@@ -30,19 +30,19 @@ func (r *SongRepository) FindAll() ([]*entities.Song, error) {
 	return docs, err
 }
 
-func (r *SongRepository) FindOneByID(ID string) (*entities.Song, error) {
+func (r *SongRepository) FindOneByID(ID string) (entities.Song, error) {
 	collection := r.mongoClient.Database("scala-chords-bot-dev").Collection("docs")
 	result := collection.FindOne(context.TODO(), bson.M{"_id": ID})
 	if result.Err() != nil {
-		return nil, result.Err()
+		return entities.Song{}, result.Err()
 	}
 
 	var song = entities.Song{}
 	err := result.Decode(&song)
-	return &song, err
+	return song, err
 }
 
-func (r *SongRepository) FindMultipleByIDs(IDs []string) ([]*entities.Song, error) {
+func (r *SongRepository) FindMultipleByIDs(IDs []string) ([]entities.Song, error) {
 	collection := r.mongoClient.Database("scala-chords-bot-dev").Collection("docs")
 
 	filter := bson.M{
@@ -56,7 +56,7 @@ func (r *SongRepository) FindMultipleByIDs(IDs []string) ([]*entities.Song, erro
 		return nil, err
 	}
 
-	var songs []*entities.Song
+	var songs []entities.Song
 	err = cursor.All(context.TODO(), &songs)
 	return songs, err
 }

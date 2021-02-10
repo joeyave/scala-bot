@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -67,26 +68,38 @@ func (s *SongService) FindByName(name string) ([]entities.Song, error) {
 	return songs, nil
 }
 
-func (s *SongService) FindCached(song entities.Song) (entities.Song, error) {
+func (s *SongService) FindOneByID(ID string) (entities.Song, error) {
+	song, err := s.songRepository.FindOneByID(ID)
+	return song, err
+}
+
+func (s *SongService) UpdateOne(song entities.Song) (entities.Song, error) {
+	if song.ID == nil {
+		return song, fmt.Errorf("ID is missing for Song: %v", song)
+	}
+
+	newSong, err := s.songRepository.UpdateOne(song)
+	return newSong, err
+}
+
+func (s *SongService) GetWithActualTgFileID(song entities.Song) (entities.Song, error) {
 	if song.ID == nil {
 		return song, fmt.Errorf("ID is missing for Song: %v", song)
 	}
 
 	cachedSong, err := s.songRepository.FindOneByID(*song.ID)
-	if err != nil {
-		return song, err
+	if err != nil || cachedSong.TgFileID == "" {
+		return entities.Song{}, errors.New("TgFileID is missing")
 	}
-
-	song.Voices = cachedSong.Voices
 
 	cachedModifiedTime, err := time.Parse(time.RFC3339, cachedSong.ModifiedTime)
 	actualModifiedTime, err := time.Parse(time.RFC3339, song.ModifiedTime)
 
-	if err != nil || !actualModifiedTime.After(cachedModifiedTime) {
-		song.TgFileID = cachedSong.TgFileID
+	if err != nil || actualModifiedTime.After(cachedModifiedTime) {
+		return entities.Song{}, err
 	}
 
-	return song, err
+	return cachedSong, err
 }
 
 func (s *SongService) DownloadPDF(song entities.Song) (*tgbotapi.FileReader, error) {

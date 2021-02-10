@@ -54,6 +54,7 @@ func main() {
 
 	updates, err := bot.GetUpdatesChan(u)
 
+	// TODO: find out how to recover from panic.
 	for update := range updates {
 		if update.Message == nil { // ignore any non-Message Updates
 			continue

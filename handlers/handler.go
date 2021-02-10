@@ -108,20 +108,39 @@ func (h *Handler) handleSongSearchState(update *tgbotapi.Update, user entities.U
 			})
 
 			if foundIndex != len(songs) {
-				fileReader, err := h.songService.DownloadPDF(songs[foundIndex])
-				if err != nil {
-					return err
-				}
+				foundSong := songs[foundIndex]
 
-				msg := tgbotapi.NewDocumentUpload(update.Message.Chat.ID, *fileReader)
+				cachedSong, err := h.songService.GetWithActualTgFileID(foundSong)
 
+				var msg tgbotapi.DocumentConfig
 				keyboard := configs.GetSongOptionsKeyboard()
 				keyboard = append([][]tgbotapi.KeyboardButton{{{Text: songs[foundIndex].Name}}}, keyboard...)
 				msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(keyboard...)
 
-				_, err = h.bot.Send(msg)
-				if err != nil {
-					return err
+				if err != nil { // Song not found in cache - upload from my server.
+					fileReader, err := h.songService.DownloadPDF(foundSong)
+					if err != nil {
+						return err
+					}
+
+					msg = tgbotapi.NewDocumentUpload(update.Message.Chat.ID, *fileReader)
+
+					res, err := h.bot.Send(msg)
+					if err != nil {
+						return fmt.Errorf("failed to send file %v", err)
+					}
+
+					foundSong.TgFileID = res.Document.FileID
+					_, err = h.songService.UpdateOne(foundSong)
+					if err != nil {
+						return fmt.Errorf("failed to cache file %v", err)
+					}
+				} else { // Found in cache.
+					msg = tgbotapi.NewDocumentShare(update.Message.Chat.ID, cachedSong.TgFileID)
+					_, err := h.bot.Send(msg)
+					if err != nil {
+						return fmt.Errorf("failed to send file %v", err)
+					}
 				}
 			} else {
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ничего не найдено.")
