@@ -1,6 +1,7 @@
 package services
 
 import (
+	"scalaChordsBot/configs"
 	"scalaChordsBot/entities"
 	"scalaChordsBot/repositories"
 )
@@ -20,7 +21,17 @@ func (s *UserService) FindOrCreate(ID int64) (entities.User, error) {
 
 	// Create User if he doesn't exists or doesn't have states.
 	if err != nil || user.States == nil {
-		user, err = s.userRepository.UpdateOne(*entities.NewUser(ID))
+		user = entities.User{
+			ID: ID,
+			States: []entities.State{
+				{
+					Name:  configs.SongSearchState,
+					Index: 0,
+				},
+			},
+		}
+
+		user, err = s.userRepository.UpdateOne(user)
 		if err != nil {
 			return entities.User{}, err
 		}

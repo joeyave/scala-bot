@@ -11,3 +11,8 @@ var songOptionsKeyboard = [][]tgbotapi.KeyboardButton{
 func GetSongOptionsKeyboard() [][]tgbotapi.KeyboardButton {
 	return append(songOptionsKeyboard[:0:0], songOptionsKeyboard...)
 }
+
+var MainMenuKeyboard = [][]tgbotapi.KeyboardButton{
+	{{Text: CreateDoc}},
+	{{Text: Help}},
+}

@@ -1,8 +1,9 @@
 package configs
 
-// State constants.
 const (
-	HandleSongSearchState string = "handleSongSearchState"
+	SongSearchState  = "SongSearchState"
+	SongActionsState = "SongActionsState"
+	SongVoicesState  = "SongVoicesState"
 )
 
 // Buttons constants.

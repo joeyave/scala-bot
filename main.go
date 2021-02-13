@@ -61,6 +61,6 @@ func main() {
 		}
 
 		// TODO: make some handler struct and all that stuff.
-		err = handler.Handle(&update)
+		err = handler.HandleUpdate(&update)
 	}
 }

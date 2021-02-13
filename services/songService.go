@@ -5,6 +5,7 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.mongodb.org/mongo-driver/mongo"
+	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
 	"scalaChordsBot/entities"
 	"scalaChordsBot/repositories"
@@ -14,12 +15,14 @@ import (
 type SongService struct {
 	songRepository *repositories.SongRepository
 	driveClient    *drive.Service
+	docsClient     *docs.Service
 }
 
 func NewSongService(songRepository *repositories.SongRepository, driveClient *drive.Service) *SongService {
 	return &SongService{
 		songRepository: songRepository,
 		driveClient:    driveClient,
+		//docsClient:     docsClient,
 	}
 }
 
@@ -27,7 +30,6 @@ func NewSongService(songRepository *repositories.SongRepository, driveClient *dr
 Searches for Song on Google Drive then returns uncached versions of Songs for performance reasons.
 */
 func (s *SongService) FindByName(name string) ([]entities.Song, error) {
-
 	var songs []entities.Song
 
 	var pageToken string
