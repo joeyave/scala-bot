@@ -3,15 +3,15 @@ package handlers
 import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	"scalaChordsBot/configs"
-	"scalaChordsBot/entities"
+	"scala-chords-bot/configs"
+	"scala-chords-bot/entities"
 )
 
 func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error)) {
 	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error), 0)
 
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
-		foundSong := user.CurrentState().Context.CurrentSong
+		foundSong := *user.State.Context.CurrentSong
 
 		cachedSong, err := updateHandler.SongService.GetWithActualTgFileID(foundSong)
 
@@ -66,8 +66,8 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 			}
 		}
 
-		user.CurrentState().NextIndex()
-		user.CurrentState().Context.CurrentSong = cachedSong
+		user.State.Index++
+		user.State.Context.CurrentSong = &cachedSong
 
 		return user, err
 	})
@@ -76,25 +76,33 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 		var err error
 
 		switch update.Message.Text {
-		case user.CurrentState().Context.CurrentSong.Name:
-			_, err = updateHandler.bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, user.CurrentState().Context.CurrentSong.WebViewLink))
+		case user.State.Context.CurrentSong.Name:
+			_, err = updateHandler.bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, user.State.Context.CurrentSong.WebViewLink))
 
 		case configs.Menu:
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Основное меню:")
-			msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(configs.MainMenuKeyboard...)
-			_, err = updateHandler.bot.Send(msg)
-
-			user.CurrentState().ChangeTo(configs.SongSearchState)
+			user.State = &entities.State{
+				Index: 0,
+				Name:  configs.MainMenuState,
+			}
+			return updateHandler.enterStateHandler(update, user)
 
 		case configs.Voices:
-			user.AppendState(configs.SongVoicesState, entities.Context{
-				CurrentSong: user.CurrentState().Context.CurrentSong,
-			})
-			return enterStateHandler(updateHandler, update, user)
+			user.State = &entities.State{
+				Index: 0,
+				Name:  configs.GetVoicesState,
+				Context: entities.Context{
+					CurrentSong: user.State.Context.CurrentSong,
+				},
+				Prev: user.State,
+			}
+			return updateHandler.enterStateHandler(update, user)
 
 		default:
-			user.CurrentState().ChangeTo(configs.SongSearchState)
-			return enterStateHandler(updateHandler, update, user)
+			user.State = &entities.State{
+				Index: 0,
+				Name:  configs.SongSearchState,
+			}
+			return updateHandler.enterStateHandler(update, user)
 		}
 
 		return user, err

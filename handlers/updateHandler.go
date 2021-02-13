@@ -3,9 +3,9 @@ package handlers
 import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	"scalaChordsBot/configs"
-	"scalaChordsBot/entities"
-	"scalaChordsBot/services"
+	"scala-chords-bot/configs"
+	"scala-chords-bot/entities"
+	"scala-chords-bot/services"
 )
 
 type UpdateHandler struct {
@@ -31,17 +31,21 @@ func (u *UpdateHandler) HandleUpdate(update *tgbotapi.Update) error {
 		return fmt.Errorf("couldn't get User's state %v", err)
 	}
 
-	//handleFuncs, ok := stateHandlers[user.CurrentState().Name]
-	//
-	//if ok == false || user.CurrentState().Index > len(handleFuncs) || user.CurrentState().Index < 0 {
-	//	user.CurrentState().Index = 0
-	//	user.CurrentState().Name = configs.SongSearchState
-	//	handleFuncs = stateHandlers[user.CurrentState().Name]
-	//}
-	//
-	//user, err = handleFuncs[user.CurrentState().Index](u, update, user)
+	if update.Message.Voice != nil {
+		user.State = &entities.State{
+			Index: 0,
+			Name:  configs.UploadVoiceState,
+			Context: entities.Context{
+				CurrentVoice: &entities.Voice{
+					TgFileID: update.Message.Voice.FileID,
+					Caption:  "",
+				},
+			},
+			Prev: user.State,
+		}
+	}
 
-	user, err = enterStateHandler(u, update, user)
+	user, err = u.enterStateHandler(update, user)
 
 	if err == nil {
 		user, err = u.userService.UpdateOne(user)
@@ -50,14 +54,14 @@ func (u *UpdateHandler) HandleUpdate(update *tgbotapi.Update) error {
 	return err
 }
 
-func enterStateHandler(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
-	handleFuncs, ok := stateHandlers[user.CurrentState().Name]
+func (u *UpdateHandler) enterStateHandler(update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs, ok := stateHandlers[user.State.Name]
 
-	if ok == false || user.CurrentState().Index >= len(handleFuncs) || user.CurrentState().Index < 0 {
-		user.CurrentState().Index = 0
-		user.CurrentState().Name = configs.SongSearchState
-		handleFuncs = stateHandlers[user.CurrentState().Name]
+	if ok == false || user.State.Index >= len(handleFuncs) || user.State.Index < 0 {
+		user.State.Index = 0
+		user.State.Name = configs.MainMenuState
+		handleFuncs = stateHandlers[user.State.Name]
 	}
 
-	return handleFuncs[user.CurrentState().Index](updateHandler, update, user)
+	return handleFuncs[user.State.Index](u, update, user)
 }

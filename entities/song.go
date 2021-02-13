@@ -1,16 +1,15 @@
 package entities
 
 type Song struct {
-	ID           *string `bson:"_id"`
-	Name         string  `bson:"name"`
-	TgFileID     string  `bson:"tgFileId"`
-	ModifiedTime string  `bson:"modifiedTime"`
-	WebViewLink  string  `bson:"webViewLink"`
-	Voices       []voice `bson:"voices"`
+	ID           *string  `bson:"_id"`
+	Name         string   `bson:"name"`
+	TgFileID     string   `bson:"tgFileId"`
+	ModifiedTime string   `bson:"modifiedTime"`
+	WebViewLink  string   `bson:"webViewLink"`
+	Voices       []*Voice `bson:"voices"`
 }
 
-type voice struct {
-	TgFileID       string `bson:"tgFileId"`
-	TgFileUniqueID string `bson:"tgFileUniqueId"`
-	Caption        string `bson:"caption"`
+type Voice struct {
+	TgFileID string `bson:"tgFileId"`
+	Caption  string `bson:"caption"`
 }

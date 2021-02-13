@@ -7,8 +7,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
-	"scalaChordsBot/entities"
-	"scalaChordsBot/repositories"
+	"scala-chords-bot/entities"
+	"scala-chords-bot/repositories"
 	"time"
 )
 

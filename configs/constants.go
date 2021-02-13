@@ -3,7 +3,9 @@ package configs
 const (
 	SongSearchState  = "SongSearchState"
 	SongActionsState = "SongActionsState"
-	SongVoicesState  = "SongVoicesState"
+	GetVoicesState   = "GetVoicesState"
+	UploadVoiceState = "UploadVoiceState"
+	MainMenuState    = "MainMenuState"
 )
 
 // Buttons constants.

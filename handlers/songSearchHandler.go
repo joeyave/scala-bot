@@ -1,10 +1,9 @@
 package handlers
 
 import (
-	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	"scalaChordsBot/configs"
-	"scalaChordsBot/entities"
+	"scala-chords-bot/configs"
+	"scala-chords-bot/entities"
 	"sort"
 )
 
@@ -19,10 +18,11 @@ func songSearchHandler() (string, []func(updateHandler *UpdateHandler, update *t
 
 			songs, err := updateHandler.SongService.FindByName(update.Message.Text)
 			if err != nil {
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ничего не найдено.")
-				msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(false)
-				_, _ = updateHandler.bot.Send(msg)
-				return entities.User{}, fmt.Errorf("couldn't find Song %v", err)
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ничего не найдено. Попробуй еще раз.")
+				//msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(false)
+				_, err = updateHandler.bot.Send(msg)
+
+				return user, err
 			}
 
 			songsKeyboard := tgbotapi.NewReplyKeyboard()
@@ -44,15 +44,14 @@ func songSearchHandler() (string, []func(updateHandler *UpdateHandler, update *t
 			msg.ReplyMarkup = songsKeyboard
 			_, _ = updateHandler.bot.Send(msg)
 
-			user.CurrentState().Context.Songs = songs
-			user.CurrentState().NextIndex()
+			user.State.Context.Songs = songs
+			user.State.Index++
 			return user, err
 		}
 	})
 
-	//
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
-		songs := user.CurrentState().Context.Songs
+		songs := user.State.Context.Songs
 
 		chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatUploadDocument)
 		_, _ = updateHandler.bot.Send(chatAction)
@@ -66,9 +65,18 @@ func songSearchHandler() (string, []func(updateHandler *UpdateHandler, update *t
 		})
 
 		if foundIndex != len(songs) {
-			user.CurrentState().ChangeTo(configs.SongActionsState)
-			user.CurrentState().Context.CurrentSong = songs[foundIndex]
-			return enterStateHandler(updateHandler, update, user)
+			if user.State.Next != nil {
+				user.State = user.State.Next
+				user.State.Context.CurrentSong = &songs[foundIndex]
+			} else {
+				user.State = &entities.State{
+					Index:   0,
+					Name:    configs.SongActionsState,
+					Context: entities.Context{CurrentSong: &songs[foundIndex]},
+				}
+			}
+
+			return updateHandler.enterStateHandler(update, user)
 		} else {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ничего не найдено.")
 			msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(false)
@@ -77,7 +85,7 @@ func songSearchHandler() (string, []func(updateHandler *UpdateHandler, update *t
 				return user, err
 			}
 
-			user.CurrentState().PrevIndex()
+			user.State.Index--
 		}
 
 		return user, nil

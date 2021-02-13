@@ -9,9 +9,9 @@ import (
 	"google.golang.org/api/option"
 	"log"
 	"os"
-	"scalaChordsBot/handlers"
-	"scalaChordsBot/repositories"
-	"scalaChordsBot/services"
+	"scala-chords-bot/handlers"
+	"scala-chords-bot/repositories"
+	"scala-chords-bot/services"
 )
 
 func main() {
