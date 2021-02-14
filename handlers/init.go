@@ -12,7 +12,7 @@ func init() {
 	name, funcs := mainMenuHandler()
 	stateHandlers[name] = funcs
 
-	name, funcs = songSearchHandler()
+	name, funcs = searchSongHandler()
 	stateHandlers[name] = funcs
 
 	name, funcs = songActionsHandler()
@@ -22,5 +22,8 @@ func init() {
 	stateHandlers[name] = funcs
 
 	name, funcs = uploadVoiceHandler()
+	stateHandlers[name] = funcs
+
+	name, funcs = transposeSongHandler()
 	stateHandlers[name] = funcs
 }

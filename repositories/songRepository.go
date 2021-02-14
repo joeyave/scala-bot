@@ -5,6 +5,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"os"
 	"scala-chords-bot/entities"
 )
 
@@ -19,7 +20,7 @@ func NewSongRepository(mongoClient *mongo.Client) *SongRepository {
 }
 
 func (r *SongRepository) FindAll() ([]*entities.Song, error) {
-	collection := r.mongoClient.Database("scala-chords-bot-dev").Collection("docs")
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
 	cursor, err := collection.Find(context.TODO(), bson.D{})
 	if err != nil {
 		return nil, err
@@ -31,7 +32,7 @@ func (r *SongRepository) FindAll() ([]*entities.Song, error) {
 }
 
 func (r *SongRepository) FindOneByID(ID string) (entities.Song, error) {
-	collection := r.mongoClient.Database("scala-chords-bot-dev").Collection("docs")
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
 	result := collection.FindOne(context.TODO(), bson.M{"_id": ID})
 	if result.Err() != nil {
 		return entities.Song{}, result.Err()
@@ -43,7 +44,7 @@ func (r *SongRepository) FindOneByID(ID string) (entities.Song, error) {
 }
 
 func (r *SongRepository) FindMultipleByIDs(IDs []string) ([]entities.Song, error) {
-	collection := r.mongoClient.Database("scala-chords-bot-dev").Collection("docs")
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
 
 	filter := bson.M{
 		"_id": bson.M{
@@ -62,7 +63,7 @@ func (r *SongRepository) FindMultipleByIDs(IDs []string) ([]entities.Song, error
 }
 
 func (r *SongRepository) UpdateOne(song entities.Song) (entities.Song, error) {
-	collection := r.mongoClient.Database("scala-chords-bot-dev").Collection("docs")
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
 
 	filter := bson.M{"_id": song.ID}
 

@@ -3,22 +3,22 @@ package handlers
 import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	"scala-chords-bot/configs"
 	"scala-chords-bot/entities"
+	"scala-chords-bot/helpers"
 	"scala-chords-bot/services"
 )
 
 type UpdateHandler struct {
 	bot         *tgbotapi.BotAPI
 	userService *services.UserService
-	SongService *services.SongService
+	songService *services.SongService
 }
 
 func NewHandler(bot *tgbotapi.BotAPI, userService *services.UserService, songService *services.SongService) *UpdateHandler {
 	return &UpdateHandler{
 		bot:         bot,
 		userService: userService,
-		SongService: songService,
+		songService: songService,
 	}
 }
 
@@ -34,7 +34,7 @@ func (u *UpdateHandler) HandleUpdate(update *tgbotapi.Update) error {
 	if update.Message.Voice != nil {
 		user.State = &entities.State{
 			Index: 0,
-			Name:  configs.UploadVoiceState,
+			Name:  helpers.UploadVoiceState,
 			Context: entities.Context{
 				CurrentVoice: &entities.Voice{
 					TgFileID: update.Message.Voice.FileID,
@@ -59,7 +59,7 @@ func (u *UpdateHandler) enterStateHandler(update *tgbotapi.Update, user entities
 
 	if ok == false || user.State.Index >= len(handleFuncs) || user.State.Index < 0 {
 		user.State.Index = 0
-		user.State.Name = configs.MainMenuState
+		user.State.Name = helpers.MainMenuState
 		handleFuncs = stateHandlers[user.State.Name]
 	}
 

@@ -1,7 +1,7 @@
 package entities
 
 type Song struct {
-	ID           *string  `bson:"_id"`
+	ID           string   `bson:"_id"`
 	Name         string   `bson:"name"`
 	TgFileID     string   `bson:"tgFileId"`
 	ModifiedTime string   `bson:"modifiedTime"`

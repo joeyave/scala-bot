@@ -5,6 +5,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"os"
 	"scala-chords-bot/entities"
 )
 
@@ -19,7 +20,7 @@ func NewUserRepository(mongoClient *mongo.Client) *UserRepository {
 }
 
 func (r *UserRepository) FindAll() ([]entities.User, error) {
-	collection := r.mongoClient.Database("scala-chords-bot-dev").Collection("users")
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("users")
 	cursor, err := collection.Find(context.TODO(), bson.D{})
 	if err != nil {
 		return nil, err
@@ -31,7 +32,7 @@ func (r *UserRepository) FindAll() ([]entities.User, error) {
 }
 
 func (r *UserRepository) FindOneByID(ID int64) (entities.User, error) {
-	collection := r.mongoClient.Database("scala-chords-bot-dev").Collection("users")
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("users")
 	result := collection.FindOne(context.TODO(), bson.M{"_id": ID})
 	if result.Err() != nil {
 		return entities.User{}, result.Err()
@@ -43,7 +44,7 @@ func (r *UserRepository) FindOneByID(ID int64) (entities.User, error) {
 }
 
 func (r *UserRepository) FindMultipleByIDs(IDs []int64) ([]entities.User, error) {
-	collection := r.mongoClient.Database("scala-chords-bot-dev").Collection("users")
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("users")
 
 	filter := bson.M{
 		"_id": bson.M{
@@ -62,7 +63,7 @@ func (r *UserRepository) FindMultipleByIDs(IDs []int64) ([]entities.User, error)
 }
 
 func (r *UserRepository) UpdateOne(user entities.User) (entities.User, error) {
-	collection := r.mongoClient.Database("scala-chords-bot-dev").Collection("users")
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("users")
 
 	// TODO: check for ID.
 

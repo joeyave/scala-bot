@@ -1,8 +1,8 @@
 package services
 
 import (
-	"scala-chords-bot/configs"
 	"scala-chords-bot/entities"
+	"scala-chords-bot/helpers"
 	"scala-chords-bot/repositories"
 )
 
@@ -25,7 +25,7 @@ func (s *UserService) FindOrCreate(ID int64) (entities.User, error) {
 			ID: ID,
 			State: &entities.State{
 				Index:   0,
-				Name:    configs.MainMenuState,
+				Name:    helpers.MainMenuState,
 				Context: entities.Context{},
 			},
 		}

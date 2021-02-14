@@ -2,8 +2,8 @@ package handlers
 
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	"scala-chords-bot/configs"
 	"scala-chords-bot/entities"
+	"scala-chords-bot/helpers"
 	"sort"
 )
 
@@ -29,7 +29,7 @@ func getVoicesHandler() (string, []func(updateHandler *UpdateHandler, update *tg
 			for _, voice := range voices {
 				keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(voice.Caption)))
 			}
-			keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(configs.Back)))
+			keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Back)))
 
 			msg.ReplyMarkup = keyboard
 
@@ -41,7 +41,7 @@ func getVoicesHandler() (string, []func(updateHandler *UpdateHandler, update *tg
 
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
 		switch update.Message.Text {
-		case configs.Back:
+		case helpers.Back:
 			user.State = user.State.Prev
 			user.State.Index = 0
 			return updateHandler.enterStateHandler(update, user)
@@ -60,8 +60,8 @@ func getVoicesHandler() (string, []func(updateHandler *UpdateHandler, update *tg
 				msg := tgbotapi.NewVoiceShare(update.Message.Chat.ID, voices[foundIndex].TgFileID)
 				msg.Caption = voices[foundIndex].Caption
 				keyboard := tgbotapi.NewReplyKeyboard(
-					tgbotapi.NewKeyboardButtonRow(tgbotapi.KeyboardButton{Text: configs.Delete}),
-					tgbotapi.NewKeyboardButtonRow(tgbotapi.KeyboardButton{Text: configs.Back}),
+					tgbotapi.NewKeyboardButtonRow(tgbotapi.KeyboardButton{Text: helpers.Delete}),
+					tgbotapi.NewKeyboardButtonRow(tgbotapi.KeyboardButton{Text: helpers.Back}),
 				)
 				keyboard.ResizeKeyboard = true
 				msg.ReplyMarkup = keyboard
@@ -80,10 +80,11 @@ func getVoicesHandler() (string, []func(updateHandler *UpdateHandler, update *tg
 
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
 		switch update.Message.Text {
-		case configs.Back:
+		case helpers.Back:
 			user.State.Index = 0
 			return updateHandler.enterStateHandler(update, user)
-		case configs.Delete:
+		case helpers.Delete:
+			// TODO: handle delete
 			return user, nil
 		default:
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Я тебя не понимаю. Нажми на кнопку.")
@@ -92,7 +93,7 @@ func getVoicesHandler() (string, []func(updateHandler *UpdateHandler, update *tg
 		}
 	})
 
-	return configs.GetVoicesState, handleFuncs
+	return helpers.GetVoicesState, handleFuncs
 }
 
 func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error)) {
@@ -100,7 +101,7 @@ func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *
 
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Введи название песни, к которой ты хочешь прикрепить эту партию:")
-		keyboard := tgbotapi.NewReplyKeyboard(tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(configs.Cancel)))
+		keyboard := tgbotapi.NewReplyKeyboard(tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)))
 		keyboard.ResizeKeyboard = true
 		msg.ReplyMarkup = keyboard
 		_, err := updateHandler.bot.Send(msg)
@@ -111,17 +112,24 @@ func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *
 
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
 		switch update.Message.Text {
-		case configs.Cancel:
-			user.State = user.State.Prev
-			user.State.Index = 0
+		case helpers.Cancel:
+			if user.State.Prev != nil {
+				user.State = user.State.Prev
+				user.State.Index = 0
+			} else {
+				user.State = &entities.State{
+					Index: 0,
+					Name:  helpers.MainMenuState,
+				}
+			}
 		default:
 			user.State = &entities.State{
 				Index: 0,
-				Name:  configs.SongSearchState,
-				Prev:  user.State,
+				Name:  helpers.SearchSongState,
+				Prev:  user.State.Prev,
 				Next: &entities.State{
 					Index:   2,
-					Name:    configs.UploadVoiceState,
+					Name:    helpers.UploadVoiceState,
 					Context: user.State.Context,
 				},
 			}
@@ -131,6 +139,11 @@ func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *
 
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Отправь мне название этой партии:")
+		keyboard := tgbotapi.NewReplyKeyboard(
+			tgbotapi.NewKeyboardButtonRow(tgbotapi.KeyboardButton{Text: helpers.Cancel}),
+		)
+		keyboard.ResizeKeyboard = true
+		msg.ReplyMarkup = keyboard
 		_, err := updateHandler.bot.Send(msg)
 
 		user.State.Index++
@@ -138,12 +151,31 @@ func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *
 	})
 
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
-		if update.Message.Text != "" {
+		switch update.Message.Text {
+		case "":
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Название для партии должно быть текстом! Попробуй еще раз.")
+			_, err := updateHandler.bot.Send(msg)
+
+			return user, err
+
+		case helpers.Cancel:
+			if user.State.Prev != nil {
+				user.State = user.State.Prev
+				user.State.Index = 0
+			} else {
+				user.State = &entities.State{
+					Index: 0,
+					Name:  helpers.MainMenuState,
+				}
+			}
+			return updateHandler.enterStateHandler(update, user)
+
+		default:
 			user.State.Context.CurrentVoice.Caption = update.Message.Text
 
 			user.State.Context.CurrentSong.Voices =
 				append(user.State.Context.CurrentSong.Voices, user.State.Context.CurrentVoice)
-			_, err := updateHandler.SongService.UpdateOne(*user.State.Context.CurrentSong)
+			_, err := updateHandler.songService.UpdateOne(*user.State.Context.CurrentSong)
 			if err != nil {
 				return user, err
 			}
@@ -153,17 +185,11 @@ func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *
 
 			user.State = &entities.State{
 				Index:   0,
-				Name:    configs.SongActionsState,
+				Name:    helpers.SongActionsState,
 				Context: entities.Context{CurrentSong: user.State.Context.CurrentSong},
 			}
-
 			return updateHandler.enterStateHandler(update, user)
-		} else {
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Название для партии должно быть текстом! Попробуй еще раз.")
-			_, err := updateHandler.bot.Send(msg)
-
-			return user, err
 		}
 	})
-	return configs.UploadVoiceState, handleFuncs
+	return helpers.UploadVoiceState, handleFuncs
 }

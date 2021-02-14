@@ -18,4 +18,5 @@ type Context struct {
 	CurrentSong  *Song  `bson:"currentSong"`
 	Songs        []Song `bson:"songs"`
 	CurrentVoice *Voice `bson:"currentVoice"`
+	Key          string `bson:"key"`
 }

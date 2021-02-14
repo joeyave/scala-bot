@@ -1,11 +1,12 @@
-package configs
+package helpers
 
 const (
-	SongSearchState  = "SongSearchState"
-	SongActionsState = "SongActionsState"
-	GetVoicesState   = "GetVoicesState"
-	UploadVoiceState = "UploadVoiceState"
-	MainMenuState    = "MainMenuState"
+	SearchSongState    = "SearchSongState"
+	SongActionsState   = "SongActionsState"
+	GetVoicesState     = "GetVoicesState"
+	UploadVoiceState   = "UploadVoiceState"
+	MainMenuState      = "MainMenuState"
+	TransposeSongState = "TransposeSongState"
 )
 
 // Buttons constants.
