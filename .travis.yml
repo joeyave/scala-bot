@@ -4,11 +4,8 @@ branches:
 
 language: go
 
-before_install:
-  - go get -v github.com/go-telegram-bot-api/telegram-bot-api
-  - go get -v go.mongodb.org/mongo-driver
-  - go get -v google.golang.org/api
-  - github.com/joeyave/chords-transposer/transposer
+before_script:
+  - go get -t -v ./...
 
 deploy:
   edge: true
