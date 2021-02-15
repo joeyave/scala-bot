@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"scala-chords-bot/entities"
 	"scala-chords-bot/repositories"
+	"sort"
 	"time"
 )
 
@@ -100,7 +101,7 @@ func (s *SongService) GetWithActualTgFileID(song entities.Song) (entities.Song, 
 	actualModifiedTime, err := time.Parse(time.RFC3339, song.ModifiedTime)
 
 	if err != nil || actualModifiedTime.After(cachedModifiedTime) {
-		return entities.Song{}, err
+		return entities.Song{}, errors.New("cached song is not actual")
 	}
 
 	return cachedSong, err
@@ -221,13 +222,13 @@ func (s *SongService) Transpose(song entities.Song, toKey string, sectionIndex i
 		return entities.Song{}, err
 	}
 
-	requests, _ := s.transposeHeader(doc, sections, sectionIndex, toKey)
+	requests, key := s.transposeHeader(doc, sections, sectionIndex, toKey)
+	requests = append(requests, s.transposeBody(doc, sections, sectionIndex, key, toKey)...)
 
 	_, err = s.docsClient.Documents.BatchUpdate(doc.DocumentId,
 		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
-	fmt.Println(err)
 
-	//song.ModifiedTime = time.Now().Format(time.RFC3339)
+	song.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
 	return song, err
 }
 
@@ -236,57 +237,88 @@ func (s *SongService) transposeHeader(doc *docs.Document, sections []docs.Struct
 		return nil, ""
 	}
 
+	requests := make([]*docs.Request, 0)
+
 	// Create header if section doesn't have it.
 	if sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId == "" {
-		requests := &docs.BatchUpdateDocumentRequest{
-			Requests: []*docs.Request{
-				{
-					CreateHeader: &docs.CreateHeaderRequest{
-						SectionBreakLocation: &docs.Location{
-							SegmentId: "",
-							Index:     sections[sectionIndex].StartIndex,
-						},
-						Type: "DEFAULT",
-					},
+		requests = append(requests, &docs.Request{
+			CreateHeader: &docs.CreateHeaderRequest{
+				SectionBreakLocation: &docs.Location{
+					SegmentId: "",
+					Index:     sections[sectionIndex].StartIndex,
 				},
+				Type: "DEFAULT",
 			},
-		}
-
-		_, err := s.docsClient.Documents.BatchUpdate(doc.DocumentId, requests).Do()
-		if err != nil {
-			return nil, ""
-		}
+		})
 	} else {
 		header := doc.Headers[sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId]
 		if header.Content[len(header.Content)-1].EndIndex-1 > 0 {
-			requests := &docs.BatchUpdateDocumentRequest{
-				Requests: []*docs.Request{
-					{
-						DeleteContentRange: &docs.DeleteContentRangeRequest{
-							Range: &docs.Range{
-								StartIndex:      0,
-								EndIndex:        header.Content[len(header.Content)-1].EndIndex - 1,
-								SegmentId:       header.HeaderId,
-								ForceSendFields: []string{"StartIndex"},
-							},
-						},
+			requests = append(requests, &docs.Request{
+				DeleteContentRange: &docs.DeleteContentRangeRequest{
+					Range: &docs.Range{
+						StartIndex:      0,
+						EndIndex:        header.Content[len(header.Content)-1].EndIndex - 1,
+						SegmentId:       header.HeaderId,
+						ForceSendFields: []string{"StartIndex"},
 					},
 				},
-			}
+			})
 
-			_, err := s.docsClient.Documents.BatchUpdate(doc.DocumentId, requests).Do()
-			if err != nil {
-				return nil, ""
-			}
 		}
 	}
 
+	r, key := composeRequests(doc.Headers[doc.DocumentStyle.DefaultHeaderId].Content,
+		0, "", toKey, doc.Headers[sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId].HeaderId)
+	requests = append(requests, r...)
+
+	return requests, key
+}
+
+func (s *SongService) transposeBody(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int, key string, toKey string) []*docs.Request {
 	requests := make([]*docs.Request, 0)
 
-	key := ""
-	var index int64 = 0
+	sectionToInsertStartIndex := sections[sectionIndex].StartIndex + 1
+	var sectionToInsertEndIndex int64
 
-	for i, item := range doc.Headers[doc.DocumentStyle.DefaultHeaderId].Content {
+	if len(sections) > sectionIndex+1 {
+		sectionToInsertEndIndex = sections[sectionIndex+1].StartIndex - 1
+	} else {
+		sectionToInsertEndIndex = doc.Body.Content[len(doc.Body.Content)-1].EndIndex - 1
+	}
+
+	var content []*docs.StructuralElement
+	if len(sections) > 1 {
+		index := sort.Search(len(doc.Body.Content), func(i int) bool {
+			return doc.Body.Content[i].StartIndex == sections[1].StartIndex
+		})
+		content = doc.Body.Content[:index]
+	} else {
+		content = doc.Body.Content
+	}
+
+	if sectionToInsertEndIndex-sectionToInsertStartIndex > 0 {
+		requests = append(requests, &docs.Request{
+			DeleteContentRange: &docs.DeleteContentRangeRequest{
+				Range: &docs.Range{
+					StartIndex:      sectionToInsertStartIndex,
+					EndIndex:        sectionToInsertEndIndex,
+					SegmentId:       "",
+					ForceSendFields: []string{"StartIndex"},
+				},
+			},
+		})
+	}
+
+	r, _ := composeRequests(content, sectionToInsertStartIndex, key, toKey, "")
+	requests = append(requests, r...)
+
+	return requests
+}
+
+func composeRequests(content []*docs.StructuralElement, index int64, key string, toKey string, segmentId string) ([]*docs.Request, string) {
+	requests := make([]*docs.Request, 0)
+
+	for i, item := range content {
 		if item.Paragraph != nil && item.Paragraph.Elements != nil {
 			for _, element := range item.Paragraph.Elements {
 				if element.TextRun != nil && element.TextRun.Content != "" {
@@ -302,9 +334,9 @@ func (s *SongService) transposeHeader(doc *docs.Document, sections []docs.Struct
 						element.TextRun.Content = transposedText
 					}
 
-					if i == len(doc.Headers[doc.DocumentStyle.DefaultHeaderId].Content)-1 {
+					if i == len(content)-1 {
 						re := regexp.MustCompile("[\\r\\n]$")
-						element.TextRun.Content = re.ReplaceAllString(element.TextRun.Content, " ")
+						element.TextRun.Content = re.ReplaceAllString(element.TextRun.Content, "")
 					}
 
 					if len([]rune(element.TextRun.Content)) == 0 {
@@ -328,7 +360,7 @@ func (s *SongService) transposeHeader(doc *docs.Document, sections []docs.Struct
 							InsertText: &docs.InsertTextRequest{
 								Location: &docs.Location{
 									Index:     index,
-									SegmentId: doc.Headers[sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId].HeaderId,
+									SegmentId: segmentId,
 								},
 								Text: element.TextRun.Content,
 							},
@@ -339,7 +371,7 @@ func (s *SongService) transposeHeader(doc *docs.Document, sections []docs.Struct
 								Range: &docs.Range{
 									StartIndex: index,
 									EndIndex:   index + int64(len([]rune(element.TextRun.Content))),
-									SegmentId:  doc.Headers[sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId].HeaderId,
+									SegmentId:  segmentId,
 									ForceSendFields: func() []string {
 										if index == 0 {
 											return []string{"StartIndex"}
@@ -358,7 +390,7 @@ func (s *SongService) transposeHeader(doc *docs.Document, sections []docs.Struct
 								Range: &docs.Range{
 									StartIndex: index,
 									EndIndex:   index + int64(len([]rune(element.TextRun.Content))),
-									SegmentId:  doc.Headers[sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId].HeaderId,
+									SegmentId:  segmentId,
 									ForceSendFields: func() []string {
 										if index == 0 {
 											return []string{"StartIndex"}
