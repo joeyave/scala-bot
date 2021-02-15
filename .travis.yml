@@ -6,8 +6,6 @@ language: go
 
 go_import_path: github.com/joeyave/scala-chords-bot
 
-script: go test -v ./...
-
 deploy:
   edge: true
   provider: bluemixcloudfoundry
