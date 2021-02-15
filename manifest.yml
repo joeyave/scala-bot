@@ -2,7 +2,7 @@ applications:
   - name: scala-chords-bot
 
     env:
-      GOVERSION: master
+      GOVERSION: 1.9.26
     random-route: true
     memory: 256M
     instances: 1
