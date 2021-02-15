@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/joeyave/scala-chords-bot/handlers"
+	"github.com/joeyave/scala-chords-bot/repositories"
+	"github.com/joeyave/scala-chords-bot/services"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -11,9 +14,6 @@ import (
 	"google.golang.org/api/option"
 	"log"
 	"os"
-	"github.com/joeyave/scala-chords-bot/handlers"
-	"github.com/joeyave/scala-chords-bot/repositories"
-	"github.com/joeyave/scala-chords-bot/services"
 	"time"
 )
 
@@ -56,7 +56,7 @@ func main() {
 		log.Panic(err)
 	}
 
-	bot.Debug = true
+	bot.Debug = false
 
 	handler := handlers.NewHandler(bot, userService, songService)
 
