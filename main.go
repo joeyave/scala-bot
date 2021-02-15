@@ -11,9 +11,9 @@ import (
 	"google.golang.org/api/option"
 	"log"
 	"os"
-	"scala-chords-bot/handlers"
-	"scala-chords-bot/repositories"
-	"scala-chords-bot/services"
+	"github.com/joeyave/scala-chords-bot/handlers"
+	"github.com/joeyave/scala-chords-bot/repositories"
+	"github.com/joeyave/scala-chords-bot/services"
 	"time"
 )
 
