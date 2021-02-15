@@ -4,6 +4,9 @@ branches:
 
 language: go
 
+go:
+  - master
+
 go_import_path: github.com/joeyave
 
 deploy:
