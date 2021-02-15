@@ -1,10 +1,11 @@
 applications:
   - name: scala-chords-bot
 
-    env:
-      GOVERSION: 1.15
+#    env:
+#      GOVERSION: 1.15
+
     random-route: true
     memory: 256M
     instances: 1
-    buildpack: go_buildpack
+#    buildpack: go_buildpack
 

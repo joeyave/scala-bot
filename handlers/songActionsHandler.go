@@ -4,7 +4,6 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/joeyave/chords-transposer/transposer"
-	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
 	"regexp"
 	"sort"

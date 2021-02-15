@@ -5,7 +5,8 @@ branches:
 language: go
 
 go:
-  - "1.15"
+#  - "1.15"
+  - main
 
 go_import_path: github.com/joeyave
 
