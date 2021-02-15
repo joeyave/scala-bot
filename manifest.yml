@@ -4,3 +4,4 @@ applications:
     random-route: true
     memory: 256M
     instances: 1
+    health-check-type: process
