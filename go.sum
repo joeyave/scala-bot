@@ -156,6 +156,8 @@ github.com/jmespath/go-jmespath/internal/testify v1.5.1 h1:shLQSRRSCCPj3f2gpwzGw
 github.com/jmespath/go-jmespath/internal/testify v1.5.1/go.mod h1:L3OGu8Wl2/fWfCI6z80xFu9LTZmf1ZRjMHUOPmWr69U=
 github.com/joeyave/chords-transposer v0.0.0-20210215203301-df4a64bc3a5f h1:RRtTJXO+3/1witcZZnqwqYRJDeuh5+5cioN2S0oP5+U=
 github.com/joeyave/chords-transposer v0.0.0-20210215203301-df4a64bc3a5f/go.mod h1:HIukuoHF6Od6O0hloRBz/ZAN14yVXrUuJgorbqmxTeg=
+github.com/joeyave/chords-transposer v0.0.1 h1:idlhpXE03DlksAczPcR7m5Fn5/lPvG+mSbojuctC2+w=
+github.com/joeyave/chords-transposer v0.0.1/go.mod h1:HIukuoHF6Od6O0hloRBz/ZAN14yVXrUuJgorbqmxTeg=
 github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
