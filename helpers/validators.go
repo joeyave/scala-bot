@@ -2,7 +2,7 @@ package helpers
 
 import (
 	"errors"
-	"scala-chords-bot/entities"
+	"github.com/joeyave/scala-chords-bot/entities"
 )
 
 func ValidateTextInput(text string, user entities.User) (entities.User, error) {

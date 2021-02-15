@@ -2,11 +2,11 @@ package repositories
 
 import (
 	"context"
+	"github.com/joeyave/scala-chords-bot/entities"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"os"
-	"scala-chords-bot/entities"
 )
 
 type UserRepository struct {

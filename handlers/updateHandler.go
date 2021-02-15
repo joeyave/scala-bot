@@ -3,9 +3,9 @@ package handlers
 import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	"scala-chords-bot/entities"
-	"scala-chords-bot/helpers"
-	"scala-chords-bot/services"
+	"github.com/joeyave/scala-chords-bot/entities"
+	"github.com/joeyave/scala-chords-bot/helpers"
+	"github.com/joeyave/scala-chords-bot/services"
 )
 
 type UpdateHandler struct {

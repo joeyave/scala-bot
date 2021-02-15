@@ -1,9 +1,9 @@
 package services
 
 import (
-	"scala-chords-bot/entities"
-	"scala-chords-bot/helpers"
-	"scala-chords-bot/repositories"
+	"github.com/joeyave/scala-chords-bot/entities"
+	"github.com/joeyave/scala-chords-bot/helpers"
+	"github.com/joeyave/scala-chords-bot/repositories"
 )
 
 type UserService struct {
