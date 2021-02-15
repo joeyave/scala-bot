@@ -4,7 +4,7 @@ branches:
 
 language: go
 
-go_import_path: github.com/joeyave/scala-chords-bot
+go_import_path: github.com/joeyave
 
 deploy:
   edge: true
