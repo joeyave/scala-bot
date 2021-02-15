@@ -1,6 +1,10 @@
 applications:
   - name: scala-chords-bot
+
+    env:
+      GOVERSION: go1.8
     random-route: true
     memory: 256M
     instances: 1
     buildpack: go_buildpack
+
