@@ -4,6 +4,8 @@ branches:
 
 language: go
 
+go_import_path: github.com/joeyave/scala-chords-bot
+
 before_script:
   - go get -t -v ./...
 
