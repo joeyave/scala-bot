@@ -2,6 +2,7 @@ package helpers
 
 const (
 	SearchSongState    = "SearchSongState"
+	SetlistState       = "SetlistState"
 	SongActionsState   = "SongActionsState"
 	GetVoicesState     = "GetVoicesState"
 	UploadVoiceState   = "UploadVoiceState"

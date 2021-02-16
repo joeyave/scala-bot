@@ -4,6 +4,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
+	"strings"
 )
 
 func mainMenuHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error)) {
@@ -27,6 +28,8 @@ func mainMenuHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 			_, err := updateHandler.bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Для поиска документа, отправь боту название.\n\nРедактировать документ можно на гугл диске. Теперь не нужно отправлять файл боту, он сам обновит его.\n\nДля добавления партии, отправь боту голосовое сообщение."))
 			return user, err
 		default:
+			strings.Split(update.Message.Text, "[\\r\\n]")
+
 			user.State = &entities.State{
 				Index: 0,
 				Name:  helpers.SearchSongState,

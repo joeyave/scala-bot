@@ -15,6 +15,9 @@ func init() {
 	name, funcs = searchSongHandler()
 	stateHandlers[name] = funcs
 
+	name, funcs = setlistHandler()
+	stateHandlers[name] = funcs
+
 	name, funcs = songActionsHandler()
 	stateHandlers[name] = funcs
 

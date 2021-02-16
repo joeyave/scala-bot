@@ -335,8 +335,8 @@ func composeRequests(content []*docs.StructuralElement, index int64, key string,
 					}
 
 					if i == len(content)-1 {
-						re := regexp.MustCompile("[\\r\\n]$")
-						element.TextRun.Content = re.ReplaceAllString(element.TextRun.Content, "")
+						re := regexp.MustCompile("\\s*[\\r\\n]$")
+						element.TextRun.Content = re.ReplaceAllString(element.TextRun.Content, " ")
 					}
 
 					if len([]rune(element.TextRun.Content)) == 0 {

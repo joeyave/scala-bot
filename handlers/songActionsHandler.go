@@ -31,6 +31,7 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 			songs, err := updateHandler.songService.FindByName(update.Message.Text)
 			if err != nil {
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ничего не найдено. Попробуй еще раз.")
+				msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)))
 				user.State.Index++
 				_, err = updateHandler.bot.Send(msg)
 
