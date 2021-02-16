@@ -5,7 +5,6 @@ import (
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
 	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
-	"sort"
 	"sync"
 )
 
@@ -83,13 +82,13 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 		}
 
 		songs := user.State.Context.Songs
-		sort.Slice(songs, func(i, j int) bool {
-			return songs[i].Name <= songs[j].Name
-		})
-
-		foundIndex := sort.Search(len(songs), func(i int) bool {
-			return songs[i].Name >= update.Message.Text
-		})
+		foundIndex := len(songs)
+		for i := range songs {
+			if songs[i].Name == update.Message.Text {
+				foundIndex = i
+				break
+			}
+		}
 
 		if foundIndex != len(songs) {
 			song, err := updateHandler.songService.GetWithActualTgFileID(songs[foundIndex])

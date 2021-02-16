@@ -4,7 +4,6 @@ import (
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
 	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
-	"sort"
 )
 
 func getVoicesHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error)) {
@@ -47,14 +46,12 @@ func getVoicesHandler() (string, []func(updateHandler *UpdateHandler, update *tg
 			return updateHandler.enterStateHandler(update, user)
 		default:
 			voices := user.State.Context.CurrentSong.Voices
-
-			sort.Slice(voices, func(i, j int) bool {
-				return voices[i].Caption <= voices[j].Caption
-			})
-
-			foundIndex := sort.Search(len(voices), func(i int) bool {
-				return voices[i].Caption >= update.Message.Text
-			})
+			foundIndex := len(voices)
+			for i := range voices {
+				if voices[i].Caption == update.Message.Text {
+					foundIndex = i
+				}
+			}
 
 			if foundIndex != len(voices) {
 				msg := tgbotapi.NewVoice(update.Message.Chat.ID, tgbotapi.FileID(voices[foundIndex].TgFileID))

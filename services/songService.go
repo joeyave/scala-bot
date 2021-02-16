@@ -11,7 +11,6 @@ import (
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
 	"regexp"
-	"sort"
 	"time"
 )
 
@@ -280,9 +279,13 @@ func (s *SongService) transposeBody(doc *docs.Document, sections []docs.Structur
 
 	var content []*docs.StructuralElement
 	if len(sections) > 1 {
-		index := sort.Search(len(doc.Body.Content), func(i int) bool {
-			return doc.Body.Content[i].StartIndex == sections[1].StartIndex
-		})
+		index := len(doc.Body.Content)
+		for i := range doc.Body.Content {
+			if doc.Body.Content[i].StartIndex == sections[1].StartIndex {
+				index = i
+				break
+			}
+		}
 		content = doc.Body.Content[:index]
 	} else {
 		content = doc.Body.Content

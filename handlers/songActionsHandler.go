@@ -7,7 +7,6 @@ import (
 	"github.com/joeyave/scala-chords-bot/helpers"
 	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
 	"regexp"
-	"sort"
 	"strconv"
 )
 
@@ -77,18 +76,17 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 			user.State.Index--
 			return user, err
 		default:
-			songs := user.State.Context.Songs
-
 			chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatUploadDocument)
 			_, _ = updateHandler.bot.Send(chatAction)
 
-			sort.Slice(songs, func(i, j int) bool {
-				return songs[i].Name <= songs[j].Name
-			})
-
-			foundIndex := sort.Search(len(songs), func(i int) bool {
-				return songs[i].Name >= update.Message.Text
-			})
+			songs := user.State.Context.Songs
+			foundIndex := len(songs)
+			for i := range songs {
+				if songs[i].Name == update.Message.Text {
+					foundIndex = i
+					break
+				}
+			}
 
 			if foundIndex != len(songs) {
 				if user.State.Next != nil {
