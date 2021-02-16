@@ -109,20 +109,29 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 		chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatUploadDocument)
 		_, _ = updateHandler.bot.Send(chatAction)
 
+		docsChan := make(chan interface{}, 0)
+
 		var waitGroup sync.WaitGroup
 		waitGroup.Add(len(user.State.Context.FoundSongs))
 		var documents []interface{}
 		for _, song := range user.State.Context.FoundSongs {
 			go func(song entities.Song) {
-				defer waitGroup.Done()
 				if song.TgFileID != "" {
-					documents = append(documents, tgbotapi.NewInputMediaDocument(tgbotapi.FileID(song.TgFileID)))
+					docsChan <- tgbotapi.NewInputMediaDocument(tgbotapi.FileID(song.TgFileID))
 				} else {
 					fileReader, _ := updateHandler.songService.DownloadPDF(song)
-					documents = append(documents, tgbotapi.NewInputMediaDocument(fileReader))
+					docsChan <- tgbotapi.NewInputMediaDocument(fileReader)
 				}
 			}(song)
 		}
+
+		go func() {
+			for doc := range docsChan {
+				documents = append(documents, doc)
+				waitGroup.Done()
+			}
+		}()
+
 		waitGroup.Wait()
 
 		const chunkSize = 10
@@ -141,26 +150,35 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 
 				songs := user.State.Context.FoundSongs[fromIndex:toIndex]
 
+				newChunkChan := make(chan interface{}, 0)
 				var newChunk []interface{}
 
 				var waitGroup sync.WaitGroup
 				waitGroup.Add(len(songs))
 				for _, song := range songs {
 					go func(song entities.Song) {
-						defer waitGroup.Done()
 						fileReader, _ := updateHandler.songService.DownloadPDF(song)
-						newChunk = append(newChunk, tgbotapi.NewInputMediaDocument(fileReader))
+						newChunkChan <- tgbotapi.NewInputMediaDocument(fileReader)
 					}(song)
 				}
+
+				go func() {
+					for doc := range newChunkChan {
+						newChunk = append(newChunk, doc)
+						waitGroup.Done()
+					}
+				}()
+
 				waitGroup.Wait()
+
 				responses, err = updateHandler.bot.SendMediaGroup(tgbotapi.NewMediaGroup(update.Message.Chat.ID, newChunk))
 				if err != nil {
 					continue
 				}
 			}
 
-			for j, response := range responses {
-				user.State.Context.FoundSongs[j+(i*len(chunk))].TgFileID = response.Document.FileID
+			for j := range responses {
+				user.State.Context.FoundSongs[j+(i*len(chunk))].TgFileID = responses[j].Document.FileID
 				_, _ = updateHandler.songService.Cache(user.State.Context.FoundSongs[j+(i*len(chunk))])
 			}
 		}
