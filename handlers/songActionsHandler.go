@@ -149,7 +149,7 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 			}
 
 			foundSong.TgFileID = res.Document.FileID
-			cachedSong, err = updateHandler.songService.UpdateOne(foundSong)
+			cachedSong, err = updateHandler.songService.Cache(foundSong)
 			if err != nil {
 				return user, fmt.Errorf("failed to cache file %v", err)
 			}
@@ -173,7 +173,7 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 				}
 
 				foundSong.TgFileID = res.Document.FileID
-				cachedSong, err = updateHandler.songService.UpdateOne(foundSong)
+				cachedSong, err = updateHandler.songService.Cache(foundSong)
 				if err != nil {
 					return user, fmt.Errorf("failed to cache file %v", err)
 				}

@@ -79,6 +79,20 @@ func (s *SongService) UpdateOne(song entities.Song) (entities.Song, error) {
 	return newSong, err
 }
 
+func (s *SongService) Cache(song entities.Song) (entities.Song, error) {
+	if song.ID == "" {
+		return song, fmt.Errorf("ID is missing for Song: %v", song)
+	}
+
+	oldSong, err := s.FindOneByID(song.ID)
+	if err != nil {
+		return s.UpdateOne(song)
+	}
+
+	oldSong.TgFileID = song.TgFileID
+	return s.UpdateOne(oldSong)
+}
+
 func (s *SongService) GetWithActualTgFileID(song entities.Song) (entities.Song, error) {
 	if song.ID == "" {
 		return song, fmt.Errorf("ID is missing for Song: %v", song)

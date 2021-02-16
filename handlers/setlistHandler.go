@@ -161,7 +161,7 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 
 			for j, response := range responses {
 				user.State.Context.FoundSongs[j+(i*len(chunk))].TgFileID = response.Document.FileID
-				_, _ = updateHandler.songService.UpdateOne(user.State.Context.FoundSongs[j+(i*len(chunk))])
+				_, _ = updateHandler.songService.Cache(user.State.Context.FoundSongs[j+(i*len(chunk))])
 			}
 		}
 
