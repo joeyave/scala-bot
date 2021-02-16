@@ -15,8 +15,11 @@ type State struct {
 }
 
 type Context struct {
-	CurrentSong  *Song  `bson:"currentSong"`
-	Songs        []Song `bson:"songs"`
-	CurrentVoice *Voice `bson:"currentVoice"`
-	Key          string `bson:"key"`
+	CurrentSong      *Song    `bson:"currentSong"`
+	Songs            []Song   `bson:"songs"`
+	Setlist          []string `bson:"setlist"`
+	FoundSongs       []Song   `bson:"foundSongs"`
+	MessagesToDelete []int    `bson:"messagesToDelete"`
+	CurrentVoice     *Voice   `bson:"currentVoice"`
+	Key              string   `bson:"key"`
 }

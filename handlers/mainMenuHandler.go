@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
+	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
+	"regexp"
 	"strings"
 )
 
@@ -28,12 +29,33 @@ func mainMenuHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 			_, err := updateHandler.bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Для поиска документа, отправь боту название.\n\nРедактировать документ можно на гугл диске. Теперь не нужно отправлять файл боту, он сам обновит его.\n\nДля добавления партии, отправь боту голосовое сообщение."))
 			return user, err
 		default:
-			strings.Split(update.Message.Text, "[\\r\\n]")
+			numbersRegex := regexp.MustCompile("\\(.*?\\)|[1-9.()_]*")
+			update.Message.Text = numbersRegex.ReplaceAllString(update.Message.Text, "")
+			newLinesRegex := regexp.MustCompile(`\s*[\t\r\n]+`)
+			songNames := strings.Split(newLinesRegex.ReplaceAllString(update.Message.Text, "\n"), "\n")
+			for _, songName := range songNames {
+				songName = strings.TrimSpace(songName)
+			}
 
-			user.State = &entities.State{
-				Index: 0,
-				Name:  helpers.SearchSongState,
-				Prev:  user.State,
+			if len(songNames) > 1 {
+				user.State = &entities.State{
+					Index: 0,
+					Name:  helpers.SetlistState,
+					Prev:  user.State,
+				}
+				user.State.Context.Setlist = songNames
+
+			} else if len(songNames) == 1 {
+				update.Message.Text = songNames[0]
+				user.State = &entities.State{
+					Index: 0,
+					Name:  helpers.SearchSongState,
+					Prev:  user.State,
+				}
+			} else {
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Из запроса удаляются все числа, дифизы и скобки вместе с тем, что в них.")
+				_, err := updateHandler.bot.Send(msg)
+				return user, err
 			}
 
 			return updateHandler.enterStateHandler(update, user)

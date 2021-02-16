@@ -1,6 +1,6 @@
 package helpers
 
-import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+import tgbotapi "github.com/joeyave/telegram-bot-api/v5"
 
 var songOptionsKeyboard = [][]tgbotapi.KeyboardButton{
 	{{Text: Voices}, {Text: Audios}},

@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/joeyave/scala-chords-bot/entities"
+	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
 )
 
 var stateHandlers = make(map[string][]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error), 0)

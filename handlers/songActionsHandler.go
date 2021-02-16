@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/joeyave/chords-transposer/transposer"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
+	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
 	"regexp"
 	"sort"
 	"strconv"
@@ -17,51 +17,55 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 	// Print list of found songs.
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
 		{
-			chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
-			_, _ = updateHandler.bot.Send(chatAction)
-
-			if update.Message.Text == "" {
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Напиши название песни текстом.")
+			switch update.Message.Text {
+			case "":
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Мне нужно название песни.")
 				_, err := updateHandler.bot.Send(msg)
 
-				user.State.Index++
+				if user.State.Prev != nil {
+					user.State = user.State.Prev
+					user.State.Index = 0
+				} else {
+					user.State = &entities.State{
+						Index: 0,
+						Name:  helpers.MainMenuState,
+					}
+				}
 				return user, err
-			}
+			default:
+				chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
+				_, _ = updateHandler.bot.Send(chatAction)
 
-			songs, err := updateHandler.songService.FindByName(update.Message.Text)
-			if err != nil {
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ничего не найдено. Попробуй еще раз.")
-				msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)))
-				user.State.Index++
-				_, err = updateHandler.bot.Send(msg)
+				songs, _, err := updateHandler.songService.FindByName(update.Message.Text, "")
+				if err != nil {
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ничего не найдено. Попробуй еще раз.")
+					msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)))
+					_, err = updateHandler.bot.Send(msg)
 
-				return user, err
-			}
-
-			keyboard := tgbotapi.NewReplyKeyboard()
-			keyboard.OneTimeKeyboard = false
-			keyboard.ResizeKeyboard = true
-
-			// TODO: some sort of pagination.
-			const pageSize = 100
-			for i, song := range songs {
-				if i == pageSize {
-					break
+					return user, err
 				}
 
-				songButton := tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(song.Name))
-				keyboard.Keyboard = append(keyboard.Keyboard, songButton)
+				keyboard := tgbotapi.NewReplyKeyboard()
+				keyboard.OneTimeKeyboard = false
+				keyboard.ResizeKeyboard = true
+
+				// TODO: some sort of pagination.
+				for _, song := range songs {
+
+					songButton := tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(song.Name))
+					keyboard.Keyboard = append(keyboard.Keyboard, songButton)
+				}
+
+				keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)))
+
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выбери песню:")
+				msg.ReplyMarkup = keyboard
+				_, _ = updateHandler.bot.Send(msg)
+
+				user.State.Context.Songs = songs
+				user.State.Index++
+				return user, err
 			}
-
-			keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)))
-
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выбери песню:")
-			msg.ReplyMarkup = keyboard
-			_, _ = updateHandler.bot.Send(msg)
-
-			user.State.Context.Songs = songs
-			user.State.Index++
-			return user, err
 		}
 	})
 
@@ -72,17 +76,6 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 			_, err := updateHandler.bot.Send(msg)
 			user.State.Index--
 			return user, err
-		case helpers.Cancel:
-			if user.State.Prev != nil {
-				user.State = user.State.Prev
-				user.State.Index = 0
-			} else {
-				user.State = &entities.State{
-					Index: 0,
-					Name:  helpers.MainMenuState,
-				}
-			}
-			return updateHandler.enterStateHandler(update, user)
 		default:
 			songs := user.State.Context.Songs
 
@@ -149,7 +142,7 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 				return user, err
 			}
 
-			msg := tgbotapi.NewDocumentUpload(update.Message.Chat.ID, *fileReader)
+			msg := tgbotapi.NewDocument(update.Message.Chat.ID, fileReader)
 			msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(keyboard...)
 
 			res, err := updateHandler.bot.Send(msg)
@@ -163,7 +156,7 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 				return user, fmt.Errorf("failed to cache file %v", err)
 			}
 		} else { // Found in cache.
-			msg := tgbotapi.NewDocumentShare(update.Message.Chat.ID, cachedSong.TgFileID)
+			msg := tgbotapi.NewDocument(update.Message.Chat.ID, tgbotapi.FileID(cachedSong.TgFileID))
 			msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(keyboard...)
 
 			_, err := updateHandler.bot.Send(msg)
@@ -173,7 +166,7 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 					return user, err
 				}
 
-				msg := tgbotapi.NewDocumentUpload(update.Message.Chat.ID, *fileReader)
+				msg := tgbotapi.NewDocument(update.Message.Chat.ID, fileReader)
 				msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(keyboard...)
 
 				res, err := updateHandler.bot.Send(msg)
@@ -232,9 +225,10 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 			return updateHandler.enterStateHandler(update, user)
 
 		default:
+
 			user.State = &entities.State{
-				Index: 0,
-				Name:  helpers.SearchSongState,
+				Index: 1,
+				Name:  helpers.MainMenuState,
 			}
 			return updateHandler.enterStateHandler(update, user)
 		}
@@ -259,83 +253,89 @@ func transposeSongHandler() (string, []func(updateHandler *UpdateHandler, update
 	})
 
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
-		user, err := helpers.ValidateTextInput(update.Message.Text, user)
-		if err != nil {
+		switch update.Message.Text {
+		case "":
+			if user.State.Index > 0 {
+				user.State.Index--
+			}
 			return updateHandler.enterStateHandler(update, user)
-		}
+		default:
+			_, err := transposer.ParseChord(update.Message.Text)
+			if err != nil {
+				user.State.Index--
+				return updateHandler.enterStateHandler(update, user)
+			}
+			user.State.Context.Key = update.Message.Text
 
-		_, err = transposer.ParseChord(update.Message.Text)
-		if err != nil {
-			user.State.Index--
-			return updateHandler.enterStateHandler(update, user)
-		}
-		user.State.Context.Key = update.Message.Text
-
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Куда ты хочешь вставить новую тональность?")
-		keyboard := tgbotapi.NewReplyKeyboard()
-		keyboard.Keyboard = append(keyboard.Keyboard,
-			tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.AppendSection)))
-
-		sections, err := updateHandler.songService.GetSections(*user.State.Context.CurrentSong)
-		if err != nil {
-			return user, err
-		}
-
-		for i, _ := range sections {
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Куда ты хочешь вставить новую тональность?")
+			keyboard := tgbotapi.NewReplyKeyboard()
 			keyboard.Keyboard = append(keyboard.Keyboard,
-				tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(fmt.Sprintf("Вместо %d-й секции", i+1))))
-		}
-		keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)))
+				tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.AppendSection)))
 
-		msg.ReplyMarkup = keyboard
-		_, err = updateHandler.bot.Send(msg)
-
-		user.State.Index++
-		return user, err
-	})
-
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
-		user, err := helpers.ValidateTextInput(update.Message.Text, user)
-		if err != nil {
-			return updateHandler.enterStateHandler(update, user)
-		}
-
-		chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
-		_, _ = updateHandler.bot.Send(chatAction)
-
-		sections, err := updateHandler.songService.GetSections(*user.State.Context.CurrentSong)
-		if err != nil {
-			return user, err
-		}
-
-		re := regexp.MustCompile("[1-9]+")
-		sectionIndex, err := strconv.Atoi(re.FindString(update.Message.Text))
-		if err != nil {
-			sections, err = updateHandler.songService.AppendSection(*user.State.Context.CurrentSong)
+			sections, err := updateHandler.songService.GetSections(*user.State.Context.CurrentSong)
 			if err != nil {
 				return user, err
 			}
 
-			sectionIndex = len(sections) - 1
-		} else {
-			sectionIndex--
-		}
+			for i, _ := range sections {
+				keyboard.Keyboard = append(keyboard.Keyboard,
+					tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(fmt.Sprintf("Вместо %d-й секции", i+1))))
+			}
+			keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)))
 
-		if sectionIndex >= len(sections) {
-			user.State.Index--
+			msg.ReplyMarkup = keyboard
+			_, err = updateHandler.bot.Send(msg)
+
+			user.State.Index++
+			return user, err
+		}
+	})
+
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+		switch update.Message.Text {
+		case "":
+			if user.State.Index > 0 {
+				user.State.Index--
+			}
+			return updateHandler.enterStateHandler(update, user)
+		default:
+			chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatUploadDocument)
+			_, _ = updateHandler.bot.Send(chatAction)
+
+			sections, err := updateHandler.songService.GetSections(*user.State.Context.CurrentSong)
+			if err != nil {
+				return user, err
+			}
+
+			re := regexp.MustCompile("[1-9]+")
+			sectionIndex, err := strconv.Atoi(re.FindString(update.Message.Text))
+			if err != nil {
+				sections, err = updateHandler.songService.AppendSection(*user.State.Context.CurrentSong)
+				if err != nil {
+					return user, err
+				}
+
+				sectionIndex = len(sections) - 1
+			} else {
+				sectionIndex--
+			}
+
+			if sectionIndex >= len(sections) {
+				user.State.Index--
+				return updateHandler.enterStateHandler(update, user)
+			}
+
+			song, err := updateHandler.songService.Transpose(*user.State.Context.CurrentSong,
+				user.State.Context.Key, sectionIndex)
+
+			user.State = &entities.State{
+				Index:   0,
+				Name:    helpers.SongActionsState,
+				Context: entities.Context{CurrentSong: &song},
+			}
+
 			return updateHandler.enterStateHandler(update, user)
 		}
-
-		song, err := updateHandler.songService.Transpose(*user.State.Context.CurrentSong,
-			user.State.Context.Key, sectionIndex)
-
-		user.State = &entities.State{
-			Index:   0,
-			Name:    helpers.SongActionsState,
-			Context: entities.Context{CurrentSong: &song},
-		}
-
-		return updateHandler.enterStateHandler(update, user)
 	})
 
 	return helpers.TransposeSongState, handleFuncs

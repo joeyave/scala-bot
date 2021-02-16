@@ -3,10 +3,10 @@ package services
 import (
 	"errors"
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/joeyave/chords-transposer/transposer"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/repositories"
+	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
@@ -32,45 +32,38 @@ func NewSongService(songRepository *repositories.SongRepository, driveClient *dr
 /*
 Searches for Song on Google Drive then returns uncached versions of Songs for performance reasons.
 */
-func (s *SongService) FindByName(name string) ([]entities.Song, error) {
+func (s *SongService) FindByName(name string, pageToken string) ([]entities.Song, string, error) {
 	var songs []entities.Song
 
-	var pageToken string
+	res, err := s.driveClient.Files.List().
+		// Use this for precise search.
+		//Q(fmt.Sprintf("fullText contains '\"%s\"'", name)).
+		Q(fmt.Sprintf("fullText contains '%s'", name)).
+		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink)").
+		PageSize(90).
+		PageToken(pageToken).
+		Do()
 
-	for {
-		res, err := s.driveClient.Files.List().
-			Q(fmt.Sprintf("fullText contains '\"%s\"'", name)).
-			Fields("nextPageToken, files(id, name, modifiedTime, webViewLink)").
-			PageToken(pageToken).
-			Do()
+	if err != nil {
+		return nil, "", err
+	}
 
-		if err != nil {
-			return nil, err
+	for _, file := range res.Files {
+		actualSong := entities.Song{
+			ID:           file.Id,
+			Name:         file.Name,
+			ModifiedTime: file.ModifiedTime,
+			WebViewLink:  file.WebViewLink,
 		}
 
-		for _, file := range res.Files {
-			actualSong := entities.Song{
-				ID:           file.Id,
-				Name:         file.Name,
-				ModifiedTime: file.ModifiedTime,
-				WebViewLink:  file.WebViewLink,
-			}
-
-			songs = append(songs, actualSong)
-		}
-
-		pageToken = res.NextPageToken
-
-		if pageToken == "" {
-			break
-		}
+		songs = append(songs, actualSong)
 	}
 
 	if len(songs) == 0 {
-		return nil, mongo.ErrEmptySlice
+		return nil, "", mongo.ErrEmptySlice
 	}
 
-	return songs, nil
+	return songs, res.NextPageToken, nil
 }
 
 func (s *SongService) FindOneByID(ID string) (entities.Song, error) {
@@ -107,20 +100,19 @@ func (s *SongService) GetWithActualTgFileID(song entities.Song) (entities.Song, 
 	return cachedSong, err
 }
 
-func (s *SongService) DownloadPDF(song entities.Song) (*tgbotapi.FileReader, error) {
+func (s *SongService) DownloadPDF(song entities.Song) (tgbotapi.FileReader, error) {
 	if song.ID == "" {
-		return nil, fmt.Errorf("ID is missing for Song: %v", song)
+		return tgbotapi.FileReader{}, fmt.Errorf("ID is missing for Song: %v", song)
 	}
 
 	res, err := s.driveClient.Files.Export(song.ID, "application/pdf").Download()
 	if err != nil {
-		return nil, err
+		return tgbotapi.FileReader{}, err
 	}
 
-	fileReader := &tgbotapi.FileReader{
+	fileReader := tgbotapi.FileReader{
 		Name:   song.Name + ".pdf",
 		Reader: res.Body,
-		Size:   res.ContentLength,
 	}
 
 	return fileReader, err

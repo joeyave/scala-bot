@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/scala-chords-bot/services"
+	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
 )
 
 type UpdateHandler struct {
@@ -31,6 +31,21 @@ func (u *UpdateHandler) HandleUpdate(update *tgbotapi.Update) error {
 		return fmt.Errorf("couldn't get User's state %v", err)
 	}
 
+	// Handle buttons.
+	switch update.Message.Text {
+	case helpers.Cancel:
+		if user.State.Prev != nil {
+			user.State = user.State.Prev
+			user.State.Index = 0
+		} else {
+			user.State = &entities.State{
+				Index: 0,
+				Name:  helpers.MainMenuState,
+			}
+		}
+	}
+
+	// Catch voice anywhere.
 	if update.Message.Voice != nil {
 		user.State = &entities.State{
 			Index: 0,
@@ -38,7 +53,6 @@ func (u *UpdateHandler) HandleUpdate(update *tgbotapi.Update) error {
 			Context: entities.Context{
 				CurrentVoice: &entities.Voice{
 					TgFileID: update.Message.Voice.FileID,
-					Caption:  "",
 				},
 			},
 			Prev: user.State,

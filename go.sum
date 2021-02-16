@@ -69,8 +69,11 @@ github.com/go-gl/glfw/v3.3/glfw v0.0.0-20200222043503-6f7a984d4dc4/go.mod h1:tQ2
 github.com/go-sql-driver/mysql v1.5.0/go.mod h1:DCzpHaOWr8IXmIStZouvnhqoel9Qv2LBy8hT2VhHyBg=
 github.com/go-stack/stack v1.8.0 h1:5SgMzNM5HxrEjV0ww2lTmX6E2Izsfxas4+YHWRs3Lsk=
 github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/melR3HDY=
+github.com/go-telegram-bot-api/telegram-bot-api v1.0.0 h1:HXVtsZ+yINQeyyhPFAUU4yKmeN+iFhJ87jXZOC016gs=
 github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible h1:2cauKuaELYAEARXRkq2LrJ0yDDv1rW7+wrTEdVL3uaU=
 github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible/go.mod h1:qf9acutJ8cwBUhm1bqgz6Bei9/C/c93FPDljKWwsOgM=
+github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.0.0-rc1.0.20200726210622-f2cd95670dce h1:C4M4NNpvNG6OftavnlMr3d9CNd4/hUE7RXWBH/wOpyI=
+github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.0.0-rc1.0.20200726210622-f2cd95670dce/go.mod h1:5+h9c5l1Z/+Pi+5boa1Fmr4Q+FImsXYnifor92ljaVs=
 github.com/gobuffalo/attrs v0.0.0-20190224210810-a9411de4debd/go.mod h1:4duuawTqi2wkkpB4ePgWMaai6/Kc6WEz83bhFwpHzj0=
 github.com/gobuffalo/depgen v0.0.0-20190329151759-d478694a28d3/go.mod h1:3STtPUQYuzV0gBVOY3vy6CfMm/ljR4pABfrTeHNLHUY=
 github.com/gobuffalo/depgen v0.1.0/go.mod h1:+ifsuy7fhi15RWncXQQKjWS9JPkdah5sZvtHc2RXGlg=
@@ -173,6 +176,14 @@ github.com/joeyave/chords-transposer v0.0.1 h1:idlhpXE03DlksAczPcR7m5Fn5/lPvG+mS
 github.com/joeyave/chords-transposer v0.0.1/go.mod h1:HIukuoHF6Od6O0hloRBz/ZAN14yVXrUuJgorbqmxTeg=
 github.com/joeyave/chords-transposer v0.0.3 h1:Ffbi7i6mFKOjQvh4j6puxH+ZoayX245r+yxmV4JdvkI=
 github.com/joeyave/chords-transposer v0.0.3/go.mod h1:HIukuoHF6Od6O0hloRBz/ZAN14yVXrUuJgorbqmxTeg=
+github.com/joeyave/telegram-bot-api/v5 v5.0.0-rc1.0.20210216145353-05b7aa488f11 h1:FojtoUNs43OF8FUQBW82Qc58Az/ebdRyNeeQNxX7bAw=
+github.com/joeyave/telegram-bot-api/v5 v5.0.0-rc1.0.20210216145353-05b7aa488f11/go.mod h1:gSJ2V/vxNSN6ZGXTR7jFWFhxdbI5aTmWAfho7ac8tl0=
+github.com/joeyave/telegram-bot-api/v5 v5.0.2 h1:53nhq7y11ULmsESJq0MZix09rGrCeFkz2m1iu6Zxmek=
+github.com/joeyave/telegram-bot-api/v5 v5.0.2/go.mod h1:gSJ2V/vxNSN6ZGXTR7jFWFhxdbI5aTmWAfho7ac8tl0=
+github.com/joeyave/telegram-bot-api/v5 v5.0.3 h1:aOxpGUhrod0M00UtJ58yFGNIwGS3yu0M9I3h2y81Ofk=
+github.com/joeyave/telegram-bot-api/v5 v5.0.3/go.mod h1:gSJ2V/vxNSN6ZGXTR7jFWFhxdbI5aTmWAfho7ac8tl0=
+github.com/joeyave/telegram-bot-api/v5 v5.0.4 h1:z+xHky29BoiQQVhnJJJXRuKLzYwouKWQgL7nL1/oXGc=
+github.com/joeyave/telegram-bot-api/v5 v5.0.4/go.mod h1:gSJ2V/vxNSN6ZGXTR7jFWFhxdbI5aTmWAfho7ac8tl0=
 github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=

@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
+	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
 	"sort"
 )
 
@@ -57,7 +57,7 @@ func getVoicesHandler() (string, []func(updateHandler *UpdateHandler, update *tg
 			})
 
 			if foundIndex != len(voices) {
-				msg := tgbotapi.NewVoiceShare(update.Message.Chat.ID, voices[foundIndex].TgFileID)
+				msg := tgbotapi.NewVoice(update.Message.Chat.ID, tgbotapi.FileID(voices[foundIndex].TgFileID))
 				msg.Caption = voices[foundIndex].Caption
 				keyboard := tgbotapi.NewReplyKeyboard(
 					tgbotapi.NewKeyboardButtonRow(tgbotapi.KeyboardButton{Text: helpers.Delete}),
@@ -112,16 +112,6 @@ func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *
 
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
 		switch update.Message.Text {
-		case helpers.Cancel:
-			if user.State.Prev != nil {
-				user.State = user.State.Prev
-				user.State.Index = 0
-			} else {
-				user.State = &entities.State{
-					Index: 0,
-					Name:  helpers.MainMenuState,
-				}
-			}
 		default:
 			user.State = &entities.State{
 				Index: 0,
@@ -157,18 +147,6 @@ func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *
 			_, err := updateHandler.bot.Send(msg)
 
 			return user, err
-
-		case helpers.Cancel:
-			if user.State.Prev != nil {
-				user.State = user.State.Prev
-				user.State.Index = 0
-			} else {
-				user.State = &entities.State{
-					Index: 0,
-					Name:  helpers.MainMenuState,
-				}
-			}
-			return updateHandler.enterStateHandler(update, user)
 
 		default:
 			user.State.Context.CurrentVoice.Caption = update.Message.Text

@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/joeyave/scala-chords-bot/handlers"
 	"github.com/joeyave/scala-chords-bot/repositories"
 	"github.com/joeyave/scala-chords-bot/services"
+	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -66,7 +66,7 @@ func main() {
 	u := tgbotapi.NewUpdate(lastOffset + 1)
 	u.Timeout = 60
 
-	updates, err := bot.GetUpdatesChan(u)
+	updates := bot.GetUpdatesChan(u)
 
 	// TODO: find out how to recover from panic.
 	for update := range updates {

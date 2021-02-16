@@ -5,9 +5,9 @@ go 1.15
 require (
 	cloud.google.com/go v0.76.0 // indirect
 	github.com/aws/aws-sdk-go v1.37.11 // indirect
-	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/joeyave/chords-transposer v0.0.3
+	github.com/joeyave/telegram-bot-api/v5 v5.0.4
 	github.com/klauspost/compress v1.11.7 // indirect
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	go.mongodb.org/mongo-driver v1.4.6
