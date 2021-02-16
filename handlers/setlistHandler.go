@@ -25,7 +25,7 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 		chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
 		_, _ = updateHandler.bot.Send(chatAction)
 
-		songs, _, err := updateHandler.songService.FindByName(currentSongName, "")
+		songs, _, err := updateHandler.songService.QueryDrive(currentSongName, "")
 		if err != nil {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("По запросу \"%s\" ничего не найдено. Напиши новое название или пропусти эту песню.", currentSongName))
 			msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
@@ -91,7 +91,7 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 		}
 
 		if foundIndex != len(songs) {
-			song, err := updateHandler.songService.GetWithActualTgFileID(songs[foundIndex])
+			song, err := updateHandler.songService.GetFromCache(songs[foundIndex])
 			if err != nil {
 				user.State.Context.FoundSongs = append(user.State.Context.FoundSongs, songs[foundIndex])
 			} else {

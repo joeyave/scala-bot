@@ -31,7 +31,7 @@ func NewSongService(songRepository *repositories.SongRepository, driveClient *dr
 /*
 Searches for Song on Google Drive then returns uncached versions of Songs for performance reasons.
 */
-func (s *SongService) FindByName(name string, pageToken string) ([]entities.Song, string, error) {
+func (s *SongService) QueryDrive(name string, pageToken string) ([]entities.Song, string, error) {
 	var songs []entities.Song
 
 	res, err := s.driveClient.Files.List().
@@ -93,7 +93,10 @@ func (s *SongService) Cache(song entities.Song) (entities.Song, error) {
 	return s.UpdateOne(oldSong)
 }
 
-func (s *SongService) GetWithActualTgFileID(song entities.Song) (entities.Song, error) {
+/*
+Returns error if cached version is outdated.
+*/
+func (s *SongService) GetFromCache(song entities.Song) (entities.Song, error) {
 	if song.ID == "" {
 		return song, fmt.Errorf("ID is missing for Song: %v", song)
 	}
@@ -109,6 +112,9 @@ func (s *SongService) GetWithActualTgFileID(song entities.Song) (entities.Song, 
 	if err != nil || actualModifiedTime.After(cachedModifiedTime) {
 		return entities.Song{}, errors.New("cached song is not actual")
 	}
+
+	cachedSong.Name = song.Name
+	cachedSong.WebViewLink = song.WebViewLink
 
 	return cachedSong, err
 }

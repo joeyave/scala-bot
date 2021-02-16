@@ -35,7 +35,7 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 				chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
 				_, _ = updateHandler.bot.Send(chatAction)
 
-				songs, _, err := updateHandler.songService.FindByName(update.Message.Text, "")
+				songs, _, err := updateHandler.songService.QueryDrive(update.Message.Text, "")
 				if err != nil {
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ничего не найдено. Попробуй еще раз.")
 					msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)))
@@ -91,7 +91,7 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 			if foundIndex != len(songs) {
 				if user.State.Next != nil {
 					user.State = user.State.Next
-					song, err := updateHandler.songService.GetWithActualTgFileID(songs[foundIndex])
+					song, err := updateHandler.songService.GetFromCache(songs[foundIndex])
 					if err != nil {
 						user.State.Context.CurrentSong = &songs[foundIndex]
 					} else {
@@ -127,7 +127,7 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 
 		foundSong := *user.State.Context.CurrentSong
 
-		cachedSong, err := updateHandler.songService.GetWithActualTgFileID(foundSong)
+		cachedSong, err := updateHandler.songService.GetFromCache(foundSong)
 
 		keyboard := helpers.GetSongOptionsKeyboard()
 		keyboard = append([][]tgbotapi.KeyboardButton{{{Text: foundSong.Name}}}, keyboard...)
