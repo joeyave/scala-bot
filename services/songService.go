@@ -89,7 +89,9 @@ func (s *SongService) Cache(song entities.Song) (entities.Song, error) {
 		return s.UpdateOne(song)
 	}
 
+	oldSong.ModifiedTime = song.ModifiedTime
 	oldSong.TgFileID = song.TgFileID
+	oldSong.WebViewLink = song.WebViewLink
 	return s.UpdateOne(oldSong)
 }
 

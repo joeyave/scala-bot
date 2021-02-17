@@ -109,29 +109,22 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 		chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatUploadDocument)
 		_, _ = updateHandler.bot.Send(chatAction)
 
-		docsChan := make(chan interface{}, 0)
+		songs := user.State.Context.FoundSongs
 
 		var waitGroup sync.WaitGroup
-		waitGroup.Add(len(user.State.Context.FoundSongs))
-		var documents []interface{}
-		for _, song := range user.State.Context.FoundSongs {
-			go func(song entities.Song) {
-				if song.TgFileID != "" {
-					docsChan <- tgbotapi.NewInputMediaDocument(tgbotapi.FileID(song.TgFileID))
+		waitGroup.Add(len(songs))
+		documents := make([]interface{}, len(songs))
+		for i := range user.State.Context.FoundSongs {
+			go func(i int) {
+				defer waitGroup.Done()
+				if songs[i].TgFileID != "" {
+					documents[i] = tgbotapi.NewInputMediaDocument(tgbotapi.FileID(songs[i].TgFileID))
 				} else {
-					fileReader, _ := updateHandler.songService.DownloadPDF(song)
-					docsChan <- tgbotapi.NewInputMediaDocument(fileReader)
+					fileReader, _ := updateHandler.songService.DownloadPDF(songs[i])
+					documents[i] = tgbotapi.NewInputMediaDocument(fileReader)
 				}
-			}(song)
+			}(i)
 		}
-
-		go func() {
-			for doc := range docsChan {
-				documents = append(documents, doc)
-				waitGroup.Done()
-			}
-		}()
-
 		waitGroup.Wait()
 
 		const chunkSize = 10
@@ -150,28 +143,19 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 
 				songs := user.State.Context.FoundSongs[fromIndex:toIndex]
 
-				newChunkChan := make(chan interface{}, 0)
-				var newChunk []interface{}
-
 				var waitGroup sync.WaitGroup
 				waitGroup.Add(len(songs))
-				for _, song := range songs {
-					go func(song entities.Song) {
-						fileReader, _ := updateHandler.songService.DownloadPDF(song)
-						newChunkChan <- tgbotapi.NewInputMediaDocument(fileReader)
-					}(song)
+				documents := make([]interface{}, len(songs))
+				for i := range songs {
+					go func(i int) {
+						defer waitGroup.Done()
+						fileReader, _ := updateHandler.songService.DownloadPDF(songs[i])
+						documents[i] = tgbotapi.NewInputMediaDocument(fileReader)
+					}(i)
 				}
-
-				go func() {
-					for doc := range newChunkChan {
-						newChunk = append(newChunk, doc)
-						waitGroup.Done()
-					}
-				}()
-
 				waitGroup.Wait()
 
-				responses, err = updateHandler.bot.SendMediaGroup(tgbotapi.NewMediaGroup(update.Message.Chat.ID, newChunk))
+				responses, err = updateHandler.bot.SendMediaGroup(tgbotapi.NewMediaGroup(update.Message.Chat.ID, documents))
 				if err != nil {
 					continue
 				}

@@ -109,7 +109,11 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 
 				return updateHandler.enterStateHandler(update, user)
 			} else {
-				user.State.Index = 0
+				//user.State.Index = 0
+				user.State = &entities.State{
+					Index: 1,
+					Name:  helpers.MainMenuState,
+				}
 				return updateHandler.enterStateHandler(update, user)
 			}
 		}
@@ -223,7 +227,6 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 			return updateHandler.enterStateHandler(update, user)
 
 		default:
-
 			user.State = &entities.State{
 				Index: 1,
 				Name:  helpers.MainMenuState,
