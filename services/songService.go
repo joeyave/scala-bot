@@ -476,69 +476,60 @@ func (s *SongService) Style(song entities.Song) (entities.Song, error) {
 	}
 
 	for _, header := range doc.Headers {
-		for j, item := range header.Content {
-			if item.Paragraph == nil {
+		for j, paragraph := range header.Content {
+			if paragraph.Paragraph == nil {
 				continue
 			}
 
-			item.Paragraph.ParagraphStyle.SpaceAbove = &docs.Dimension{
-				Magnitude:       0,
-				Unit:            "PT",
-				ForceSendFields: []string{"Magnitude"},
-			}
-			item.Paragraph.ParagraphStyle.SpaceBelow = &docs.Dimension{
-				Magnitude:       0,
-				Unit:            "PT",
-				ForceSendFields: []string{"Magnitude"},
-			}
-			item.Paragraph.ParagraphStyle.LineSpacing = 0
+			style := *paragraph.Paragraph.ParagraphStyle
 
 			if j == 0 || j == 2 {
-				item.Paragraph.ParagraphStyle.Alignment = "CENTER"
+				paragraph.Paragraph.ParagraphStyle.Alignment = "CENTER"
 			}
 			if j == 1 {
-				item.Paragraph.ParagraphStyle.Alignment = "END"
+				paragraph.Paragraph.ParagraphStyle.Alignment = "END"
 			}
 
 			requests = append(requests, &docs.Request{
 				UpdateParagraphStyle: &docs.UpdateParagraphStyleRequest{
 					Fields:         "*",
-					ParagraphStyle: item.Paragraph.ParagraphStyle,
+					ParagraphStyle: &style,
 					Range: &docs.Range{
-						StartIndex:      item.StartIndex,
-						EndIndex:        item.EndIndex,
+						StartIndex:      paragraph.StartIndex,
+						EndIndex:        paragraph.EndIndex,
 						SegmentId:       header.HeaderId,
 						ForceSendFields: []string{"StartIndex"},
 					},
 				},
 			})
 
-			for _, element := range item.Paragraph.Elements {
-				if element.TextRun.TextStyle.WeightedFontFamily != nil {
-					element.TextRun.TextStyle.WeightedFontFamily.FontFamily = "Roboto Mono"
+			for _, element := range paragraph.Paragraph.Elements {
+				style := *element.TextRun.TextStyle
+				if style.WeightedFontFamily != nil {
+					style.WeightedFontFamily.FontFamily = "Roboto Mono"
 				} else {
-					element.TextRun.TextStyle.WeightedFontFamily = &docs.WeightedFontFamily{
+					style.WeightedFontFamily = &docs.WeightedFontFamily{
 						FontFamily: "Roboto Mono",
 					}
 				}
 
 				if j == 0 {
-					element.TextRun.TextStyle.Bold = true
-					element.TextRun.TextStyle.FontSize = &docs.Dimension{
+					style.Bold = true
+					style.FontSize = &docs.Dimension{
 						Magnitude: 20,
 						Unit:      "PT",
 					}
 				}
 				if j == 1 {
-					element.TextRun.TextStyle.Bold = true
-					element.TextRun.TextStyle.FontSize = &docs.Dimension{
+					style.Bold = true
+					style.FontSize = &docs.Dimension{
 						Magnitude: 14,
 						Unit:      "PT",
 					}
 				}
 				if j == 2 {
-					element.TextRun.TextStyle.Bold = true
-					element.TextRun.TextStyle.FontSize = &docs.Dimension{
+					style.Bold = true
+					style.FontSize = &docs.Dimension{
 						Magnitude: 11,
 						Unit:      "PT",
 					}
@@ -553,7 +544,7 @@ func (s *SongService) Style(song entities.Song) (entities.Song, error) {
 							SegmentId:       header.HeaderId,
 							ForceSendFields: []string{"StartIndex"},
 						},
-						TextStyle: element.TextRun.TextStyle,
+						TextStyle: &style,
 					},
 				})
 			}
@@ -625,7 +616,7 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string) [
 			Unit:            "PT",
 			ForceSendFields: []string{"Magnitude"},
 		}
-		style.LineSpacing = 100
+		style.LineSpacing = 90
 
 		requests = append(requests, &docs.Request{
 			UpdateParagraphStyle: &docs.UpdateParagraphStyleRequest{
