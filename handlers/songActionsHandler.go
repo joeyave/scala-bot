@@ -359,6 +359,9 @@ func styleSongHandler() (string, []func(updateHandler *UpdateHandler, update *tg
 
 	// Print list of found songs.
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+		chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
+		_, _ = updateHandler.bot.Send(chatAction)
+
 		song, err := updateHandler.songService.Style(*user.State.Context.CurrentSong)
 
 		if err != nil {

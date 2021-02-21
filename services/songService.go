@@ -625,7 +625,7 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string) [
 			Unit:            "PT",
 			ForceSendFields: []string{"Magnitude"},
 		}
-		style.LineSpacing = 0
+		style.LineSpacing = 100
 
 		requests = append(requests, &docs.Request{
 			UpdateParagraphStyle: &docs.UpdateParagraphStyleRequest{
