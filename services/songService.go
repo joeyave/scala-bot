@@ -504,32 +504,31 @@ func (s *SongService) Style(song entities.Song) (entities.Song, error) {
 			})
 
 			for _, element := range paragraph.Paragraph.Elements {
-				style := *element.TextRun.TextStyle
-				if style.WeightedFontFamily != nil {
-					style.WeightedFontFamily.FontFamily = "Roboto Mono"
+				if element.TextRun.TextStyle.WeightedFontFamily != nil {
+					element.TextRun.TextStyle.WeightedFontFamily.FontFamily = "Roboto Mono"
 				} else {
-					style.WeightedFontFamily = &docs.WeightedFontFamily{
+					element.TextRun.TextStyle.WeightedFontFamily = &docs.WeightedFontFamily{
 						FontFamily: "Roboto Mono",
 					}
 				}
 
 				if j == 0 {
-					style.Bold = true
-					style.FontSize = &docs.Dimension{
+					element.TextRun.TextStyle.Bold = true
+					element.TextRun.TextStyle.FontSize = &docs.Dimension{
 						Magnitude: 20,
 						Unit:      "PT",
 					}
 				}
 				if j == 1 {
-					style.Bold = true
-					style.FontSize = &docs.Dimension{
+					element.TextRun.TextStyle.Bold = true
+					element.TextRun.TextStyle.FontSize = &docs.Dimension{
 						Magnitude: 14,
 						Unit:      "PT",
 					}
 				}
 				if j == 2 {
-					style.Bold = true
-					style.FontSize = &docs.Dimension{
+					element.TextRun.TextStyle.Bold = true
+					element.TextRun.TextStyle.FontSize = &docs.Dimension{
 						Magnitude: 11,
 						Unit:      "PT",
 					}
@@ -544,7 +543,7 @@ func (s *SongService) Style(song entities.Song) (entities.Song, error) {
 							SegmentId:       header.HeaderId,
 							ForceSendFields: []string{"StartIndex"},
 						},
-						TextStyle: &style,
+						TextStyle: element.TextRun.TextStyle,
 					},
 				})
 			}
