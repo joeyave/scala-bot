@@ -11,6 +11,7 @@ import (
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -89,10 +90,8 @@ func (s *SongService) Cache(song entities.Song) (entities.Song, error) {
 		return s.UpdateOne(song)
 	}
 
-	oldSong.ModifiedTime = song.ModifiedTime
-	oldSong.TgFileID = song.TgFileID
-	oldSong.WebViewLink = song.WebViewLink
-	return s.UpdateOne(oldSong)
+	song.Voices = oldSong.Voices
+	return s.UpdateOne(song)
 }
 
 /*
@@ -280,7 +279,7 @@ func (s *SongService) transposeHeader(doc *docs.Document, sections []docs.Struct
 		}
 	}
 
-	r, key := composeRequests(doc.Headers[doc.DocumentStyle.DefaultHeaderId].Content,
+	r, key := composeTransposeRequests(doc.Headers[doc.DocumentStyle.DefaultHeaderId].Content,
 		0, "", toKey, doc.Headers[sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId].HeaderId)
 	requests = append(requests, r...)
 
@@ -326,13 +325,13 @@ func (s *SongService) transposeBody(doc *docs.Document, sections []docs.Structur
 		})
 	}
 
-	r, _ := composeRequests(content, sectionToInsertStartIndex, key, toKey, "")
+	r, _ := composeTransposeRequests(content, sectionToInsertStartIndex, key, toKey, "")
 	requests = append(requests, r...)
 
 	return requests
 }
 
-func composeRequests(content []*docs.StructuralElement, index int64, key string, toKey string, segmentId string) ([]*docs.Request, string) {
+func composeTransposeRequests(content []*docs.StructuralElement, index int64, key string, toKey string, segmentId string) ([]*docs.Request, string) {
 	requests := make([]*docs.Request, 0)
 
 	for i, item := range content {
@@ -427,4 +426,354 @@ func composeRequests(content []*docs.StructuralElement, index int64, key string,
 	}
 
 	return requests, key
+}
+
+func (s *SongService) Style(song entities.Song) (entities.Song, error) {
+	if song.ID == "" {
+		return song, fmt.Errorf("ID is missing for Song: %v", song)
+	}
+
+	requests := make([]*docs.Request, 0)
+
+	doc, err := s.docsClient.Documents.Get(song.ID).Do()
+	if err != nil {
+		return entities.Song{}, err
+	}
+
+	if doc.DocumentStyle.DefaultHeaderId == "" {
+		res, err := s.docsClient.Documents.BatchUpdate(song.ID, &docs.BatchUpdateDocumentRequest{
+			Requests: []*docs.Request{
+				{
+					CreateHeader: &docs.CreateHeaderRequest{
+						Type: "DEFAULT",
+					},
+				},
+			},
+		}).Do()
+
+		if err == nil {
+			doc.DocumentStyle.DefaultHeaderId = res.Replies[0].CreateHeader.HeaderId
+			_, _ = s.docsClient.Documents.BatchUpdate(song.ID, &docs.BatchUpdateDocumentRequest{
+				Requests: []*docs.Request{
+					{
+						InsertText: &docs.InsertTextRequest{
+							EndOfSegmentLocation: &docs.EndOfSegmentLocation{
+								SegmentId: doc.DocumentStyle.DefaultHeaderId,
+							},
+							Text: "Название - Исполнитель\n" +
+								"KEY: ?; BPM: ?; TIME: ?;\n" +
+								"структура\n",
+						},
+					},
+				},
+			}).Do()
+		}
+	}
+
+	doc, err = s.docsClient.Documents.Get(song.ID).Do()
+	if err != nil {
+		return entities.Song{}, err
+	}
+
+	for _, header := range doc.Headers {
+		for j, item := range header.Content {
+			if item.Paragraph == nil {
+				continue
+			}
+
+			item.Paragraph.ParagraphStyle.SpaceAbove = &docs.Dimension{
+				Magnitude:       0,
+				Unit:            "PT",
+				ForceSendFields: []string{"Magnitude"},
+			}
+			item.Paragraph.ParagraphStyle.SpaceBelow = &docs.Dimension{
+				Magnitude:       0,
+				Unit:            "PT",
+				ForceSendFields: []string{"Magnitude"},
+			}
+			item.Paragraph.ParagraphStyle.LineSpacing = 0
+
+			if j == 0 || j == 2 {
+				item.Paragraph.ParagraphStyle.Alignment = "CENTER"
+			}
+			if j == 1 {
+				item.Paragraph.ParagraphStyle.Alignment = "END"
+			}
+
+			requests = append(requests, &docs.Request{
+				UpdateParagraphStyle: &docs.UpdateParagraphStyleRequest{
+					Fields:         "*",
+					ParagraphStyle: item.Paragraph.ParagraphStyle,
+					Range: &docs.Range{
+						StartIndex:      item.StartIndex,
+						EndIndex:        item.EndIndex,
+						SegmentId:       header.HeaderId,
+						ForceSendFields: []string{"StartIndex"},
+					},
+				},
+			})
+
+			for _, element := range item.Paragraph.Elements {
+				if element.TextRun.TextStyle.WeightedFontFamily != nil {
+					element.TextRun.TextStyle.WeightedFontFamily.FontFamily = "Roboto Mono"
+				} else {
+					element.TextRun.TextStyle.WeightedFontFamily = &docs.WeightedFontFamily{
+						FontFamily: "Roboto Mono",
+					}
+				}
+
+				if j == 0 {
+					element.TextRun.TextStyle.Bold = true
+					element.TextRun.TextStyle.FontSize = &docs.Dimension{
+						Magnitude: 20,
+						Unit:      "PT",
+					}
+				}
+				if j == 1 {
+					element.TextRun.TextStyle.Bold = true
+					element.TextRun.TextStyle.FontSize = &docs.Dimension{
+						Magnitude: 14,
+						Unit:      "PT",
+					}
+				}
+				if j == 2 {
+					element.TextRun.TextStyle.Bold = true
+					element.TextRun.TextStyle.FontSize = &docs.Dimension{
+						Magnitude: 11,
+						Unit:      "PT",
+					}
+				}
+
+				requests = append(requests, &docs.Request{
+					UpdateTextStyle: &docs.UpdateTextStyleRequest{
+						Fields: "*",
+						Range: &docs.Range{
+							StartIndex:      element.StartIndex,
+							EndIndex:        element.EndIndex,
+							SegmentId:       header.HeaderId,
+							ForceSendFields: []string{"StartIndex"},
+						},
+						TextStyle: element.TextRun.TextStyle,
+					},
+				})
+			}
+		}
+
+		requests = append(requests, composeStyleRequests(header.Content, header.HeaderId)...)
+	}
+
+	requests = append(requests, composeStyleRequests(doc.Body.Content, "")...)
+
+	requests = append(requests, &docs.Request{
+		UpdateDocumentStyle: &docs.UpdateDocumentStyleRequest{
+			DocumentStyle: &docs.DocumentStyle{
+				MarginBottom: &docs.Dimension{
+					Magnitude: 14,
+					Unit:      "PT",
+				},
+				MarginHeader: &docs.Dimension{
+					Magnitude: 18,
+					Unit:      "PT",
+				},
+				MarginLeft: &docs.Dimension{
+					Magnitude: 30,
+					Unit:      "PT",
+				},
+				MarginRight: &docs.Dimension{
+					Magnitude: 30,
+					Unit:      "PT",
+				},
+				MarginTop: &docs.Dimension{
+					Magnitude: 14,
+					Unit:      "PT",
+				},
+				UseFirstPageHeaderFooter: false,
+			},
+			Fields: "marginBottom, marginLeft, marginRight, marginTop, marginHeader",
+		},
+	})
+
+	_, err = s.docsClient.Documents.BatchUpdate(song.ID, &docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
+	if err != nil {
+		return entities.Song{}, err
+	}
+
+	song.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
+	return song, err
+}
+
+func composeStyleRequests(content []*docs.StructuralElement, segmentID string) []*docs.Request {
+	requests := make([]*docs.Request, 0)
+
+	makeBoldAndRedRegex := regexp.MustCompile(`(x|х)\d+`)
+	sectionNamesRegex := regexp.MustCompile(`\p{L}+(\s\d*)?:|\|`)
+
+	for _, paragraph := range content {
+		if paragraph.Paragraph == nil {
+			continue
+		}
+
+		style := *paragraph.Paragraph.ParagraphStyle
+
+		style.SpaceAbove = &docs.Dimension{
+			Magnitude:       0,
+			Unit:            "PT",
+			ForceSendFields: []string{"Magnitude"},
+		}
+		style.SpaceBelow = &docs.Dimension{
+			Magnitude:       0,
+			Unit:            "PT",
+			ForceSendFields: []string{"Magnitude"},
+		}
+		style.LineSpacing = 0
+
+		requests = append(requests, &docs.Request{
+			UpdateParagraphStyle: &docs.UpdateParagraphStyleRequest{
+				Fields:         "*",
+				ParagraphStyle: &style,
+				Range: &docs.Range{
+					EndIndex:        paragraph.EndIndex,
+					SegmentId:       segmentID,
+					StartIndex:      paragraph.StartIndex,
+					ForceSendFields: []string{"StartIndex"},
+				},
+			},
+		})
+
+		for _, element := range paragraph.Paragraph.Elements {
+			style := *element.TextRun.TextStyle
+			if style.WeightedFontFamily != nil {
+				style.WeightedFontFamily.FontFamily = "Roboto Mono"
+			} else {
+				style.WeightedFontFamily = &docs.WeightedFontFamily{
+					FontFamily: "Roboto Mono",
+				}
+			}
+
+			requests = append(requests, &docs.Request{
+				UpdateTextStyle: &docs.UpdateTextStyleRequest{
+					Fields: "*",
+					Range: &docs.Range{
+						StartIndex:      element.StartIndex,
+						EndIndex:        element.EndIndex,
+						SegmentId:       segmentID,
+						ForceSendFields: []string{"StartIndex"},
+					},
+					TextStyle: &style,
+				},
+			})
+
+			tokens := transposer.Tokenize(element.TextRun.Content)
+			for _, line := range tokens {
+				for _, token := range line {
+					if token.Chord != nil {
+						style := *element.TextRun.TextStyle
+						style.Bold = true
+						style.ForegroundColor = &docs.OptionalColor{
+							Color: &docs.Color{
+								RgbColor: &docs.RgbColor{
+									Blue:            0,
+									Green:           0,
+									Red:             0.8,
+									ForceSendFields: []string{"blue", "green"},
+								},
+							},
+						}
+
+						requests = append(requests, &docs.Request{
+							UpdateTextStyle: &docs.UpdateTextStyleRequest{
+								Fields: "*",
+								Range: &docs.Range{
+									StartIndex:      element.StartIndex + token.Offset,
+									EndIndex:        element.StartIndex + token.Offset + int64(len([]rune(token.Chord.String()))),
+									SegmentId:       segmentID,
+									ForceSendFields: []string{"StartIndex"},
+								},
+								TextStyle: &style,
+							},
+						})
+					}
+				}
+			}
+
+			matches := makeBoldAndRedRegex.FindAllStringIndex(element.TextRun.Content, -1)
+			if matches != nil {
+				for _, match := range matches {
+					style := *element.TextRun.TextStyle
+					style.Bold = true
+					style.ForegroundColor = &docs.OptionalColor{
+						Color: &docs.Color{
+							RgbColor: &docs.RgbColor{Blue: 0, Green: 0, Red: 0.8, ForceSendFields: []string{"blue", "green"}},
+						},
+					}
+
+					requests = append(requests, &docs.Request{
+						UpdateTextStyle: &docs.UpdateTextStyleRequest{
+							Fields: "*",
+							Range: &docs.Range{
+								StartIndex:      element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
+								EndIndex:        element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[1]]))),
+								SegmentId:       segmentID,
+								ForceSendFields: []string{"StartIndex"},
+							},
+							TextStyle: &style,
+						},
+					})
+				}
+			}
+
+			matches = sectionNamesRegex.FindAllStringIndex(element.TextRun.Content, -1)
+			if matches != nil {
+				for _, match := range matches {
+					style := *element.TextRun.TextStyle
+					style.Bold = true
+					style.ForegroundColor = &docs.OptionalColor{
+						Color: &docs.Color{
+							RgbColor: &docs.RgbColor{Blue: 0, Green: 0, Red: 0, ForceSendFields: []string{"blue", "green"}},
+						},
+					}
+					style.Underline = false
+					style.Italic = false
+					style.Strikethrough = false
+
+					requests = append(requests,
+						&docs.Request{
+							UpdateTextStyle: &docs.UpdateTextStyleRequest{
+								Fields: "*",
+								Range: &docs.Range{
+									StartIndex:      element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
+									EndIndex:        element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[1]]))),
+									SegmentId:       segmentID,
+									ForceSendFields: []string{"StartIndex"},
+								},
+								TextStyle: &style,
+							},
+						},
+						&docs.Request{
+							DeleteContentRange: &docs.DeleteContentRangeRequest{
+								Range: &docs.Range{
+									StartIndex:      element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
+									EndIndex:        element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[1]]))),
+									SegmentId:       segmentID,
+									ForceSendFields: []string{"StartIndex"},
+								},
+							},
+						},
+						&docs.Request{
+							InsertText: &docs.InsertTextRequest{
+								Location: &docs.Location{
+									Index:           element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
+									SegmentId:       segmentID,
+									ForceSendFields: []string{"StartIndex"},
+								},
+								Text: strings.ToUpper(element.TextRun.Content[match[0]:match[1]]),
+							},
+						},
+					)
+				}
+			}
+		}
+	}
+
+	return requests
 }

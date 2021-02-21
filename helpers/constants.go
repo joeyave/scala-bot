@@ -8,6 +8,7 @@ const (
 	UploadVoiceState   = "UploadVoiceState"
 	MainMenuState      = "MainMenuState"
 	TransposeSongState = "TransposeSongState"
+	StyleSongState     = "StyleSongState"
 )
 
 // Buttons constants.

@@ -225,7 +225,16 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 				Prev: user.State,
 			}
 			return updateHandler.enterStateHandler(update, user)
-
+		case helpers.Style:
+			user.State = &entities.State{
+				Index: 0,
+				Name:  helpers.StyleSongState,
+				Context: entities.Context{
+					CurrentSong: user.State.Context.CurrentSong,
+				},
+				Prev: user.State,
+			}
+			return updateHandler.enterStateHandler(update, user)
 		default:
 			user.State = &entities.State{
 				Index: 1,
@@ -328,6 +337,9 @@ func transposeSongHandler() (string, []func(updateHandler *UpdateHandler, update
 
 			song, err := updateHandler.songService.Transpose(*user.State.Context.CurrentSong,
 				user.State.Context.Key, sectionIndex)
+			if err != nil {
+				return entities.User{}, err
+			}
 
 			user.State = &entities.State{
 				Index:   0,
@@ -340,4 +352,26 @@ func transposeSongHandler() (string, []func(updateHandler *UpdateHandler, update
 	})
 
 	return helpers.TransposeSongState, handleFuncs
+}
+
+func styleSongHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error)) {
+	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error), 0)
+
+	// Print list of found songs.
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+		song, err := updateHandler.songService.Style(*user.State.Context.CurrentSong)
+
+		if err != nil {
+			return entities.User{}, err
+		}
+
+		user.State = &entities.State{
+			Index:   0,
+			Name:    helpers.SongActionsState,
+			Context: entities.Context{CurrentSong: &song},
+		}
+
+		return updateHandler.enterStateHandler(update, user)
+	})
+	return helpers.StyleSongState, handleFuncs
 }
