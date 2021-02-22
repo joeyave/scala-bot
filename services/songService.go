@@ -631,6 +631,9 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string) [
 		})
 
 		for _, element := range paragraph.Paragraph.Elements {
+			if element.TextRun == nil {
+				continue
+			}
 			style := *element.TextRun.TextStyle
 			if style.WeightedFontFamily != nil {
 				style.WeightedFontFamily.FontFamily = "Roboto Mono"
