@@ -1,8 +1,22 @@
 package entities
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type User struct {
-	ID    int64  `bson:"_id"`
-	State *State `bson:"states"`
+	ID      int64                `bson:"_id"`
+	State   *State               `bson:"states"`
+	BandIDs []primitive.ObjectID `bson:"bandIds"`
+	Bands   []Band               `bson:"-"`
+}
+
+func (u *User) GetFolderIDs() []string {
+	folderIDs := make([]string, 0)
+
+	for i := range u.Bands {
+		folderIDs = append(folderIDs, u.Bands[i].DriveFolderID)
+	}
+
+	return folderIDs
 }
 
 type State struct {
@@ -20,6 +34,11 @@ type Context struct {
 	Setlist          []string `bson:"setlist"`
 	FoundSongs       []Song   `bson:"foundSongs"`
 	MessagesToDelete []int    `bson:"messagesToDelete"`
-	CurrentVoice     *Voice   `bson:"currentVoice"`
-	Key              string   `bson:"key"`
+
+	CurrentVoice *Voice `bson:"currentVoice"`
+
+	Key string `bson:"key"`
+
+	Bands       []Band `bson:"bands"`
+	CurrentBand Band   `bson:"band"`
 }

@@ -26,9 +26,9 @@ func (r *SongRepository) FindAll() ([]*entities.Song, error) {
 		return nil, err
 	}
 
-	var docs []*entities.Song
-	err = cursor.All(context.TODO(), &docs)
-	return docs, err
+	var songs []*entities.Song
+	err = cursor.All(context.TODO(), &songs)
+	return songs, err
 }
 
 func (r *SongRepository) FindOneByID(ID string) (entities.Song, error) {

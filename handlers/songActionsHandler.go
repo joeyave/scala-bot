@@ -35,7 +35,7 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 				chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
 				_, _ = updateHandler.bot.Send(chatAction)
 
-				songs, _, err := updateHandler.songService.QueryDrive(update.Message.Text, "")
+				songs, _, err := updateHandler.songService.QueryDrive(update.Message.Text, "", user.GetFolderIDs()...)
 				if err != nil {
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ничего не найдено. Попробуй еще раз.")
 					msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)))

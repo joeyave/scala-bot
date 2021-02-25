@@ -12,13 +12,15 @@ type UpdateHandler struct {
 	bot         *tgbotapi.BotAPI
 	userService *services.UserService
 	songService *services.SongService
+	bandService *services.BandService
 }
 
-func NewHandler(bot *tgbotapi.BotAPI, userService *services.UserService, songService *services.SongService) *UpdateHandler {
+func NewHandler(bot *tgbotapi.BotAPI, userService *services.UserService, songService *services.SongService, bandService *services.BandService) *UpdateHandler {
 	return &UpdateHandler{
 		bot:         bot,
 		userService: userService,
 		songService: songService,
+		bandService: bandService,
 	}
 }
 

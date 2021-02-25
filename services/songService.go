@@ -32,13 +32,30 @@ func NewSongService(songRepository *repositories.SongRepository, driveClient *dr
 /*
 Searches for Song on Google Drive then returns uncached versions of Songs for performance reasons.
 */
-func (s *SongService) QueryDrive(name string, pageToken string) ([]entities.Song, string, error) {
+func (s *SongService) QueryDrive(name string, pageToken string, folderIDs ...string) ([]entities.Song, string, error) {
 	var songs []entities.Song
+
+	q := fmt.Sprintf("fullText contains '%s'"+
+		" and mimeType = 'application/vnd.google-apps.document'", name)
+
+	if folderIDs != nil && len(folderIDs) > 0 {
+		for i := range folderIDs {
+			if i == 0 {
+				q += " and "
+			}
+
+			q += fmt.Sprintf("'%s' in parents", folderIDs[i])
+
+			if i != len(folderIDs)-1 {
+				q += " or "
+			}
+		}
+	}
 
 	res, err := s.driveClient.Files.List().
 		// Use this for precise search.
 		//Q(fmt.Sprintf("fullText contains '\"%s\"'", name)).
-		Q(fmt.Sprintf("fullText contains '%s'", name)).
+		Q(q).
 		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink)").
 		PageSize(90).
 		PageToken(pageToken).

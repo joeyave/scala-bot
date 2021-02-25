@@ -51,6 +51,9 @@ func main() {
 	userRepository := repositories.NewUserRepository(mongoClient)
 	userService := services.NewUserService(userRepository)
 
+	bandRepository := repositories.NewBandRepository(mongoClient)
+	bandService := services.NewBandService(bandRepository)
+
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
 	if err != nil {
 		log.Panic(err)
@@ -58,7 +61,7 @@ func main() {
 
 	bot.Debug = false
 
-	handler := handlers.NewHandler(bot, userService, songService)
+	handler := handlers.NewHandler(bot, userService, songService, bandService)
 
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 

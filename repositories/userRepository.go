@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"errors"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -33,13 +34,43 @@ func (r *UserRepository) FindAll() ([]entities.User, error) {
 
 func (r *UserRepository) FindOneByID(ID int64) (entities.User, error) {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("users")
-	result := collection.FindOne(context.TODO(), bson.M{"_id": ID})
-	if result.Err() != nil {
-		return entities.User{}, result.Err()
+	//result := collection.FindOne(context.TODO(), bson.M{"_id": ID})
+	//if result.Err() != nil {
+	//	return entities.User{}, result.Err()
+	//}
+	//
+	//var user = entities.User{}
+	//err := result.Decode(&user)
+
+	pipeline := bson.A{
+		bson.M{
+			"$match": bson.M{
+				"_id": ID,
+			},
+		},
+		bson.M{
+			"$lookup": bson.M{
+				"from":         "bands",
+				"localField":   "bandIds",
+				"foreignField": "_id",
+				"as":           "bands",
+			},
+		},
+	}
+
+	cur, err := collection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return entities.User{}, err
+	}
+
+	if cur.Next(context.TODO()) == false {
+		return entities.User{}, errors.New("user not found")
 	}
 
 	var user = entities.User{}
-	err := result.Decode(&user)
+	err = cur.Decode(&user)
+	err = cur.Current.Lookup("bands").Unmarshal(&user.Bands)
+
 	return user, err
 }
 
