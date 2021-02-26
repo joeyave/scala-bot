@@ -12,6 +12,9 @@ func init() {
 	name, funcs := mainMenuHandler()
 	stateHandlers[name] = funcs
 
+	name, funcs = copySongHandler()
+	stateHandlers[name] = funcs
+
 	name, funcs = createBandHandler()
 	stateHandlers[name] = funcs
 

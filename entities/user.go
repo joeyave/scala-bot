@@ -19,6 +19,18 @@ func (u *User) GetFolderIDs() []string {
 	return folderIDs
 }
 
+func (u *User) HasAuthorityToEdit(song Song) bool {
+	for _, userFolderID := range u.GetFolderIDs() {
+		for _, songParentID := range song.Parents {
+			if songParentID == userFolderID {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 type State struct {
 	Index   int     `bson:"index"`
 	Name    string  `bson:"name"`
@@ -34,6 +46,7 @@ type Context struct {
 	Setlist          []string `bson:"setlist"`
 	FoundSongs       []Song   `bson:"foundSongs"`
 	MessagesToDelete []int    `bson:"messagesToDelete"`
+	Query            string   `bson:"query,omitempty"`
 
 	CurrentVoice *Voice `bson:"currentVoice"`
 

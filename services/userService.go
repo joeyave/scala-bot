@@ -36,7 +36,7 @@ func (s *UserService) FindOrCreate(ID int64) (entities.User, error) {
 		}
 	}
 
-	if (user.BandIDs == nil || len(user.BandIDs) == 0) &&
+	if (user.Bands == nil || len(user.Bands) == 0) &&
 		user.State.Name != helpers.ChooseBandState && user.State.Name != helpers.CreateBandState {
 		user.State = &entities.State{
 			Index: 0,

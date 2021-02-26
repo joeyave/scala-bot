@@ -24,10 +24,10 @@ func chooseBandHandler() (string, []func(updateHandler *UpdateHandler, update *t
 		keyboard.OneTimeKeyboard = false
 		keyboard.ResizeKeyboard = true
 
+		keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.CreateBand)))
 		for i := range bands {
 			keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(bands[i].Name)))
 		}
-		keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.CreateBand)))
 		msg.ReplyMarkup = keyboard
 		_, _ = updateHandler.bot.Send(msg)
 
@@ -126,21 +126,22 @@ func createBandHandler() (string, []func(updateHandler *UpdateHandler, update *t
 				return updateHandler.enterStateHandler(update, user)
 			}
 			user.State.Context.CurrentBand.DriveFolderID = matches[1]
-
+			user.State.Context.CurrentBand.AdminUserIDs = append(user.State.Context.CurrentBand.AdminUserIDs, update.Message.Chat.ID)
 			band, err := updateHandler.bandService.UpdateOne(user.State.Context.CurrentBand)
 			if err != nil {
 				return user, err
 			}
 
 			user.BandIDs = append(user.BandIDs, band.ID)
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Ты добавлен в группу %s.", band.Name))
+
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Ты добавлен в группу \"%s\" как администратор.", band.Name))
 			_, _ = updateHandler.bot.Send(msg)
 
 			user.State = &entities.State{
 				Index: 0,
 				Name:  helpers.MainMenuState,
 			}
-			return user, err
+			return updateHandler.enterStateHandler(update, user)
 		}
 	})
 

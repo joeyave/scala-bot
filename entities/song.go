@@ -7,6 +7,7 @@ type Song struct {
 	ModifiedTime string   `bson:"modifiedTime"`
 	WebViewLink  string   `bson:"webViewLink"`
 	Voices       []*Voice `bson:"voices"`
+	Parents      []string `bson:"parents"`
 }
 
 type Voice struct {

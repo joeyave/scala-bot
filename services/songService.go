@@ -55,11 +55,7 @@ func (s *SongService) QueryDrive(name string, pageToken string, folderIDs ...str
 	res, err := s.driveClient.Files.List().
 		// Use this for precise search.
 		//Q(fmt.Sprintf("fullText contains '\"%s\"'", name)).
-		Q(q).
-		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink)").
-		PageSize(90).
-		PageToken(pageToken).
-		Do()
+		Q(q).Fields("nextPageToken, files(id, name, modifiedTime, webViewLink, parents)").PageSize(90).PageToken(pageToken).Do()
 
 	if err != nil {
 		return nil, "", err
@@ -71,6 +67,7 @@ func (s *SongService) QueryDrive(name string, pageToken string, folderIDs ...str
 			Name:         file.Name,
 			ModifiedTime: file.ModifiedTime,
 			WebViewLink:  file.WebViewLink,
+			Parents:      file.Parents,
 		}
 
 		songs = append(songs, actualSong)
@@ -133,6 +130,7 @@ func (s *SongService) GetFromCache(song entities.Song) (entities.Song, error) {
 
 	cachedSong.Name = song.Name
 	cachedSong.WebViewLink = song.WebViewLink
+	cachedSong.Parents = song.Parents
 
 	return cachedSong, err
 }
@@ -153,6 +151,63 @@ func (s *SongService) DownloadPDF(song entities.Song) (tgbotapi.FileReader, erro
 	}
 
 	return fileReader, err
+}
+
+func (s *SongService) DeepCopyToFolder(song entities.Song, folderID string) (entities.Song, error) {
+	if song.ID == "" {
+		return song, fmt.Errorf("ID is missing for Song: %v", song)
+	}
+
+	file := &drive.File{Parents: []string{folderID}}
+	fileCopyResponse, err := s.driveClient.Files.Copy(song.ID, file).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+	if err != nil {
+		return entities.Song{}, err
+	}
+
+	folderPermissionsResponse, err := s.driveClient.Permissions.List(folderID).Fields("*").Do()
+	if err != nil {
+		return entities.Song{}, err
+	}
+
+	var folderOwnerPermission *drive.Permission
+	for _, permission := range folderPermissionsResponse.Permissions {
+		if permission.Role == "owner" {
+			folderOwnerPermission = permission
+		}
+	}
+
+	if folderOwnerPermission != nil {
+		permission := &drive.Permission{
+			EmailAddress: folderOwnerPermission.EmailAddress,
+			Role:         "owner",
+			Type:         "user",
+		}
+		_, err = s.driveClient.Permissions.
+			Create(fileCopyResponse.Id, permission).
+			TransferOwnership(true).Do()
+		if err != nil {
+			return entities.Song{}, err
+		}
+
+	}
+
+	copiedSong := entities.Song{
+		ID:           fileCopyResponse.Id,
+		Name:         fileCopyResponse.Name,
+		ModifiedTime: fileCopyResponse.ModifiedTime,
+		WebViewLink:  fileCopyResponse.WebViewLink,
+		Parents:      fileCopyResponse.Parents,
+	}
+
+	originalSong, err := s.FindOneByID(song.ID)
+	if err != nil {
+		return copiedSong, nil
+	}
+
+	copiedSong.TgFileID = originalSong.TgFileID
+	copiedSong.Voices = originalSong.Voices
+
+	return s.UpdateOne(copiedSong)
 }
 
 func (s *SongService) GetSections(song entities.Song) ([]docs.StructuralElement, error) {
