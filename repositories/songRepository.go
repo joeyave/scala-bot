@@ -31,14 +31,14 @@ func (r *SongRepository) FindAll() ([]*entities.Song, error) {
 	return songs, err
 }
 
-func (r *SongRepository) FindOneByID(ID string) (entities.Song, error) {
+func (r *SongRepository) FindOneByID(ID string) (*entities.Song, error) {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
 	result := collection.FindOne(context.TODO(), bson.M{"_id": ID})
 	if result.Err() != nil {
-		return entities.Song{}, result.Err()
+		return nil, result.Err()
 	}
 
-	var song = entities.Song{}
+	var song *entities.Song
 	err := result.Decode(&song)
 	return song, err
 }
@@ -62,7 +62,7 @@ func (r *SongRepository) FindMultipleByIDs(IDs []string) ([]entities.Song, error
 	return songs, err
 }
 
-func (r *SongRepository) UpdateOne(song entities.Song) (entities.Song, error) {
+func (r *SongRepository) UpdateOne(song entities.Song) (*entities.Song, error) {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
 
 	filter := bson.M{"_id": song.ID}
@@ -80,16 +80,16 @@ func (r *SongRepository) UpdateOne(song entities.Song) (entities.Song, error) {
 
 	result := collection.FindOneAndUpdate(context.TODO(), filter, update, &opts)
 	if result.Err() != nil {
-		return song, result.Err()
+		return nil, result.Err()
 	}
 
-	var newSong = entities.Song{}
+	var newSong *entities.Song
 	err := result.Decode(&newSong)
 	return newSong, err
 }
 
-func (r *SongRepository) UpdateMultiple(songs []entities.Song) ([]entities.Song, error) {
-	var newSongs []entities.Song
+func (r *SongRepository) UpdateMultiple(songs []entities.Song) ([]*entities.Song, error) {
+	var newSongs []*entities.Song
 
 	for _, song := range songs {
 		newSong, err := r.UpdateOne(song)

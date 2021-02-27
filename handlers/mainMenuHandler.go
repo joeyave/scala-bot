@@ -39,18 +39,19 @@ func mainMenuHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 
 			if len(songNames) > 1 {
 				user.State = &entities.State{
-					Index: 0,
-					Name:  helpers.SetlistState,
-					Prev:  user.State,
+					Index:   0,
+					Name:    helpers.SetlistState,
+					Prev:    user.State,
+					Context: user.State.Context,
 				}
 				user.State.Context.Setlist = songNames
 
 			} else if len(songNames) == 1 {
 				update.Message.Text = songNames[0]
 				user.State = &entities.State{
-					Index: 0,
-					Name:  helpers.SearchSongState,
-					Prev:  user.State,
+					Index:   0,
+					Name:    helpers.SearchSongState,
+					Context: user.State.Context,
 				}
 			} else {
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Из запроса удаляются все числа, дифизы и скобки вместе с тем, что в них.")

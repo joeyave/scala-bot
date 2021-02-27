@@ -1,6 +1,9 @@
 package entities
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"google.golang.org/api/drive/v3"
+)
 
 type User struct {
 	ID      int64                `bson:"_id"`
@@ -19,18 +22,6 @@ func (u *User) GetFolderIDs() []string {
 	return folderIDs
 }
 
-func (u *User) HasAuthorityToEdit(song Song) bool {
-	for _, userFolderID := range u.GetFolderIDs() {
-		for _, songParentID := range song.Parents {
-			if songParentID == userFolderID {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
 type State struct {
 	Index   int     `bson:"index"`
 	Name    string  `bson:"name"`
@@ -41,12 +32,14 @@ type State struct {
 }
 
 type Context struct {
-	CurrentSong      *Song    `bson:"currentSong"`
-	Songs            []Song   `bson:"songs"`
+	CurrentSong *Song `bson:"currentSong, omitempty"`
+	//Songs            []Song        `bson:"songs"`
 	Setlist          []string `bson:"setlist"`
-	FoundSongs       []Song   `bson:"foundSongs"`
+	FoundSongs       []*Song  `bson:"foundSongs"`
 	MessagesToDelete []int    `bson:"messagesToDelete"`
 	Query            string   `bson:"query,omitempty"`
+
+	DriveFiles []*drive.File `bson:"driveFiles,omitempty"`
 
 	CurrentVoice *Voice `bson:"currentVoice"`
 

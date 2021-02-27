@@ -25,7 +25,7 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 		chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
 		_, _ = updateHandler.bot.Send(chatAction)
 
-		songs, _, err := updateHandler.songService.QueryDrive(currentSongName, "", user.GetFolderIDs()...)
+		driveFiles, _, err := updateHandler.songService.QueryDrive(currentSongName, "", user.GetFolderIDs()...)
 		if err != nil {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("По запросу \"%s\" ничего не найдено. Напиши новое название или пропусти эту песню.", currentSongName))
 			msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
@@ -47,7 +47,7 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 		keyboard.ResizeKeyboard = true
 
 		// TODO: some sort of pagination.
-		for _, song := range songs {
+		for _, song := range driveFiles {
 			songButton := tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(song.Name))
 			keyboard.Keyboard = append(keyboard.Keyboard, songButton)
 		}
@@ -65,7 +65,7 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 		}
 
 		user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, res.MessageID)
-		user.State.Context.Songs = songs
+		user.State.Context.DriveFiles = driveFiles
 		user.State.Index++
 
 		return user, nil
@@ -81,22 +81,24 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 			return updateHandler.enterStateHandler(update, user)
 		}
 
-		songs := user.State.Context.Songs
-		foundIndex := len(songs)
-		for i := range songs {
-			if songs[i].Name == update.Message.Text {
+		driveFiles := user.State.Context.DriveFiles
+		foundIndex := len(driveFiles)
+		for i := range driveFiles {
+			if driveFiles[i].Name == update.Message.Text {
 				foundIndex = i
 				break
 			}
 		}
 
-		if foundIndex != len(songs) {
-			song, err := updateHandler.songService.GetFromCache(songs[foundIndex])
-			if err != nil {
-				user.State.Context.FoundSongs = append(user.State.Context.FoundSongs, songs[foundIndex])
-			} else {
-				user.State.Context.FoundSongs = append(user.State.Context.FoundSongs, song)
+		if foundIndex != len(driveFiles) {
+			song, err := updateHandler.songService.FindOneByDriveFile(*driveFiles[foundIndex])
+			if err != nil || song.HasOutdatedPDF() {
+				song = &entities.Song{
+					ID:        driveFiles[foundIndex].Id,
+					DriveFile: driveFiles[foundIndex],
+				}
 			}
+			user.State.Context.FoundSongs = append(user.State.Context.FoundSongs, song)
 		} else {
 			user.State.Context.Setlist = append([]string{update.Message.Text}, user.State.Context.Setlist...)
 		}
@@ -117,10 +119,10 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 		for i := range user.State.Context.FoundSongs {
 			go func(i int) {
 				defer waitGroup.Done()
-				if songs[i].TgFileID != "" {
-					documents[i] = tgbotapi.NewInputMediaDocument(tgbotapi.FileID(songs[i].TgFileID))
+				if songs[i].PDF != nil {
+					documents[i] = tgbotapi.NewInputMediaDocument(tgbotapi.FileID(songs[i].PDF.TgFileID))
 				} else {
-					fileReader, _ := updateHandler.songService.DownloadPDF(songs[i])
+					fileReader, _ := updateHandler.songService.DownloadPDF(*songs[i].DriveFile)
 					documents[i] = tgbotapi.NewInputMediaDocument(fileReader)
 				}
 			}(i)
@@ -149,7 +151,7 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 				for i := range songs {
 					go func(i int) {
 						defer waitGroup.Done()
-						fileReader, _ := updateHandler.songService.DownloadPDF(songs[i])
+						fileReader, _ := updateHandler.songService.DownloadPDF(*songs[i].DriveFile)
 						documents[i] = tgbotapi.NewInputMediaDocument(fileReader)
 					}(i)
 				}
@@ -162,8 +164,13 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 			}
 
 			for j := range responses {
-				user.State.Context.FoundSongs[j+(i*len(chunk))].TgFileID = responses[j].Document.FileID
-				_, _ = updateHandler.songService.Cache(user.State.Context.FoundSongs[j+(i*len(chunk))])
+				song := user.State.Context.FoundSongs[j+(i*len(chunk))]
+				song.PDF = &entities.PDF{
+					TgFileID:     responses[j].Document.FileID,
+					ModifiedTime: song.DriveFile.ModifiedTime,
+				}
+
+				_, _ = updateHandler.songService.UpdateOne(*song)
 			}
 		}
 
