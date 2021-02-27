@@ -9,6 +9,7 @@ import (
 	"google.golang.org/api/drive/v3"
 	"regexp"
 	"strconv"
+	"sync"
 )
 
 func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error)) {
@@ -36,16 +37,49 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 				chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
 				_, _ = updateHandler.bot.Send(chatAction)
 
+				if user.State.Context.Query == "" {
+
+					update.Message.Text = helpers.CleanUpQuery(update.Message.Text)
+					songNames := helpers.SplitQueryByNewlines(update.Message.Text)
+
+					if len(songNames) > 1 {
+						user.State = &entities.State{
+							Index:   0,
+							Name:    helpers.SetlistState,
+							Prev:    user.State,
+							Context: user.State.Context,
+						}
+						user.State.Context.Setlist = songNames
+
+					} else if len(songNames) == 1 {
+						update.Message.Text = songNames[0]
+					} else {
+						msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Из запроса удаляются все числа, дифизы и скобки вместе с тем, что в них.")
+						_, err := updateHandler.bot.Send(msg)
+
+						user.State = &entities.State{
+							Index: 0,
+							Name:  helpers.MainMenuState,
+						}
+						return user, err
+					}
+
+					user.State.Context.Query = update.Message.Text
+				}
+
 				var driveFiles []*drive.File
 				var err error
 				if update.Message.Text == helpers.SearchEverywhere {
 					driveFiles, _, err = updateHandler.songService.QueryDrive(user.State.Context.Query, "")
 				} else {
-					user.State.Context.Query = update.Message.Text
-					driveFiles, _, err = updateHandler.songService.QueryDrive(update.Message.Text, "", user.GetFolderIDs()...)
+					driveFiles, _, err = updateHandler.songService.QueryDrive(user.State.Context.Query, "", user.GetFolderIDs()...)
 				}
 
 				if err != nil {
+					return entities.User{}, err
+				}
+
+				if len(driveFiles) == 0 {
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ничего не найдено. Попробуй еще раз.")
 					keyboard := tgbotapi.NewReplyKeyboard()
 					keyboard.Keyboard = append(keyboard.Keyboard,
@@ -109,26 +143,19 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 					return entities.User{}, err
 				}
 
-				if user.State.Next != nil {
-					user.State = user.State.Next
-					user.State.Context.CurrentSong = song
-				} else {
-					user.State = &entities.State{
-						Index: 0,
-						Name:  helpers.SongActionsState,
-						Context: entities.Context{
-							CurrentSong: song,
-						},
-					}
+				user.State.Index = 0
+				user.State = &entities.State{
+					Index: 0,
+					Name:  helpers.SongActionsState,
+					Context: entities.Context{
+						CurrentSong: song,
+					},
+					Prev: user.State,
 				}
 
 				return updateHandler.enterStateHandler(update, user)
 			} else {
-				user.State = &entities.State{
-					Index:   1,
-					Name:    helpers.MainMenuState,
-					Context: user.State.Context,
-				}
+				user.State.Index--
 				return updateHandler.enterStateHandler(update, user)
 			}
 		}
@@ -143,20 +170,6 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
 		chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatUploadDocument)
 		_, _ = updateHandler.bot.Send(chatAction)
-
-		//if user.HasAuthorityToEdit(cachedSong) == false {
-		//	buttons := [][]tgbotapi.KeyboardButton{
-		//		{{Text: foundSong.Name}},
-		//		{{Text: helpers.CopyToMyBand}},
-		//		{{Text: helpers.Voices}, {Text: helpers.Audios}},
-		//		{{Text: helpers.Menu}},
-		//	}
-		//	keyboard.Keyboard = append(keyboard.Keyboard, buttons...)
-		//} else {
-		//	buttons := helpers.GetSongOptionsKeyboard()
-		//	buttons = append([][]tgbotapi.KeyboardButton{{{Text: foundSong.Name}}}, buttons...)
-		//	keyboard.Keyboard = append(keyboard.Keyboard, buttons...)
-		//}
 
 		song := user.State.Context.CurrentSong
 		song, err := updateHandler.songService.FindOneByDriveFile(*song.DriveFile)
@@ -220,10 +233,14 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
 		switch update.Message.Text {
-		case helpers.Menu:
-			user.State = &entities.State{
-				Index: 0,
-				Name:  helpers.MainMenuState,
+		case helpers.Back:
+			if user.State.Prev != nil {
+				user.State = user.State.Prev
+			} else {
+				user.State = &entities.State{
+					Index: 0,
+					Name:  helpers.MainMenuState,
+				}
 			}
 			return updateHandler.enterStateHandler(update, user)
 
@@ -278,8 +295,8 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 
 		default:
 			user.State = &entities.State{
-				Index: 1,
-				Name:  helpers.MainMenuState,
+				Index: 0,
+				Name:  helpers.SearchSongState,
 			}
 			return updateHandler.enterStateHandler(update, user)
 		}
@@ -482,4 +499,425 @@ func copySongHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 	})
 
 	return helpers.CopySongState, handleFuncs
+}
+
+func getVoicesHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error)) {
+	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error), 0)
+
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+		voices := user.State.Context.CurrentSong.Voices
+
+		var err error
+		if voices == nil || len(voices) == 0 {
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "У этой песни нет партий. Чтобы добавить, отправь мне голосовое сообщение.")
+			_, err = updateHandler.bot.Send(msg)
+
+			user.State = user.State.Prev
+			return user, err
+		} else {
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выбери партию:")
+
+			keyboard := tgbotapi.NewReplyKeyboard()
+			keyboard.ResizeKeyboard = true
+
+			for _, voice := range voices {
+				keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(voice.Caption)))
+			}
+			keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Back)))
+
+			msg.ReplyMarkup = keyboard
+
+			_, err = updateHandler.bot.Send(msg)
+			user.State.Index++
+			return user, err
+		}
+	})
+
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+		switch update.Message.Text {
+		case helpers.Back:
+			user.State = user.State.Prev
+			user.State.Index = 0
+			return updateHandler.enterStateHandler(update, user)
+		default:
+			voices := user.State.Context.CurrentSong.Voices
+			foundIndex := len(voices)
+			for i := range voices {
+				if voices[i].Caption == update.Message.Text {
+					foundIndex = i
+				}
+			}
+
+			if foundIndex != len(voices) {
+				msg := tgbotapi.NewVoice(update.Message.Chat.ID, tgbotapi.FileID(voices[foundIndex].TgFileID))
+				msg.Caption = voices[foundIndex].Caption
+				keyboard := tgbotapi.NewReplyKeyboard(
+					tgbotapi.NewKeyboardButtonRow(tgbotapi.KeyboardButton{Text: helpers.Delete}),
+					tgbotapi.NewKeyboardButtonRow(tgbotapi.KeyboardButton{Text: helpers.Back}),
+				)
+				keyboard.ResizeKeyboard = true
+				msg.ReplyMarkup = keyboard
+
+				_, err := updateHandler.bot.Send(msg)
+
+				user.State.Index++
+				return user, err
+			} else {
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Нет партии c таким названием. Попробуй еще раз.")
+				_, err := updateHandler.bot.Send(msg)
+				return user, err
+			}
+		}
+	})
+
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+		switch update.Message.Text {
+		case helpers.Back:
+			user.State.Index = 0
+			return updateHandler.enterStateHandler(update, user)
+		case helpers.Delete:
+			// TODO: handle delete
+			return user, nil
+		default:
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Я тебя не понимаю. Нажми на кнопку.")
+			_, err := updateHandler.bot.Send(msg)
+			return user, err
+		}
+	})
+
+	return helpers.GetVoicesState, handleFuncs
+}
+
+func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error)) {
+	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error), 0)
+
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Введи название песни, к которой ты хочешь прикрепить эту партию:")
+		keyboard := tgbotapi.NewReplyKeyboard(tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)))
+		keyboard.ResizeKeyboard = true
+		msg.ReplyMarkup = keyboard
+		_, err := updateHandler.bot.Send(msg)
+
+		user.State.Index++
+		return user, err
+	})
+
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+		{
+			switch update.Message.Text {
+			case "":
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Название песни должно быть текстом! Попробуй еще раз.")
+				_, err := updateHandler.bot.Send(msg)
+
+				user.State.Index--
+				return user, err
+			default:
+				chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
+				_, _ = updateHandler.bot.Send(chatAction)
+
+				var driveFiles []*drive.File
+				var err error
+
+				user.State.Context.Query = update.Message.Text
+				driveFiles, _, err = updateHandler.songService.QueryDrive(update.Message.Text, "", user.GetFolderIDs()...)
+				if err != nil {
+					return entities.User{}, err
+				}
+
+				if len(driveFiles) == 0 {
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ничего не найдено. Попробуй другое название.")
+					keyboard := tgbotapi.NewReplyKeyboard()
+					keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)))
+					msg.ReplyMarkup = keyboard
+					_, err = updateHandler.bot.Send(msg)
+
+					return user, err
+				}
+
+				keyboard := tgbotapi.NewReplyKeyboard()
+				keyboard.OneTimeKeyboard = false
+				keyboard.ResizeKeyboard = true
+
+				// TODO: some sort of pagination.
+				for _, song := range driveFiles {
+					songButton := tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(song.Name))
+					keyboard.Keyboard = append(keyboard.Keyboard, songButton)
+				}
+
+				keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)))
+
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выбери песню:")
+				msg.ReplyMarkup = keyboard
+				_, _ = updateHandler.bot.Send(msg)
+
+				user.State.Context.DriveFiles = driveFiles
+				user.State.Index++
+				return user, err
+			}
+		}
+	})
+
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+		switch update.Message.Text {
+		case "":
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Мне нужно название песни.")
+			_, err := updateHandler.bot.Send(msg)
+			user.State.Index--
+			return user, err
+		default:
+			chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatUploadDocument)
+			_, _ = updateHandler.bot.Send(chatAction)
+
+			driveFiles := user.State.Context.DriveFiles
+			foundIndex := len(driveFiles)
+			for i := range driveFiles {
+				if driveFiles[i].Name == update.Message.Text {
+					foundIndex = i
+					break
+				}
+			}
+
+			if foundIndex != len(driveFiles) {
+				song, err := updateHandler.songService.FindOneByDriveFile(*driveFiles[foundIndex])
+				if err != nil {
+					return entities.User{}, err
+				}
+
+				user.State.Context.CurrentSong = song
+
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Отправь мне название этой партии:")
+				keyboard := tgbotapi.NewReplyKeyboard(
+					tgbotapi.NewKeyboardButtonRow(tgbotapi.KeyboardButton{Text: helpers.Cancel}),
+				)
+				keyboard.ResizeKeyboard = true
+				msg.ReplyMarkup = keyboard
+				_, err = updateHandler.bot.Send(msg)
+
+				user.State.Index++
+				return user, err
+			} else {
+				user.State.Index--
+				return updateHandler.enterStateHandler(update, user)
+			}
+		}
+	})
+
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+		switch update.Message.Text {
+		case "":
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Название для партии должно быть текстом! Попробуй еще раз.")
+			_, err := updateHandler.bot.Send(msg)
+
+			user.State.Index--
+			return user, err
+
+		default:
+			user.State.Context.CurrentVoice.Caption = update.Message.Text
+
+			user.State.Context.CurrentSong.Voices =
+				append(user.State.Context.CurrentSong.Voices, user.State.Context.CurrentVoice)
+			_, err := updateHandler.songService.UpdateOne(*user.State.Context.CurrentSong)
+			if err != nil {
+				return user, err
+			}
+
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Добавление завершено.")
+			_, err = updateHandler.bot.Send(msg)
+
+			user.State = &entities.State{
+				Index:   0,
+				Name:    helpers.SongActionsState,
+				Context: entities.Context{CurrentSong: user.State.Context.CurrentSong},
+			}
+			return updateHandler.enterStateHandler(update, user)
+		}
+	})
+	return helpers.UploadVoiceState, handleFuncs
+}
+
+func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error)) {
+	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error), 0)
+
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+		if len(user.State.Context.Setlist) < 1 {
+			user.State.Index = 2
+			return updateHandler.enterStateHandler(update, user)
+		}
+
+		songNames := user.State.Context.Setlist
+
+		currentSongName := songNames[0]
+		user.State.Context.Setlist = songNames[1:]
+
+		chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
+		_, _ = updateHandler.bot.Send(chatAction)
+
+		driveFiles, _, err := updateHandler.songService.QueryDrive(currentSongName, "", user.GetFolderIDs()...)
+		if err != nil {
+			return entities.User{}, err
+		}
+
+		if len(driveFiles) == 0 {
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("По запросу \"%s\" ничего не найдено. Напиши новое название или пропусти эту песню.", currentSongName))
+			msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
+				tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Skip)),
+				tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)),
+			)
+			res, err := updateHandler.bot.Send(msg)
+			if err != nil {
+				return user, err
+			}
+
+			user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, res.MessageID)
+			user.State.Index++
+			return user, err
+		}
+
+		keyboard := tgbotapi.NewReplyKeyboard()
+		keyboard.OneTimeKeyboard = false
+		keyboard.ResizeKeyboard = true
+
+		// TODO: some sort of pagination.
+		for _, song := range driveFiles {
+			songButton := tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(song.Name))
+			keyboard.Keyboard = append(keyboard.Keyboard, songButton)
+		}
+
+		keyboard.Keyboard = append(keyboard.Keyboard,
+			tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Skip)),
+			tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)),
+		)
+
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Выбери песню по запросу \"%s\" или введи другое название:", currentSongName))
+		msg.ReplyMarkup = keyboard
+		res, err := updateHandler.bot.Send(msg)
+		if err != nil {
+			return user, err
+		}
+
+		user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, res.MessageID)
+		user.State.Context.DriveFiles = driveFiles
+		user.State.Index++
+
+		return user, nil
+	})
+
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+		user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, update.Message.MessageID)
+
+		switch update.Message.Text {
+		case "":
+		case helpers.Skip:
+			user.State.Index = 0
+			return updateHandler.enterStateHandler(update, user)
+		}
+
+		driveFiles := user.State.Context.DriveFiles
+		foundIndex := len(driveFiles)
+		for i := range driveFiles {
+			if driveFiles[i].Name == update.Message.Text {
+				foundIndex = i
+				break
+			}
+		}
+
+		if foundIndex != len(driveFiles) {
+			song, err := updateHandler.songService.FindOneByDriveFile(*driveFiles[foundIndex])
+			if err != nil || song.HasOutdatedPDF() {
+				song = &entities.Song{
+					ID:        driveFiles[foundIndex].Id,
+					DriveFile: driveFiles[foundIndex],
+				}
+			}
+			user.State.Context.FoundSongs = append(user.State.Context.FoundSongs, song)
+		} else {
+			user.State.Context.Setlist = append([]string{update.Message.Text}, user.State.Context.Setlist...)
+		}
+
+		user.State.Index = 0
+		return updateHandler.enterStateHandler(update, user)
+	})
+
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+		chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatUploadDocument)
+		_, _ = updateHandler.bot.Send(chatAction)
+
+		songs := user.State.Context.FoundSongs
+
+		var waitGroup sync.WaitGroup
+		waitGroup.Add(len(songs))
+		documents := make([]interface{}, len(songs))
+		for i := range user.State.Context.FoundSongs {
+			go func(i int) {
+				defer waitGroup.Done()
+				if songs[i].PDF != nil {
+					documents[i] = tgbotapi.NewInputMediaDocument(tgbotapi.FileID(songs[i].PDF.TgFileID))
+				} else {
+					fileReader, _ := updateHandler.songService.DownloadPDF(*songs[i].DriveFile)
+					documents[i] = tgbotapi.NewInputMediaDocument(fileReader)
+				}
+			}(i)
+		}
+		waitGroup.Wait()
+
+		const chunkSize = 10
+		chunks := chunkBy(documents, chunkSize)
+
+		for i, chunk := range chunks {
+			responses, err := updateHandler.bot.SendMediaGroup(tgbotapi.NewMediaGroup(update.Message.Chat.ID, chunk))
+			if err != nil {
+				fromIndex := 0
+				toIndex := 0 + len(chunk)
+
+				if i-1 < len(chunks) {
+					fromIndex = i * len(chunks[i-1])
+					toIndex = fromIndex + len(chunks[i])
+				}
+
+				songs := user.State.Context.FoundSongs[fromIndex:toIndex]
+
+				var waitGroup sync.WaitGroup
+				waitGroup.Add(len(songs))
+				documents := make([]interface{}, len(songs))
+				for i := range songs {
+					go func(i int) {
+						defer waitGroup.Done()
+						fileReader, _ := updateHandler.songService.DownloadPDF(*songs[i].DriveFile)
+						documents[i] = tgbotapi.NewInputMediaDocument(fileReader)
+					}(i)
+				}
+				waitGroup.Wait()
+
+				responses, err = updateHandler.bot.SendMediaGroup(tgbotapi.NewMediaGroup(update.Message.Chat.ID, documents))
+				if err != nil {
+					continue
+				}
+			}
+
+			for j := range responses {
+				song := user.State.Context.FoundSongs[j+(i*len(chunk))]
+				song.PDF = &entities.PDF{
+					TgFileID:     responses[j].Document.FileID,
+					ModifiedTime: song.DriveFile.ModifiedTime,
+				}
+
+				_, _ = updateHandler.songService.UpdateOne(*song)
+			}
+		}
+
+		user.State = user.State.Prev
+		user.State.Index = 0
+
+		return updateHandler.enterStateHandler(update, user)
+	})
+
+	return helpers.SetlistState, handleFuncs
+}
+
+func chunkBy(items []interface{}, chunkSize int) (chunks [][]interface{}) {
+	for chunkSize < len(items) {
+		items, chunks = items[chunkSize:], append(chunks, items[0:chunkSize:chunkSize])
+	}
+
+	return append(chunks, items)
 }

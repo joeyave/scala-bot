@@ -5,13 +5,13 @@ import tgbotapi "github.com/joeyave/telegram-bot-api/v5"
 var SongActionsKeyboard = [][]tgbotapi.KeyboardButton{
 	{{Text: Voices}, {Text: Audios}},
 	{{Text: Transpose}, {Text: Style}},
-	{{Text: Menu}},
+	{{Text: Back}},
 }
 
 var RestrictedSongActionsKeyboard = [][]tgbotapi.KeyboardButton{
 	{{Text: CopyToMyBand}},
 	{{Text: Voices}, {Text: Audios}},
-	{{Text: Menu}},
+	{{Text: Back}},
 }
 
 var MainMenuKeyboard = [][]tgbotapi.KeyboardButton{

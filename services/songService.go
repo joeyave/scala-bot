@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/joeyave/chords-transposer/transposer"
 	"github.com/joeyave/scala-chords-bot/entities"
+	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/scala-chords-bot/repositories"
 	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
 	"google.golang.org/api/docs/v1"
@@ -31,17 +32,19 @@ func NewSongService(songRepository *repositories.SongRepository, driveClient *dr
 Searches for Song on Google Drive then returns uncached versions of Songs for performance reasons.
 */
 func (s *SongService) QueryDrive(name string, pageToken string, folderIDs ...string) ([]*drive.File, string, error) {
-	q := fmt.Sprintf("fullText contains '%s'"+
-		" and trashed = false"+
-		" and mimeType = 'application/vnd.google-apps.document'", name)
+	name = helpers.JsonEscape(name)
+
+	q := fmt.Sprintf(`fullText contains '%s'`+
+		` and trashed = false`+
+		` and mimeType = 'application/vnd.google-apps.document'`, name)
 
 	if folderIDs != nil && len(folderIDs) > 0 {
 		for i := range folderIDs {
 			if i == 0 {
-				q += " and "
+				q += ` and `
 			}
 
-			q += fmt.Sprintf("'%s' in parents", folderIDs[i])
+			q += fmt.Sprintf(`'%s' in parents`, folderIDs[i])
 
 			if i != len(folderIDs)-1 {
 				q += " or "
@@ -279,7 +282,7 @@ func (s *SongService) Transpose(song entities.Song, toKey string, sectionIndex i
 	_, err = s.docsClient.Documents.BatchUpdate(doc.DocumentId,
 		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
 
-	song.PDF.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
+	song.DriveFile.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
 	return song, err
 }
 
@@ -543,12 +546,9 @@ func (s *SongService) Style(song entities.Song) (entities.Song, error) {
 			})
 
 			for _, element := range paragraph.Paragraph.Elements {
-				if element.TextRun.TextStyle.WeightedFontFamily != nil {
-					element.TextRun.TextStyle.WeightedFontFamily.FontFamily = "Roboto Mono"
-				} else {
-					element.TextRun.TextStyle.WeightedFontFamily = &docs.WeightedFontFamily{
-						FontFamily: "Roboto Mono",
-					}
+
+				element.TextRun.TextStyle.WeightedFontFamily = &docs.WeightedFontFamily{
+					FontFamily: "Roboto Mono",
 				}
 
 				if j == 0 {
@@ -627,7 +627,7 @@ func (s *SongService) Style(song entities.Song) (entities.Song, error) {
 		return entities.Song{}, err
 	}
 
-	song.PDF.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
+	song.DriveFile.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
 	return song, err
 }
 
@@ -674,12 +674,9 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string) [
 				continue
 			}
 			style := *element.TextRun.TextStyle
-			if style.WeightedFontFamily != nil {
-				style.WeightedFontFamily.FontFamily = "Roboto Mono"
-			} else {
-				style.WeightedFontFamily = &docs.WeightedFontFamily{
-					FontFamily: "Roboto Mono",
-				}
+
+			style.WeightedFontFamily = &docs.WeightedFontFamily{
+				FontFamily: "Roboto Mono",
 			}
 
 			requests = append(requests, &docs.Request{
