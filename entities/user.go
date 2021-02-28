@@ -12,16 +12,6 @@ type User struct {
 	Bands   []Band               `bson:"-"`
 }
 
-func (u *User) GetFolderIDs() []string {
-	folderIDs := make([]string, 0)
-
-	for i := range u.Bands {
-		folderIDs = append(folderIDs, u.Bands[i].DriveFolderID)
-	}
-
-	return folderIDs
-}
-
 type State struct {
 	Index   int     `bson:"index"`
 	Name    string  `bson:"name"`
@@ -47,4 +37,14 @@ type Context struct {
 
 	Bands       []Band `bson:"bands"`
 	CurrentBand Band   `bson:"band"`
+}
+
+func (u *User) GetFolderIDs() []string {
+	folderIDs := make([]string, 0)
+
+	for i := range u.Bands {
+		folderIDs = append(folderIDs, u.Bands[i].DriveFolderID)
+	}
+
+	return folderIDs
 }

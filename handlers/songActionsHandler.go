@@ -37,42 +37,48 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 				chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
 				_, _ = updateHandler.bot.Send(chatAction)
 
-				if user.State.Context.Query == "" {
+				query := update.Message.Text
 
-					update.Message.Text = helpers.CleanUpQuery(update.Message.Text)
-					songNames := helpers.SplitQueryByNewlines(update.Message.Text)
+				if user.State.Context.Query != "" {
+					query = user.State.Context.Query
+				}
 
-					if len(songNames) > 1 {
-						user.State = &entities.State{
-							Index:   0,
-							Name:    helpers.SetlistState,
-							Prev:    user.State,
-							Context: user.State.Context,
-						}
-						user.State.Context.Setlist = songNames
+				query = helpers.CleanUpQuery(query)
+				songNames := helpers.SplitQueryByNewlines(query)
 
-					} else if len(songNames) == 1 {
-						update.Message.Text = songNames[0]
-					} else {
-						msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Из запроса удаляются все числа, дифизы и скобки вместе с тем, что в них.")
-						_, err := updateHandler.bot.Send(msg)
-
-						user.State = &entities.State{
+				if len(songNames) > 1 {
+					user.State = &entities.State{
+						Index: 0,
+						Name:  helpers.SetlistState,
+						Prev: &entities.State{
 							Index: 0,
 							Name:  helpers.MainMenuState,
-						}
-						return user, err
+						},
+						Context: user.State.Context,
 					}
+					user.State.Context.Setlist = songNames
+					return updateHandler.enterStateHandler(update, user)
 
-					user.State.Context.Query = update.Message.Text
+				} else if len(songNames) == 1 {
+					query = songNames[0]
+					user.State.Context.Query = query
+				} else {
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Из запроса удаляются все числа, дифизы и скобки вместе с тем, что в них.")
+					_, _ = updateHandler.bot.Send(msg)
+
+					user.State = &entities.State{
+						Index: 0,
+						Name:  helpers.MainMenuState,
+					}
+					return updateHandler.enterStateHandler(update, user)
 				}
 
 				var driveFiles []*drive.File
 				var err error
 				if update.Message.Text == helpers.SearchEverywhere {
-					driveFiles, _, err = updateHandler.songService.QueryDrive(user.State.Context.Query, "")
+					driveFiles, _, err = updateHandler.songService.QueryDrive(query, "")
 				} else {
-					driveFiles, _, err = updateHandler.songService.QueryDrive(user.State.Context.Query, "", user.GetFolderIDs()...)
+					driveFiles, _, err = updateHandler.songService.QueryDrive(query, "", user.GetFolderIDs()...)
 				}
 
 				if err != nil {
@@ -124,6 +130,9 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 			_, err := updateHandler.bot.Send(msg)
 			user.State.Index--
 			return user, err
+		case helpers.SearchEverywhere:
+			user.State.Index--
+			return updateHandler.enterStateHandler(update, user)
 		default:
 			chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatUploadDocument)
 			_, _ = updateHandler.bot.Send(chatAction)
@@ -156,6 +165,7 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 				return updateHandler.enterStateHandler(update, user)
 			} else {
 				user.State.Index--
+				user.State.Context.Query = ""
 				return updateHandler.enterStateHandler(update, user)
 			}
 		}
@@ -234,14 +244,7 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
 		switch update.Message.Text {
 		case helpers.Back:
-			if user.State.Prev != nil {
-				user.State = user.State.Prev
-			} else {
-				user.State = &entities.State{
-					Index: 0,
-					Name:  helpers.MainMenuState,
-				}
-			}
+			user.State = user.State.Prev
 			return updateHandler.enterStateHandler(update, user)
 
 		case helpers.Voices:
@@ -264,6 +267,7 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 				},
 				Prev: user.State,
 			}
+			user.State.Prev.Index = 0
 			return updateHandler.enterStateHandler(update, user)
 
 		case helpers.Style:
@@ -275,6 +279,7 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 				},
 				Prev: user.State,
 			}
+			user.State.Prev.Index = 0
 			return updateHandler.enterStateHandler(update, user)
 
 		case helpers.CopyToMyBand:
@@ -286,6 +291,7 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 				},
 				Prev: user.State,
 			}
+			user.State.Prev.Index = 0
 			return updateHandler.enterStateHandler(update, user)
 
 		case user.State.Context.CurrentSong.DriveFile.Name:
@@ -399,12 +405,8 @@ func transposeSongHandler() (string, []func(updateHandler *UpdateHandler, update
 				return entities.User{}, err
 			}
 
-			user.State = &entities.State{
-				Index:   0,
-				Name:    helpers.SongActionsState,
-				Context: entities.Context{CurrentSong: &song},
-			}
-
+			user.State = user.State.Prev
+			user.State.Context.CurrentSong = &song
 			return updateHandler.enterStateHandler(update, user)
 		}
 	})
@@ -426,12 +428,13 @@ func styleSongHandler() (string, []func(updateHandler *UpdateHandler, update *tg
 			return entities.User{}, err
 		}
 
-		user.State = &entities.State{
-			Index:   0,
-			Name:    helpers.SongActionsState,
-			Context: entities.Context{CurrentSong: &song},
-		}
-
+		//user.State = &entities.State{
+		//	Index:   0,
+		//	Name:    helpers.SongActionsState,
+		//	Context: entities.Context{CurrentSong: &song},
+		//}
+		user.State = user.State.Prev
+		user.State.Context.CurrentSong = &song
 		return updateHandler.enterStateHandler(update, user)
 	})
 	return helpers.StyleSongState, handleFuncs
@@ -482,11 +485,8 @@ func copySongHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 					return entities.User{}, err
 				}
 
-				user.State = &entities.State{
-					Index:   0,
-					Name:    helpers.SongActionsState,
-					Context: entities.Context{CurrentSong: copiedSong},
-				}
+				user.State = user.State.Prev
+				user.State.Context.CurrentSong = copiedSong
 
 				return updateHandler.enterStateHandler(update, user)
 
@@ -618,7 +618,6 @@ func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *
 				var driveFiles []*drive.File
 				var err error
 
-				user.State.Context.Query = update.Message.Text
 				driveFiles, _, err = updateHandler.songService.QueryDrive(update.Message.Text, "", user.GetFolderIDs()...)
 				if err != nil {
 					return entities.User{}, err
