@@ -493,7 +493,7 @@ func (s *SongService) Style(song entities.Song) (*entities.Song, error) {
 			},
 		}).Do()
 
-		if err == nil {
+		if err == nil && res.Replies[0].CreateHeader.HeaderId != "" {
 			doc.DocumentStyle.DefaultHeaderId = res.Replies[0].CreateHeader.HeaderId
 			_, _ = s.docsClient.Documents.BatchUpdate(song.ID, &docs.BatchUpdateDocumentRequest{
 				Requests: []*docs.Request{
