@@ -1,13 +1,12 @@
 package services
 
 import (
-	"errors"
 	"fmt"
 	"github.com/joeyave/chords-transposer/transposer"
 	"github.com/joeyave/scala-chords-bot/entities"
+	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/scala-chords-bot/repositories"
 	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
-	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
 	"regexp"
@@ -32,110 +31,153 @@ func NewSongService(songRepository *repositories.SongRepository, driveClient *dr
 /*
 Searches for Song on Google Drive then returns uncached versions of Songs for performance reasons.
 */
-func (s *SongService) QueryDrive(name string, pageToken string) ([]entities.Song, string, error) {
-	var songs []entities.Song
+func (s *SongService) QueryDrive(name string, pageToken string, folderIDs ...string) ([]*drive.File, string, error) {
+	name = helpers.JsonEscape(name)
+
+	q := fmt.Sprintf(`fullText contains '%s'`+
+		` and trashed = false`+
+		` and mimeType = 'application/vnd.google-apps.document'`, name)
+
+	if folderIDs != nil && len(folderIDs) > 0 {
+		for i := range folderIDs {
+			if i == 0 {
+				q += ` and `
+			}
+
+			q += fmt.Sprintf(`'%s' in parents`, folderIDs[i])
+
+			if i != len(folderIDs)-1 {
+				q += " or "
+			}
+		}
+	}
 
 	res, err := s.driveClient.Files.List().
 		// Use this for precise search.
 		//Q(fmt.Sprintf("fullText contains '\"%s\"'", name)).
-		Q(fmt.Sprintf("fullText contains '%s'", name)).
-		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink)").
-		PageSize(90).
-		PageToken(pageToken).
-		Do()
+		Q(q).
+		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink, parents)").
+		PageSize(90).PageToken(pageToken).Do()
 
 	if err != nil {
 		return nil, "", err
 	}
 
-	for _, file := range res.Files {
-		actualSong := entities.Song{
-			ID:           file.Id,
-			Name:         file.Name,
-			ModifiedTime: file.ModifiedTime,
-			WebViewLink:  file.WebViewLink,
-		}
-
-		songs = append(songs, actualSong)
-	}
-
-	if len(songs) == 0 {
-		return nil, "", mongo.ErrEmptySlice
-	}
-
-	return songs, res.NextPageToken, nil
+	return res.Files, res.NextPageToken, nil
 }
 
-func (s *SongService) FindOneByID(ID string) (entities.Song, error) {
+func (s *SongService) FindOneByID(ID string) (*entities.Song, error) {
+	file, err := s.driveClient.Files.
+		Get(ID).
+		Fields("id, name, modifiedTime, webViewLink, parents").Do()
+	if err != nil {
+		return nil, err
+	}
+
 	song, err := s.songRepository.FindOneByID(ID)
+	if err != nil {
+		err = nil
+		song = &entities.Song{
+			ID: file.Id,
+		}
+	}
+
+	song.DriveFile = file
+
 	return song, err
 }
 
-func (s *SongService) UpdateOne(song entities.Song) (entities.Song, error) {
-	if song.ID == "" {
-		return song, fmt.Errorf("ID is missing for Song: %v", song)
+func (s *SongService) FindOneByDriveFile(file drive.File) (*entities.Song, error) {
+	if file.Id == "" {
+		return nil, fmt.Errorf("ID is missing for File: %v", file)
 	}
 
-	newSong, err := s.songRepository.UpdateOne(song)
-	return newSong, err
-}
-
-func (s *SongService) Cache(song entities.Song) (entities.Song, error) {
-	if song.ID == "" {
-		return song, fmt.Errorf("ID is missing for Song: %v", song)
-	}
-
-	oldSong, err := s.FindOneByID(song.ID)
+	song, err := s.songRepository.FindOneByID(file.Id)
 	if err != nil {
-		return s.UpdateOne(song)
+		err = nil
+		song = &entities.Song{
+			ID: file.Id,
+		}
 	}
 
-	song.Voices = oldSong.Voices
-	return s.UpdateOne(song)
+	song.DriveFile = &file
+
+	return song, err
 }
 
-/*
-Returns error if cached version is outdated.
-*/
-func (s *SongService) GetFromCache(song entities.Song) (entities.Song, error) {
+func (s *SongService) UpdateOne(song entities.Song) (*entities.Song, error) {
 	if song.ID == "" {
-		return song, fmt.Errorf("ID is missing for Song: %v", song)
+		return nil, fmt.Errorf("ID is missing for Song: %v", song)
 	}
 
-	cachedSong, err := s.songRepository.FindOneByID(song.ID)
-	if err != nil || cachedSong.TgFileID == "" {
-		return entities.Song{}, errors.New("TgFileID is missing")
-	}
-
-	cachedModifiedTime, err := time.Parse(time.RFC3339, cachedSong.ModifiedTime)
-	actualModifiedTime, err := time.Parse(time.RFC3339, song.ModifiedTime)
-
-	if err != nil || actualModifiedTime.After(cachedModifiedTime) {
-		return entities.Song{}, errors.New("cached song is not actual")
-	}
-
-	cachedSong.Name = song.Name
-	cachedSong.WebViewLink = song.WebViewLink
-
-	return cachedSong, err
+	return s.songRepository.UpdateOne(song)
 }
 
-func (s *SongService) DownloadPDF(song entities.Song) (tgbotapi.FileReader, error) {
-	if song.ID == "" {
-		return tgbotapi.FileReader{}, fmt.Errorf("ID is missing for Song: %v", song)
-	}
-
-	res, err := s.driveClient.Files.Export(song.ID, "application/pdf").Download()
+func (s *SongService) DownloadPDF(file drive.File) (tgbotapi.FileReader, error) {
+	res, err := s.driveClient.Files.Export(file.Id, "application/pdf").Download()
 	if err != nil {
 		return tgbotapi.FileReader{}, err
 	}
 
 	fileReader := tgbotapi.FileReader{
-		Name:   song.Name + ".pdf",
+		Name:   file.Name + ".pdf",
 		Reader: res.Body,
 	}
 
 	return fileReader, err
+}
+
+func (s *SongService) DeepCopyToFolder(song entities.Song, folderID string) (*entities.Song, error) {
+	if song.ID == "" {
+		return nil, fmt.Errorf("ID is missing for Song: %v", song)
+	}
+
+	file := &drive.File{
+		Name:    song.DriveFile.Name,
+		Parents: []string{folderID},
+	}
+	newFile, err := s.driveClient.Files.Copy(song.ID, file).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+	if err != nil {
+		return nil, err
+	}
+
+	folderPermissionsList, err := s.driveClient.Permissions.List(folderID).
+		Fields("*").
+		PageSize(100).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	var folderOwnerPermission *drive.Permission
+	for _, permission := range folderPermissionsList.Permissions {
+		if permission.Role == "owner" {
+			folderOwnerPermission = permission
+		}
+	}
+
+	if folderOwnerPermission != nil {
+		permission := &drive.Permission{
+			EmailAddress: folderOwnerPermission.EmailAddress,
+			Role:         "owner",
+			Type:         "user",
+		}
+		_, err = s.driveClient.Permissions.
+			Create(newFile.Id, permission).
+			TransferOwnership(true).Do()
+		if err != nil {
+			return nil, err
+		}
+
+	}
+
+	newSong := entities.Song{
+		ID:        newFile.Id,
+		DriveFile: newFile,
+		PDF:       song.PDF,
+		Voices:    song.Voices,
+	}
+
+	return s.UpdateOne(newSong)
 }
 
 func (s *SongService) GetSections(song entities.Song) ([]docs.StructuralElement, error) {
@@ -219,19 +261,19 @@ func (s *SongService) AppendSection(song entities.Song) ([]docs.StructuralElemen
 	return s.GetSections(song)
 }
 
-func (s *SongService) Transpose(song entities.Song, toKey string, sectionIndex int) (entities.Song, error) {
+func (s *SongService) Transpose(song entities.Song, toKey string, sectionIndex int) (*entities.Song, error) {
 	if song.ID == "" {
-		return song, fmt.Errorf("ID is missing for Song: %v", song)
+		return nil, fmt.Errorf("ID is missing for Song: %v", song)
 	}
 
 	doc, err := s.docsClient.Documents.Get(song.ID).Do()
 	if err != nil {
-		return entities.Song{}, err
+		return nil, err
 	}
 
 	sections, err := s.GetSections(song)
 	if err != nil {
-		return entities.Song{}, err
+		return nil, err
 	}
 
 	requests, key := s.transposeHeader(doc, sections, sectionIndex, toKey)
@@ -240,8 +282,8 @@ func (s *SongService) Transpose(song entities.Song, toKey string, sectionIndex i
 	_, err = s.docsClient.Documents.BatchUpdate(doc.DocumentId,
 		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
 
-	song.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
-	return song, err
+	song.DriveFile.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
+	return &song, err
 }
 
 func (s *SongService) transposeHeader(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int, toKey string) ([]*docs.Request, string) {
@@ -428,16 +470,16 @@ func composeTransposeRequests(content []*docs.StructuralElement, index int64, ke
 	return requests, key
 }
 
-func (s *SongService) Style(song entities.Song) (entities.Song, error) {
+func (s *SongService) Style(song entities.Song) (*entities.Song, error) {
 	if song.ID == "" {
-		return song, fmt.Errorf("ID is missing for Song: %v", song)
+		return nil, fmt.Errorf("ID is missing for Song: %v", song)
 	}
 
 	requests := make([]*docs.Request, 0)
 
 	doc, err := s.docsClient.Documents.Get(song.ID).Do()
 	if err != nil {
-		return entities.Song{}, err
+		return nil, err
 	}
 
 	if doc.DocumentStyle.DefaultHeaderId == "" {
@@ -472,7 +514,7 @@ func (s *SongService) Style(song entities.Song) (entities.Song, error) {
 
 	doc, err = s.docsClient.Documents.Get(song.ID).Do()
 	if err != nil {
-		return entities.Song{}, err
+		return nil, err
 	}
 
 	for _, header := range doc.Headers {
@@ -504,12 +546,9 @@ func (s *SongService) Style(song entities.Song) (entities.Song, error) {
 			})
 
 			for _, element := range paragraph.Paragraph.Elements {
-				if element.TextRun.TextStyle.WeightedFontFamily != nil {
-					element.TextRun.TextStyle.WeightedFontFamily.FontFamily = "Roboto Mono"
-				} else {
-					element.TextRun.TextStyle.WeightedFontFamily = &docs.WeightedFontFamily{
-						FontFamily: "Roboto Mono",
-					}
+
+				element.TextRun.TextStyle.WeightedFontFamily = &docs.WeightedFontFamily{
+					FontFamily: "Roboto Mono",
 				}
 
 				if j == 0 {
@@ -585,11 +624,11 @@ func (s *SongService) Style(song entities.Song) (entities.Song, error) {
 
 	_, err = s.docsClient.Documents.BatchUpdate(song.ID, &docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
 	if err != nil {
-		return entities.Song{}, err
+		return nil, err
 	}
 
-	song.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
-	return song, err
+	song.DriveFile.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
+	return &song, err
 }
 
 func composeStyleRequests(content []*docs.StructuralElement, segmentID string) []*docs.Request {
@@ -635,12 +674,9 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string) [
 				continue
 			}
 			style := *element.TextRun.TextStyle
-			if style.WeightedFontFamily != nil {
-				style.WeightedFontFamily.FontFamily = "Roboto Mono"
-			} else {
-				style.WeightedFontFamily = &docs.WeightedFontFamily{
-					FontFamily: "Roboto Mono",
-				}
+
+			style.WeightedFontFamily = &docs.WeightedFontFamily{
+				FontFamily: "Roboto Mono",
 			}
 
 			requests = append(requests, &docs.Request{

@@ -16,30 +16,41 @@ func NewUserService(userRepository *repositories.UserRepository) *UserService {
 	}
 }
 
-func (s *UserService) FindOrCreate(ID int64) (entities.User, error) {
+func (s *UserService) FindOrCreate(ID int64) (*entities.User, error) {
 	user, err := s.userRepository.FindOneByID(ID)
 
 	// Create User if he doesn't exists or doesn't have states.
 	if err != nil {
-		user = entities.User{
+		user = &entities.User{
 			ID: ID,
 			State: &entities.State{
-				Index:   0,
-				Name:    helpers.MainMenuState,
-				Context: entities.Context{},
+				Index: 0,
+				Name:  helpers.MainMenuState,
 			},
 		}
 
-		user, err = s.userRepository.UpdateOne(user)
+		user, err = s.userRepository.UpdateOne(*user)
 		if err != nil {
-			return entities.User{}, err
+			return nil, err
+		}
+	}
+
+	if (user.Bands == nil || len(user.Bands) == 0) &&
+		user.State.Name != helpers.ChooseBandState && user.State.Name != helpers.CreateBandState {
+		user.State = &entities.State{
+			Index: 0,
+			Name:  helpers.ChooseBandState,
+		}
+
+		user, err = s.userRepository.UpdateOne(*user)
+		if err != nil {
+			return nil, err
 		}
 	}
 
 	return user, err
 }
 
-func (s *UserService) UpdateOne(user entities.User) (entities.User, error) {
-	user, err := s.userRepository.UpdateOne(user)
-	return user, err
+func (s *UserService) UpdateOne(user entities.User) (*entities.User, error) {
+	return s.userRepository.UpdateOne(user)
 }

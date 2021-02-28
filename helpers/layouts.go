@@ -2,14 +2,16 @@ package helpers
 
 import tgbotapi "github.com/joeyave/telegram-bot-api/v5"
 
-var songOptionsKeyboard = [][]tgbotapi.KeyboardButton{
+var SongActionsKeyboard = [][]tgbotapi.KeyboardButton{
 	{{Text: Voices}, {Text: Audios}},
 	{{Text: Transpose}, {Text: Style}},
-	{{Text: Menu}},
+	{{Text: Back}},
 }
 
-func GetSongOptionsKeyboard() [][]tgbotapi.KeyboardButton {
-	return append(songOptionsKeyboard[:0:0], songOptionsKeyboard...)
+var RestrictedSongActionsKeyboard = [][]tgbotapi.KeyboardButton{
+	{{Text: CopyToMyBand}},
+	{{Text: Voices}, {Text: Audios}},
+	{{Text: Back}},
 }
 
 var MainMenuKeyboard = [][]tgbotapi.KeyboardButton{

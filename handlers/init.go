@@ -5,11 +5,20 @@ import (
 	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
 )
 
-var stateHandlers = make(map[string][]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error), 0)
+var stateHandlers = make(map[string][]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error), 0)
 
 // Register your handlers here.
 func init() {
 	name, funcs := mainMenuHandler()
+	stateHandlers[name] = funcs
+
+	name, funcs = copySongHandler()
+	stateHandlers[name] = funcs
+
+	name, funcs = createBandHandler()
+	stateHandlers[name] = funcs
+
+	name, funcs = chooseBandHandler()
 	stateHandlers[name] = funcs
 
 	name, funcs = styleSongHandler()
