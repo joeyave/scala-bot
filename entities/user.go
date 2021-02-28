@@ -6,37 +6,36 @@ import (
 )
 
 type User struct {
-	ID      int64                `bson:"_id"`
-	State   *State               `bson:"states"`
-	BandIDs []primitive.ObjectID `bson:"bandIds"`
-	Bands   []Band               `bson:"-"`
+	ID      int64                `bson:"_id,omitempty"`
+	State   *State               `bson:"state,omitempty"`
+	BandIDs []primitive.ObjectID `bson:"bandIds,omitempty"`
+	Bands   []*Band              `bson:"-"`
 }
 
 type State struct {
-	Index   int     `bson:"index"`
-	Name    string  `bson:"name"`
-	Context Context `bson:"context"`
+	Index   int     `bson:"index,omitempty"`
+	Name    string  `bson:"name,omitempty"`
+	Context Context `bson:"context,omitempty"`
 
-	Prev *State `bson:"prev"`
-	Next *State `bson:"next"`
+	Prev *State `bson:"prev,omitempty"`
+	Next *State `bson:"next,omitempty"`
 }
 
 type Context struct {
-	CurrentSong *Song `bson:"currentSong, omitempty"`
-	//Songs            []Song        `bson:"songs"`
-	Setlist          []string `bson:"setlist"`
-	FoundSongs       []*Song  `bson:"foundSongs"`
-	MessagesToDelete []int    `bson:"messagesToDelete"`
+	CurrentSong      *Song    `bson:"currentSong,omitempty"`
+	Setlist          []string `bson:"setlist,omitempty"`
+	FoundSongs       []*Song  `bson:"foundSongs,omitempty"`
+	MessagesToDelete []int    `bson:"messagesToDelete,omitempty"`
 	Query            string   `bson:"query,omitempty"`
 
 	DriveFiles []*drive.File `bson:"driveFiles,omitempty"`
 
-	CurrentVoice *Voice `bson:"currentVoice"`
+	CurrentVoice *Voice `bson:"currentVoice,omitempty"`
 
-	Key string `bson:"key"`
+	Key string `bson:"key,omitempty"`
 
-	Bands       []Band `bson:"bands"`
-	CurrentBand Band   `bson:"band"`
+	Bands       []*Band `bson:"bands,omitempty"`
+	CurrentBand *Band   `bson:"currentBand,omitempty"`
 }
 
 func (u *User) GetFolderIDs() []string {

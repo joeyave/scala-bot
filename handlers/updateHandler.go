@@ -6,6 +6,8 @@ import (
 	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/scala-chords-bot/services"
 	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
+	"os"
+	"strconv"
 )
 
 type UpdateHandler struct {
@@ -61,16 +63,26 @@ func (u *UpdateHandler) HandleUpdate(update *tgbotapi.Update) error {
 		}
 	}
 
-	user, err = u.enterStateHandler(update, user)
+	user, err = u.enterStateHandler(update, *user)
 
-	if err == nil {
-		user, err = u.userService.UpdateOne(user)
+	if err != nil {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Произошла ошибка. Поправим.")
+		_, _ = u.bot.Send(msg)
+
+		channelId, convErr := strconv.ParseInt(os.Getenv("LOG_CHANNEL"), 10, 0)
+		if convErr == nil {
+			msg = tgbotapi.NewMessage(channelId, fmt.Sprintf("<code>%v</code>", err))
+			msg.ParseMode = tgbotapi.ModeHTML
+			_, _ = u.bot.Send(msg)
+		}
+	} else {
+		user, err = u.userService.UpdateOne(*user)
 	}
 
 	return err
 }
 
-func (u *UpdateHandler) enterStateHandler(update *tgbotapi.Update, user entities.User) (entities.User, error) {
+func (u *UpdateHandler) enterStateHandler(update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 	handleFuncs, ok := stateHandlers[user.State.Name]
 
 	if ok == false || user.State.Index >= len(handleFuncs) || user.State.Index < 0 {

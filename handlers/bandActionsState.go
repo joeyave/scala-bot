@@ -8,14 +8,14 @@ import (
 	"regexp"
 )
 
-func chooseBandHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error)) {
-	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error), 0)
+func chooseBandHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error)) {
+	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error), 0)
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		bands, err := updateHandler.bandService.FindAll()
 		if err != nil {
 			// TODO
-			return entities.User{}, err
+			return nil, err
 		}
 
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выбери свою группу:")
@@ -33,10 +33,10 @@ func chooseBandHandler() (string, []func(updateHandler *UpdateHandler, update *t
 
 		user.State.Context.Bands = bands
 		user.State.Index++
-		return user, err
+		return &user, err
 	})
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		switch update.Message.Text {
 		case "":
 			user.State.Index--
@@ -77,10 +77,10 @@ func chooseBandHandler() (string, []func(updateHandler *UpdateHandler, update *t
 	return helpers.ChooseBandState, handleFuncs
 }
 
-func createBandHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error)) {
-	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error), 0)
+func createBandHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error)) {
+	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error), 0)
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Введи название своей группы:")
 		keyboard := tgbotapi.NewReplyKeyboard()
 		keyboard.ResizeKeyboard = true
@@ -89,16 +89,16 @@ func createBandHandler() (string, []func(updateHandler *UpdateHandler, update *t
 		_, _ = updateHandler.bot.Send(msg)
 
 		user.State.Index++
-		return user, nil
+		return &user, nil
 	})
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		switch update.Message.Text {
 		case "":
 			user.State.Index--
 			return updateHandler.enterStateHandler(update, user)
 		default:
-			user.State.Context.CurrentBand = entities.Band{
+			user.State.Context.CurrentBand = &entities.Band{
 				Name: update.Message.Text,
 			}
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Теперь добавь имейл scala-drive@scala-chords-bot.iam.gserviceaccount.com в папку на Гугл Диске как редактора. После этого отправь мне ссылку на эту папку.")
@@ -109,11 +109,11 @@ func createBandHandler() (string, []func(updateHandler *UpdateHandler, update *t
 			_, _ = updateHandler.bot.Send(msg)
 
 			user.State.Index++
-			return user, nil
+			return &user, nil
 		}
 	})
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		switch update.Message.Text {
 		case "":
 			user.State.Index--
@@ -127,9 +127,9 @@ func createBandHandler() (string, []func(updateHandler *UpdateHandler, update *t
 			}
 			user.State.Context.CurrentBand.DriveFolderID = matches[1]
 			user.State.Context.CurrentBand.AdminUserIDs = append(user.State.Context.CurrentBand.AdminUserIDs, update.Message.Chat.ID)
-			band, err := updateHandler.bandService.UpdateOne(user.State.Context.CurrentBand)
+			band, err := updateHandler.bandService.UpdateOne(*user.State.Context.CurrentBand)
 			if err != nil {
-				return user, err
+				return &user, err
 			}
 
 			user.BandIDs = append(user.BandIDs, band.ID)

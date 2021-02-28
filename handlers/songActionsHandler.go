@@ -12,11 +12,11 @@ import (
 	"sync"
 )
 
-func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error)) {
-	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error), 0)
+func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error)) {
+	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error), 0)
 
 	// Print list of found songs.
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		{
 			switch update.Message.Text {
 			case "":
@@ -32,7 +32,7 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 						Name:  helpers.MainMenuState,
 					}
 				}
-				return user, err
+				return &user, err
 			default:
 				chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
 				_, _ = updateHandler.bot.Send(chatAction)
@@ -82,7 +82,7 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 				}
 
 				if err != nil {
-					return entities.User{}, err
+					return nil, err
 				}
 
 				if len(driveFiles) == 0 {
@@ -94,7 +94,7 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 					msg.ReplyMarkup = keyboard
 					_, err = updateHandler.bot.Send(msg)
 
-					return user, err
+					return &user, err
 				}
 
 				keyboard := tgbotapi.NewReplyKeyboard()
@@ -118,18 +118,18 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 
 				user.State.Context.DriveFiles = driveFiles
 				user.State.Index++
-				return user, err
+				return &user, err
 			}
 		}
 	})
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		switch update.Message.Text {
 		case "":
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Мне нужно название песни.")
 			_, err := updateHandler.bot.Send(msg)
 			user.State.Index--
-			return user, err
+			return &user, err
 		case helpers.SearchEverywhere:
 			user.State.Index--
 			return updateHandler.enterStateHandler(update, user)
@@ -149,7 +149,7 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 			if foundIndex != len(driveFiles) {
 				song, err := updateHandler.songService.FindOneByDriveFile(*driveFiles[foundIndex])
 				if err != nil {
-					return entities.User{}, err
+					return nil, err
 				}
 
 				user.State.Index = 0
@@ -174,17 +174,17 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 	return helpers.SearchSongState, handleFuncs
 }
 
-func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error)) {
-	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error), 0)
+func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error)) {
+	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error), 0)
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatUploadDocument)
 		_, _ = updateHandler.bot.Send(chatAction)
 
 		song := user.State.Context.CurrentSong
 		song, err := updateHandler.songService.FindOneByDriveFile(*song.DriveFile)
 		if err != nil {
-			return entities.User{}, err
+			return nil, err
 		}
 
 		var msg tgbotapi.DocumentConfig
@@ -192,7 +192,7 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 		if song.HasOutdatedPDF() {
 			fileReader, err := updateHandler.songService.DownloadPDF(*song.DriveFile)
 			if err != nil {
-				return entities.User{}, err
+				return nil, err
 			}
 
 			msg = tgbotapi.NewDocument(update.Message.Chat.ID, fileReader)
@@ -214,14 +214,14 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 		if err != nil {
 			fileReader, err := updateHandler.songService.DownloadPDF(*song.DriveFile)
 			if err != nil {
-				return entities.User{}, err
+				return nil, err
 			}
 
 			msg = tgbotapi.NewDocument(update.Message.Chat.ID, fileReader)
 
 			res, err = updateHandler.bot.Send(msg)
 			if err != nil {
-				return entities.User{}, err
+				return nil, err
 			}
 		}
 
@@ -232,16 +232,16 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 
 		song, err = updateHandler.songService.UpdateOne(*song)
 		if err != nil {
-			return user, fmt.Errorf("failed to cache file %v", err)
+			return nil, fmt.Errorf("failed to cache file %v", err)
 		}
 
 		user.State.Index++
 		user.State.Context.CurrentSong = song
 
-		return user, err
+		return &user, err
 	})
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		switch update.Message.Text {
 		case helpers.Back:
 			user.State = user.State.Prev
@@ -257,6 +257,11 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 				Prev: user.State,
 			}
 			return updateHandler.enterStateHandler(update, user)
+
+		case helpers.Audios:
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Функция еще не реалилованна. В будущем планируется хранинть тут аудиозаписи песни в нужной тональности.")
+			_, err := updateHandler.bot.Send(msg)
+			return &user, err
 
 		case helpers.Transpose:
 			user.State = &entities.State{
@@ -297,7 +302,7 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 		case user.State.Context.CurrentSong.DriveFile.Name:
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, user.State.Context.CurrentSong.DriveFile.WebViewLink)
 			_, err := updateHandler.bot.Send(msg)
-			return user, err
+			return &user, err
 
 		default:
 			user.State = &entities.State{
@@ -311,10 +316,10 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 	return helpers.SongActionsState, handleFuncs
 }
 
-func transposeSongHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error)) {
-	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error), 0)
+func transposeSongHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error)) {
+	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error), 0)
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выбери новую тональность:")
 		keyboard := tgbotapi.NewReplyKeyboard()
 		keyboard.ResizeKeyboard = true
@@ -323,10 +328,10 @@ func transposeSongHandler() (string, []func(updateHandler *UpdateHandler, update
 		_, err := updateHandler.bot.Send(msg)
 
 		user.State.Index++
-		return user, err
+		return &user, err
 	})
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		switch update.Message.Text {
 		case "":
 			if user.State.Index > 0 {
@@ -348,7 +353,7 @@ func transposeSongHandler() (string, []func(updateHandler *UpdateHandler, update
 
 			sections, err := updateHandler.songService.GetSections(*user.State.Context.CurrentSong)
 			if err != nil {
-				return user, err
+				return &user, err
 			}
 
 			for i, _ := range sections {
@@ -361,11 +366,11 @@ func transposeSongHandler() (string, []func(updateHandler *UpdateHandler, update
 			_, err = updateHandler.bot.Send(msg)
 
 			user.State.Index++
-			return user, err
+			return &user, err
 		}
 	})
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		switch update.Message.Text {
 		case "":
 			if user.State.Index > 0 {
@@ -378,7 +383,7 @@ func transposeSongHandler() (string, []func(updateHandler *UpdateHandler, update
 
 			sections, err := updateHandler.songService.GetSections(*user.State.Context.CurrentSong)
 			if err != nil {
-				return user, err
+				return &user, err
 			}
 
 			re := regexp.MustCompile("[1-9]+")
@@ -386,7 +391,7 @@ func transposeSongHandler() (string, []func(updateHandler *UpdateHandler, update
 			if err != nil {
 				sections, err = updateHandler.songService.AppendSection(*user.State.Context.CurrentSong)
 				if err != nil {
-					return user, err
+					return &user, err
 				}
 
 				sectionIndex = len(sections) - 1
@@ -402,11 +407,11 @@ func transposeSongHandler() (string, []func(updateHandler *UpdateHandler, update
 			song, err := updateHandler.songService.Transpose(*user.State.Context.CurrentSong,
 				user.State.Context.Key, sectionIndex)
 			if err != nil {
-				return entities.User{}, err
+				return nil, err
 			}
 
 			user.State = user.State.Prev
-			user.State.Context.CurrentSong = &song
+			user.State.Context.CurrentSong = song
 			return updateHandler.enterStateHandler(update, user)
 		}
 	})
@@ -414,36 +419,31 @@ func transposeSongHandler() (string, []func(updateHandler *UpdateHandler, update
 	return helpers.TransposeSongState, handleFuncs
 }
 
-func styleSongHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error)) {
-	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error), 0)
+func styleSongHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error)) {
+	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error), 0)
 
 	// Print list of found songs.
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
 		_, _ = updateHandler.bot.Send(chatAction)
 
 		song, err := updateHandler.songService.Style(*user.State.Context.CurrentSong)
 
 		if err != nil {
-			return entities.User{}, err
+			return nil, err
 		}
 
-		//user.State = &entities.State{
-		//	Index:   0,
-		//	Name:    helpers.SongActionsState,
-		//	Context: entities.Context{CurrentSong: &song},
-		//}
 		user.State = user.State.Prev
-		user.State.Context.CurrentSong = &song
+		user.State.Context.CurrentSong = song
 		return updateHandler.enterStateHandler(update, user)
 	})
 	return helpers.StyleSongState, handleFuncs
 }
 
-func copySongHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error)) {
-	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error), 0)
+func copySongHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error)) {
+	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error), 0)
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выбери группу, в которую ты хочешь скопировать эту песню:")
 
 		keyboard := tgbotapi.NewReplyKeyboard()
@@ -459,10 +459,10 @@ func copySongHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 
 		user.State.Context.Bands = user.Bands
 		user.State.Index++
-		return user, err
+		return &user, err
 	})
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		switch update.Message.Text {
 		case "":
 			user.State.Index--
@@ -482,7 +482,7 @@ func copySongHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 			if foundIndex != len(user.Bands) {
 				copiedSong, err := updateHandler.songService.DeepCopyToFolder(*user.State.Context.CurrentSong, user.Bands[foundIndex].DriveFolderID)
 				if err != nil {
-					return entities.User{}, err
+					return nil, err
 				}
 
 				user.State = user.State.Prev
@@ -501,10 +501,10 @@ func copySongHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 	return helpers.CopySongState, handleFuncs
 }
 
-func getVoicesHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error)) {
-	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error), 0)
+func getVoicesHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error)) {
+	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error), 0)
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		voices := user.State.Context.CurrentSong.Voices
 
 		var err error
@@ -513,7 +513,7 @@ func getVoicesHandler() (string, []func(updateHandler *UpdateHandler, update *tg
 			_, err = updateHandler.bot.Send(msg)
 
 			user.State = user.State.Prev
-			return user, err
+			return &user, err
 		} else {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выбери партию:")
 
@@ -529,11 +529,11 @@ func getVoicesHandler() (string, []func(updateHandler *UpdateHandler, update *tg
 
 			_, err = updateHandler.bot.Send(msg)
 			user.State.Index++
-			return user, err
+			return &user, err
 		}
 	})
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		switch update.Message.Text {
 		case helpers.Back:
 			user.State = user.State.Prev
@@ -561,37 +561,37 @@ func getVoicesHandler() (string, []func(updateHandler *UpdateHandler, update *tg
 				_, err := updateHandler.bot.Send(msg)
 
 				user.State.Index++
-				return user, err
+				return &user, err
 			} else {
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Нет партии c таким названием. Попробуй еще раз.")
 				_, err := updateHandler.bot.Send(msg)
-				return user, err
+				return &user, err
 			}
 		}
 	})
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		switch update.Message.Text {
 		case helpers.Back:
 			user.State.Index = 0
 			return updateHandler.enterStateHandler(update, user)
 		case helpers.Delete:
 			// TODO: handle delete
-			return user, nil
+			return &user, nil
 		default:
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Я тебя не понимаю. Нажми на кнопку.")
 			_, err := updateHandler.bot.Send(msg)
-			return user, err
+			return &user, err
 		}
 	})
 
 	return helpers.GetVoicesState, handleFuncs
 }
 
-func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error)) {
-	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error), 0)
+func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error)) {
+	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error), 0)
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Введи название песни, к которой ты хочешь прикрепить эту партию:")
 		keyboard := tgbotapi.NewReplyKeyboard(tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)))
 		keyboard.ResizeKeyboard = true
@@ -599,10 +599,10 @@ func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *
 		_, err := updateHandler.bot.Send(msg)
 
 		user.State.Index++
-		return user, err
+		return &user, err
 	})
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		{
 			switch update.Message.Text {
 			case "":
@@ -610,7 +610,7 @@ func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *
 				_, err := updateHandler.bot.Send(msg)
 
 				user.State.Index--
-				return user, err
+				return &user, err
 			default:
 				chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
 				_, _ = updateHandler.bot.Send(chatAction)
@@ -620,7 +620,7 @@ func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *
 
 				driveFiles, _, err = updateHandler.songService.QueryDrive(update.Message.Text, "", user.GetFolderIDs()...)
 				if err != nil {
-					return entities.User{}, err
+					return nil, err
 				}
 
 				if len(driveFiles) == 0 {
@@ -630,7 +630,7 @@ func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *
 					msg.ReplyMarkup = keyboard
 					_, err = updateHandler.bot.Send(msg)
 
-					return user, err
+					return &user, err
 				}
 
 				keyboard := tgbotapi.NewReplyKeyboard()
@@ -651,18 +651,18 @@ func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *
 
 				user.State.Context.DriveFiles = driveFiles
 				user.State.Index++
-				return user, err
+				return &user, err
 			}
 		}
 	})
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		switch update.Message.Text {
 		case "":
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Мне нужно название песни.")
 			_, err := updateHandler.bot.Send(msg)
 			user.State.Index--
-			return user, err
+			return &user, err
 		default:
 			chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatUploadDocument)
 			_, _ = updateHandler.bot.Send(chatAction)
@@ -679,7 +679,7 @@ func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *
 			if foundIndex != len(driveFiles) {
 				song, err := updateHandler.songService.FindOneByDriveFile(*driveFiles[foundIndex])
 				if err != nil {
-					return entities.User{}, err
+					return nil, err
 				}
 
 				user.State.Context.CurrentSong = song
@@ -693,7 +693,7 @@ func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *
 				_, err = updateHandler.bot.Send(msg)
 
 				user.State.Index++
-				return user, err
+				return &user, err
 			} else {
 				user.State.Index--
 				return updateHandler.enterStateHandler(update, user)
@@ -701,14 +701,14 @@ func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *
 		}
 	})
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		switch update.Message.Text {
 		case "":
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Название для партии должно быть текстом! Попробуй еще раз.")
 			_, err := updateHandler.bot.Send(msg)
 
 			user.State.Index--
-			return user, err
+			return &user, err
 
 		default:
 			user.State.Context.CurrentVoice.Caption = update.Message.Text
@@ -717,16 +717,18 @@ func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *
 				append(user.State.Context.CurrentSong.Voices, user.State.Context.CurrentVoice)
 			_, err := updateHandler.songService.UpdateOne(*user.State.Context.CurrentSong)
 			if err != nil {
-				return user, err
+				return &user, err
 			}
 
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Добавление завершено.")
 			_, err = updateHandler.bot.Send(msg)
 
 			user.State = &entities.State{
-				Index:   0,
-				Name:    helpers.SongActionsState,
-				Context: entities.Context{CurrentSong: user.State.Context.CurrentSong},
+				Index: 0,
+				Name:  helpers.SongActionsState,
+				Context: entities.Context{
+					CurrentSong: user.State.Context.CurrentSong,
+				},
 			}
 			return updateHandler.enterStateHandler(update, user)
 		}
@@ -734,10 +736,10 @@ func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *
 	return helpers.UploadVoiceState, handleFuncs
 }
 
-func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error)) {
-	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error), 0)
+func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error)) {
+	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error), 0)
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		if len(user.State.Context.Setlist) < 1 {
 			user.State.Index = 2
 			return updateHandler.enterStateHandler(update, user)
@@ -753,7 +755,7 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 
 		driveFiles, _, err := updateHandler.songService.QueryDrive(currentSongName, "", user.GetFolderIDs()...)
 		if err != nil {
-			return entities.User{}, err
+			return nil, err
 		}
 
 		if len(driveFiles) == 0 {
@@ -764,12 +766,12 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 			)
 			res, err := updateHandler.bot.Send(msg)
 			if err != nil {
-				return user, err
+				return &user, err
 			}
 
 			user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, res.MessageID)
 			user.State.Index++
-			return user, err
+			return &user, err
 		}
 
 		keyboard := tgbotapi.NewReplyKeyboard()
@@ -791,17 +793,17 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 		msg.ReplyMarkup = keyboard
 		res, err := updateHandler.bot.Send(msg)
 		if err != nil {
-			return user, err
+			return &user, err
 		}
 
 		user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, res.MessageID)
 		user.State.Context.DriveFiles = driveFiles
 		user.State.Index++
 
-		return user, nil
+		return &user, nil
 	})
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, update.Message.MessageID)
 
 		switch update.Message.Text {
@@ -837,7 +839,7 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 		return updateHandler.enterStateHandler(update, user)
 	})
 
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (entities.User, error) {
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatUploadDocument)
 		_, _ = updateHandler.bot.Send(chatAction)
 

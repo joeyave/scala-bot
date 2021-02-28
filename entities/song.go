@@ -6,20 +6,20 @@ import (
 )
 
 type Song struct {
-	ID        string      `bson:"_id"`
-	DriveFile *drive.File `bson:"file"`
-	PDF       *PDF        `bson:"pdf"`
-	Voices    []*Voice    `bson:"voices"`
+	ID        string      `bson:"_id,omitempty"`
+	DriveFile *drive.File `bson:"file,omitempty"`
+	PDF       *PDF        `bson:"pdf,omitempty"`
+	Voices    []*Voice    `bson:"voices,omitempty"`
 }
 
 type Voice struct {
-	TgFileID string `bson:"tgFileId"`
-	Caption  string `bson:"caption"`
+	TgFileID string `bson:"tgFileId,omitempty"`
+	Caption  string `bson:"caption,omitempty"`
 }
 
 type PDF struct {
-	TgFileID     string `bson:"tgFileId"`
-	ModifiedTime string `bson:"modifiedTime"`
+	TgFileID     string `bson:"tgFileId,omitempty"`
+	ModifiedTime string `bson:"modifiedTime,omitempty"`
 }
 
 func (s *Song) HasOutdatedPDF() bool {

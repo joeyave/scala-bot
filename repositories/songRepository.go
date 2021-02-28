@@ -43,7 +43,7 @@ func (r *SongRepository) FindOneByID(ID string) (*entities.Song, error) {
 	return song, err
 }
 
-func (r *SongRepository) FindMultipleByIDs(IDs []string) ([]entities.Song, error) {
+func (r *SongRepository) FindMultipleByIDs(IDs []string) ([]*entities.Song, error) {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
 
 	filter := bson.M{
@@ -57,7 +57,7 @@ func (r *SongRepository) FindMultipleByIDs(IDs []string) ([]entities.Song, error
 		return nil, err
 	}
 
-	var songs []entities.Song
+	var songs []*entities.Song
 	err = cursor.All(context.TODO(), &songs)
 	return songs, err
 }

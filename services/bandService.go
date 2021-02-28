@@ -15,10 +15,10 @@ func NewBandService(bandRepository *repositories.BandRepository) *BandService {
 	}
 }
 
-func (s *BandService) FindAll() ([]entities.Band, error) {
+func (s *BandService) FindAll() ([]*entities.Band, error) {
 	return s.bandRepository.FindAll()
 }
 
-func (s *BandService) UpdateOne(band entities.Band) (entities.Band, error) {
+func (s *BandService) UpdateOne(band entities.Band) (*entities.Band, error) {
 	return s.bandRepository.UpdateOne(band)
 }

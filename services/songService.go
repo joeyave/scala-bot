@@ -261,19 +261,19 @@ func (s *SongService) AppendSection(song entities.Song) ([]docs.StructuralElemen
 	return s.GetSections(song)
 }
 
-func (s *SongService) Transpose(song entities.Song, toKey string, sectionIndex int) (entities.Song, error) {
+func (s *SongService) Transpose(song entities.Song, toKey string, sectionIndex int) (*entities.Song, error) {
 	if song.ID == "" {
-		return song, fmt.Errorf("ID is missing for Song: %v", song)
+		return nil, fmt.Errorf("ID is missing for Song: %v", song)
 	}
 
 	doc, err := s.docsClient.Documents.Get(song.ID).Do()
 	if err != nil {
-		return entities.Song{}, err
+		return nil, err
 	}
 
 	sections, err := s.GetSections(song)
 	if err != nil {
-		return entities.Song{}, err
+		return nil, err
 	}
 
 	requests, key := s.transposeHeader(doc, sections, sectionIndex, toKey)
@@ -283,7 +283,7 @@ func (s *SongService) Transpose(song entities.Song, toKey string, sectionIndex i
 		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
 
 	song.DriveFile.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
-	return song, err
+	return &song, err
 }
 
 func (s *SongService) transposeHeader(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int, toKey string) ([]*docs.Request, string) {
@@ -470,16 +470,16 @@ func composeTransposeRequests(content []*docs.StructuralElement, index int64, ke
 	return requests, key
 }
 
-func (s *SongService) Style(song entities.Song) (entities.Song, error) {
+func (s *SongService) Style(song entities.Song) (*entities.Song, error) {
 	if song.ID == "" {
-		return song, fmt.Errorf("ID is missing for Song: %v", song)
+		return nil, fmt.Errorf("ID is missing for Song: %v", song)
 	}
 
 	requests := make([]*docs.Request, 0)
 
 	doc, err := s.docsClient.Documents.Get(song.ID).Do()
 	if err != nil {
-		return entities.Song{}, err
+		return nil, err
 	}
 
 	if doc.DocumentStyle.DefaultHeaderId == "" {
@@ -514,7 +514,7 @@ func (s *SongService) Style(song entities.Song) (entities.Song, error) {
 
 	doc, err = s.docsClient.Documents.Get(song.ID).Do()
 	if err != nil {
-		return entities.Song{}, err
+		return nil, err
 	}
 
 	for _, header := range doc.Headers {
@@ -624,11 +624,11 @@ func (s *SongService) Style(song entities.Song) (entities.Song, error) {
 
 	_, err = s.docsClient.Documents.BatchUpdate(song.ID, &docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
 	if err != nil {
-		return entities.Song{}, err
+		return nil, err
 	}
 
 	song.DriveFile.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
-	return song, err
+	return &song, err
 }
 
 func composeStyleRequests(content []*docs.StructuralElement, segmentID string) []*docs.Request {
