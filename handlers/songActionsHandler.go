@@ -94,6 +94,7 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 					msg.ReplyMarkup = keyboard
 					_, err = updateHandler.bot.Send(msg)
 
+					user.State.Context.Query = ""
 					return &user, err
 				}
 
