@@ -2,7 +2,11 @@ package helpers
 
 import (
 	"encoding/json"
+	"fmt"
+	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
+	"os"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -28,4 +32,16 @@ func SplitQueryByNewlines(query string) []string {
 	}
 
 	return songNames
+}
+
+func LogError(update *tgbotapi.Update, bot *tgbotapi.BotAPI, err interface{}) {
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Произошла ошибка. Поправим.")
+	_, _ = bot.Send(msg)
+
+	channelId, convErr := strconv.ParseInt(os.Getenv("LOG_CHANNEL"), 10, 0)
+	if convErr == nil {
+		msg = tgbotapi.NewMessage(channelId, fmt.Sprintf("<code>%v</code>", err))
+		msg.ParseMode = tgbotapi.ModeHTML
+		_, _ = bot.Send(msg)
+	}
 }

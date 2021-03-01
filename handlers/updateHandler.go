@@ -6,8 +6,6 @@ import (
 	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/scala-chords-bot/services"
 	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
-	"os"
-	"strconv"
 )
 
 type UpdateHandler struct {
@@ -27,6 +25,12 @@ func NewHandler(bot *tgbotapi.BotAPI, userService *services.UserService, songSer
 }
 
 func (u *UpdateHandler) HandleUpdate(update *tgbotapi.Update) error {
+	defer func() {
+		if r := recover(); r != nil {
+			helpers.LogError(update, u.bot, r)
+		}
+	}()
+
 	user, err := u.userService.FindOrCreate(update.Message.Chat.ID)
 
 	if err != nil {
@@ -66,15 +70,7 @@ func (u *UpdateHandler) HandleUpdate(update *tgbotapi.Update) error {
 	user, err = u.enterStateHandler(update, *user)
 
 	if err != nil {
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Произошла ошибка. Поправим.")
-		_, _ = u.bot.Send(msg)
-
-		channelId, convErr := strconv.ParseInt(os.Getenv("LOG_CHANNEL"), 10, 0)
-		if convErr == nil {
-			msg = tgbotapi.NewMessage(channelId, fmt.Sprintf("<code>%v</code>", err))
-			msg.ParseMode = tgbotapi.ModeHTML
-			_, _ = u.bot.Send(msg)
-		}
+		helpers.LogError(update, u.bot, err)
 	} else {
 		user, err = u.userService.UpdateOne(*user)
 	}
