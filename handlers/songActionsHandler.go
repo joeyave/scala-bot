@@ -183,7 +183,7 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 		_, _ = updateHandler.bot.Send(chatAction)
 
 		song := user.State.Context.CurrentSong
-		song, err := updateHandler.songService.FindOneByDriveFile(*song.DriveFile)
+		song, err := updateHandler.songService.FindOneByDriveFile(*song.File)
 		if err != nil {
 			return nil, err
 		}
@@ -191,7 +191,7 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 		var msg tgbotapi.DocumentConfig
 
 		if song.HasOutdatedPDF() {
-			fileReader, err := updateHandler.songService.DownloadPDF(*song.DriveFile)
+			fileReader, err := updateHandler.songService.DownloadPDF(*song.File)
 			if err != nil {
 				return nil, err
 			}
@@ -202,7 +202,7 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 		}
 
 		keyboard := tgbotapi.NewReplyKeyboard()
-		keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(song.DriveFile.Name)))
+		keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(song.File.Name)))
 
 		if song.BelongsToUser(user) {
 			keyboard.Keyboard = append(keyboard.Keyboard, helpers.SongActionsKeyboard...)
@@ -211,25 +211,37 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 		}
 		msg.ReplyMarkup = keyboard
 
-		res, err := updateHandler.bot.Send(msg)
+		sendToUserResponse, err := updateHandler.bot.Send(msg)
 		if err != nil {
-			fileReader, err := updateHandler.songService.DownloadPDF(*song.DriveFile)
+			fileReader, err := updateHandler.songService.DownloadPDF(*song.File)
 			if err != nil {
 				return nil, err
 			}
 
 			msg = tgbotapi.NewDocument(update.Message.Chat.ID, fileReader)
 
-			res, err = updateHandler.bot.Send(msg)
+			sendToUserResponse, err = updateHandler.bot.Send(msg)
 			if err != nil {
 				return nil, err
 			}
 		}
 
-		song.PDF = &entities.PDF{
-			TgFileID:     res.Document.FileID,
-			ModifiedTime: song.DriveFile.ModifiedTime,
+		if song.HasOutdatedPDF() || song.PDF.TgChannelMessageID == 0 {
+			msg = tgbotapi.NewDocument(helpers.FilesChannelID, tgbotapi.FileID(sendToUserResponse.Document.FileID))
+			msg.DisableNotification = true
+			sendToChannelResponse, err := updateHandler.bot.Send(msg)
+			if err == nil {
+				if song.PDF.TgChannelMessageID != 0 {
+					delMsg := tgbotapi.NewDeleteMessage(helpers.FilesChannelID, song.PDF.TgChannelMessageID)
+					updateHandler.bot.Send(delMsg)
+				}
+
+				song.PDF.TgChannelMessageID = sendToChannelResponse.MessageID
+			}
 		}
+
+		song.PDF.TgFileID = sendToUserResponse.Document.FileID
+		song.PDF.ModifiedTime = song.File.ModifiedTime
 
 		song, err = updateHandler.songService.UpdateOne(*song)
 		if err != nil {
@@ -300,8 +312,8 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 			user.State.Prev.Index = 0
 			return updateHandler.enterStateHandler(update, user)
 
-		case user.State.Context.CurrentSong.DriveFile.Name:
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, user.State.Context.CurrentSong.DriveFile.WebViewLink)
+		case user.State.Context.CurrentSong.File.Name:
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, user.State.Context.CurrentSong.File.WebViewLink)
 			_, err := updateHandler.bot.Send(msg)
 			return &user, err
 
@@ -827,8 +839,8 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 			song, err := updateHandler.songService.FindOneByDriveFile(*driveFiles[foundIndex])
 			if err != nil || song.HasOutdatedPDF() {
 				song = &entities.Song{
-					ID:        driveFiles[foundIndex].Id,
-					DriveFile: driveFiles[foundIndex],
+					ID:   driveFiles[foundIndex].Id,
+					File: driveFiles[foundIndex],
 				}
 			}
 			user.State.Context.FoundSongs = append(user.State.Context.FoundSongs, song)
@@ -852,10 +864,10 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 		for i := range user.State.Context.FoundSongs {
 			go func(i int) {
 				defer waitGroup.Done()
-				if songs[i].PDF != nil {
+				if songs[i].PDF.TgFileID != "" {
 					documents[i] = tgbotapi.NewInputMediaDocument(tgbotapi.FileID(songs[i].PDF.TgFileID))
 				} else {
-					fileReader, _ := updateHandler.songService.DownloadPDF(*songs[i].DriveFile)
+					fileReader, _ := updateHandler.songService.DownloadPDF(*songs[i].File)
 					documents[i] = tgbotapi.NewInputMediaDocument(fileReader)
 				}
 			}(i)
@@ -884,7 +896,7 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 				for i := range songs {
 					go func(i int) {
 						defer waitGroup.Done()
-						fileReader, _ := updateHandler.songService.DownloadPDF(*songs[i].DriveFile)
+						fileReader, _ := updateHandler.songService.DownloadPDF(*songs[i].File)
 						documents[i] = tgbotapi.NewInputMediaDocument(fileReader)
 					}(i)
 				}
@@ -898,10 +910,8 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 
 			for j := range responses {
 				song := user.State.Context.FoundSongs[j+(i*len(chunk))]
-				song.PDF = &entities.PDF{
-					TgFileID:     responses[j].Document.FileID,
-					ModifiedTime: song.DriveFile.ModifiedTime,
-				}
+				song.PDF.TgFileID = responses[j].Document.FileID
+				song.PDF.ModifiedTime = song.File.ModifiedTime
 
 				_, _ = updateHandler.songService.UpdateOne(*song)
 			}

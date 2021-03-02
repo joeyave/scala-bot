@@ -82,7 +82,7 @@ func (s *SongService) FindOneByID(ID string) (*entities.Song, error) {
 		}
 	}
 
-	song.DriveFile = file
+	song.File = file
 
 	return song, err
 }
@@ -100,7 +100,7 @@ func (s *SongService) FindOneByDriveFile(file drive.File) (*entities.Song, error
 		}
 	}
 
-	song.DriveFile = &file
+	song.File = &file
 
 	return song, err
 }
@@ -133,7 +133,7 @@ func (s *SongService) DeepCopyToFolder(song entities.Song, folderID string) (*en
 	}
 
 	file := &drive.File{
-		Name:    song.DriveFile.Name,
+		Name:    song.File.Name,
 		Parents: []string{folderID},
 	}
 	newFile, err := s.driveClient.Files.Copy(song.ID, file).Fields("id, name, modifiedTime, webViewLink, parents").Do()
@@ -171,10 +171,10 @@ func (s *SongService) DeepCopyToFolder(song entities.Song, folderID string) (*en
 	}
 
 	newSong := entities.Song{
-		ID:        newFile.Id,
-		DriveFile: newFile,
-		PDF:       song.PDF,
-		Voices:    song.Voices,
+		ID:     newFile.Id,
+		File:   newFile,
+		PDF:    song.PDF,
+		Voices: song.Voices,
 	}
 
 	return s.UpdateOne(newSong)
@@ -282,7 +282,7 @@ func (s *SongService) Transpose(song entities.Song, toKey string, sectionIndex i
 	_, err = s.docsClient.Documents.BatchUpdate(doc.DocumentId,
 		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
 
-	song.DriveFile.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
+	song.File.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
 	return &song, err
 }
 
@@ -627,7 +627,7 @@ func (s *SongService) Style(song entities.Song) (*entities.Song, error) {
 		return nil, err
 	}
 
-	song.DriveFile.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
+	song.File.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
 	return &song, err
 }
 

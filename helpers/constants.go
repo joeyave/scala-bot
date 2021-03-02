@@ -34,3 +34,6 @@ const (
 	SearchEverywhere string = "Искать во всех группах"
 	CopyToMyBand     string = "Копировать песню в свою группу"
 )
+
+var FilesChannelID int64
+var LogsChannelID int64

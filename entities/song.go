@@ -6,10 +6,10 @@ import (
 )
 
 type Song struct {
-	ID        string      `bson:"_id,omitempty"`
-	DriveFile *drive.File `bson:"file,omitempty"`
-	PDF       *PDF        `bson:"pdf,omitempty"`
-	Voices    []*Voice    `bson:"voices,omitempty"`
+	ID     string      `bson:"_id,omitempty"`
+	File   *drive.File `bson:"file,omitempty"`
+	PDF    PDF         `bson:"pdf,omitempty"`
+	Voices []*Voice    `bson:"voices,omitempty"`
 }
 
 type Voice struct {
@@ -18,17 +18,18 @@ type Voice struct {
 }
 
 type PDF struct {
-	TgFileID     string `bson:"tgFileId,omitempty"`
-	ModifiedTime string `bson:"modifiedTime,omitempty"`
+	TgFileID           string `bson:"tgFileId,omitempty"`
+	ModifiedTime       string `bson:"modifiedTime,omitempty"`
+	TgChannelMessageID int    `bson:"tgChannelMessageId,omitempty"`
 }
 
 func (s *Song) HasOutdatedPDF() bool {
-	if s.PDF == nil || s.DriveFile == nil {
+	if s.PDF.ModifiedTime == "" || s.File == nil {
 		return true
 	}
 
 	pdfModifiedTime, err := time.Parse(time.RFC3339, s.PDF.ModifiedTime)
-	driveFileModifiedTime, err := time.Parse(time.RFC3339, s.DriveFile.ModifiedTime)
+	driveFileModifiedTime, err := time.Parse(time.RFC3339, s.File.ModifiedTime)
 
 	if err != nil || driveFileModifiedTime.After(pdfModifiedTime) {
 		return true
@@ -38,7 +39,7 @@ func (s *Song) HasOutdatedPDF() bool {
 
 func (s *Song) BelongsToUser(user User) bool {
 	for _, userFolderID := range user.GetFolderIDs() {
-		for _, songParentID := range s.DriveFile.Parents {
+		for _, songParentID := range s.File.Parents {
 			if songParentID == userFolderID {
 				return true
 			}
@@ -46,5 +47,4 @@ func (s *Song) BelongsToUser(user User) bool {
 	}
 
 	return false
-
 }
