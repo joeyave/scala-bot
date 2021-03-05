@@ -39,5 +39,4 @@ func LogError(update *tgbotapi.Update, bot *tgbotapi.BotAPI, err interface{}) {
 	msg = tgbotapi.NewMessage(LogsChannelID, fmt.Sprintf("<code>%v</code>", err))
 	msg.ParseMode = tgbotapi.ModeHTML
 	_, _ = bot.Send(msg)
-
 }

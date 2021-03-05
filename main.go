@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/joeyave/scala-chords-bot/handlers"
+	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/scala-chords-bot/repositories"
 	"github.com/joeyave/scala-chords-bot/services"
 	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
@@ -79,6 +80,9 @@ func main() {
 		}
 
 		// TODO: make some handler struct and all that stuff.
-		_ = handler.HandleUpdate(&update)
+		err := handler.HandleUpdate(&update)
+		if err != nil {
+			helpers.LogError(&update, bot, err)
+		}
 	}
 }

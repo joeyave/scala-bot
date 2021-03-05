@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/scala-chords-bot/services"
@@ -32,11 +31,8 @@ func (u *UpdateHandler) HandleUpdate(update *tgbotapi.Update) error {
 	}()
 
 	user, err := u.userService.FindOrCreate(update.Message.Chat.ID)
-
 	if err != nil {
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Что-то пошло не так.")
-		_, _ = u.bot.Send(msg)
-		return fmt.Errorf("couldn't get User's state %v", err)
+		return err
 	}
 
 	// Handle buttons.
@@ -68,13 +64,11 @@ func (u *UpdateHandler) HandleUpdate(update *tgbotapi.Update) error {
 	}
 
 	user, err = u.enterStateHandler(update, *user)
-
 	if err != nil {
-		helpers.LogError(update, u.bot, err)
-	} else {
-		user, err = u.userService.UpdateOne(*user)
+		return err
 	}
 
+	_, err = u.userService.UpdateOne(*user)
 	return err
 }
 
