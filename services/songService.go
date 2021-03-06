@@ -673,9 +673,8 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string) [
 			if element.TextRun == nil {
 				continue
 			}
-			style := *element.TextRun.TextStyle
 
-			style.WeightedFontFamily = &docs.WeightedFontFamily{
+			element.TextRun.TextStyle.WeightedFontFamily = &docs.WeightedFontFamily{
 				FontFamily: "Roboto Mono",
 			}
 
@@ -688,7 +687,7 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string) [
 						SegmentId:       segmentID,
 						ForceSendFields: []string{"StartIndex"},
 					},
-					TextStyle: &style,
+					TextStyle: element.TextRun.TextStyle,
 				},
 			})
 
@@ -696,6 +695,8 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string) [
 			for _, line := range tokens {
 				for _, token := range line {
 					if token.Chord != nil {
+						style := *element.TextRun.TextStyle
+
 						style.Bold = true
 						style.ForegroundColor = &docs.OptionalColor{
 							Color: &docs.Color{
@@ -727,6 +728,8 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string) [
 			matches := makeBoldAndRedRegex.FindAllStringIndex(element.TextRun.Content, -1)
 			if matches != nil {
 				for _, match := range matches {
+					style := *element.TextRun.TextStyle
+
 					style.Bold = true
 					style.ForegroundColor = &docs.OptionalColor{
 						Color: &docs.Color{
@@ -752,6 +755,8 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string) [
 			matches = sectionNamesRegex.FindAllStringIndex(element.TextRun.Content, -1)
 			if matches != nil {
 				for _, match := range matches {
+					style := *element.TextRun.TextStyle
+
 					style.Bold = true
 					style.ForegroundColor = &docs.OptionalColor{
 						Color: &docs.Color{

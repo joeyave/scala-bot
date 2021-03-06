@@ -827,7 +827,7 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 
 		if foundIndex != len(driveFiles) {
 			song, err := updateHandler.songService.FindOneByDriveFile(*driveFiles[foundIndex])
-			if err != nil || song.HasOutdatedPDF() {
+			if err != nil {
 				song = &entities.Song{
 					ID:   driveFiles[foundIndex].Id,
 					File: driveFiles[foundIndex],
@@ -854,11 +854,11 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 		for i := range user.State.Context.FoundSongs {
 			go func(i int) {
 				defer waitGroup.Done()
-				if songs[i].PDF.TgFileID != "" {
-					documents[i] = tgbotapi.NewInputMediaDocument(tgbotapi.FileID(songs[i].PDF.TgFileID))
-				} else {
+				if songs[i].HasOutdatedPDF() {
 					fileReader, _ := updateHandler.songService.DownloadPDF(*songs[i].File)
 					documents[i] = tgbotapi.NewInputMediaDocument(fileReader)
+				} else {
+					documents[i] = tgbotapi.NewInputMediaDocument(tgbotapi.FileID(songs[i].PDF.TgFileID))
 				}
 			}(i)
 		}
