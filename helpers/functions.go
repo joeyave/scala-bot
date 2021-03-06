@@ -3,6 +3,7 @@ package helpers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/joeyave/scala-chords-bot/entities"
 	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
 	"regexp"
 	"strings"
@@ -39,4 +40,20 @@ func LogError(update *tgbotapi.Update, bot *tgbotapi.BotAPI, err interface{}) {
 	msg = tgbotapi.NewMessage(LogsChannelID, fmt.Sprintf("<code>%v</code>", err))
 	msg.ParseMode = tgbotapi.ModeHTML
 	_, _ = bot.Send(msg)
+}
+
+func SendToChannel(fileID string, bot *tgbotapi.BotAPI, song *entities.Song) *entities.Song {
+	msg := tgbotapi.NewDocument(FilesChannelID, tgbotapi.FileID(fileID))
+	msg.DisableNotification = true
+	sendToChannelResponse, err := bot.Send(msg)
+	if err == nil {
+		if song.PDF.TgChannelMessageID != 0 {
+			delMsg := tgbotapi.NewDeleteMessage(FilesChannelID, song.PDF.TgChannelMessageID)
+			bot.Send(delMsg)
+		}
+
+		song.PDF.TgChannelMessageID = sendToChannelResponse.MessageID
+	}
+
+	return song
 }

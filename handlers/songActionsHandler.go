@@ -227,17 +227,7 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 		}
 
 		if song.HasOutdatedPDF() || song.PDF.TgChannelMessageID == 0 {
-			msg = tgbotapi.NewDocument(helpers.FilesChannelID, tgbotapi.FileID(sendToUserResponse.Document.FileID))
-			msg.DisableNotification = true
-			sendToChannelResponse, err := updateHandler.bot.Send(msg)
-			if err == nil {
-				if song.PDF.TgChannelMessageID != 0 {
-					delMsg := tgbotapi.NewDeleteMessage(helpers.FilesChannelID, song.PDF.TgChannelMessageID)
-					updateHandler.bot.Send(delMsg)
-				}
-
-				song.PDF.TgChannelMessageID = sendToChannelResponse.MessageID
-			}
+			song = helpers.SendToChannel(sendToUserResponse.Document.FileID, updateHandler.bot, song)
 		}
 
 		song.PDF.TgFileID = sendToUserResponse.Document.FileID
@@ -910,6 +900,11 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 
 			for j := range responses {
 				song := user.State.Context.FoundSongs[j+(i*len(chunk))]
+
+				if song.HasOutdatedPDF() || song.PDF.TgChannelMessageID == 0 {
+					song = helpers.SendToChannel(responses[j].Document.FileID, updateHandler.bot, song)
+				}
+
 				song.PDF.TgFileID = responses[j].Document.FileID
 				song.PDF.ModifiedTime = song.File.ModifiedTime
 
