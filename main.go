@@ -7,6 +7,7 @@ import (
 	"github.com/joeyave/scala-chords-bot/repositories"
 	"github.com/joeyave/scala-chords-bot/services"
 	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
+	"github.com/kjk/notionapi"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -46,6 +47,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unable to retrieve Docs client: %v", err)
 	}
+
+	notionClient := &notionapi.Client{}
+
 	songRepository := repositories.NewSongRepository(mongoClient)
 	songService := services.NewSongService(songRepository, driveClient, docsClient)
 
@@ -53,7 +57,7 @@ func main() {
 	userService := services.NewUserService(userRepository)
 
 	bandRepository := repositories.NewBandRepository(mongoClient)
-	bandService := services.NewBandService(bandRepository)
+	bandService := services.NewBandService(bandRepository, notionClient)
 
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
 	if err != nil {
@@ -72,14 +76,12 @@ func main() {
 
 	updates := bot.GetUpdatesChan(u)
 
-	// TODO: find out how to recover from panic.
 	for update := range updates {
 		lastOffset = update.UpdateID
 		if update.Message == nil { // ignore any non-Message Updates
 			continue
 		}
 
-		// TODO: make some handler struct and all that stuff.
 		err := handler.HandleUpdate(&update)
 		if err != nil {
 			helpers.LogError(&update, bot, err)

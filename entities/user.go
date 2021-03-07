@@ -36,6 +36,8 @@ type Context struct {
 
 	Bands       []*Band `bson:"bands,omitempty"`
 	CurrentBand *Band   `bson:"currentBand,omitempty"`
+
+	Events []*Event `bson:events,omitempty`
 }
 
 func (u *User) GetFolderIDs() []string {

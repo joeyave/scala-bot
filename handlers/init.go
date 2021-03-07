@@ -15,6 +15,9 @@ func init() {
 	name, funcs = copySongHandler()
 	stateHandlers[name] = funcs
 
+	name, funcs = scheduleHandler()
+	stateHandlers[name] = funcs
+
 	name, funcs = createBandHandler()
 	stateHandlers[name] = funcs
 

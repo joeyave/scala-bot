@@ -8,6 +8,7 @@ require (
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/joeyave/chords-transposer v0.0.5
 	github.com/joeyave/telegram-bot-api/v5 v5.0.4
+	github.com/kjk/notionapi v0.0.0-20201230072046-b69038831038
 	github.com/klauspost/compress v1.11.7 // indirect
 	go.mongodb.org/mongo-driver v1.4.6
 	go.opencensus.io v0.22.6 // indirect

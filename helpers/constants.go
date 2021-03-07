@@ -12,6 +12,7 @@ const (
 	ChooseBandState    = "ChooseBandState"
 	CreateBandState    = "CreateBandState"
 	CopySongState      = "CopySongState"
+	ScheduleState      = "ScheduleState"
 )
 
 // Buttons constants.
@@ -33,6 +34,7 @@ const (
 	CreateBand       string = "Создать свою группу"
 	SearchEverywhere string = "Искать во всех группах"
 	CopyToMyBand     string = "Копировать песню в свою группу"
+	Schedule         string = "Расписание"
 )
 
 var FilesChannelID int64

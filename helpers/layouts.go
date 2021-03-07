@@ -16,6 +16,7 @@ var RestrictedSongActionsKeyboard = [][]tgbotapi.KeyboardButton{
 
 var MainMenuKeyboard = [][]tgbotapi.KeyboardButton{
 	{{Text: CreateDoc}},
+	{{Text: Schedule}},
 	{{Text: Help}},
 }
 
