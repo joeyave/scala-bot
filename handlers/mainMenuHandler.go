@@ -103,7 +103,7 @@ func scheduleHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 
 		if foundIndex != len(events) {
 			messageText := ""
-			for _, pageID := range events[foundIndex].SetlistPageIDs {
+			for i, pageID := range events[foundIndex].SetlistPageIDs {
 
 				page, err := updateHandler.songService.FindNotionPageByID(pageID)
 				if err != nil {
@@ -115,8 +115,9 @@ func scheduleHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 					continue
 				}
 
-				messageText += fmt.Sprintf("%s\n", songTitleProp[0].Text)
+				messageText += fmt.Sprintf("%d. %s\n", i+1, songTitleProp[0].Text)
 			}
+
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, messageText)
 			_, _ = updateHandler.bot.Send(msg)
 
