@@ -1,15 +1,17 @@
 package entities
 
 import (
+	"github.com/kjk/notionapi"
 	"google.golang.org/api/drive/v3"
 	"time"
 )
 
 type Song struct {
-	ID     string      `bson:"_id,omitempty"`
-	File   *drive.File `bson:"file,omitempty"`
-	PDF    PDF         `bson:"pdf,omitempty"`
-	Voices []*Voice    `bson:"voices,omitempty"`
+	ID         string           `bson:"_id,omitempty"`
+	DriveFile  *drive.File      `bson:"driveFile,omitempty"`
+	NotionPage *notionapi.Block `bson:"notionPage,omitempty"`
+	PDF        PDF              `bson:"pdf,omitempty"`
+	Voices     []*Voice         `bson:"voices,omitempty"`
 }
 
 type Voice struct {
@@ -24,12 +26,12 @@ type PDF struct {
 }
 
 func (s *Song) HasOutdatedPDF() bool {
-	if s.PDF.ModifiedTime == "" || s.File == nil {
+	if s.PDF.ModifiedTime == "" || s.DriveFile == nil {
 		return true
 	}
 
 	pdfModifiedTime, err := time.Parse(time.RFC3339, s.PDF.ModifiedTime)
-	driveFileModifiedTime, err := time.Parse(time.RFC3339, s.File.ModifiedTime)
+	driveFileModifiedTime, err := time.Parse(time.RFC3339, s.DriveFile.ModifiedTime)
 
 	if err != nil || driveFileModifiedTime.After(pdfModifiedTime) {
 		return true
@@ -39,7 +41,7 @@ func (s *Song) HasOutdatedPDF() bool {
 
 func (s *Song) BelongsToUser(user User) bool {
 	for _, userFolderID := range user.GetFolderIDs() {
-		for _, songParentID := range s.File.Parents {
+		for _, songParentID := range s.DriveFile.Parents {
 			if songParentID == userFolderID {
 				return true
 			}

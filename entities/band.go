@@ -17,10 +17,10 @@ type Band struct {
 }
 
 type Event struct {
-	ID      string    `bson:"id"`
-	Name    string    `bson:"name"`
-	Time    time.Time `bson:"date"`
-	Setlist []string  `bson:"setlist"`
+	ID             string    `bson:"id"`
+	Name           string    `bson:"name"`
+	Time           time.Time `bson:"date"`
+	SetlistPageIDs []string  `bson:"setlistPageIds"`
 }
 
 func (e *Event) GetAlias() string {

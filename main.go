@@ -51,7 +51,7 @@ func main() {
 	notionClient := &notionapi.Client{}
 
 	songRepository := repositories.NewSongRepository(mongoClient)
-	songService := services.NewSongService(songRepository, driveClient, docsClient)
+	songService := services.NewSongService(songRepository, driveClient, docsClient, notionClient)
 
 	userRepository := repositories.NewUserRepository(mongoClient)
 	userService := services.NewUserService(userRepository)

@@ -1,12 +1,14 @@
 package services
 
 import (
+	"errors"
 	"fmt"
 	"github.com/joeyave/chords-transposer/transposer"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/scala-chords-bot/repositories"
 	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
+	"github.com/kjk/notionapi"
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
 	"regexp"
@@ -18,13 +20,15 @@ type SongService struct {
 	songRepository *repositories.SongRepository
 	driveClient    *drive.Service
 	docsClient     *docs.Service
+	notionClient   *notionapi.Client
 }
 
-func NewSongService(songRepository *repositories.SongRepository, driveClient *drive.Service, docsClient *docs.Service) *SongService {
+func NewSongService(songRepository *repositories.SongRepository, driveClient *drive.Service, docsClient *docs.Service, notionClient *notionapi.Client) *SongService {
 	return &SongService{
 		songRepository: songRepository,
 		driveClient:    driveClient,
 		docsClient:     docsClient,
+		notionClient:   notionClient,
 	}
 }
 
@@ -82,14 +86,14 @@ func (s *SongService) FindOneByID(ID string) (*entities.Song, error) {
 		}
 	}
 
-	song.File = file
+	song.DriveFile = file
 
 	return song, err
 }
 
 func (s *SongService) FindOneByDriveFile(file drive.File) (*entities.Song, error) {
 	if file.Id == "" {
-		return nil, fmt.Errorf("ID is missing for File: %v", file)
+		return nil, fmt.Errorf("ID is missing for DriveFile: %v", file)
 	}
 
 	song, err := s.songRepository.FindOneByID(file.Id)
@@ -100,7 +104,7 @@ func (s *SongService) FindOneByDriveFile(file drive.File) (*entities.Song, error
 		}
 	}
 
-	song.File = &file
+	song.DriveFile = &file
 
 	return song, err
 }
@@ -133,7 +137,7 @@ func (s *SongService) DeepCopyToFolder(song entities.Song, folderID string) (*en
 	}
 
 	file := &drive.File{
-		Name:    song.File.Name,
+		Name:    song.DriveFile.Name,
 		Parents: []string{folderID},
 	}
 	newFile, err := s.driveClient.Files.Copy(song.ID, file).Fields("id, name, modifiedTime, webViewLink, parents").Do()
@@ -171,10 +175,10 @@ func (s *SongService) DeepCopyToFolder(song entities.Song, folderID string) (*en
 	}
 
 	newSong := entities.Song{
-		ID:     newFile.Id,
-		File:   newFile,
-		PDF:    song.PDF,
-		Voices: song.Voices,
+		ID:        newFile.Id,
+		DriveFile: newFile,
+		PDF:       song.PDF,
+		Voices:    song.Voices,
 	}
 
 	return s.UpdateOne(newSong)
@@ -282,7 +286,7 @@ func (s *SongService) Transpose(song entities.Song, toKey string, sectionIndex i
 	_, err = s.docsClient.Documents.BatchUpdate(doc.DocumentId,
 		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
 
-	song.File.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
+	song.DriveFile.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
 	return &song, err
 }
 
@@ -627,7 +631,7 @@ func (s *SongService) Style(song entities.Song) (*entities.Song, error) {
 		return nil, err
 	}
 
-	song.File.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
+	song.DriveFile.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
 	return &song, err
 }
 
@@ -807,4 +811,23 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string) [
 	}
 
 	return requests
+}
+
+func (s *SongService) FindNotionPageByID(pageID string) (*notionapi.Block, error) {
+	res, err := s.notionClient.LoadPageChunk(pageID, 0, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	record, ok := res.RecordMap.Blocks[pageID]
+	if !ok {
+		return nil, errors.New("TODO")
+	}
+
+	block := record.Block
+	if block == nil || !block.IsPage() || block.IsSubPage() || block.IsLinkToPage() {
+		return nil, errors.New("TODO")
+	}
+
+	return block, nil
 }

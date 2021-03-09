@@ -46,7 +46,7 @@ func (s *BandService) GetTodayOrAfterEvents(band entities.Band) ([]*entities.Eve
                             "value": "today"
                         }
                     },
-                    "property": "\\qpk"
+					"property": "\\qpk"
                 }
             ],
             "operator": "and"
@@ -104,22 +104,8 @@ func (s *BandService) GetTodayOrAfterEvents(band entities.Band) ([]*entities.Eve
 			}
 
 			pageID := notionapi.AttrGetPageID(prop.Attrs[0])
-			res, err := s.notionClient.LoadPageChunk(pageID, 0, nil)
-			if err != nil {
-				continue
-			}
 
-			record, ok := res.RecordMap.Blocks[pageID]
-			if !ok {
-				continue
-			}
-
-			songTitleProp := record.Block.GetTitle()
-			if len(songTitleProp) < 1 {
-				continue
-			}
-
-			event.Setlist = append(event.Setlist, songTitleProp[0].Text)
+			event.SetlistPageIDs = append(event.SetlistPageIDs, pageID)
 		}
 
 		events = append(events, event)
