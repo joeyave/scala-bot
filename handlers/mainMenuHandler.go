@@ -102,7 +102,8 @@ func scheduleHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 		}
 
 		if foundIndex != len(events) {
-			messageText := ""
+			messageText := fmt.Sprintf("<b>%s</b>\n\n", events[foundIndex].GetAlias())
+
 			for i, pageID := range events[foundIndex].SetlistPageIDs {
 
 				page, err := updateHandler.songService.FindNotionPageByID(pageID)
@@ -114,11 +115,32 @@ func scheduleHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 				if len(songTitleProp) < 1 {
 					continue
 				}
+				songTitle := songTitleProp[0].Text
 
-				messageText += fmt.Sprintf("%d. %s\n", i+1, songTitleProp[0].Text)
+				songPerformer := "?"
+				songPerformerProp := page.GetProperty("%P{)")
+				if len(songPerformerProp) > 0 {
+					songPerformer = songPerformerProp[0].Text
+				}
+
+				songKey := "?"
+				songKeyProp := page.GetProperty("OR>-")
+				if len(songKeyProp) > 0 {
+					songKey = songKeyProp[0].Text
+				}
+
+				songBPM := "?"
+				songBPMProp := page.GetProperty("j0]A")
+				if len(songBPMProp) > 0 {
+					songBPM = songBPMProp[0].Text
+				}
+
+				messageText += fmt.Sprintf("%d. %s - %s <code>(KEY: %s, BPM: %s)</code>\n",
+					i+1, songTitle, songPerformer, songKey, songBPM)
 			}
 
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, messageText)
+			msg.ParseMode = tgbotapi.ModeHTML
 			_, _ = updateHandler.bot.Send(msg)
 
 			user.State = &entities.State{

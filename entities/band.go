@@ -45,7 +45,7 @@ func (e *Event) GetAlias() string {
 		weekday = "Воскресенье"
 	}
 
-	return fmt.Sprintf("%s / %s / %s", e.Time.Format("2006-01-02 15:04"), weekday, e.Name)
+	return fmt.Sprintf("%s / %s / %s", e.Time.Format("02.01.2006 15:04"), weekday, e.Name)
 }
 
 type NotionCollection struct {
