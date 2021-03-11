@@ -422,6 +422,8 @@ func transposeSongHandler() (string, []func(updateHandler *UpdateHandler, update
 				return nil, err
 			}
 
+                        updateHandler.songService.UpdateOne(*song)
+
 			user.State = user.State.Prev
 			user.State.Context.CurrentSongID = song.ID
 			return updateHandler.enterStateHandler(update, user)
@@ -445,10 +447,11 @@ func styleSongHandler() (string, []func(updateHandler *UpdateHandler, update *tg
 		}
 
 		song, err = updateHandler.songService.Style(*song)
-
 		if err != nil {
 			return nil, err
 		}
+
+                updateHandler.songService.UpdateOne(*song)
 
 		user.State = user.State.Prev
 		user.State.Context.CurrentSongID = song.ID
