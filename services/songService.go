@@ -280,7 +280,8 @@ func (s *SongService) Transpose(song entities.Song, toKey string, sectionIndex i
 	_, err = s.docsClient.Documents.BatchUpdate(doc.DocumentId,
 		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
 
-	song.PDF.ModifiedTime, _ = time.Parse("2006", "2006").Format(time.RFC3339)
+        fakeTime, _ := time.Parse("2006", "2006")
+	song.PDF.ModifiedTime = fakeTime.Format(time.RFC3339)
 	return &song, err
 }
 
@@ -625,7 +626,8 @@ func (s *SongService) Style(song entities.Song) (*entities.Song, error) {
 		return nil, err
 	}
 
-	song.PDF.ModifiedTime, _ = time.Parse("2006", "2006").Format(time.RFC3339)
+	fakeTime, _ := time.Parse("2006", "2006")
+	song.PDF.ModifiedTime = fakeTime.Format(time.RFC3339)
 	return &song, err
 }
 
