@@ -117,12 +117,6 @@ func scheduleHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 				}
 				songTitle := songTitleProp[0].Text
 
-				songPerformer := "?"
-				songPerformerProp := page.GetProperty("%P{)")
-				if len(songPerformerProp) > 0 {
-					songPerformer = songPerformerProp[0].Text
-				}
-
 				songKey := "?"
 				songKeyProp := page.GetProperty("OR>-")
 				if len(songKeyProp) > 0 {
@@ -135,8 +129,8 @@ func scheduleHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 					songBPM = songBPMProp[0].Text
 				}
 
-				messageText += fmt.Sprintf("%d. %s - %s <code>(KEY: %s, BPM: %s)</code>\n",
-					i+1, songTitle, songPerformer, songKey, songBPM)
+				messageText += fmt.Sprintf("%d. %s <code>(%s, %s)</code>\n",
+					i+1, songTitle, songKey, songBPM)
 			}
 
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, messageText)

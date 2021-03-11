@@ -2,6 +2,7 @@ package entities
 
 import (
 	"fmt"
+	"github.com/klauspost/lctime"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 )
@@ -24,28 +25,14 @@ type Event struct {
 }
 
 func (e *Event) GetAlias() string {
-	// TODO: move this to the constants
-	var weekday string
-	switch e.Time.Weekday() {
-	case 0:
-		weekday = "Воскресенье"
-	case 1:
-		weekday = "Понедельник"
-	case 2:
-		weekday = "Вторник"
-	case 3:
-		weekday = "Среда"
-	case 4:
-		weekday = "Черверг"
-	case 5:
-		weekday = "Пятница"
-	case 6:
-		weekday = "Суббота"
-	case 7:
-		weekday = "Воскресенье"
+	err := lctime.SetLocale("ru_RU")
+	if err != nil {
+		fmt.Println(err)
 	}
 
-	return fmt.Sprintf("%s / %s / %s", e.Time.Format("02.01.2006 15:04"), weekday, e.Name)
+	timeStr := lctime.Strftime("%A / %d %b", e.Time)
+
+	return fmt.Sprintf("%s / %s", timeStr, e.Name)
 }
 
 type NotionCollection struct {
