@@ -280,7 +280,7 @@ func (s *SongService) Transpose(song entities.Song, toKey string, sectionIndex i
 	_, err = s.docsClient.Documents.BatchUpdate(doc.DocumentId,
 		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
 
-	song.DriveFile.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
+	song.PDF.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
 	return &song, err
 }
 
@@ -625,7 +625,7 @@ func (s *SongService) Style(song entities.Song) (*entities.Song, error) {
 		return nil, err
 	}
 
-	song.DriveFile.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
+	song.PDF.ModifiedTime = time.Now().UTC().Format(time.RFC3339)
 	return &song, err
 }
 
