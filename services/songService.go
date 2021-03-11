@@ -117,8 +117,10 @@ func (s *SongService) UpdateOne(song entities.Song) (*entities.Song, error) {
 	return s.songRepository.UpdateOne(song)
 }
 
-func (s *SongService) DownloadPDF(file drive.File) (tgbotapi.FileReader, error) {
-	res, err := s.driveClient.Files.Export(file.Id, "application/pdf").Download()
+func (s *SongService) DownloadPDFByID(songID string) (tgbotapi.FileReader, error) {
+	file, err := s.driveClient.Files.Get(songID).Fields("id, name").Do()
+
+	res, err := s.driveClient.Files.Export(songID, "application/pdf").Download()
 	if err != nil {
 		return tgbotapi.FileReader{}, err
 	}
@@ -184,14 +186,10 @@ func (s *SongService) DeepCopyToFolder(song entities.Song, folderID string) (*en
 	return s.UpdateOne(newSong)
 }
 
-func (s *SongService) GetSections(song entities.Song) ([]docs.StructuralElement, error) {
+func (s *SongService) GetSectionsByID(songID string) ([]docs.StructuralElement, error) {
 	sections := make([]docs.StructuralElement, 0)
 
-	if song.ID == "" {
-		return sections, fmt.Errorf("ID is missing for Song: %v", song)
-	}
-
-	doc, err := s.docsClient.Documents.Get(song.ID).Do()
+	doc, err := s.docsClient.Documents.Get(songID).Do()
 	if err != nil {
 		return sections, err
 	}
@@ -213,12 +211,8 @@ func (s *SongService) GetSections(song entities.Song) ([]docs.StructuralElement,
 	return sections, err
 }
 
-func (s *SongService) AppendSection(song entities.Song) ([]docs.StructuralElement, error) {
+func (s *SongService) AppendSection(songID string) ([]docs.StructuralElement, error) {
 	sections := make([]docs.StructuralElement, 0)
-
-	if song.ID == "" {
-		return sections, fmt.Errorf("ID is missing for Song: %v", song)
-	}
 
 	requests := &docs.BatchUpdateDocumentRequest{
 		Requests: []*docs.Request{
@@ -233,12 +227,12 @@ func (s *SongService) AppendSection(song entities.Song) ([]docs.StructuralElemen
 		},
 	}
 
-	_, err := s.docsClient.Documents.BatchUpdate(song.ID, requests).Do()
+	_, err := s.docsClient.Documents.BatchUpdate(songID, requests).Do()
 	if err != nil {
 		return nil, err
 	}
 
-	sections, err = s.GetSections(song)
+	sections, err = s.GetSectionsByID(songID)
 	if err != nil {
 		return nil, err
 	}
@@ -257,12 +251,12 @@ func (s *SongService) AppendSection(song entities.Song) ([]docs.StructuralElemen
 		},
 	}
 
-	_, err = s.docsClient.Documents.BatchUpdate(song.ID, requests).Do()
+	_, err = s.docsClient.Documents.BatchUpdate(songID, requests).Do()
 	if err != nil {
 		return nil, err
 	}
 
-	return s.GetSections(song)
+	return s.GetSectionsByID(songID)
 }
 
 func (s *SongService) Transpose(song entities.Song, toKey string, sectionIndex int) (*entities.Song, error) {
@@ -275,7 +269,7 @@ func (s *SongService) Transpose(song entities.Song, toKey string, sectionIndex i
 		return nil, err
 	}
 
-	sections, err := s.GetSections(song)
+	sections, err := s.GetSectionsByID(song.ID)
 	if err != nil {
 		return nil, err
 	}

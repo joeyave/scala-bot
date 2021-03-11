@@ -22,13 +22,13 @@ type State struct {
 }
 
 type Context struct {
-	CurrentSong      *Song    `bson:"currentSong,omitempty"`
 	Setlist          []string `bson:"setlist,omitempty"`
-	FoundSongs       []*Song  `bson:"foundSongs,omitempty"`
 	MessagesToDelete []int    `bson:"messagesToDelete,omitempty"`
 	Query            string   `bson:"query,omitempty"`
 
-	DriveFiles []*drive.File `bson:"driveFiles,omitempty"`
+	CurrentSongID string        `bson:"currentSongId,omitempty"`
+	FoundSongIDs  []string      `bson:"foundSongIds,omitempty"`
+	DriveFiles    []*drive.File `bson:"driveFiles,omitempty"`
 
 	CurrentVoice *Voice `bson:"currentVoice,omitempty"`
 

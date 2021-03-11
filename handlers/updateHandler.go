@@ -35,6 +35,8 @@ func (u *UpdateHandler) HandleUpdate(update *tgbotapi.Update) error {
 		return err
 	}
 
+	backupUser := *user
+
 	// Handle buttons.
 	switch update.Message.Text {
 	case helpers.Cancel:
@@ -65,6 +67,12 @@ func (u *UpdateHandler) HandleUpdate(update *tgbotapi.Update) error {
 
 	user, err = u.enterStateHandler(update, *user)
 	if err != nil {
+		backupUser.State = &entities.State{
+			Index: 0,
+			Name:  helpers.MainMenuState,
+		}
+		u.userService.UpdateOne(backupUser)
+
 		return err
 	}
 
