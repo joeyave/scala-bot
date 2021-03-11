@@ -82,9 +82,11 @@ func main() {
 			continue
 		}
 
-		err := handler.HandleUpdate(&update)
-		if err != nil {
-			helpers.LogError(&update, bot, err)
-		}
+		go func(update *tgbotapi.Update) {
+			err := handler.HandleUpdate(update)
+			if err != nil {
+				helpers.LogError(update, bot, err)
+			}
+		}(&update)
 	}
 }
