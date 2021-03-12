@@ -49,6 +49,12 @@ func (u *UpdateHandler) HandleUpdate(update *tgbotapi.Update) error {
 				Name:  helpers.MainMenuState,
 			}
 		}
+
+	case helpers.Menu:
+		user.State = &entities.State{
+			Index: 0,
+			Name:  helpers.MainMenuState,
+		}
 	}
 
 	// Catch voice anywhere.

@@ -5,13 +5,13 @@ import tgbotapi "github.com/joeyave/telegram-bot-api/v5"
 var SongActionsKeyboard = [][]tgbotapi.KeyboardButton{
 	{{Text: Voices}, {Text: Audios}},
 	{{Text: Transpose}, {Text: Style}},
-	{{Text: Back}},
+	{{Text: Back}, {Text: Menu}},
 }
 
 var RestrictedSongActionsKeyboard = [][]tgbotapi.KeyboardButton{
 	{{Text: CopyToMyBand}},
 	{{Text: Voices}, {Text: Audios}},
-	{{Text: Back}},
+	{{Text: Back}, {Text: Menu}},
 }
 
 var MainMenuKeyboard = [][]tgbotapi.KeyboardButton{
@@ -30,3 +30,26 @@ var KeysKeyboard = [][]tgbotapi.KeyboardButton{
 	{{Text: "B"}},
 	{{Text: Cancel}},
 }
+
+var SkipSongInSetlistKeyboard = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(Cancel),
+		tgbotapi.NewKeyboardButton(Skip),
+	),
+)
+
+var FindChordsKeyboard = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(FindChords),
+	),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(Menu),
+	),
+)
+
+var SearchEverywhereKeyboard = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(Cancel),
+		tgbotapi.NewKeyboardButton(SearchEverywhere),
+	),
+)

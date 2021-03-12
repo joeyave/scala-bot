@@ -5,6 +5,8 @@ import (
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
 	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
+	"github.com/kjk/notionapi"
+	"strings"
 )
 
 func mainMenuHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error)) {
@@ -102,9 +104,12 @@ func scheduleHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 		}
 
 		if foundIndex != len(events) {
-			messageText := fmt.Sprintf("<b>%s</b>\n\n", events[foundIndex].GetAlias())
+			event := events[foundIndex]
 
-			for i, pageID := range events[foundIndex].SetlistPageIDs {
+			messageText := fmt.Sprintf("<b>%s</b> (<a href=\"https://notion.so/%s\">notion</a>)\n\n",
+				event.GetAlias(), notionapi.ToNoDashID(event.ID))
+
+			for i, pageID := range event.SetlistPageIDs {
 
 				page, err := updateHandler.songService.FindNotionPageByID(pageID)
 				if err != nil {
@@ -129,22 +134,46 @@ func scheduleHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 					songBPM = songBPMProp[0].Text
 				}
 
-				messageText += fmt.Sprintf("%d. %s <code>(%s, %s)</code>\n",
-					i+1, songTitle, songKey, songBPM)
+				user.State.Context.Setlist = append(user.State.Context.Setlist, songTitle)
+
+				messageText += fmt.Sprintf("%d. %s (<a href=\"https://notion.so/%s\">%s, %s</a>)\n",
+					i+1, songTitle, notionapi.ToNoDashID(pageID), songKey, songBPM)
 			}
 
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, messageText)
+			msg.DisableWebPagePreview = true
 			msg.ParseMode = tgbotapi.ModeHTML
+			msg.ReplyMarkup = helpers.FindChordsKeyboard
 			_, _ = updateHandler.bot.Send(msg)
 
-			user.State = &entities.State{
-				Index: 0,
-				Name:  helpers.MainMenuState,
-			}
+			user.State.Index++
+			return &user, nil
 		} else {
 			user.State.Index--
+			return updateHandler.enterStateHandler(update, user)
 		}
-		return updateHandler.enterStateHandler(update, user)
+	})
+
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
+		switch update.Message.Text {
+		case "":
+			return &user, nil
+
+		case helpers.FindChords:
+			update.Message.Text = strings.Join(user.State.Context.Setlist, "\n")
+			user.State = &entities.State{
+				Index: 0,
+				Name:  helpers.SearchSongState,
+			}
+			return updateHandler.enterStateHandler(update, user)
+
+		default:
+			user.State = &entities.State{
+				Index: 0,
+				Name:  helpers.SearchSongState,
+			}
+			return updateHandler.enterStateHandler(update, user)
+		}
 	})
 
 	return helpers.ScheduleState, handleFuncs

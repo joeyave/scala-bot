@@ -53,7 +53,7 @@ func (s *BandService) GetTodayOrAfterEvents(band entities.Band) ([]*entities.Eve
         },
         "sort": [
             {
-                "direction": "descending",
+                "direction": "ascending",
                 "property": "\\qpk"
             }
         ]
@@ -79,14 +79,14 @@ func (s *BandService) GetTodayOrAfterEvents(band entities.Band) ([]*entities.Eve
 			event.Name = eventTitleProp[0].Text
 		}
 
-		eventTimeProp := block.GetProperty("\\qpk")
-		eventSetlistProp := block.GetProperty("wZ?W")
-
-		if len(eventTimeProp) < 1 || len(eventSetlistProp) < 1 {
+		timeProp := block.GetProperty("\\qpk")
+		if len(timeProp) < 1 {
 			continue
 		}
 
-		date := notionapi.AttrGetDate(eventTimeProp[0].Attrs[0])
+		setlistProp := block.GetProperty("wZ?W")
+
+		date := notionapi.AttrGetDate(timeProp[0].Attrs[0])
 
 		var err error
 		if date.StartTime != "" {
@@ -98,7 +98,7 @@ func (s *BandService) GetTodayOrAfterEvents(band entities.Band) ([]*entities.Eve
 			continue
 		}
 
-		for _, prop := range eventSetlistProp {
+		for _, prop := range setlistProp {
 			if len(prop.Attrs) < 1 {
 				continue
 			}

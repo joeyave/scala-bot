@@ -88,9 +88,7 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 				if len(driveFiles) == 0 {
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ничего не найдено. Попробуй еще раз.")
 					keyboard := tgbotapi.NewReplyKeyboard()
-					keyboard.Keyboard = append(keyboard.Keyboard,
-						tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.SearchEverywhere)),
-						tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)))
+					keyboard.Keyboard = append(keyboard.Keyboard, helpers.SearchEverywhereKeyboard.Keyboard...)
 					msg.ReplyMarkup = keyboard
 					_, err = updateHandler.bot.Send(msg)
 
@@ -109,9 +107,7 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 					keyboard.Keyboard = append(keyboard.Keyboard, songButton)
 				}
 
-				keyboard.Keyboard = append(keyboard.Keyboard,
-					tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.SearchEverywhere)),
-					tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)))
+				keyboard.Keyboard = append(keyboard.Keyboard, helpers.SearchEverywhereKeyboard.Keyboard...)
 
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выбери песню:")
 				msg.ReplyMarkup = keyboard
@@ -422,7 +418,7 @@ func transposeSongHandler() (string, []func(updateHandler *UpdateHandler, update
 				return nil, err
 			}
 
-                        updateHandler.songService.UpdateOne(*song)
+			updateHandler.songService.UpdateOne(*song)
 
 			user.State = user.State.Prev
 			user.State.Context.CurrentSongID = song.ID
@@ -451,7 +447,7 @@ func styleSongHandler() (string, []func(updateHandler *UpdateHandler, update *tg
 			return nil, err
 		}
 
-                updateHandler.songService.UpdateOne(*song)
+		updateHandler.songService.UpdateOne(*song)
 
 		user.State = user.State.Prev
 		user.State.Context.CurrentSongID = song.ID
@@ -798,10 +794,8 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 
 		if len(driveFiles) == 0 {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("По запросу \"%s\" ничего не найдено. Напиши новое название или пропусти эту песню.", currentSongName))
-			msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
-				tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Skip)),
-				tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)),
-			)
+			msg.ReplyMarkup = helpers.SkipSongInSetlistKeyboard
+
 			res, err := updateHandler.bot.Send(msg)
 			if err != nil {
 				return &user, err
@@ -824,14 +818,7 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 			keyboard.Keyboard = append(keyboard.Keyboard, songButton)
 		}
 
-		keyboard.Keyboard = append(keyboard.Keyboard,
-			tgbotapi.NewKeyboardButtonRow(
-				tgbotapi.NewKeyboardButton(helpers.Skip),
-			),
-			tgbotapi.NewKeyboardButtonRow(
-				tgbotapi.NewKeyboardButton(helpers.Cancel),
-			),
-		)
+		keyboard.Keyboard = append(keyboard.Keyboard, helpers.SkipSongInSetlistKeyboard.Keyboard...)
 
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Выбери песню по запросу \"%s\" или введи другое название:", currentSongName))
 		msg.ReplyMarkup = keyboard

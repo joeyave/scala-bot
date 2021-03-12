@@ -18,10 +18,12 @@ type Band struct {
 }
 
 type Event struct {
-	ID             string    `bson:"id"`
-	Name           string    `bson:"name"`
-	Time           time.Time `bson:"date"`
-	SetlistPageIDs []string  `bson:"setlistPageIds"`
+	ID              string    `bson:"id"`
+	Name            string    `bson:"name"`
+	Time            time.Time `bson:"date"`
+	SetlistPageIDs  []string  `bson:"setlistPageIds"`
+	BackVocalistIDs []string  `bson:"vocalistIds"`
+	LeadVocalistIDs []string  `bson:"leadVocalistIds"`
 }
 
 func (e *Event) GetAlias() string {

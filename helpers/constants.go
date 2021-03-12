@@ -35,6 +35,7 @@ const (
 	SearchEverywhere string = "Искать во всех группах"
 	CopyToMyBand     string = "Копировать песню в свою группу"
 	Schedule         string = "Расписание"
+	FindChords       string = "Найти аккорды"
 )
 
 var FilesChannelID int64
