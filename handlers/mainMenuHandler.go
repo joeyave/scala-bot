@@ -106,8 +106,8 @@ func scheduleHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 		if foundIndex != len(events) {
 			event := events[foundIndex]
 
-			messageText := fmt.Sprintf("<b>%s</b> (<a href=\"https://www.notion.so/%s\">notion</a>)\n\n",
-				event.GetAlias(), notionapi.ToNoDashID(event.ID))
+			messageText := fmt.Sprintf("<b><a href=\"https://www.notion.so/%s\">%s</a></b>\n\n",
+				notionapi.ToNoDashID(event.ID), event.GetAlias())
 
 			for i, pageID := range event.SetlistPageIDs {
 
