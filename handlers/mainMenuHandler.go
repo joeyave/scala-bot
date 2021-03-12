@@ -106,7 +106,7 @@ func scheduleHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 		if foundIndex != len(events) {
 			event := events[foundIndex]
 
-			messageText := fmt.Sprintf("<b>%s</b> (<a href=\"https://notion.so/%s\">notion</a>)\n\n",
+			messageText := fmt.Sprintf("<b>%s</b> (<a href=\"https://www.notion.so/%s\">notion</a>)\n\n",
 				event.GetAlias(), notionapi.ToNoDashID(event.ID))
 
 			for i, pageID := range event.SetlistPageIDs {
@@ -136,7 +136,7 @@ func scheduleHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 
 				user.State.Context.Setlist = append(user.State.Context.Setlist, songTitle)
 
-				messageText += fmt.Sprintf("%d. %s (<a href=\"https://notion.so/%s\">%s, %s</a>)\n",
+				messageText += fmt.Sprintf("%d. %s (<a href=\"https://www.notion.so/%s\">%s, %s</a>)\n",
 					i+1, songTitle, notionapi.ToNoDashID(pageID), songKey, songBPM)
 			}
 
