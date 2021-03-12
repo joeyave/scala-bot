@@ -944,6 +944,11 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 			}
 		}
 
+		for _, messageID := range user.State.Context.MessagesToDelete {
+			msg := tgbotapi.NewDeleteMessage(update.Message.Chat.ID, messageID)
+			updateHandler.bot.Send(msg)
+		}
+
 		user.State = user.State.Prev
 		user.State.Index = 0
 
