@@ -39,7 +39,7 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 
 				query := update.Message.Text
 
-				if query == helpers.SearchEverywhere {
+				if query == helpers.SearchEverywhere || query == helpers.Back {
 					query = user.State.Context.Query
 				}
 
