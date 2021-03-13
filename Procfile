@@ -1,1 +1,1 @@
-worker: bin/scala-chords-bot
+worker: bin/github.com/joeyave/scala-chords-bot
