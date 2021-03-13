@@ -58,7 +58,7 @@ func chooseBandHandler() (string, []func(updateHandler *UpdateHandler, update *t
 			}
 
 			if foundIndex != len(bands) {
-				user.BandIDs = append(user.BandIDs, bands[foundIndex].ID)
+				user.BandID = bands[foundIndex].ID
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Ты добавлен в группу %s.", bands[foundIndex].Name))
 				_, _ = updateHandler.bot.Send(msg)
 
@@ -119,20 +119,20 @@ func createBandHandler() (string, []func(updateHandler *UpdateHandler, update *t
 			user.State.Index--
 			return updateHandler.enterStateHandler(update, user)
 		default:
-			re := regexp.MustCompile(`/folders/(.*?)(/|$)`)
+			re := regexp.MustCompile(`(/folders/|id=)(.*?)(/|$)`)
 			matches := re.FindStringSubmatch(update.Message.Text)
-			if matches == nil || len(matches) < 2 {
+			if matches == nil || len(matches) < 3 {
 				user.State.Index--
 				return updateHandler.enterStateHandler(update, user)
 			}
-			user.State.Context.CurrentBand.DriveFolderID = matches[1]
+			user.State.Context.CurrentBand.DriveFolderID = matches[2]
 			user.State.Context.CurrentBand.AdminUserIDs = append(user.State.Context.CurrentBand.AdminUserIDs, update.Message.Chat.ID)
 			band, err := updateHandler.bandService.UpdateOne(*user.State.Context.CurrentBand)
 			if err != nil {
 				return &user, err
 			}
 
-			user.BandIDs = append(user.BandIDs, band.ID)
+			user.BandID = band.ID
 
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Ты добавлен в группу \"%s\" как администратор.", band.Name))
 			_, _ = updateHandler.bot.Send(msg)

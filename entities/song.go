@@ -40,11 +40,13 @@ func (s *Song) HasOutdatedPDF() bool {
 }
 
 func (s *Song) BelongsToUser(user User) bool {
-	for _, userFolderID := range user.GetFolderIDs() {
-		for _, songParentID := range s.DriveFile.Parents {
-			if songParentID == userFolderID {
-				return true
-			}
+	if user.Band == nil {
+		return false
+	}
+
+	for _, songParentID := range s.DriveFile.Parents {
+		if songParentID == user.Band.DriveFolderID {
+			return true
 		}
 	}
 

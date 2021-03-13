@@ -44,9 +44,15 @@ func (r *UserRepository) FindOneByID(ID int64) (*entities.User, error) {
 		bson.M{
 			"$lookup": bson.M{
 				"from":         "bands",
-				"localField":   "bandIds",
+				"localField":   "bandId",
 				"foreignField": "_id",
-				"as":           "bands",
+				"as":           "band",
+			},
+		},
+		bson.M{
+			"$unwind": bson.M{
+				"path":                       "$band",
+				"preserveNullAndEmptyArrays": true,
 			},
 		},
 	}
@@ -62,9 +68,17 @@ func (r *UserRepository) FindOneByID(ID int64) (*entities.User, error) {
 
 	var user *entities.User
 	err = cur.Decode(&user)
-	err = cur.Current.Lookup("bands").Unmarshal(&user.Bands)
+	if err != nil {
+		return nil, err
+	}
 
-	return user, err
+	var band *entities.Band
+	err = cur.Current.Lookup("band").Unmarshal(&band)
+	if err == nil {
+		user.Band = band
+	}
+
+	return user, nil
 }
 
 func (r *UserRepository) FindMultipleByIDs(IDs []int64) ([]*entities.User, error) {

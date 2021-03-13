@@ -36,6 +36,7 @@ const (
 	CopyToMyBand     string = "Копировать песню в свою группу"
 	Schedule         string = "Расписание"
 	FindChords       string = "Найти аккорды"
+	ChangeBand       string = "Изменить группу"
 )
 
 var FilesChannelID int64

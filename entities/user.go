@@ -6,10 +6,10 @@ import (
 )
 
 type User struct {
-	ID      int64                `bson:"_id,omitempty"`
-	State   *State               `bson:"state,omitempty"`
-	BandIDs []primitive.ObjectID `bson:"bandIds,omitempty"`
-	Bands   []*Band              `bson:"-"`
+	ID     int64              `bson:"_id,omitempty"`
+	State  *State             `bson:"state,omitempty"`
+	BandID primitive.ObjectID `bson:"bandId,omitempty"`
+	Band   *Band              `bson:"-"`
 }
 
 type State struct {
@@ -37,15 +37,5 @@ type Context struct {
 	Bands       []*Band `bson:"bands,omitempty"`
 	CurrentBand *Band   `bson:"currentBand,omitempty"`
 
-	Events []*Event `bson:events,omitempty`
-}
-
-func (u *User) GetFolderIDs() []string {
-	folderIDs := make([]string, 0)
-
-	for i := range u.Bands {
-		folderIDs = append(folderIDs, u.Bands[i].DriveFolderID)
-	}
-
-	return folderIDs
+	Events []*Event `bson:"events,omitempty"`
 }

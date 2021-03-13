@@ -39,7 +39,7 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 
 				query := update.Message.Text
 
-				if user.State.Context.Query != "" {
+				if query == helpers.SearchEverywhere {
 					query = user.State.Context.Query
 				}
 
@@ -76,9 +76,9 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 				var driveFiles []*drive.File
 				var err error
 				if update.Message.Text == helpers.SearchEverywhere {
-					driveFiles, _, err = updateHandler.songService.QueryDrive(query, "")
+					driveFiles, _, err = updateHandler.songService.QueryDrive(query, "", "")
 				} else {
-					driveFiles, _, err = updateHandler.songService.QueryDrive(query, "", user.GetFolderIDs()...)
+					driveFiles, _, err = updateHandler.songService.QueryDrive(query, "", user.Band.DriveFolderID)
 				}
 
 				if err != nil {
@@ -92,7 +92,6 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 					msg.ReplyMarkup = keyboard
 					_, err = updateHandler.bot.Send(msg)
 
-					user.State.Context.Query = ""
 					return &user, err
 				}
 
@@ -157,7 +156,6 @@ func searchSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 				return updateHandler.enterStateHandler(update, user)
 			} else {
 				user.State.Index--
-				user.State.Context.Query = ""
 				return updateHandler.enterStateHandler(update, user)
 			}
 		}
@@ -460,63 +458,23 @@ func copySongHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error), 0)
 
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выбери группу, в которую ты хочешь скопировать эту песню:")
+		chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
+		_, _ = updateHandler.bot.Send(chatAction)
 
-		keyboard := tgbotapi.NewReplyKeyboard()
-		keyboard.OneTimeKeyboard = false
-		keyboard.ResizeKeyboard = true
-
-		for i := range user.Bands {
-			keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(user.Bands[i].Name)))
+		song, err := updateHandler.songService.FindOneByID(user.State.Context.CurrentSongID)
+		if err != nil {
+			return nil, err
 		}
-		keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(helpers.Cancel)))
-		msg.ReplyMarkup = keyboard
-		_, err := updateHandler.bot.Send(msg)
 
-		user.State.Context.Bands = user.Bands
-		user.State.Index++
-		return &user, err
-	})
-
-	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
-		switch update.Message.Text {
-		case "":
-			user.State.Index--
-			return updateHandler.enterStateHandler(update, user)
-		default:
-			chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
-			_, _ = updateHandler.bot.Send(chatAction)
-
-			foundIndex := len(user.Bands)
-			for i := range user.Bands {
-				if user.Bands[i].Name == update.Message.Text {
-					foundIndex = i
-					break
-				}
-			}
-
-			if foundIndex != len(user.Bands) {
-				song, err := updateHandler.songService.FindOneByID(user.State.Context.CurrentSongID)
-				if err != nil {
-					return nil, err
-				}
-
-				copiedSong, err := updateHandler.songService.DeepCopyToFolder(*song, user.Bands[foundIndex].DriveFolderID)
-				if err != nil {
-					return nil, err
-				}
-
-				user.State = user.State.Prev
-				user.State.Context.CurrentSongID = copiedSong.ID
-
-				return updateHandler.enterStateHandler(update, user)
-
-			} else {
-				user.State.Index--
-			}
-
-			return updateHandler.enterStateHandler(update, user)
+		copiedSong, err := updateHandler.songService.DeepCopyToFolder(*song, user.Band.DriveFolderID)
+		if err != nil {
+			return nil, err
 		}
+
+		user.State = user.State.Prev
+		user.State.Context.CurrentSongID = copiedSong.ID
+
+		return updateHandler.enterStateHandler(update, user)
 	})
 
 	return helpers.CopySongState, handleFuncs
@@ -648,7 +606,7 @@ func uploadVoiceHandler() (string, []func(updateHandler *UpdateHandler, update *
 				var driveFiles []*drive.File
 				var err error
 
-				driveFiles, _, err = updateHandler.songService.QueryDrive(update.Message.Text, "", user.GetFolderIDs()...)
+				driveFiles, _, err = updateHandler.songService.QueryDrive(update.Message.Text, "", user.Band.DriveFolderID)
 				if err != nil {
 					return nil, err
 				}
@@ -787,7 +745,7 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 		chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
 		_, _ = updateHandler.bot.Send(chatAction)
 
-		driveFiles, _, err := updateHandler.songService.QueryDrive(currentSongName, "", user.GetFolderIDs()...)
+		driveFiles, _, err := updateHandler.songService.QueryDrive(currentSongName, "", user.Band.DriveFolderID)
 		if err != nil {
 			return nil, err
 		}

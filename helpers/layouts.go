@@ -14,11 +14,18 @@ var RestrictedSongActionsKeyboard = [][]tgbotapi.KeyboardButton{
 	{{Text: Back}, {Text: Menu}},
 }
 
-var MainMenuKeyboard = [][]tgbotapi.KeyboardButton{
-	{{Text: CreateDoc}},
-	{{Text: Schedule}},
-	{{Text: Help}},
-}
+var MainMenuKeyboard = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(CreateDoc),
+	),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(Schedule)),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(ChangeBand),
+	),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(Help)),
+)
 
 var KeysKeyboard = [][]tgbotapi.KeyboardButton{
 	{{Text: "C"}, {Text: "C#"}, {Text: "Db"}},

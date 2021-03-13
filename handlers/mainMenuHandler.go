@@ -14,7 +14,7 @@ func mainMenuHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Основное меню:")
-		msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(helpers.MainMenuKeyboard...)
+		msg.ReplyMarkup = helpers.MainMenuKeyboard
 		_, err := updateHandler.bot.Send(msg)
 
 		user.State.Index++
@@ -38,6 +38,13 @@ func mainMenuHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 			}
 			return updateHandler.enterStateHandler(update, user)
 
+		case helpers.ChangeBand:
+			user.State = &entities.State{
+				Index: 0,
+				Name:  helpers.ChooseBandState,
+			}
+			return updateHandler.enterStateHandler(update, user)
+
 		default:
 			user.State = &entities.State{
 				Index: 0,
@@ -57,21 +64,16 @@ func scheduleHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 		chatAction := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
 		_, _ = updateHandler.bot.Send(chatAction)
 
-		var allBandsEvents []*entities.Event
-		for _, band := range user.Bands {
-			events, err := updateHandler.bandService.GetTodayOrAfterEvents(*band)
-			if err != nil {
-				return nil, err
-			}
-
-			allBandsEvents = append(allBandsEvents, events...)
+		events, err := updateHandler.bandService.GetTodayOrAfterEvents(*user.Band)
+		if err != nil {
+			return nil, err
 		}
 
 		keyboard := tgbotapi.NewReplyKeyboard()
 		keyboard.OneTimeKeyboard = false
 		keyboard.ResizeKeyboard = true
 
-		for _, event := range allBandsEvents {
+		for _, event := range events {
 			songButton := tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(event.GetAlias()))
 			keyboard.Keyboard = append(keyboard.Keyboard, songButton)
 		}
@@ -81,9 +83,9 @@ func scheduleHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выбери собрание:")
 		msg.ReplyMarkup = keyboard
-		_, err := updateHandler.bot.Send(msg)
+		_, err = updateHandler.bot.Send(msg)
 
-		user.State.Context.Events = allBandsEvents
+		user.State.Context.Events = events
 		user.State.Index++
 
 		return &user, err
