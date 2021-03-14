@@ -13,6 +13,7 @@ const (
 	CreateBandState    = "CreateBandState"
 	CopySongState      = "CopySongState"
 	ScheduleState      = "ScheduleState"
+	CreateSongState    = "CreateSongState"
 )
 
 // Buttons constants.
@@ -24,7 +25,7 @@ const (
 	Voices           string = "Партии"
 	Audios           string = "Аудио"
 	Transpose        string = "Изменить тональность"
-	Style            string = "Стилизировать"
+	Style            string = "Стилизовать"
 	Menu             string = "Меню"
 	Delete           string = "Удалить"
 	Back             string = "Назад"

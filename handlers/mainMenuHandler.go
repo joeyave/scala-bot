@@ -36,22 +36,27 @@ func mainMenuHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 				Index: 0,
 				Name:  helpers.ScheduleState,
 			}
-			return updateHandler.enterStateHandler(update, user)
 
 		case helpers.ChangeBand:
 			user.State = &entities.State{
 				Index: 0,
 				Name:  helpers.ChooseBandState,
 			}
-			return updateHandler.enterStateHandler(update, user)
+
+		case helpers.CreateDoc:
+			user.State = &entities.State{
+				Index: 0,
+				Name:  helpers.CreateSongState,
+			}
 
 		default:
 			user.State = &entities.State{
 				Index: 0,
 				Name:  helpers.SearchSongState,
 			}
-			return updateHandler.enterStateHandler(update, user)
 		}
+
+		return updateHandler.enterStateHandler(update, user)
 	})
 
 	return helpers.MainMenuState, handleFuncs

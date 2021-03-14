@@ -27,18 +27,49 @@ var MainMenuKeyboard = tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButton(Help)),
 )
 
-var KeysKeyboard = [][]tgbotapi.KeyboardButton{
-	{{Text: "C"}, {Text: "C#"}, {Text: "Db"}},
-	{{Text: "D"}, {Text: "D#"}, {Text: "Eb"}},
-	{{Text: "E"}},
-	{{Text: "F"}, {Text: "F#"}, {Text: "Gb"}},
-	{{Text: "G"}, {Text: "G#"}, {Text: "Ab"}},
-	{{Text: "A"}, {Text: "A#"}, {Text: "Bb"}},
-	{{Text: "B"}},
-	{{Text: Cancel}},
-}
+var KeysKeyboard = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("C"),
+		tgbotapi.NewKeyboardButton("C#"),
+		tgbotapi.NewKeyboardButton("Db"),
+	),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("D"),
+		tgbotapi.NewKeyboardButton("D#"),
+		tgbotapi.NewKeyboardButton("Eb"),
+	),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("E"),
+	),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("F"),
+		tgbotapi.NewKeyboardButton("F#"),
+		tgbotapi.NewKeyboardButton("Gb"),
+	),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("G"),
+		tgbotapi.NewKeyboardButton("G#"),
+		tgbotapi.NewKeyboardButton("Ab"),
+	),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("A"),
+		tgbotapi.NewKeyboardButton("A#"),
+		tgbotapi.NewKeyboardButton("Bb"),
+	),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("B"),
+	),
+)
 
-var SkipSongInSetlistKeyboard = tgbotapi.NewReplyKeyboard(
+var TimesKeyboard = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("2/4"),
+		tgbotapi.NewKeyboardButton("3/4"),
+		tgbotapi.NewKeyboardButton("4/4"),
+	),
+)
+
+var CancelOrSkipKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton(Cancel),
 		tgbotapi.NewKeyboardButton(Skip),

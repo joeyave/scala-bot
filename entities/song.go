@@ -1,17 +1,15 @@
 package entities
 
 import (
-	"github.com/kjk/notionapi"
 	"google.golang.org/api/drive/v3"
 	"time"
 )
 
 type Song struct {
-	ID         string           `bson:"_id,omitempty"`
-	DriveFile  *drive.File      `bson:"driveFile,omitempty"`
-	NotionPage *notionapi.Block `bson:"notionPage,omitempty"`
-	PDF        PDF              `bson:"pdf,omitempty"`
-	Voices     []*Voice         `bson:"voices,omitempty"`
+	ID        string      `bson:"_id,omitempty"`
+	DriveFile *drive.File `bson:"-"`
+	PDF       PDF         `bson:"pdf,omitempty"`
+	Voices    []*Voice    `bson:"voices,omitempty"`
 }
 
 type Voice struct {
@@ -31,11 +29,19 @@ func (s *Song) HasOutdatedPDF() bool {
 	}
 
 	pdfModifiedTime, err := time.Parse(time.RFC3339, s.PDF.ModifiedTime)
-	driveFileModifiedTime, err := time.Parse(time.RFC3339, s.DriveFile.ModifiedTime)
-
-	if err != nil || driveFileModifiedTime.After(pdfModifiedTime) {
+	if err != nil {
 		return true
 	}
+
+	driveFileModifiedTime, err := time.Parse(time.RFC3339, s.DriveFile.ModifiedTime)
+	if err != nil {
+		return true
+	}
+
+	if driveFileModifiedTime.After(pdfModifiedTime) {
+		return true
+	}
+
 	return false
 }
 

@@ -38,4 +38,12 @@ type Context struct {
 	CurrentBand *Band   `bson:"currentBand,omitempty"`
 
 	Events []*Event `bson:"events,omitempty"`
+
+	CreateSongPayload struct {
+		Name   string `bson:"name,omitempty"`
+		Lyrics string `bson:"lyrics,omitempty"`
+		Key    string `bson:"key,omitempty"`
+		BPM    string `bson:"bpm,omitempty"`
+		Time   string `bson:"time,omitempty"`
+	} `bson:"createSongPayload,omitempty"`
 }

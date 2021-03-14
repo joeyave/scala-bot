@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"fmt"
+	"github.com/flowchartsman/retry"
 	"github.com/joeyave/chords-transposer/transposer"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
@@ -81,24 +82,6 @@ func (s *SongService) FindOneByID(ID string) (*entities.Song, error) {
 	return song, err
 }
 
-func (s *SongService) FindOneByDriveFile(file drive.File) (*entities.Song, error) {
-	if file.Id == "" {
-		return nil, fmt.Errorf("ID is missing for DriveFile: %v", file)
-	}
-
-	song, err := s.songRepository.FindOneByID(file.Id)
-	if err != nil {
-		err = nil
-		song = &entities.Song{
-			ID: file.Id,
-		}
-	}
-
-	song.DriveFile = &file
-
-	return song, err
-}
-
 func (s *SongService) UpdateOne(song entities.Song) (*entities.Song, error) {
 	if song.ID == "" {
 		return nil, fmt.Errorf("ID is missing for Song: %v", song)
@@ -107,17 +90,121 @@ func (s *SongService) UpdateOne(song entities.Song) (*entities.Song, error) {
 	return s.songRepository.UpdateOne(song)
 }
 
-func (s *SongService) DownloadPDFByID(songID string) (tgbotapi.FileReader, error) {
-	file, err := s.driveClient.Files.Get(songID).Fields("id, name").Do()
+func (s *SongService) CreateOne(name string, lyrics string, key string, BPM string, time string, folderID string) (*entities.Song, error) {
 
-	res, err := s.driveClient.Files.Export(songID, "application/pdf").Download()
-	if err != nil {
-		return tgbotapi.FileReader{}, err
+	fileToCreate := &drive.File{
+		Name:     name,
+		Parents:  []string{folderID},
+		MimeType: "application/vnd.google-apps.document",
 	}
 
-	fileReader := tgbotapi.FileReader{
-		Name:   file.Name + ".pdf",
-		Reader: res.Body,
+	newFile, err := s.driveClient.Files.Create(fileToCreate).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	requests := make([]*docs.Request, 0)
+
+	requests = append(requests,
+		&docs.Request{
+			CreateHeader: &docs.CreateHeaderRequest{
+				Type: "DEFAULT",
+			},
+		},
+		&docs.Request{
+			InsertText: &docs.InsertTextRequest{
+				EndOfSegmentLocation: &docs.EndOfSegmentLocation{
+					SegmentId: "",
+				},
+				Text: lyrics,
+			},
+		})
+
+	res, err := s.docsClient.Documents.BatchUpdate(newFile.Id,
+		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	if res.Replies[0].CreateHeader.HeaderId != "" {
+		_, _ = s.docsClient.Documents.BatchUpdate(newFile.Id,
+			&docs.BatchUpdateDocumentRequest{
+				Requests: []*docs.Request{
+					getDefaultHeaderRequest(res.Replies[0].CreateHeader.HeaderId, name, key, BPM, time),
+				},
+			}).Do()
+	}
+
+	doc, err := s.docsClient.Documents.Get(newFile.Id).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	requests = nil
+	for _, paragraph := range doc.Body.Content {
+		if paragraph.Paragraph == nil {
+			continue
+		}
+
+		for _, element := range paragraph.Paragraph.Elements {
+			if element.TextRun == nil || element.TextRun.TextStyle == nil {
+				continue
+			}
+
+			element.TextRun.TextStyle.FontSize = &docs.Dimension{
+				Magnitude: 14,
+				Unit:      "PT",
+			}
+
+			requests = append(requests, &docs.Request{
+				UpdateTextStyle: &docs.UpdateTextStyleRequest{
+					Fields: "*",
+					Range: &docs.Range{
+						SegmentId:       "",
+						StartIndex:      element.StartIndex,
+						EndIndex:        element.EndIndex,
+						ForceSendFields: []string{"StartIndex"},
+					},
+					TextStyle: element.TextRun.TextStyle,
+				},
+			})
+		}
+	}
+
+	_, _ = s.docsClient.Documents.BatchUpdate(newFile.Id,
+		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
+
+	newSong := entities.Song{
+		ID:        newFile.Id,
+		DriveFile: newFile,
+	}
+
+	return &newSong, err
+}
+
+func (s *SongService) DownloadPDFByID(songID string) (tgbotapi.FileReader, error) {
+	retrier := retry.NewRetrier(5, 100*time.Millisecond, time.Second)
+
+	var fileReader tgbotapi.FileReader
+	err := retrier.Run(func() error {
+		file, err := s.driveClient.Files.Get(songID).Fields("id, name").Do()
+		if err != nil {
+			return err
+		}
+
+		res, err := s.driveClient.Files.Export(songID, "application/pdf").Download()
+		if err != nil {
+			return err
+		}
+
+		fileReader = tgbotapi.FileReader{
+			Name:   file.Name + ".pdf",
+			Reader: res.Body,
+		}
+		return nil
+	})
+	if err != nil {
+		return tgbotapi.FileReader{}, err
 	}
 
 	return fileReader, err
@@ -486,16 +573,7 @@ func (s *SongService) Style(song entities.Song) (*entities.Song, error) {
 			doc.DocumentStyle.DefaultHeaderId = res.Replies[0].CreateHeader.HeaderId
 			_, _ = s.docsClient.Documents.BatchUpdate(song.ID, &docs.BatchUpdateDocumentRequest{
 				Requests: []*docs.Request{
-					{
-						InsertText: &docs.InsertTextRequest{
-							EndOfSegmentLocation: &docs.EndOfSegmentLocation{
-								SegmentId: doc.DocumentStyle.DefaultHeaderId,
-							},
-							Text: "Название - Исполнитель\n" +
-								"KEY: ?; BPM: ?; TIME: ?;\n" +
-								"структура\n",
-						},
-					},
+					getDefaultHeaderRequest(doc.DocumentStyle.DefaultHeaderId, doc.Title, "", "", ""),
 				},
 			}).Do()
 		}
@@ -797,6 +875,37 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string) [
 	}
 
 	return requests
+}
+
+func getDefaultHeaderRequest(headerID string, name string, key string, BPM string, time string) *docs.Request {
+
+	if name == "" {
+		name = "Название - Исполнитель"
+	}
+
+	if key == "" {
+		key = "?"
+	}
+
+	if BPM == "" {
+		BPM = "?"
+	}
+
+	if time == "" {
+		time = "?"
+	}
+
+	text := fmt.Sprintf("%s\nKEY: %s; BPM: %s; TIME: %s;\nструктура\n",
+		name, key, BPM, time)
+
+	return &docs.Request{
+		InsertText: &docs.InsertTextRequest{
+			EndOfSegmentLocation: &docs.EndOfSegmentLocation{
+				SegmentId: headerID,
+			},
+			Text: text,
+		},
+	}
 }
 
 func (s *SongService) FindNotionPageByID(pageID string) (*notionapi.Block, error) {

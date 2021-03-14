@@ -6,6 +6,7 @@ go 1.15
 require (
 	cloud.google.com/go v0.77.0 // indirect
 	github.com/aws/aws-sdk-go v1.37.14 // indirect
+	github.com/flowchartsman/retry v1.2.0
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/joeyave/chords-transposer v0.0.5
 	github.com/joeyave/telegram-bot-api/v5 v5.0.4
