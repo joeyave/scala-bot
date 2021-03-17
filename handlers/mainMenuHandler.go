@@ -166,6 +166,10 @@ func scheduleHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 		case "":
 			return &user, nil
 
+		case helpers.Back:
+			user.State.Index = 0
+			return updateHandler.enterStateHandler(update, user)
+
 		case helpers.FindChords:
 			update.Message.Text = strings.Join(user.State.Context.Setlist, "\n")
 			user.State = &entities.State{

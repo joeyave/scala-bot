@@ -81,6 +81,7 @@ var FindChordsKeyboard = tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButton(FindChords),
 	),
 	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(Back),
 		tgbotapi.NewKeyboardButton(Menu),
 	),
 )
