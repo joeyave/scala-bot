@@ -15,6 +15,7 @@ const (
 	ScheduleState      = "ScheduleState"
 	CreateSongState    = "CreateSongState"
 	DeleteSongState    = "DeleteSongState"
+	AddBandAdminState  = "AddBandAdminState"
 )
 
 // Buttons constants.
@@ -39,6 +40,7 @@ const (
 	Schedule         string = "Расписание"
 	FindChords       string = "Найти аккорды"
 	ChangeBand       string = "Изменить группу"
+	AddAdmin         string = "Добавить администратора"
 )
 
 var FilesChannelID int64

@@ -51,6 +51,10 @@ func (s *UserService) FindOrCreate(ID int64) (*entities.User, error) {
 	return user, err
 }
 
+func (s *UserService) FindOneByID(ID int64) (*entities.User, error) {
+	return s.userRepository.FindOneByID(ID)
+}
+
 func (s *UserService) UpdateOne(user entities.User) (*entities.User, error) {
 	return s.userRepository.UpdateOne(user)
 }

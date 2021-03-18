@@ -5,6 +5,7 @@ import (
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/repositories"
 	"github.com/kjk/notionapi"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 )
 
@@ -24,6 +25,9 @@ func (s *BandService) FindAll() ([]*entities.Band, error) {
 	return s.bandRepository.FindAll()
 }
 
+func (s *BandService) FindOneByID(ID primitive.ObjectID) (*entities.Band, error) {
+	return s.bandRepository.FindOneByID(ID)
+}
 func (s *BandService) UpdateOne(band entities.Band) (*entities.Band, error) {
 	return s.bandRepository.UpdateOne(band)
 }

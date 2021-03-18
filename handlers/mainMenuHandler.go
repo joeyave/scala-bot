@@ -49,6 +49,12 @@ func mainMenuHandler() (string, []func(updateHandler *UpdateHandler, update *tgb
 				Name:  helpers.CreateSongState,
 			}
 
+		case helpers.AddAdmin:
+			user.State = &entities.State{
+				Index: 0,
+				Name:  helpers.AddBandAdminState,
+			}
+
 		default:
 			user.State = &entities.State{
 				Index: 0,

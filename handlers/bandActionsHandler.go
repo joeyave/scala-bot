@@ -5,6 +5,7 @@ import (
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
 	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"regexp"
 )
 
@@ -146,4 +147,64 @@ func createBandHandler() (string, []func(updateHandler *UpdateHandler, update *t
 	})
 
 	return helpers.CreateBandState, handleFuncs
+}
+
+func addBandAdminHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error)) {
+	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error), 0)
+
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Перешли сообщение от пользователя, которого ты хочешь сделать администратором:")
+		msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton(helpers.Cancel),
+			),
+		)
+
+		_, err := updateHandler.bot.Send(msg)
+		if err != nil {
+			return nil, err
+		}
+
+		user.State.Index++
+		return &user, nil
+	})
+
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
+		if update.Message.ForwardFrom == nil || update.Message.ForwardFrom.ID == 0 {
+			user.State.Index--
+			return updateHandler.enterStateHandler(update, user)
+		}
+
+		userToMakeAdmin, err := updateHandler.userService.FindOneByID(int64(update.Message.ForwardFrom.ID))
+		if err != nil || userToMakeAdmin.BandID == primitive.NilObjectID {
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Этот пользователь ни разу не пользовался ботом или не состоит ни в одной группе.")
+			updateHandler.bot.Send(msg)
+
+			user.State.Name = helpers.MainMenuState
+			return updateHandler.enterStateHandler(update, user)
+		}
+
+		band, err := updateHandler.bandService.FindOneByID(userToMakeAdmin.BandID)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, adminUserID := range band.AdminUserIDs {
+			if adminUserID == userToMakeAdmin.ID {
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Этот пользователь уже является администратором.")
+				updateHandler.bot.Send(msg)
+
+				user.State.Name = helpers.MainMenuState
+				return updateHandler.enterStateHandler(update, user)
+			}
+		}
+
+		band.AdminUserIDs = append(band.AdminUserIDs, userToMakeAdmin.ID)
+
+		_, err = updateHandler.bandService.UpdateOne(*band)
+		user.State.Name = helpers.MainMenuState
+		return &user, err
+	})
+
+	return helpers.AddBandAdminState, handleFuncs
 }
