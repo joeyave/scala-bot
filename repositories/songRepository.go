@@ -102,3 +102,11 @@ func (r *SongRepository) UpdateMultiple(songs []entities.Song) ([]*entities.Song
 
 	return newSongs, nil
 }
+
+func (r *SongRepository) DeleteOneByID(ID string) error {
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+
+	filter := bson.M{"_id": ID}
+	_, err := collection.DeleteOne(context.TODO(), filter)
+	return err
+}

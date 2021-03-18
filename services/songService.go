@@ -182,6 +182,15 @@ func (s *SongService) CreateOne(name string, lyrics string, key string, BPM stri
 	return &newSong, err
 }
 
+func (s *SongService) DeleteOne(ID string) error {
+	err := s.driveClient.Files.Delete(ID).Do()
+	if err != nil {
+		return err
+	}
+
+	return s.songRepository.DeleteOneByID(ID)
+}
+
 func (s *SongService) DownloadPDFByID(songID string) (tgbotapi.FileReader, error) {
 	retrier := retry.NewRetrier(5, 100*time.Millisecond, time.Second)
 

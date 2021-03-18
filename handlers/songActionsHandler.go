@@ -247,7 +247,6 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 		switch update.Message.Text {
 		case helpers.Back:
 			user.State = user.State.Prev
-			return updateHandler.enterStateHandler(update, user)
 
 		case helpers.Voices:
 			user.State = &entities.State{
@@ -258,7 +257,6 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 				},
 				Prev: user.State,
 			}
-			return updateHandler.enterStateHandler(update, user)
 
 		case helpers.Audios:
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Функция еще не реалилованна. В будущем планируется хранинть тут аудиозаписи песни в нужной тональности.")
@@ -275,7 +273,6 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 				Prev: user.State,
 			}
 			user.State.Prev.Index = 0
-			return updateHandler.enterStateHandler(update, user)
 
 		case helpers.Style:
 			user.State = &entities.State{
@@ -287,7 +284,6 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 				Prev: user.State,
 			}
 			user.State.Prev.Index = 0
-			return updateHandler.enterStateHandler(update, user)
 
 		case helpers.CopyToMyBand:
 			user.State = &entities.State{
@@ -299,7 +295,16 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 				Prev: user.State,
 			}
 			user.State.Prev.Index = 0
-			return updateHandler.enterStateHandler(update, user)
+
+		case helpers.Delete:
+			user.State = &entities.State{
+				Name: helpers.DeleteSongState,
+				Context: entities.Context{
+					CurrentSongID: user.State.Context.CurrentSongID,
+				},
+				Prev: user.State,
+			}
+			user.State.Prev.Index = 0
 
 		case song.DriveFile.Name:
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, song.DriveFile.WebViewLink)
@@ -311,8 +316,9 @@ func songActionsHandler() (string, []func(updateHandler *UpdateHandler, update *
 				Index: 0,
 				Name:  helpers.SearchSongState,
 			}
-			return updateHandler.enterStateHandler(update, user)
 		}
+
+		return updateHandler.enterStateHandler(update, user)
 	})
 
 	return helpers.SongActionsState, handleFuncs
@@ -626,6 +632,38 @@ func createSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 	})
 
 	return helpers.CreateSongState, handleFuncs
+}
+
+func deleteSongHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error)) {
+	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error), 0)
+
+	// TODO: allow deleting Song only if it belongs to the User's Band.
+	// TODO: delete from channel.
+	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
+		if user.IsAdmin() {
+			err := updateHandler.songService.DeleteOne(user.State.Context.CurrentSongID)
+			if err != nil {
+				return nil, err
+			}
+
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Удалено.")
+			_, _ = updateHandler.bot.Send(msg)
+
+			user.State = &entities.State{
+				Name: helpers.MainMenuState,
+			}
+			return updateHandler.enterStateHandler(update, user)
+
+		} else {
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Для удаления песни нужно быть администратором группы.")
+			_, _ = updateHandler.bot.Send(msg)
+		}
+
+		user.State = user.State.Prev
+		return updateHandler.enterStateHandler(update, user)
+	})
+
+	return helpers.DeleteSongState, handleFuncs
 }
 
 func getVoicesHandler() (string, []func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error)) {

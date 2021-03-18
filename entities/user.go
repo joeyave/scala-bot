@@ -12,6 +12,16 @@ type User struct {
 	Band   *Band              `bson:"-"`
 }
 
+func (u *User) IsAdmin() bool {
+	for _, id := range u.Band.AdminUserIDs {
+		if id == u.ID {
+			return true
+		}
+	}
+
+	return false
+}
+
 type State struct {
 	Index   int     `bson:"index,omitempty"`
 	Name    string  `bson:"name,omitempty"`

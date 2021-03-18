@@ -14,6 +14,7 @@ const (
 	CopySongState      = "CopySongState"
 	ScheduleState      = "ScheduleState"
 	CreateSongState    = "CreateSongState"
+	DeleteSongState    = "DeleteSongState"
 )
 
 // Buttons constants.
