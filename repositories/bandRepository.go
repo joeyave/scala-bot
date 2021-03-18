@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"errors"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -34,13 +35,43 @@ func (r *BandRepository) FindAll() ([]*entities.Band, error) {
 
 func (r *BandRepository) FindOneByID(ID primitive.ObjectID) (*entities.Band, error) {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("bands")
-	result := collection.FindOne(context.TODO(), bson.M{"_id": ID})
-	if result.Err() != nil {
-		return nil, result.Err()
+
+	pipeline := bson.A{
+		bson.M{
+			"$match": bson.M{
+				"_id": ID,
+			},
+		},
+		bson.M{
+			"$lookup": bson.M{
+				"from":         "users",
+				"localField":   "_id",
+				"foreignField": "bandId",
+				"as":           "users",
+			},
+		},
+	}
+
+	cur, err := collection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	if cur.Next(context.TODO()) == false {
+		return nil, errors.New("band not found")
 	}
 
 	var band *entities.Band
-	err := result.Decode(&band)
+	err = cur.Decode(&band)
+	if err != nil {
+		return nil, err
+	}
+
+	var users []*entities.User
+	err = cur.Current.Lookup("users").Unmarshal(&users)
+	if err == nil {
+		band.Users = users
+	}
 	return band, err
 }
 

@@ -1,8 +1,8 @@
 package services
 
 import (
+	"fmt"
 	"github.com/joeyave/scala-chords-bot/entities"
-	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/scala-chords-bot/repositories"
 )
 
@@ -16,39 +16,17 @@ func NewUserService(userRepository *repositories.UserRepository) *UserService {
 	}
 }
 
-func (s *UserService) FindOrCreate(ID int64) (*entities.User, error) {
-	user, err := s.userRepository.FindOneByID(ID)
-
-	// Create User if he doesn't exists or doesn't have states.
-	if err != nil {
-		user = &entities.User{
-			ID: ID,
-			State: &entities.State{
-				Index: 0,
-				Name:  helpers.MainMenuState,
-			},
-		}
-
-		user, err = s.userRepository.UpdateOne(*user)
-		if err != nil {
-			return nil, err
-		}
+func (s *UserService) CreateOne(user entities.User) (*entities.User, error) {
+	if user.ID == 0 {
+		return nil, fmt.Errorf("invalid id for User %v", user)
 	}
 
-	if user.Band == nil &&
-		user.State.Name != helpers.ChooseBandState && user.State.Name != helpers.CreateBandState {
-		user.State = &entities.State{
-			Index: 0,
-			Name:  helpers.ChooseBandState,
-		}
-
-		user, err = s.userRepository.UpdateOne(*user)
-		if err != nil {
-			return nil, err
-		}
+	_, err := s.userRepository.FindOneByID(user.ID)
+	if err == nil {
+		return nil, fmt.Errorf("User with id %d already exists", user.ID)
 	}
 
-	return user, err
+	return s.userRepository.UpdateOne(user)
 }
 
 func (s *UserService) FindOneByID(ID int64) (*entities.User, error) {

@@ -7,6 +7,7 @@ import (
 
 type User struct {
 	ID     int64              `bson:"_id,omitempty"`
+	Name   string             `bson:"name,omitempty"`
 	State  *State             `bson:"state,omitempty"`
 	BandID primitive.ObjectID `bson:"bandId,omitempty"`
 	Band   *Band              `bson:"-"`
@@ -39,6 +40,8 @@ type Context struct {
 	CurrentSongID string        `bson:"currentSongId,omitempty"`
 	FoundSongIDs  []string      `bson:"foundSongIds,omitempty"`
 	DriveFiles    []*drive.File `bson:"driveFiles,omitempty"`
+
+	CurrentBandID primitive.ObjectID `bson:"currentBandId,omitempty"`
 
 	CurrentVoice *Voice `bson:"currentVoice,omitempty"`
 

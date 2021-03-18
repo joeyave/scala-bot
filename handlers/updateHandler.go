@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/scala-chords-bot/services"
 	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
+	"strings"
 )
 
 type UpdateHandler struct {
@@ -30,10 +32,37 @@ func (u *UpdateHandler) HandleUpdate(update *tgbotapi.Update) error {
 		}
 	}()
 
-	user, err := u.userService.FindOrCreate(update.Message.Chat.ID)
+	user, err := u.userService.FindOneByID(update.Message.Chat.ID)
 	if err != nil {
-		return err
+		user = &entities.User{
+			ID:   update.Message.Chat.ID,
+			Name: strings.TrimSpace(fmt.Sprintf("%s %s", update.Message.Chat.FirstName, update.Message.Chat.LastName)),
+			State: &entities.State{
+				Index: 0,
+				Name:  helpers.MainMenuState,
+			},
+		}
+
+		user, err = u.userService.CreateOne(*user)
+		if err != nil {
+			return err
+		}
 	}
+
+	if user.Band == nil &&
+		user.State.Name != helpers.ChooseBandState && user.State.Name != helpers.CreateBandState {
+		user.State = &entities.State{
+			Index: 0,
+			Name:  helpers.ChooseBandState,
+		}
+
+		user, err = u.userService.UpdateOne(*user)
+		if err != nil {
+			return err
+		}
+	}
+
+	user.Name = strings.TrimSpace(fmt.Sprintf("%s %s", update.Message.Chat.FirstName, update.Message.Chat.LastName))
 
 	backupUser := *user
 

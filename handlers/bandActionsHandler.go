@@ -5,7 +5,6 @@ import (
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
 	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"regexp"
 )
 
@@ -153,57 +152,85 @@ func addBandAdminHandler() (string, []func(updateHandler *UpdateHandler, update 
 	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error), 0)
 
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Перешли сообщение от пользователя, которого ты хочешь сделать администратором:")
-		msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
-			tgbotapi.NewKeyboardButtonRow(
-				tgbotapi.NewKeyboardButton(helpers.Cancel),
-			),
-		)
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выбери пользователя, которого ты хочешь сделать администратором:")
+		keyboard := tgbotapi.NewReplyKeyboard()
 
-		_, err := updateHandler.bot.Send(msg)
+		band, err := updateHandler.bandService.FindOneByID(user.BandID)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, bandUser := range band.Users {
+			keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton(bandUser.Name),
+			))
+		}
+
+		keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(helpers.Cancel),
+		))
+
+		msg.ReplyMarkup = keyboard
+
+		_, err = updateHandler.bot.Send(msg)
 		if err != nil {
 			return nil, err
 		}
 
 		user.State.Index++
+		user.State.Context.CurrentBandID = band.ID
 		return &user, nil
 	})
 
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
-		if update.Message.ForwardFrom == nil || update.Message.ForwardFrom.ID == 0 {
+		switch update.Message.Text {
+		case "":
 			user.State.Index--
 			return updateHandler.enterStateHandler(update, user)
-		}
+		default:
+			band, err := updateHandler.bandService.FindOneByID(user.State.Context.CurrentBandID)
+			if err != nil {
+				return nil, err
+			}
 
-		userToMakeAdmin, err := updateHandler.userService.FindOneByID(int64(update.Message.ForwardFrom.ID))
-		if err != nil || userToMakeAdmin.BandID == primitive.NilObjectID {
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Этот пользователь ни разу не пользовался ботом или не состоит ни в одной группе.")
-			updateHandler.bot.Send(msg)
+			var foundUser *entities.User
+			for _, bandUser := range band.Users {
+				if bandUser.Name == update.Message.Text {
+					foundUser = bandUser
+				}
+			}
 
-			user.State.Name = helpers.MainMenuState
-			return updateHandler.enterStateHandler(update, user)
-		}
-
-		band, err := updateHandler.bandService.FindOneByID(userToMakeAdmin.BandID)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, adminUserID := range band.AdminUserIDs {
-			if adminUserID == userToMakeAdmin.ID {
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Этот пользователь уже является администратором.")
-				updateHandler.bot.Send(msg)
-
-				user.State.Name = helpers.MainMenuState
+			if foundUser == nil {
 				return updateHandler.enterStateHandler(update, user)
 			}
+
+			exists := false
+			for _, bandAdminUserID := range band.AdminUserIDs {
+				if bandAdminUserID == foundUser.ID {
+					exists = true
+					break
+				}
+			}
+
+			if exists == false {
+				band.AdminUserIDs = append(band.AdminUserIDs, foundUser.ID)
+			}
+
+			_, err = updateHandler.bandService.UpdateOne(*band)
+			if err != nil {
+				return nil, err
+			}
+
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Пользователь %s повышен до администратора группы %s.",
+				foundUser.Name, band.Name))
+			updateHandler.bot.Send(msg)
+
+			user.State = &entities.State{
+				Name: helpers.MainMenuState,
+			}
+
+			return updateHandler.enterStateHandler(update, user)
 		}
-
-		band.AdminUserIDs = append(band.AdminUserIDs, userToMakeAdmin.ID)
-
-		_, err = updateHandler.bandService.UpdateOne(*band)
-		user.State.Name = helpers.MainMenuState
-		return &user, err
 	})
 
 	return helpers.AddBandAdminState, handleFuncs

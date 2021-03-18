@@ -15,6 +15,9 @@ type Band struct {
 
 	Events           []*Event          `bson:"-"`
 	NotionCollection *NotionCollection `bson:"notionCollection"`
+
+	Users      []*User `bson:"-"`
+	AdminUsers []*User `bson:"-"`
 }
 
 type Event struct {
