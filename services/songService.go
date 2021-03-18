@@ -710,9 +710,8 @@ func (s *SongService) Style(song entities.Song) (*entities.Song, error) {
 
 func composeStyleRequests(content []*docs.StructuralElement, segmentID string) []*docs.Request {
 	requests := make([]*docs.Request, 0)
-
-	makeBoldAndRedRegex := regexp.MustCompile(`(x|х)\d+`)
-	sectionNamesRegex := regexp.MustCompile(`\p{L}+(\s\d*)?:|\|`)
+	//makeBoldAndRedRegex := regexp.MustCompile(`(x|х)\d+`)
+	//sectionNamesRegex := regexp.MustCompile(`\p{L}+(\s\d*)?:|\|`)
 
 	for _, paragraph := range content {
 		if paragraph.Paragraph == nil {
@@ -802,84 +801,172 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string) [
 				}
 			}
 
-			matches := makeBoldAndRedRegex.FindAllStringIndex(element.TextRun.Content, -1)
-			if matches != nil {
-				for _, match := range matches {
-					style := *element.TextRun.TextStyle
+			style := *element.TextRun.TextStyle
 
-					style.Bold = true
-					style.ForegroundColor = &docs.OptionalColor{
-						Color: &docs.Color{
-							RgbColor: &docs.RgbColor{Blue: 0, Green: 0, Red: 0.8, ForceSendFields: []string{"blue", "green"}},
-						},
-					}
-
-					requests = append(requests, &docs.Request{
-						UpdateTextStyle: &docs.UpdateTextStyleRequest{
-							Fields: "*",
-							Range: &docs.Range{
-								StartIndex:      element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
-								EndIndex:        element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[1]]))),
-								SegmentId:       segmentID,
-								ForceSendFields: []string{"StartIndex"},
-							},
-							TextStyle: &style,
-						},
-					})
-				}
+			style.Bold = true
+			style.ForegroundColor = &docs.OptionalColor{
+				Color: &docs.Color{
+					RgbColor: &docs.RgbColor{Blue: 0, Green: 0, Red: 0, ForceSendFields: []string{"blue", "green", "red"}},
+				},
 			}
 
-			matches = sectionNamesRegex.FindAllStringIndex(element.TextRun.Content, -1)
-			if matches != nil {
-				for _, match := range matches {
-					style := *element.TextRun.TextStyle
+			requests = append(requests, changeStyleByRegex(regexp.MustCompile(`[|]`), *element, style, nil, segmentID)...)
 
-					style.Bold = true
-					style.ForegroundColor = &docs.OptionalColor{
-						Color: &docs.Color{
-							RgbColor: &docs.RgbColor{Blue: 0, Green: 0, Red: 0, ForceSendFields: []string{"blue", "green"}},
-						},
-					}
-					style.Underline = false
-					style.Italic = false
-					style.Strikethrough = false
+			style = *element.TextRun.TextStyle
 
-					requests = append(requests,
-						&docs.Request{
-							UpdateTextStyle: &docs.UpdateTextStyleRequest{
-								Fields: "*",
-								Range: &docs.Range{
-									StartIndex:      element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
-									EndIndex:        element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[1]]))),
-									SegmentId:       segmentID,
-									ForceSendFields: []string{"StartIndex"},
-								},
-								TextStyle: &style,
-							},
-						},
-						&docs.Request{
-							DeleteContentRange: &docs.DeleteContentRangeRequest{
-								Range: &docs.Range{
-									StartIndex:      element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
-									EndIndex:        element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[1]]))),
-									SegmentId:       segmentID,
-									ForceSendFields: []string{"StartIndex"},
-								},
-							},
-						},
-						&docs.Request{
-							InsertText: &docs.InsertTextRequest{
-								Location: &docs.Location{
-									Index:           element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
-									SegmentId:       segmentID,
-									ForceSendFields: []string{"StartIndex"},
-								},
-								Text: strings.ToUpper(element.TextRun.Content[match[0]:match[1]]),
-							},
-						},
-					)
-				}
+			style.Bold = true
+			style.ForegroundColor = &docs.OptionalColor{
+				Color: &docs.Color{
+					RgbColor: &docs.RgbColor{Blue: 0, Green: 0, Red: 0.8, ForceSendFields: []string{"blue", "green"}},
+				},
 			}
+
+			requests = append(requests, changeStyleByRegex(regexp.MustCompile(`(x|х)\d+`), *element, style, nil, segmentID)...)
+
+			style = *element.TextRun.TextStyle
+
+			style.Bold = true
+			style.ForegroundColor = &docs.OptionalColor{
+				Color: &docs.Color{
+					RgbColor: &docs.RgbColor{Blue: 0, Green: 0, Red: 0, ForceSendFields: []string{"blue", "green", "red"}},
+				},
+			}
+			style.Underline = false
+			style.Italic = false
+			style.Strikethrough = false
+
+			requests = append(requests, changeStyleByRegex(regexp.MustCompile(`\p{L}+(\s\d*)?:`), *element, style, strings.ToUpper, segmentID)...)
+
+			//matches := makeBoldAndRedRegex.FindAllStringIndex(element.TextRun.Content, -1)
+			//if matches != nil {
+			//	for _, match := range matches {
+			//		style := *element.TextRun.TextStyle
+			//
+			//		style.Bold = true
+			//		style.ForegroundColor = &docs.OptionalColor{
+			//			Color: &docs.Color{
+			//				RgbColor: &docs.RgbColor{Blue: 0, Green: 0, Red: 0.8, ForceSendFields: []string{"blue", "green"}},
+			//			},
+			//		}
+			//
+			//		requests = append(requests, &docs.Request{
+			//			UpdateTextStyle: &docs.UpdateTextStyleRequest{
+			//				Fields: "*",
+			//				Range: &docs.Range{
+			//					StartIndex:      element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
+			//					EndIndex:        element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[1]]))),
+			//					SegmentId:       segmentID,
+			//					ForceSendFields: []string{"StartIndex"},
+			//				},
+			//				TextStyle: &style,
+			//			},
+			//		})
+			//	}
+			//}
+			//
+			//matches = sectionNamesRegex.FindAllStringIndex(element.TextRun.Content, -1)
+			//if matches != nil {
+			//	for _, match := range matches {
+			//		style := *element.TextRun.TextStyle
+			//
+			//		style.Bold = true
+			//		style.ForegroundColor = &docs.OptionalColor{
+			//			Color: &docs.Color{
+			//				RgbColor: &docs.RgbColor{Blue: 0, Green: 0, Red: 0, ForceSendFields: []string{"blue", "green"}},
+			//			},
+			//		}
+			//		style.Underline = false
+			//		style.Italic = false
+			//		style.Strikethrough = false
+			//
+			//		requests = append(requests,
+			//			&docs.Request{
+			//				UpdateTextStyle: &docs.UpdateTextStyleRequest{
+			//					Fields: "*",
+			//					Range: &docs.Range{
+			//						StartIndex:      element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
+			//						EndIndex:        element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[1]]))),
+			//						SegmentId:       segmentID,
+			//						ForceSendFields: []string{"StartIndex"},
+			//					},
+			//					TextStyle: &style,
+			//				},
+			//			},
+			//			&docs.Request{
+			//				DeleteContentRange: &docs.DeleteContentRangeRequest{
+			//					Range: &docs.Range{
+			//						StartIndex:      element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
+			//						EndIndex:        element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[1]]))),
+			//						SegmentId:       segmentID,
+			//						ForceSendFields: []string{"StartIndex"},
+			//					},
+			//				},
+			//			},
+			//			&docs.Request{
+			//				InsertText: &docs.InsertTextRequest{
+			//					Location: &docs.Location{
+			//						Index:           element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
+			//						SegmentId:       segmentID,
+			//						ForceSendFields: []string{"StartIndex"},
+			//					},
+			//					Text: strings.ToUpper(element.TextRun.Content[match[0]:match[1]]),
+			//				},
+			//			},
+			//		)
+			//	}
+			//}
+		}
+	}
+
+	return requests
+}
+
+func changeStyleByRegex(re *regexp.Regexp, element docs.ParagraphElement, style docs.TextStyle, textFunc func(string) string, segmentID string) []*docs.Request {
+	requests := make([]*docs.Request, 0)
+
+	matches := re.FindAllStringIndex(element.TextRun.Content, -1)
+	if matches == nil {
+		return requests
+	}
+
+	for _, match := range matches {
+		requests = append(requests,
+			&docs.Request{
+				UpdateTextStyle: &docs.UpdateTextStyleRequest{
+					Fields: "*",
+					Range: &docs.Range{
+						StartIndex:      element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
+						EndIndex:        element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[1]]))),
+						SegmentId:       segmentID,
+						ForceSendFields: []string{"StartIndex"},
+					},
+					TextStyle: &style,
+				},
+			},
+		)
+
+		if textFunc != nil {
+			requests = append(requests,
+				&docs.Request{
+					DeleteContentRange: &docs.DeleteContentRangeRequest{
+						Range: &docs.Range{
+							StartIndex:      element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
+							EndIndex:        element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[1]]))),
+							SegmentId:       segmentID,
+							ForceSendFields: []string{"StartIndex"},
+						},
+					},
+				},
+				&docs.Request{
+					InsertText: &docs.InsertTextRequest{
+						Location: &docs.Location{
+							Index:           element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
+							SegmentId:       segmentID,
+							ForceSendFields: []string{"StartIndex"},
+						},
+						Text: textFunc(element.TextRun.Content[match[0]:match[1]]),
+					},
+				})
 		}
 	}
 
