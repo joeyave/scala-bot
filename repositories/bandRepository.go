@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -22,33 +22,38 @@ func NewBandRepository(mongoClient *mongo.Client) *BandRepository {
 }
 
 func (r *BandRepository) FindAll() ([]*entities.Band, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("bands")
-	cursor, err := collection.Find(context.TODO(), bson.D{})
+	bands, err := r.find(bson.M{"_id": bson.M{"$ne": ""}})
 	if err != nil {
 		return nil, err
 	}
 
-	var bands []*entities.Band
-	err = cursor.All(context.TODO(), &bands)
-	return bands, err
+	return bands, nil
 }
 
 func (r *BandRepository) FindOneByID(ID primitive.ObjectID) (*entities.Band, error) {
+	bands, err := r.find(bson.M{"_id": ID})
+	if err != nil {
+		return nil, err
+	}
+
+	return bands[0], nil
+}
+
+func (r *BandRepository) FindOneByDriveFolderID(driveFolderID string) (*entities.Band, error) {
+	bands, err := r.find(bson.M{"driveFolderId": driveFolderID})
+	if err != nil {
+		return nil, err
+	}
+
+	return bands[0], nil
+}
+
+func (r *BandRepository) find(m bson.M) ([]*entities.Band, error) {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("bands")
 
 	pipeline := bson.A{
 		bson.M{
-			"$match": bson.M{
-				"_id": ID,
-			},
-		},
-		bson.M{
-			"$lookup": bson.M{
-				"from":         "users",
-				"localField":   "_id",
-				"foreignField": "bandId",
-				"as":           "users",
-			},
+			"$match": m,
 		},
 	}
 
@@ -57,22 +62,17 @@ func (r *BandRepository) FindOneByID(ID primitive.ObjectID) (*entities.Band, err
 		return nil, err
 	}
 
-	if cur.Next(context.TODO()) == false {
-		return nil, errors.New("band not found")
-	}
-
-	var band *entities.Band
-	err = cur.Decode(&band)
+	var bands []*entities.Band
+	err = cur.All(context.TODO(), &bands)
 	if err != nil {
 		return nil, err
 	}
 
-	var users []*entities.User
-	err = cur.Current.Lookup("users").Unmarshal(&users)
-	if err == nil {
-		band.Users = users
+	if len(bands) == 0 {
+		return nil, fmt.Errorf("not found")
 	}
-	return band, err
+
+	return bands, nil
 }
 
 func (r *BandRepository) UpdateOne(band entities.Band) (*entities.Band, error) {
@@ -102,7 +102,11 @@ func (r *BandRepository) UpdateOne(band entities.Band) (*entities.Band, error) {
 
 	var newBand *entities.Band
 	err := result.Decode(&newBand)
-	return newBand, err
+	if err != nil {
+		return nil, err
+	}
+
+	return r.FindOneByID(newBand.ID)
 }
 
 func (r *BandRepository) generateUniqueID() primitive.ObjectID {

@@ -11,13 +11,8 @@ type Band struct {
 	ID            primitive.ObjectID `bson:"_id,omitempty"`
 	Name          string             `bson:"name,omitempty"`
 	DriveFolderID string             `bson:"driveFolderId,omitempty"`
-	AdminUserIDs  []int64            `bson:"adminUserIds,omitempty"`
 
-	Events           []*Event          `bson:"-"`
 	NotionCollection *NotionCollection `bson:"notionCollection"`
-
-	Users      []*User `bson:"-"`
-	AdminUsers []*User `bson:"-"`
 }
 
 type Event struct {

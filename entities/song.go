@@ -1,20 +1,23 @@
 package entities
 
 import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
 	"time"
 )
 
 type Song struct {
-	ID        string      `bson:"_id,omitempty"`
-	DriveFile *drive.File `bson:"-"`
-	PDF       PDF         `bson:"pdf,omitempty"`
-	Voices    []*Voice    `bson:"voices,omitempty"`
-}
+	ID primitive.ObjectID `bson:"_id,omitempty"`
 
-type Voice struct {
-	TgFileID string `bson:"tgFileId,omitempty"`
-	Caption  string `bson:"caption,omitempty"`
+	DriveFileID string      `bson:"driveFileId,omitempty"`
+	DriveFile   *drive.File `bson:"-"`
+
+	BandID primitive.ObjectID `bson:"bandId,omitempty"`
+	Band   *Band              `bson:"band,omitempty"`
+
+	PDF PDF `bson:"pdf,omitempty"`
+
+	Voices []*Voice `bson:"voices,omitempty"`
 }
 
 type PDF struct {
@@ -40,20 +43,6 @@ func (s *Song) HasOutdatedPDF() bool {
 
 	if driveFileModifiedTime.After(pdfModifiedTime) {
 		return true
-	}
-
-	return false
-}
-
-func (s *Song) BelongsToUser(user User) bool {
-	if user.Band == nil {
-		return false
-	}
-
-	for _, songParentID := range s.DriveFile.Parents {
-		if songParentID == user.Band.DriveFolderID {
-			return true
-		}
 	}
 
 	return false

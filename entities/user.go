@@ -6,21 +6,13 @@ import (
 )
 
 type User struct {
-	ID     int64              `bson:"_id,omitempty"`
-	Name   string             `bson:"name,omitempty"`
-	State  *State             `bson:"state,omitempty"`
+	ID    int64  `bson:"_id,omitempty"`
+	Name  string `bson:"name,omitempty"`
+	Role  string `bson:"role,omitempty"`
+	State *State `bson:"state,omitempty"`
+
 	BandID primitive.ObjectID `bson:"bandId,omitempty"`
-	Band   *Band              `bson:"-"`
-}
-
-func (u *User) IsAdmin() bool {
-	for _, id := range u.Band.AdminUserIDs {
-		if id == u.ID {
-			return true
-		}
-	}
-
-	return false
+	Band   *Band              `bson:"band,omitempty"`
 }
 
 type State struct {
@@ -37,9 +29,9 @@ type Context struct {
 	MessagesToDelete []int    `bson:"messagesToDelete,omitempty"`
 	Query            string   `bson:"query,omitempty"`
 
-	CurrentSongID string        `bson:"currentSongId,omitempty"`
-	FoundSongIDs  []string      `bson:"foundSongIds,omitempty"`
-	DriveFiles    []*drive.File `bson:"driveFiles,omitempty"`
+	CurrentDriveFileID string        `bson:"currentSongId,omitempty"`
+	FoundDriveFileIDs  []string      `bson:"foundSongIds,omitempty"`
+	DriveFiles         []*drive.File `bson:"driveFiles,omitempty"`
 
 	CurrentBandID primitive.ObjectID `bson:"currentBandId,omitempty"`
 

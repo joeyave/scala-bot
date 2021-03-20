@@ -28,6 +28,11 @@ func (s *BandService) FindAll() ([]*entities.Band, error) {
 func (s *BandService) FindOneByID(ID primitive.ObjectID) (*entities.Band, error) {
 	return s.bandRepository.FindOneByID(ID)
 }
+
+func (s *BandService) FindOneByDriveFolderID(driveFolderID string) (*entities.Band, error) {
+	return s.bandRepository.FindOneByDriveFolderID(driveFolderID)
+}
+
 func (s *BandService) UpdateOne(band entities.Band) (*entities.Band, error) {
 	return s.bandRepository.UpdateOne(band)
 }

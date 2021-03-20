@@ -50,14 +50,18 @@ func main() {
 
 	notionClient := &notionapi.Client{}
 
-	songRepository := repositories.NewSongRepository(mongoClient)
-	songService := services.NewSongService(songRepository, driveClient, docsClient, notionClient)
-
-	userRepository := repositories.NewUserRepository(mongoClient)
-	userService := services.NewUserService(userRepository)
+	voiceRepository := repositories.NewVoiceRepository(mongoClient)
+	voiceService := services.NewVoiceService(voiceRepository)
 
 	bandRepository := repositories.NewBandRepository(mongoClient)
 	bandService := services.NewBandService(bandRepository, notionClient)
+
+	songRepository := repositories.NewSongRepository(mongoClient, driveClient)
+	driveFileService := services.NewDriveFileService(driveClient, docsClient)
+	songService := services.NewSongService(songRepository, voiceRepository, bandRepository, driveClient, notionClient)
+
+	userRepository := repositories.NewUserRepository(mongoClient)
+	userService := services.NewUserService(userRepository)
 
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
 	if err != nil {
@@ -66,7 +70,7 @@ func main() {
 
 	bot.Debug = false
 
-	handler := handlers.NewHandler(bot, userService, songService, bandService)
+	handler := handlers.NewHandler(bot, userService, driveFileService, songService, voiceService, bandService)
 
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 

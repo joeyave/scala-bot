@@ -43,5 +43,9 @@ const (
 	AddAdmin         string = "Добавить администратора"
 )
 
+const (
+	Admin string = "Admin"
+)
+
 var FilesChannelID int64
 var LogsChannelID int64

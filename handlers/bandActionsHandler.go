@@ -12,11 +12,7 @@ func chooseBandHandler() (string, []func(updateHandler *UpdateHandler, update *t
 	handleFuncs := make([]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error), 0)
 
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
-		bands, err := updateHandler.bandService.FindAll()
-		if err != nil {
-			// TODO
-			return nil, err
-		}
+		bands, _ := updateHandler.bandService.FindAll()
 
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выбери свою группу:")
 
@@ -33,7 +29,7 @@ func chooseBandHandler() (string, []func(updateHandler *UpdateHandler, update *t
 
 		user.State.Context.Bands = bands
 		user.State.Index++
-		return &user, err
+		return &user, nil
 	})
 
 	handleFuncs = append(handleFuncs, func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error) {
@@ -126,7 +122,7 @@ func createBandHandler() (string, []func(updateHandler *UpdateHandler, update *t
 				return updateHandler.enterStateHandler(update, user)
 			}
 			user.State.Context.CurrentBand.DriveFolderID = matches[2]
-			user.State.Context.CurrentBand.AdminUserIDs = append(user.State.Context.CurrentBand.AdminUserIDs, update.Message.Chat.ID)
+			user.Role = helpers.Admin
 			band, err := updateHandler.bandService.UpdateOne(*user.State.Context.CurrentBand)
 			if err != nil {
 				return &user, err
@@ -160,7 +156,12 @@ func addBandAdminHandler() (string, []func(updateHandler *UpdateHandler, update 
 			return nil, err
 		}
 
-		for _, bandUser := range band.Users {
+		users, err := updateHandler.userService.FindMultipleByBandID(band.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, bandUser := range users {
 			keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(
 				tgbotapi.NewKeyboardButton(bandUser.Name),
 			))
@@ -193,8 +194,13 @@ func addBandAdminHandler() (string, []func(updateHandler *UpdateHandler, update 
 				return nil, err
 			}
 
+			users, err := updateHandler.userService.FindMultipleByBandID(band.ID)
+			if err != nil {
+				return nil, err
+			}
+
 			var foundUser *entities.User
-			for _, bandUser := range band.Users {
+			for _, bandUser := range users {
 				if bandUser.Name == update.Message.Text {
 					foundUser = bandUser
 				}
@@ -203,20 +209,8 @@ func addBandAdminHandler() (string, []func(updateHandler *UpdateHandler, update 
 			if foundUser == nil {
 				return updateHandler.enterStateHandler(update, user)
 			}
-
-			exists := false
-			for _, bandAdminUserID := range band.AdminUserIDs {
-				if bandAdminUserID == foundUser.ID {
-					exists = true
-					break
-				}
-			}
-
-			if exists == false {
-				band.AdminUserIDs = append(band.AdminUserIDs, foundUser.ID)
-			}
-
-			_, err = updateHandler.bandService.UpdateOne(*band)
+			foundUser.Role = helpers.Admin
+			_, err = updateHandler.userService.UpdateOne(*foundUser)
 			if err != nil {
 				return nil, err
 			}

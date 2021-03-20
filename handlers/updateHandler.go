@@ -6,22 +6,27 @@ import (
 	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/scala-chords-bot/services"
 	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"strings"
 )
 
 type UpdateHandler struct {
-	bot         *tgbotapi.BotAPI
-	userService *services.UserService
-	songService *services.SongService
-	bandService *services.BandService
+	bot              *tgbotapi.BotAPI
+	userService      *services.UserService
+	driveFileService *services.DriveFileService
+	songService      *services.SongService
+	voiceService     *services.VoiceService
+	bandService      *services.BandService
 }
 
-func NewHandler(bot *tgbotapi.BotAPI, userService *services.UserService, songService *services.SongService, bandService *services.BandService) *UpdateHandler {
+func NewHandler(bot *tgbotapi.BotAPI, userService *services.UserService, driveFileService *services.DriveFileService, songService *services.SongService, voiceService *services.VoiceService, bandService *services.BandService) *UpdateHandler {
 	return &UpdateHandler{
-		bot:         bot,
-		userService: userService,
-		songService: songService,
-		bandService: bandService,
+		bot:              bot,
+		userService:      userService,
+		driveFileService: driveFileService,
+		songService:      songService,
+		voiceService:     voiceService,
+		bandService:      bandService,
 	}
 }
 
@@ -35,34 +40,27 @@ func (u *UpdateHandler) HandleUpdate(update *tgbotapi.Update) error {
 	user, err := u.userService.FindOneByID(update.Message.Chat.ID)
 	if err != nil {
 		user = &entities.User{
-			ID:   update.Message.Chat.ID,
-			Name: strings.TrimSpace(fmt.Sprintf("%s %s", update.Message.Chat.FirstName, update.Message.Chat.LastName)),
+			ID: update.Message.Chat.ID,
 			State: &entities.State{
 				Index: 0,
 				Name:  helpers.MainMenuState,
 			},
 		}
-
-		user, err = u.userService.CreateOne(*user)
-		if err != nil {
-			return err
-		}
 	}
 
-	if user.Band == nil &&
-		user.State.Name != helpers.ChooseBandState && user.State.Name != helpers.CreateBandState {
+	user.Name = strings.TrimSpace(fmt.Sprintf("%s %s", update.Message.Chat.FirstName, update.Message.Chat.LastName))
+
+	if user.BandID == primitive.NilObjectID && user.State.Name != helpers.ChooseBandState && user.State.Name != helpers.CreateBandState {
 		user.State = &entities.State{
 			Index: 0,
 			Name:  helpers.ChooseBandState,
 		}
-
-		user, err = u.userService.UpdateOne(*user)
-		if err != nil {
-			return err
-		}
 	}
 
-	user.Name = strings.TrimSpace(fmt.Sprintf("%s %s", update.Message.Chat.FirstName, update.Message.Chat.LastName))
+	user, err = u.userService.UpdateOne(*user)
+	if err != nil {
+		return err
+	}
 
 	backupUser := *user
 
@@ -93,7 +91,7 @@ func (u *UpdateHandler) HandleUpdate(update *tgbotapi.Update) error {
 			Name:  helpers.UploadVoiceState,
 			Context: entities.Context{
 				CurrentVoice: &entities.Voice{
-					TgFileID: update.Message.Voice.FileID,
+					FileID: update.Message.Voice.FileID,
 				},
 			},
 			Prev: user.State,
@@ -106,12 +104,11 @@ func (u *UpdateHandler) HandleUpdate(update *tgbotapi.Update) error {
 			Index: 0,
 			Name:  helpers.MainMenuState,
 		}
-		u.userService.UpdateOne(backupUser)
-
-		return err
+		_, err = u.userService.UpdateOne(backupUser)
+	} else {
+		_, err = u.userService.UpdateOne(*user)
 	}
 
-	_, err = u.userService.UpdateOne(*user)
 	return err
 }
 
