@@ -43,14 +43,16 @@ func LogError(update *tgbotapi.Update, bot *tgbotapi.BotAPI, err interface{}) {
 }
 
 func SendToChannel(fileID string, bot *tgbotapi.BotAPI, song *entities.Song) *entities.Song {
-	if song.PDF.TgChannelMessageID == 0 {
+	sendNew := func() {
 		msg := tgbotapi.NewDocument(FilesChannelID, tgbotapi.FileID(fileID))
 		msg.DisableNotification = true
 		sendToChannelResponse, err := bot.Send(msg)
 		if err == nil {
 			song.PDF.TgChannelMessageID = sendToChannelResponse.MessageID
 		}
-	} else {
+	}
+
+	edit := func() {
 		msg := tgbotapi.EditMessageMediaConfig{
 			BaseEdit: tgbotapi.BaseEdit{
 				ChatID:    FilesChannelID,
@@ -59,8 +61,16 @@ func SendToChannel(fileID string, bot *tgbotapi.BotAPI, song *entities.Song) *en
 			Media: tgbotapi.NewInputMediaDocument(tgbotapi.FileID(fileID)),
 		}
 
-		res, err := bot.Send(msg)
-		fmt.Println(res, err)
+		_, err := bot.Send(msg)
+		if err != nil {
+			sendNew()
+		}
+	}
+
+	if song.PDF.TgChannelMessageID == 0 {
+		sendNew()
+	} else {
+		edit()
 	}
 
 	return song
