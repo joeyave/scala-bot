@@ -28,6 +28,10 @@ func NewSongService(songRepository *repositories.SongRepository, voiceRepository
 	}
 }
 
+func (s *SongService) FindAll() ([]*entities.Song, error) {
+	return s.songRepository.FindAll()
+}
+
 func (s *SongService) FindOneByID(ID primitive.ObjectID) (*entities.Song, error) {
 	return s.songRepository.FindOneByID(ID)
 }

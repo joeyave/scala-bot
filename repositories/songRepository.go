@@ -24,6 +24,10 @@ func NewSongRepository(mongoClient *mongo.Client, driveClient *drive.Service) *S
 	}
 }
 
+func (r *SongRepository) FindAll() ([]*entities.Song, error) {
+	return r.find(bson.M{})
+}
+
 func (r *SongRepository) FindOneByID(ID primitive.ObjectID) (*entities.Song, error) {
 	songs, err := r.find(bson.M{"_id": ID})
 	if err != nil {
@@ -77,19 +81,21 @@ func (r *SongRepository) find(m bson.M) ([]*entities.Song, error) {
 	}
 
 	var songs []*entities.Song
-	err = cur.All(context.TODO(), &songs)
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range songs {
-		// TODO: wrap with retrier. Maybe the best way is to create driveFileRepository and wrap all methods there.
-		driveFile, err := r.driveClient.Files.Get(songs[i].DriveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+	for cur.Next(context.TODO()) {
+		var song *entities.Song
+		err := cur.Decode(&song)
 		if err != nil {
-			return nil, err
+			continue
 		}
 
-		songs[i].DriveFile = driveFile
+		driveFile, err := r.driveClient.Files.Get(song.DriveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+		if err != nil {
+			continue
+		}
+
+		song.DriveFile = driveFile
+
+		songs = append(songs, song)
 	}
 
 	if len(songs) == 0 {
