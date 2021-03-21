@@ -68,7 +68,7 @@ func main() {
 		log.Panic(err)
 	}
 
-	bot.Debug = false
+	bot.Debug = true
 
 	handler := handlers.NewHandler(bot, userService, driveFileService, songService, voiceService, bandService)
 
@@ -82,15 +82,15 @@ func main() {
 
 	for update := range updates {
 		lastOffset = update.UpdateID
-		if update.Message == nil { // ignore any non-Message Updates
+		if update.Message == nil {
 			continue
 		}
 
-		go func(update *tgbotapi.Update) {
-			err := handler.HandleUpdate(update)
+		go func(update tgbotapi.Update) {
+			err := handler.HandleUpdate(&update)
 			if err != nil {
-				helpers.LogError(update, bot, err)
+				helpers.LogError(&update, bot, err)
 			}
-		}(&update)
+		}(update)
 	}
 }

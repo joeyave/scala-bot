@@ -1064,7 +1064,28 @@ func setlistHandler() (string, []func(updateHandler *UpdateHandler, update *tgbo
 
 				song, err := updateHandler.songService.FindOneByDriveFileID(foundSongIDs[i])
 				if err != nil {
-					return
+					err = nil
+					driveFile, err := updateHandler.driveFileService.FindOneByID(foundSongIDs[i])
+					if err != nil {
+						return
+					}
+
+					song = &entities.Song{
+						DriveFileID: driveFile.Id,
+					}
+
+					for _, parentFolderID := range driveFile.Parents {
+						band, err := updateHandler.bandService.FindOneByDriveFolderID(parentFolderID)
+						if err == nil {
+							song.BandID = band.ID
+							break
+						}
+					}
+
+					song, err = updateHandler.songService.UpdateOne(*song)
+					if err != nil {
+						return
+					}
 				}
 
 				if song.HasOutdatedPDF() {
