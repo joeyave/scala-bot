@@ -668,7 +668,7 @@ func createSongHandler() (string, []func(updateHandler *UpdateHandler, update *t
 			},
 		}
 
-		return &user, err
+		return updateHandler.enterStateHandler(update, user)
 	})
 
 	return helpers.CreateSongState, handleFuncs
