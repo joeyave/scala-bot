@@ -1,0 +1,16 @@
+name: Deploy to IBM Cloud Foundry
+on:
+  push:
+    branches: [ master ]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Deploy to IBM Cloud Foundry
+        uses: IBM/cloudfoundry-deploy@master
+        with:
+          IBM_CLOUD_API_KEY: ${{ secrets.IBM_CLOUD_API_KEY }}
+          IBM_CLOUD_CF_API: ${{ secrets.IBM_CLOUD_CF_API }}
+          IBM_CLOUD_CF_ORG: ${{ secrets.IBM_CLOUD_CF_ORG }}
+          IBM_CLOUD_CF_SPACE: ${{ secrets.IBM_CLOUD_CF_SPACE }}
