@@ -115,7 +115,7 @@ func createBandHandler() (string, []func(updateHandler *UpdateHandler, update *t
 			user.State.Index--
 			return updateHandler.enterStateHandler(update, user)
 		default:
-			re := regexp.MustCompile(`(/folders/|id=)(.*?)(/|$)`)
+			re := regexp.MustCompile(`(/folders/|id=)(.*?)(/|\?|$)`)
 			matches := re.FindStringSubmatch(update.Message.Text)
 			if matches == nil || len(matches) < 3 {
 				user.State.Index--
