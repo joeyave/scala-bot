@@ -79,7 +79,7 @@ func main() {
 	r := gin.Default()
 	r.LoadHTMLGlob("templates/*")
 
-	r.GET("/googlef424063251e2d68b", func(c *gin.Context) {
+	r.GET("/googlef424063251e2d68b.html", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "googlef424063251e2d68b.html", gin.H{})
 	})
 
