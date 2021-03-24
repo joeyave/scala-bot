@@ -3,7 +3,6 @@ package repositories
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -141,14 +140,14 @@ func (r *SongRepository) UpdateOne(song entities.Song) (*entities.Song, error) {
 		return nil, err
 	}
 
-	channel, err := r.driveClient.Files.Watch(song.DriveFileID, &drive.Channel{
-		Address: fmt.Sprintf("%s/driveFileChangeCallback", os.Getenv("HOST")),
-		Id:      uuid.New().String(),
-		Kind:    "api#channel",
-		Type:    "web_hook",
-	}).Do()
-
-	fmt.Println(channel, err)
+	//channel, err := r.driveClient.Files.Watch(song.DriveFileID, &drive.Channel{
+	//	Address: fmt.Sprintf("%s/driveFileChangeCallback", os.Getenv("HOST")),
+	//	Id:      uuid.New().String(),
+	//	Kind:    "api#channel",
+	//	Type:    "web_hook",
+	//}).Do()
+	//
+	//fmt.Println(channel, err)
 
 	return r.FindOneByID(newSong.ID)
 }
