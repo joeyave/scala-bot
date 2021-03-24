@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"github.com/gin-gonic/gin"
 	"github.com/joeyave/scala-chords-bot/handlers"
 	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/scala-chords-bot/repositories"
@@ -14,7 +16,9 @@ import (
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"time"
 )
@@ -68,29 +72,64 @@ func main() {
 		log.Panic(err)
 	}
 
-	bot.Debug = true
+	bot.Debug = false
 
 	handler := handlers.NewHandler(bot, userService, driveFileService, songService, voiceService, bandService)
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	r := gin.Default()
+	r.LoadHTMLGlob("templates/*")
 
-	lastOffset := 0
-	u := tgbotapi.NewUpdate(lastOffset + 1)
-	u.Timeout = 60
+	r.GET("/googlef424063251e2d68b", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "googlef424063251e2d68b.html", gin.H{})
+	})
 
-	updates := bot.GetUpdatesChan(u)
+	r.POST("/", func(c *gin.Context) {
+		defer c.Request.Body.Close()
 
-	for update := range updates {
-		lastOffset = update.UpdateID
-		if update.Message == nil {
-			continue
+		bytes, err := ioutil.ReadAll(c.Request.Body)
+		if err != nil {
+			helpers.LogError(nil, bot, err)
+			return
 		}
 
-		go func(update tgbotapi.Update) {
-			err := handler.HandleUpdate(&update)
-			if err != nil {
-				helpers.LogError(&update, bot, err)
-			}
-		}(update)
-	}
+		var update tgbotapi.Update
+		err = json.Unmarshal(bytes, &update)
+		if err != nil {
+			helpers.LogError(nil, bot, err)
+			return
+		}
+
+		err = handler.HandleUpdate(&update)
+		if err != nil {
+			helpers.LogError(&update, bot, err)
+			return
+		}
+	})
+
+	r.Run(":" + os.Getenv("PORT"))
+
+	//log.Printf("Authorized on account %s", bot.Self.UserName)
+	//
+	//lastOffset := 0
+	//u := tgbotapi.NewUpdate(lastOffset + 1)
+	//u.Timeout = 60
+	//
+	//updates := bot.GetUpdatesChan(u)
+	//
+	//go func() {
+	//	for update := range updates {
+	//		lastOffset = update.UpdateID
+	//		if update.Message == nil {
+	//			continue
+	//		}
+	//
+	//		go func(update tgbotapi.Update) {
+	//			err := handler.HandleUpdate(&update)
+	//			if err != nil {
+	//				helpers.LogError(&update, bot, err)
+	//			}
+	//		}(update)
+	//	}
+	//	wg.Done()
+	//}()
 }
