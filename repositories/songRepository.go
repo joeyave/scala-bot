@@ -147,6 +147,7 @@ func (r *SongRepository) UpdateOne(song entities.Song) (*entities.Song, error) {
 		Kind:    "api#channel",
 		Type:    "web_hook",
 	}).Do()
+
 	fmt.Println(channel, err)
 
 	return r.FindOneByID(newSong.ID)

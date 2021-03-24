@@ -106,6 +106,24 @@ func main() {
 		}
 	})
 
+	r.POST("/driveFileChangeCallback", func(c *gin.Context) {
+		defer c.Request.Body.Close()
+
+		bytes, err := ioutil.ReadAll(c.Request.Body)
+		if err != nil {
+			return
+		}
+
+		var body map[string]interface{}
+		err = json.Unmarshal(bytes, &body)
+		if err != nil {
+			return
+		}
+
+		helpers.LogError(nil, bot, body)
+		log.Println(body)
+	})
+
 	r.Run(":" + os.Getenv("PORT"))
 
 	//log.Printf("Authorized on account %s", bot.Self.UserName)
