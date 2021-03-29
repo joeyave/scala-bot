@@ -1092,7 +1092,7 @@ func getVoicesHandler() (string, []HandlerFunc) {
 					File:    telebot.File{FileID: foundVoice.FileID},
 					Caption: foundVoice.Caption,
 				}, &telebot.ReplyMarkup{
-					ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Delete}, {Text: helpers.Back}}},
+					ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Back}}, {{Text: helpers.Delete}}},
 					ResizeKeyboard: true,
 				})
 				if err != nil {
