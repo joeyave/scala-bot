@@ -430,7 +430,7 @@ func searchSongHandler() (string, []HandlerFunc) {
 
 			query := c.Text()
 
-			if query == helpers.SearchEverywhere || query == helpers.Back {
+			if query == helpers.SearchEverywhere || query == helpers.Back || query == helpers.FindChords {
 				query = user.State.Context.Query
 			}
 
