@@ -17,7 +17,7 @@ func init() {
 		//addBandAdminHandler,
 		createSongHandler,
 		copySongHandler,
-		deleteSongHandler,
+		//deleteSongHandler,
 		createBandHandler,
 		chooseBandHandler,
 		styleSongHandler,
