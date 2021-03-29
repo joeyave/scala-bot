@@ -63,8 +63,9 @@ func main() {
 	userService := services.NewUserService(userRepository)
 
 	bot, err := telebot.NewBot(telebot.Settings{
-		Token:  os.Getenv("BOT_TOKEN"),
-		Poller: &telebot.LongPoller{Timeout: 10 * time.Second},
+		Token:       os.Getenv("BOT_TOKEN"),
+		Poller:      &telebot.LongPoller{Timeout: 10 * time.Second},
+		Synchronous: false,
 	})
 	if err != nil {
 		log.Fatal(err)
