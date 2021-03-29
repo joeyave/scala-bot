@@ -2,13 +2,10 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"github.com/gin-gonic/gin"
 	"github.com/joeyave/scala-chords-bot/handlers"
-	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/scala-chords-bot/repositories"
 	"github.com/joeyave/scala-chords-bot/services"
-	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
+	"github.com/joeyave/telebot/v3"
 	"github.com/kjk/notionapi"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -16,9 +13,7 @@ import (
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"time"
 )
@@ -67,74 +62,22 @@ func main() {
 	userRepository := repositories.NewUserRepository(mongoClient)
 	userService := services.NewUserService(userRepository)
 
-	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
+	bot, err := telebot.NewBot(telebot.Settings{
+		Token:  os.Getenv("BOT_TOKEN"),
+		Poller: &telebot.LongPoller{Timeout: 10 * time.Second},
+	})
 	if err != nil {
-		log.Panic(err)
+		log.Fatal(err)
 	}
-
-	bot.Debug = false
 
 	handler := handlers.NewHandler(bot, userService, driveFileService, songService, voiceService, bandService)
 
-	r := gin.Default()
-	r.LoadHTMLGlob("templates/*")
+	bot.OnError = handler.OnError
 
-	r.GET("/googlef424063251e2d68b.html", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "googlef424063251e2d68b.html", gin.H{})
-	})
+	bot.Use(handler.RegisterUserMiddleware)
 
-	r.POST("/", func(c *gin.Context) {
-		defer c.Request.Body.Close()
+	bot.Handle(telebot.OnText, handler.OnText)
+	bot.Handle(telebot.OnVoice, handler.OnText)
 
-		bytes, err := ioutil.ReadAll(c.Request.Body)
-		if err != nil {
-			helpers.LogError(nil, bot, err)
-			return
-		}
-
-		var update tgbotapi.Update
-		err = json.Unmarshal(bytes, &update)
-		if err != nil {
-			helpers.LogError(nil, bot, err)
-			return
-		}
-
-		err = handler.HandleUpdate(&update)
-		if err != nil {
-			helpers.LogError(&update, bot, err)
-			return
-		}
-	})
-
-	//r.POST("/driveFileChangeCallback", func(c *gin.Context) {
-	//	defer c.Request.Body.Close()
-	//	helpers.LogError(nil, bot, c.Request.Header)
-	//})
-
-	r.Run(":" + os.Getenv("PORT"))
-
-	//log.Printf("Authorized on account %s", bot.Self.UserName)
-	//
-	//lastOffset := 0
-	//u := tgbotapi.NewUpdate(lastOffset + 1)
-	//u.Timeout = 60
-	//
-	//updates := bot.GetUpdatesChan(u)
-	//
-	//go func() {
-	//	for update := range updates {
-	//		lastOffset = update.UpdateID
-	//		if update.Message == nil {
-	//			continue
-	//		}
-	//
-	//		go func(update tgbotapi.Update) {
-	//			err := handler.HandleUpdate(&update)
-	//			if err != nil {
-	//				helpers.LogError(&update, bot, err)
-	//			}
-	//		}(update)
-	//	}
-	//	wg.Done()
-	//}()
+	bot.Start()
 }

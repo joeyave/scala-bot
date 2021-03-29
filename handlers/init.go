@@ -2,55 +2,37 @@ package handlers
 
 import (
 	"github.com/joeyave/scala-chords-bot/entities"
-	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
+	"github.com/joeyave/telebot/v3"
 )
 
-var stateHandlers = make(map[string][]func(updateHandler *UpdateHandler, update *tgbotapi.Update, user entities.User) (*entities.User, error), 0)
+type HandlerFunc = func(h *Handler, c telebot.Context, user *entities.User) error
+
+var handlers = make(map[string][]HandlerFunc, 0)
 
 // Register your handlers here.
 func init() {
-	name, funcs := mainMenuHandler()
-	stateHandlers[name] = funcs
+	registerHandlers(
+		mainMenuHandler,
+		scheduleHandler,
+		//addBandAdminHandler,
+		//createSongHandler,
+		//copySongHandler,
+		//deleteSongHandler,
+		createBandHandler,
+		chooseBandHandler,
+		//styleSongHandler,
+		searchSongHandler,
+		setlistHandler,
+		songActionsHandler,
+		//getVoicesHandler,
+		//uploadVoiceHandler,
+		transposeSongHandler,
+	)
+}
 
-	name, funcs = addBandAdminHandler()
-	stateHandlers[name] = funcs
-
-	name, funcs = createSongHandler()
-	stateHandlers[name] = funcs
-
-	name, funcs = copySongHandler()
-	stateHandlers[name] = funcs
-
-	name, funcs = deleteSongHandler()
-	stateHandlers[name] = funcs
-
-	name, funcs = scheduleHandler()
-	stateHandlers[name] = funcs
-
-	name, funcs = createBandHandler()
-	stateHandlers[name] = funcs
-
-	name, funcs = chooseBandHandler()
-	stateHandlers[name] = funcs
-
-	name, funcs = styleSongHandler()
-	stateHandlers[name] = funcs
-
-	name, funcs = searchSongHandler()
-	stateHandlers[name] = funcs
-
-	name, funcs = setlistHandler()
-	stateHandlers[name] = funcs
-
-	name, funcs = songActionsHandler()
-	stateHandlers[name] = funcs
-
-	name, funcs = getVoicesHandler()
-	stateHandlers[name] = funcs
-
-	name, funcs = uploadVoiceHandler()
-	stateHandlers[name] = funcs
-
-	name, funcs = transposeSongHandler()
-	stateHandlers[name] = funcs
+func registerHandlers(funcs ...func() (name string, funcs []HandlerFunc)) {
+	for _, f := range funcs {
+		name, hf := f()
+		handlers[name] = hf
+	}
 }

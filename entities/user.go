@@ -25,13 +25,13 @@ type State struct {
 }
 
 type Context struct {
-	Setlist          []string `bson:"setlist,omitempty"`
+	SongNames        []string `bson:"songNames,omitempty"`
 	MessagesToDelete []int    `bson:"messagesToDelete,omitempty"`
 	Query            string   `bson:"query,omitempty"`
 
-	CurrentDriveFileID string        `bson:"currentSongId,omitempty"`
-	FoundDriveFileIDs  []string      `bson:"foundSongIds,omitempty"`
-	DriveFiles         []*drive.File `bson:"driveFiles,omitempty"`
+	DriveFileID       string        `bson:"currentSongId,omitempty"`
+	FoundDriveFileIDs []string      `bson:"foundSongIds,omitempty"`
+	DriveFiles        []*drive.File `bson:"driveFiles,omitempty"`
 
 	CurrentBandID primitive.ObjectID `bson:"currentBandId,omitempty"`
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/joeyave/scala-chords-bot/entities"
+	"github.com/joeyave/telebot/v3"
 	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
 	"regexp"
 	"strings"
@@ -44,26 +45,26 @@ func LogError(update *tgbotapi.Update, bot *tgbotapi.BotAPI, err interface{}) {
 	_, _ = bot.Send(msg)
 }
 
-func SendToChannel(fileID string, bot *tgbotapi.BotAPI, song *entities.Song) *entities.Song {
+// TODO: переписать пачелавечески
+func SendToChannel(bot *telebot.Bot, song *entities.Song) *entities.Song {
 	sendNew := func() {
-		msg := tgbotapi.NewDocument(FilesChannelID, tgbotapi.FileID(fileID))
-		msg.DisableNotification = true
-		sendToChannelResponse, err := bot.Send(msg)
+		msg, err := bot.Send(telebot.ChatID(FilesChannelID), &telebot.Document{
+			File: telebot.File{FileID: song.PDF.TgFileID},
+		}, telebot.Silent)
 		if err == nil {
-			song.PDF.TgChannelMessageID = sendToChannelResponse.MessageID
+			song.PDF.TgChannelMessageID = msg.ID
 		}
 	}
 
 	edit := func() {
-		msg := tgbotapi.EditMessageMediaConfig{
-			BaseEdit: tgbotapi.BaseEdit{
-				ChatID:    FilesChannelID,
-				MessageID: song.PDF.TgChannelMessageID,
-			},
-			Media: tgbotapi.NewInputMediaDocument(tgbotapi.FileID(fileID)),
-		}
+		_, err := bot.EditMedia(&telebot.Message{
+			ID:   song.PDF.TgChannelMessageID,
+			Chat: &telebot.Chat{ID: FilesChannelID},
+		}, &telebot.Document{
+			File: telebot.File{FileID: song.PDF.TgFileID},
+			MIME: "application/pdf",
+		})
 
-		_, err := bot.Send(msg)
 		if err != nil {
 			sendNew()
 		}
