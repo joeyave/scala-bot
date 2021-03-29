@@ -77,7 +77,7 @@ func main() {
 	bot.Use(handler.RegisterUserMiddleware)
 
 	bot.Handle(telebot.OnText, handler.OnText)
-	bot.Handle(telebot.OnVoice, handler.OnText)
+	bot.Handle(telebot.OnVoice, handler.OnVoice)
 
 	bot.Start()
 }

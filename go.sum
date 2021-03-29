@@ -196,6 +196,8 @@ github.com/joeyave/chords-transposer v0.0.6/go.mod h1:HIukuoHF6Od6O0hloRBz/ZAN14
 github.com/joeyave/telebot v0.0.0-20210329114451-6cf5f6e87e69 h1:S9d4qLwv2BIFTZe3xeG0k9GsB6Z0laZIQceGldvwVrU=
 github.com/joeyave/telebot/v3 v3.0.0-20210329115747-4a5588911f85 h1:oK0YoJAI60ErYQwr1fWb52nvkAAf2QtYusEYp9i+04g=
 github.com/joeyave/telebot/v3 v3.0.0-20210329115747-4a5588911f85/go.mod h1:Fq2NCcsdQf+6QgdwEI+0Cs8cUpzRCOppDPK3u3qyM9k=
+github.com/joeyave/telebot/v3 v3.0.1 h1:0fLsDYcRi+kYu3YZN0P4Uwe60wWP2r8FCzoHSIc7bu4=
+github.com/joeyave/telebot/v3 v3.0.1/go.mod h1:Fq2NCcsdQf+6QgdwEI+0Cs8cUpzRCOppDPK3u3qyM9k=
 github.com/joeyave/telegram-bot-api/v5 v5.0.4 h1:z+xHky29BoiQQVhnJJJXRuKLzYwouKWQgL7nL1/oXGc=
 github.com/joeyave/telegram-bot-api/v5 v5.0.4/go.mod h1:gSJ2V/vxNSN6ZGXTR7jFWFhxdbI5aTmWAfho7ac8tl0=
 github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=

@@ -2,7 +2,6 @@ package helpers
 
 import (
 	"github.com/joeyave/telebot/v3"
-	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
 )
 
 var SongActionsKeyboard = [][]telebot.ReplyButton{
@@ -33,13 +32,9 @@ var KeysKeyboard = [][]telebot.ReplyButton{
 	{{Text: "B"}},
 }
 
-var TimesKeyboard = tgbotapi.NewReplyKeyboard(
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("2/4"),
-		tgbotapi.NewKeyboardButton("3/4"),
-		tgbotapi.NewKeyboardButton("4/4"),
-	),
-)
+var TimesKeyboard = [][]telebot.ReplyButton{
+	{{Text: "2/4"}, {Text: "3/4"}, {Text: "4/4"}},
+}
 
 var CancelOrSkipKeyboard = [][]telebot.ReplyButton{
 	{{Text: Cancel}, {Text: Skip}},

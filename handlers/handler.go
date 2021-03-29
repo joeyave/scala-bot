@@ -144,10 +144,6 @@ func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.Handl
 				Index: 0,
 				Name:  helpers.ChooseBandState,
 			}
-			//err = h.enter(c, user)
-			//if err != nil {
-			//	return err
-			//}
 		}
 
 		_, err = h.userService.UpdateOne(*user)

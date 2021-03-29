@@ -11,7 +11,7 @@ require (
 	github.com/golang/protobuf v1.5.1 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/joeyave/chords-transposer v0.0.6
-	github.com/joeyave/telebot/v3 v3.0.0-20210329115747-4a5588911f85
+	github.com/joeyave/telebot/v3 v3.0.1
 	github.com/joeyave/telegram-bot-api/v5 v5.0.4
 	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/kjk/notionapi v0.0.0-20201230072046-b69038831038
