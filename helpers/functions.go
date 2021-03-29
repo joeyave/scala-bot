@@ -2,10 +2,8 @@ package helpers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/telebot/v3"
-	tgbotapi "github.com/joeyave/telegram-bot-api/v5"
 	"regexp"
 	"strings"
 )
@@ -32,17 +30,6 @@ func SplitQueryByNewlines(query string) []string {
 	}
 
 	return songNames
-}
-
-func LogError(update *tgbotapi.Update, bot *tgbotapi.BotAPI, err interface{}) {
-	if update != nil {
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Произошла ошибка. Поправим.")
-		_, _ = bot.Send(msg)
-	}
-
-	msg := tgbotapi.NewMessage(LogsChannelID, fmt.Sprintf("<code>%v</code>", err))
-	msg.ParseMode = tgbotapi.ModeHTML
-	_, _ = bot.Send(msg)
 }
 
 // TODO: переписать пачелавечески

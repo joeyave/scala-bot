@@ -1191,7 +1191,28 @@ func uploadVoiceHandler() (string, []HandlerFunc) {
 		if foundDriveFile != nil {
 			song, err := h.songService.FindOneByDriveFileID(foundDriveFile.Id)
 			if err != nil {
-				return err
+				err = nil
+				driveFile, err := h.driveFileService.FindOneByID(foundDriveFile.Id)
+				if err != nil {
+					return err
+				}
+
+				song = &entities.Song{
+					DriveFileID: driveFile.Id,
+				}
+
+				for _, parentFolderID := range driveFile.Parents {
+					band, err := h.bandService.FindOneByDriveFolderID(parentFolderID)
+					if err == nil {
+						song.BandID = band.ID
+						break
+					}
+				}
+
+				song, err = h.songService.UpdateOne(*song)
+				if err != nil {
+					return err
+				}
 			}
 
 			user.State.Context.DriveFileID = song.DriveFileID
