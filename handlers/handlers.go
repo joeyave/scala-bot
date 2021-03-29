@@ -214,7 +214,7 @@ func chooseBandHandler() (string, []HandlerFunc) {
 			ResizeKeyboard: true,
 		}
 
-		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.CreateDoc}})
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.CreateBand}})
 		for _, band := range bands {
 			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: band.Name}})
 		}
