@@ -62,6 +62,15 @@ func main() {
 	userRepository := repositories.NewUserRepository(mongoClient)
 	userService := services.NewUserService(userRepository)
 
+	membershipRepository := repositories.NewMembershipRepository(mongoClient)
+	membershipService := services.NewMembershipService(membershipRepository)
+
+	eventRepository := repositories.NewEventRepository(mongoClient)
+	eventService := services.NewEventService(eventRepository)
+
+	roleRepository := repositories.NewRoleRepository(mongoClient)
+	roleService := services.NewRoleService(roleRepository)
+
 	bot, err := telebot.NewBot(telebot.Settings{
 		Token:       os.Getenv("BOT_TOKEN"),
 		Poller:      &telebot.LongPoller{Timeout: 10 * time.Second},
@@ -71,7 +80,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	handler := handlers.NewHandler(bot, userService, driveFileService, songService, voiceService, bandService)
+	handler := handlers.NewHandler(
+		bot,
+		userService,
+		driveFileService,
+		songService,
+		voiceService,
+		bandService,
+		membershipService,
+		eventService,
+		roleService,
+	)
 
 	bot.OnError = handler.OnError
 

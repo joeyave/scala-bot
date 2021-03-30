@@ -6,19 +6,18 @@ import (
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/telebot/v3"
-	"github.com/kjk/notionapi"
+	"github.com/klauspost/lctime"
 	"google.golang.org/api/drive/v3"
 	"regexp"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
 
 func mainMenuHandler() (string, []HandlerFunc) {
-	handleFuncs := make([]HandlerFunc, 0)
+	handlerFuncs := make([]HandlerFunc, 0)
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 		err := c.Send("Основное меню:", &telebot.ReplyMarkup{
 			ReplyKeyboard:  helpers.MainMenuKeyboard,
 			ResizeKeyboard: true,
@@ -30,7 +29,7 @@ func mainMenuHandler() (string, []HandlerFunc) {
 		return nil
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 		switch c.Text() {
 
 		case helpers.Help:
@@ -39,49 +38,433 @@ func mainMenuHandler() (string, []HandlerFunc) {
 
 		case helpers.Schedule:
 			user.State = &entities.State{
-				Index: 0,
-				Name:  helpers.ScheduleState,
+				Name: helpers.GetEventsState,
 			}
 
-		case helpers.ChangeBand:
-			user.State = &entities.State{
-				Index: 0,
-				Name:  helpers.ChooseBandState,
+		case helpers.Settings:
+			err := c.Send("Настройки:", &telebot.ReplyMarkup{
+				ReplyKeyboard:  helpers.SettingsKeyboard,
+				ResizeKeyboard: true,
+			})
+			if err != nil {
+				return err
 			}
+
+			user.State.Index++
+			return nil
 
 		case helpers.CreateDoc:
 			user.State = &entities.State{
-				Index: 0,
-				Name:  helpers.CreateSongState,
+				Name: helpers.CreateSongState,
 			}
 
 		case helpers.AddAdmin:
 			user.State = &entities.State{
-				Index: 0,
-				Name:  helpers.AddBandAdminState,
+				Name: helpers.AddBandAdminState,
 			}
 
 		default:
 			user.State = &entities.State{
-				Index: 0,
-				Name:  helpers.SearchSongState,
+				Name: helpers.SearchSongState,
 			}
 		}
 
 		return h.enter(c, user)
 	})
 
-	return helpers.MainMenuState, handleFuncs
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+		switch c.Text() {
+		case helpers.ChangeBand:
+			user.State = &entities.State{
+				Name: helpers.ChooseBandState,
+			}
+		case helpers.CreateRole:
+			user.State = &entities.State{
+				Name: helpers.CreateRoleState,
+			}
+		}
+
+		return h.enter(c, user)
+	})
+
+	return helpers.MainMenuState, handlerFuncs
 }
 
-func scheduleHandler() (string, []HandlerFunc) {
-	handleFuncs := make([]HandlerFunc, 0)
+func createRoleHandler() (string, []HandlerFunc) {
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFuncs := make([]HandlerFunc, 0)
 
-		c.Notify(telebot.Typing)
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+		err := c.Send("Отправь название новой роли. Например, лид-вокал, проповедник и т. д.", &telebot.ReplyMarkup{
+			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Cancel}}},
+			ResizeKeyboard: true,
+		})
+		if err != nil {
+			return err
+		}
 
-		events, err := h.bandService.GetTodayOrAfterEvents(*user.Band)
+		user.State.Index++
+		return nil
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		role, err := h.roleService.UpdateOne(entities.Role{
+			Name:   c.Text(),
+			BandID: user.BandID,
+		})
+		if err != nil {
+			return err
+		}
+
+		err = c.Send(fmt.Sprintf("Добавлена новая роль: %s.", role.Name))
+		if err != nil {
+			return err
+		}
+
+		user.State = &entities.State{Name: helpers.MainMenuState}
+		return h.enter(c, user)
+	})
+
+	return helpers.CreateRoleState, handlerFuncs
+}
+
+//func scheduleHandler() (string, []HandlerFunc) {
+//	handlerFunc := make([]HandlerFunc, 0)
+//
+//	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+//
+//		c.Notify(telebot.Typing)
+//
+//		events, err := h.bandService.GetTodayOrAfterEvents(*user.Band)
+//		if err != nil {
+//			return err
+//		}
+//
+//		markup := &telebot.ReplyMarkup{
+//			ResizeKeyboard: true,
+//		}
+//
+//		for _, event := range events {
+//			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: event.GetAlias()}})
+//		}
+//		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}})
+//
+//		err = c.Send("Выбери собрание:", markup)
+//		if err != nil {
+//			return err
+//		}
+//
+//		user.State.Context.NotionEvents = events
+//		user.State.Index++
+//
+//		return err
+//	})
+//
+//	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+//		c.Notify(telebot.Typing)
+//
+//		events := user.State.Context.NotionEvents
+//
+//		var foundEvent *entities.NotionEvent
+//		for _, event := range events {
+//			if event.GetAlias() == c.Text() {
+//				foundEvent = event
+//				break
+//			}
+//		}
+//
+//		if foundEvent != nil {
+//			messageText := fmt.Sprintf("<b><a href=\"https://www.notion.so/%s\">%s</a></b>\n\n",
+//				notionapi.ToNoDashID(foundEvent.ID), foundEvent.GetAlias())
+//
+//			for i, pageID := range foundEvent.SetlistPageIDs {
+//
+//				page, err := h.songService.FindNotionPageByID(pageID)
+//				if err != nil {
+//					continue
+//				}
+//
+//				songTitleProp := page.GetTitle()
+//				if len(songTitleProp) < 1 {
+//					continue
+//				}
+//				songTitle := songTitleProp[0].Text
+//
+//				songKey := "?"
+//				songKeyProp := page.GetProperty("OR>-")
+//				if len(songKeyProp) > 0 {
+//					songKey = songKeyProp[0].Text
+//				}
+//
+//				songBPM := "?"
+//				songBPMProp := page.GetProperty("j0]A")
+//				if len(songBPMProp) > 0 {
+//					songBPM = songBPMProp[0].Text
+//				}
+//
+//				user.State.Context.SongNames = append(user.State.Context.SongNames, songTitle)
+//
+//				messageText += fmt.Sprintf("%d. %s (<a href=\"https://www.notion.so/%s\">%s, %s</a>)\n",
+//					i+1, songTitle, notionapi.ToNoDashID(pageID), songKey, songBPM)
+//			}
+//
+//			err := c.Send(messageText, &telebot.SendOptions{
+//				ReplyMarkup: &telebot.ReplyMarkup{
+//					ReplyKeyboard:  helpers.FindChordsKeyboard,
+//					ResizeKeyboard: true,
+//				},
+//				DisableWebPagePreview: true,
+//				ParseMode:             telebot.ModeHTML,
+//			})
+//			if err != nil {
+//				return err
+//			}
+//
+//			user.State.Index++
+//			return nil
+//		} else {
+//			user.State.Index--
+//			return h.enter(c, user)
+//		}
+//	})
+//
+//	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+//		switch c.Text() {
+//
+//		case helpers.Back:
+//			user.State.Index = 0
+//			return h.enter(c, user)
+//
+//		case helpers.FindChords:
+//			user.State = &entities.State{
+//				Index:   0,
+//				Role:    helpers.SearchSongState,
+//				Context: entities.Context{Query: strings.Join(user.State.Context.SongNames, "\n")},
+//			}
+//			return h.enter(c, user)
+//
+//		default:
+//			user.State = &entities.State{
+//				Index: 0,
+//				Role:  helpers.SearchSongState,
+//			}
+//			return h.enter(c, user)
+//		}
+//	})
+//
+//	return helpers.ScheduleState, handlerFunc
+//}
+
+func getEventsHandler() (string, []HandlerFunc) {
+
+	handlerFuncs := make([]HandlerFunc, 0)
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		events, err := h.eventService.FindMultipleByBandID(user.BandID)
+		user.State.Context.Events = events
+
+		markup := &telebot.ReplyMarkup{
+			ResizeKeyboard: true,
+		}
+
+		for _, event := range events {
+			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: event.Alias()}})
+		}
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Back}, {Text: helpers.CreateEvent}})
+
+		err = c.Send("Выбери собрание:", markup)
+		if err != nil {
+			return err
+		}
+
+		user.State.Index++
+		return nil
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+		switch c.Text() {
+		case helpers.CreateEvent:
+			user.State = &entities.State{
+				Name: helpers.CreateEventState,
+				Prev: user.State,
+			}
+			user.State.Prev.Index = 0
+			return h.enter(c, user)
+		default:
+			events := user.State.Context.Events
+
+			var foundEvent *entities.Event
+			for _, event := range events {
+				if c.Text() == event.Alias() {
+					foundEvent = event
+					break
+				}
+			}
+
+			if foundEvent != nil {
+				user.State = &entities.State{
+					Name: helpers.EventActionsState,
+					Context: entities.Context{
+						EventID: foundEvent.ID,
+					},
+					Prev: user.State,
+				}
+				user.State.Prev.Index = 0
+				return h.enter(c, user)
+			} else {
+				user.State.Index--
+				return h.enter(c, user)
+			}
+		}
+	})
+
+	return helpers.GetEventsState, handlerFuncs
+}
+
+func createEventHandler() (string, []HandlerFunc) {
+
+	handlerFuncs := make([]HandlerFunc, 0)
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		markup := &telebot.ReplyMarkup{
+			ResizeKeyboard: true,
+		}
+
+		err := lctime.SetLocale("ru_RU")
+		if err != nil {
+			fmt.Println(err)
+		}
+		start := time.Now()
+		end := start.AddDate(0, 1, 0)
+
+		for d := start; d.After(end) == false; d = d.AddDate(0, 0, 1) {
+			timeStr := lctime.Strftime("%A / %d.%m.%Y", d)
+			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: timeStr}})
+		}
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}})
+
+		err = c.Send("Выбери дату:", markup)
+		if err != nil {
+			return err
+		}
+
+		user.State.Index++
+		return nil
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		re := regexp.MustCompile(`(\d{1,2}).(\d{1,2}).(\d{4})`)
+		matches := re.FindStringSubmatch(c.Text())
+
+		if len(matches) < 4 {
+			return c.Send("Неверный формат. Введи дату в формате 01.02.2021.")
+		}
+
+		year, _ := strconv.Atoi(matches[3])
+		month, _ := strconv.Atoi(matches[2])
+		day, _ := strconv.Atoi(matches[1])
+
+		parsedTime, err := time.Parse("02-01-2006", fmt.Sprintf("%02d-%02d-%d", day, month, year))
+		if err != nil {
+			return c.Send("Что-то не так. Введи дату в формате 01.02.2021.")
+		}
+
+		user.State.Context.Map = map[string]string{"time": parsedTime.Format(time.RFC3339)}
+
+		err = c.Send("Введи название этого собрания:", &telebot.ReplyMarkup{
+			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Cancel}}},
+			ResizeKeyboard: true,
+		})
+		if err != nil {
+			return err
+		}
+
+		user.State.Index++
+		return nil
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+		parsedTime, err := time.Parse(time.RFC3339, user.State.Context.Map["time"])
+		if err != nil {
+			user.State = &entities.State{Name: helpers.CreateEventState}
+			return h.enter(c, user)
+		}
+
+		event, err := h.eventService.UpdateOne(entities.Event{
+			Time:   parsedTime,
+			Name:   c.Text(),
+			BandID: user.BandID,
+		})
+		if err != nil {
+			return err
+		}
+
+		user.State = &entities.State{
+			Name: helpers.EventActionsState,
+			Context: entities.Context{
+				EventID: event.ID,
+			},
+		}
+		return h.enter(c, user)
+	})
+
+	return helpers.CreateEventState, handlerFuncs
+}
+
+func eventActionsHandler() (string, []HandlerFunc) {
+	handlerFuncs := make([]HandlerFunc, 0)
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		event, err := h.eventService.FindOneByID(user.State.Context.EventID)
+		if err != nil {
+			return err
+		}
+
+		eventString := event.Alias()
+		membershipGroups := map[string][]*entities.Membership{}
+		for _, membership := range event.Memberships {
+			if membership.Role == nil {
+				continue
+			}
+			membershipGroups[membership.Role.Name] = append(membershipGroups[membership.Role.Name], membership)
+		}
+
+		for membershipName, memberships := range membershipGroups {
+			eventString = fmt.Sprintf("%s\n\n%s:", eventString, membershipName)
+
+			var userIDs []int64
+			for _, membership := range memberships {
+				userIDs = append(userIDs, membership.UserID)
+			}
+			members, err := h.userService.FindMultipleByIDs(userIDs)
+			if err != nil {
+				continue
+			}
+
+			for i, member := range members {
+				eventString = fmt.Sprintf("%s\n%d. %s", eventString, i+1, member.Name)
+			}
+		}
+
+		err = c.Send(eventString, &telebot.ReplyMarkup{
+			ReplyKeyboard:  append(helpers.EventActionsKeyboard, helpers.BackOrMenuKeyboard...),
+			ResizeKeyboard: true,
+		})
+		if err != nil {
+			return err
+		}
+
+		user.State.Index++
+		return nil
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+		event, err := h.eventService.FindOneByID(user.State.Context.EventID)
 		if err != nil {
 			return err
 		}
@@ -90,121 +473,106 @@ func scheduleHandler() (string, []HandlerFunc) {
 			ResizeKeyboard: true,
 		}
 
-		for _, event := range events {
-			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: event.GetAlias()}})
+		for _, role := range event.Band.Roles {
+			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: role.Name}})
 		}
 		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}})
 
-		err = c.Send("Выбери собрание:", markup)
+		err = c.Send("Кем будет этот участник?", markup)
 		if err != nil {
 			return err
 		}
 
-		user.State.Context.Events = events
 		user.State.Index++
-
-		return err
+		return nil
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
-		c.Notify(telebot.Typing)
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+		event, err := h.eventService.FindOneByID(user.State.Context.EventID)
+		if err != nil {
+			return err
+		}
 
-		events := user.State.Context.Events
-
-		var foundEvent *entities.Event
-		for _, event := range events {
-			if event.GetAlias() == c.Text() {
-				foundEvent = event
-				break
+		var foundRole *entities.Role
+		for _, role := range event.Band.Roles {
+			if role.Name == c.Text() {
+				foundRole = role
 			}
 		}
 
-		if foundEvent != nil {
-			messageText := fmt.Sprintf("<b><a href=\"https://www.notion.so/%s\">%s</a></b>\n\n",
-				notionapi.ToNoDashID(foundEvent.ID), foundEvent.GetAlias())
-
-			for i, pageID := range foundEvent.SetlistPageIDs {
-
-				page, err := h.songService.FindNotionPageByID(pageID)
-				if err != nil {
-					continue
-				}
-
-				songTitleProp := page.GetTitle()
-				if len(songTitleProp) < 1 {
-					continue
-				}
-				songTitle := songTitleProp[0].Text
-
-				songKey := "?"
-				songKeyProp := page.GetProperty("OR>-")
-				if len(songKeyProp) > 0 {
-					songKey = songKeyProp[0].Text
-				}
-
-				songBPM := "?"
-				songBPMProp := page.GetProperty("j0]A")
-				if len(songBPMProp) > 0 {
-					songBPM = songBPMProp[0].Text
-				}
-
-				user.State.Context.SongNames = append(user.State.Context.SongNames, songTitle)
-
-				messageText += fmt.Sprintf("%d. %s (<a href=\"https://www.notion.so/%s\">%s, %s</a>)\n",
-					i+1, songTitle, notionapi.ToNoDashID(pageID), songKey, songBPM)
-			}
-
-			err := c.Send(messageText, &telebot.SendOptions{
-				ReplyMarkup: &telebot.ReplyMarkup{
-					ReplyKeyboard:  helpers.FindChordsKeyboard,
-					ResizeKeyboard: true,
-				},
-				DisableWebPagePreview: true,
-				ParseMode:             telebot.ModeHTML,
-			})
-			if err != nil {
-				return err
-			}
-
-			user.State.Index++
-			return nil
-		} else {
+		if foundRole == nil {
 			user.State.Index--
 			return h.enter(c, user)
 		}
+
+		user.State.Context.RoleID = foundRole.ID
+
+		users, err := h.userService.FindMultipleByBandID(event.BandID)
+		if err != nil {
+			return err
+		}
+
+		markup := &telebot.ReplyMarkup{
+			ResizeKeyboard: true,
+		}
+
+		for _, user := range users {
+			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: user.Name}})
+		}
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}})
+
+		err = c.Send("Выбери участника", markup)
+		if err != nil {
+			return err
+		}
+
+		user.State.Index++
+		return nil
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
-		switch c.Text() {
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+		event, err := h.eventService.FindOneByID(user.State.Context.EventID)
+		if err != nil {
+			return err
+		}
 
-		case helpers.Back:
-			user.State.Index = 0
-			return h.enter(c, user)
+		users, err := h.userService.FindMultipleByBandID(event.BandID)
+		if err != nil {
+			return err
+		}
 
-		case helpers.FindChords:
-			user.State = &entities.State{
-				Index:   0,
-				Name:    helpers.SearchSongState,
-				Context: entities.Context{Query: strings.Join(user.State.Context.SongNames, "\n")},
+		var foundUser *entities.User
+		for _, user := range users {
+			if user.Name == c.Text() {
+				foundUser = user
 			}
-			return h.enter(c, user)
+		}
 
-		default:
-			user.State = &entities.State{
-				Index: 0,
-				Name:  helpers.SearchSongState,
-			}
+		if foundUser == nil {
+			user.State.Index--
 			return h.enter(c, user)
 		}
+
+		_, err = h.membershipService.UpdateOne(entities.Membership{
+			EventID: user.State.Context.EventID,
+			UserID:  foundUser.ID,
+			RoleID:  user.State.Context.RoleID,
+		})
+		if err != nil {
+			return err
+		}
+
+		user.State.Index = 0
+		return h.enter(c, user)
 	})
 
-	return helpers.ScheduleState, handleFuncs
+	return helpers.EventActionsState, handlerFuncs
 }
 
 func chooseBandHandler() (string, []HandlerFunc) {
-	handleFuncs := make([]HandlerFunc, 0)
+	handlerFunc := make([]HandlerFunc, 0)
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		bands, err := h.bandService.FindAll()
 		if err != nil {
 			return err
@@ -229,7 +597,7 @@ func chooseBandHandler() (string, []HandlerFunc) {
 		return nil
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		switch c.Text() {
 		case helpers.CreateBand:
 			user.State = &entities.State{
@@ -267,13 +635,13 @@ func chooseBandHandler() (string, []HandlerFunc) {
 		}
 	})
 
-	return helpers.ChooseBandState, handleFuncs
+	return helpers.ChooseBandState, handlerFunc
 }
 
 func createBandHandler() (string, []HandlerFunc) {
-	handleFuncs := make([]HandlerFunc, 0)
+	handlerFunc := make([]HandlerFunc, 0)
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		err := c.Send("Введи название своей группы:", &telebot.ReplyMarkup{
 			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Cancel}}},
 			ResizeKeyboard: true,
@@ -286,8 +654,8 @@ func createBandHandler() (string, []HandlerFunc) {
 		return nil
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
-		user.State.Context.CurrentBand = &entities.Band{
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+		user.State.Context.Band = &entities.Band{
 			Name: c.Text(),
 		}
 
@@ -304,16 +672,16 @@ func createBandHandler() (string, []HandlerFunc) {
 		return nil
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		re := regexp.MustCompile(`(/folders/|id=)(.*?)(/|\?|$)`)
 		matches := re.FindStringSubmatch(c.Text())
 		if matches == nil || len(matches) < 3 {
 			user.State.Index--
 			return h.enter(c, user)
 		}
-		user.State.Context.CurrentBand.DriveFolderID = matches[2]
+		user.State.Context.Band.DriveFolderID = matches[2]
 		user.Role = helpers.Admin
-		band, err := h.bandService.UpdateOne(*user.State.Context.CurrentBand)
+		band, err := h.bandService.UpdateOne(*user.State.Context.Band)
 		if err != nil {
 			return err
 		}
@@ -331,13 +699,13 @@ func createBandHandler() (string, []HandlerFunc) {
 		return h.enter(c, user)
 	})
 
-	return helpers.CreateBandState, handleFuncs
+	return helpers.CreateBandState, handlerFunc
 }
 
 //func addBandAdminHandler() (string, []HandlerFunc) {
-//	handleFuncs := make([]HandlerFunc, 0)
+//	handlerFunc := make([]HandlerFunc, 0)
 //
-//	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+//	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 //		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выбери пользователя, которого ты хочешь сделать администратором:")
 //		keyboard := tgbotapi.NewReplyKeyboard()
 //
@@ -353,7 +721,7 @@ func createBandHandler() (string, []HandlerFunc) {
 //
 //		for _, bandUser := range users {
 //			keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(
-//				tgbotapi.NewKeyboardButton(bandUser.Name),
+//				tgbotapi.NewKeyboardButton(bandUser.Role),
 //			))
 //		}
 //
@@ -369,17 +737,17 @@ func createBandHandler() (string, []HandlerFunc) {
 //		}
 //
 //		user.State.Index++
-//		user.State.Context.CurrentBandID = band.ID
+//		user.State.Context.BandID = band.ID
 //		return nil
 //	})
 //
-//	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+//	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 //		switch update.Message.Text {
 //		case "":
 //			user.State.Index--
 //			return h.enter(c, user)
 //		default:
-//			band, err := h.bandService.FindOneByID(user.State.Context.CurrentBandID)
+//			band, err := h.bandService.FindOneByID(user.State.Context.BandID)
 //			if err != nil {
 //				return nil, err
 //			}
@@ -391,7 +759,7 @@ func createBandHandler() (string, []HandlerFunc) {
 //
 //			var foundUser *entities.User
 //			for _, bandUser := range users {
-//				if bandUser.Name == update.Message.Text {
+//				if bandUser.Role == update.Message.Text {
 //					foundUser = bandUser
 //				}
 //			}
@@ -406,25 +774,25 @@ func createBandHandler() (string, []HandlerFunc) {
 //			}
 //
 //			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Пользователь %s повышен до администратора группы %s.",
-//				foundUser.Name, band.Name))
+//				foundUser.Role, band.Role))
 //			h.bot.Send(msg)
 //
 //			user.State = &entities.State{
-//				Name: helpers.MainMenuState,
+//				Role: helpers.MainMenuState,
 //			}
 //
 //			return h.enter(c, user)
 //		}
 //	})
 //
-//	return helpers.AddBandAdminState, handleFuncs
+//	return helpers.AddBandAdminState, handlerFunc
 //}
 
 func searchSongHandler() (string, []HandlerFunc) {
-	handleFuncs := make([]HandlerFunc, 0)
+	handlerFunc := make([]HandlerFunc, 0)
 
 	// Print list of found songs.
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		{
 			c.Notify(telebot.Typing)
 
@@ -506,7 +874,7 @@ func searchSongHandler() (string, []HandlerFunc) {
 		}
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		switch c.Text() {
 
 		case helpers.SearchEverywhere:
@@ -541,40 +909,20 @@ func searchSongHandler() (string, []HandlerFunc) {
 		}
 	})
 
-	return helpers.SearchSongState, handleFuncs
+	return helpers.SearchSongState, handlerFunc
 }
 
 func songActionsHandler() (string, []HandlerFunc) {
-	handleFuncs := make([]HandlerFunc, 0)
+	handlerFunc := make([]HandlerFunc, 0)
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		c.Notify(telebot.UploadingDocument)
 
 		driveFileID := user.State.Context.DriveFileID
-		song, err := h.songService.FindOneByDriveFileID(driveFileID)
+
+		song, err := h.songService.FindOrCreateOneByDriveFileID(driveFileID)
 		if err != nil {
-			err = nil
-			driveFile, err := h.driveFileService.FindOneByID(driveFileID)
-			if err != nil {
-				return err
-			}
-
-			song = &entities.Song{
-				DriveFileID: driveFile.Id,
-			}
-
-			for _, parentFolderID := range driveFile.Parents {
-				band, err := h.bandService.FindOneByDriveFolderID(parentFolderID)
-				if err == nil {
-					song.BandID = band.ID
-					break
-				}
-			}
-
-			song, err = h.songService.UpdateOne(*song)
-			if err != nil {
-				return err
-			}
+			return err
 		}
 
 		markup := &telebot.ReplyMarkup{
@@ -644,7 +992,7 @@ func songActionsHandler() (string, []HandlerFunc) {
 		return nil
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		song, err := h.songService.FindOneByDriveFileID(user.State.Context.DriveFileID)
 		if err != nil {
 			return err
@@ -718,13 +1066,13 @@ func songActionsHandler() (string, []HandlerFunc) {
 		return h.enter(c, user)
 	})
 
-	return helpers.SongActionsState, handleFuncs
+	return helpers.SongActionsState, handlerFunc
 }
 
 func transposeSongHandler() (string, []HandlerFunc) {
-	handleFuncs := make([]HandlerFunc, 0)
+	handlerFunc := make([]HandlerFunc, 0)
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		err := c.Send("Выбери новую тональность:", &telebot.ReplyMarkup{
 			ReplyKeyboard:  append(helpers.KeysKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}}),
 			ResizeKeyboard: true,
@@ -737,7 +1085,7 @@ func transposeSongHandler() (string, []HandlerFunc) {
 		return nil
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		_, err := transposer.ParseChord(c.Text())
 		if err != nil {
 			user.State.Index--
@@ -769,7 +1117,7 @@ func transposeSongHandler() (string, []HandlerFunc) {
 		return err
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		c.Notify(telebot.UploadingDocument)
 
 		re := regexp.MustCompile("[1-9]+")
@@ -803,14 +1151,14 @@ func transposeSongHandler() (string, []HandlerFunc) {
 		return h.enter(c, user)
 	})
 
-	return helpers.TransposeSongState, handleFuncs
+	return helpers.TransposeSongState, handlerFunc
 }
 
 func styleSongHandler() (string, []HandlerFunc) {
-	handleFuncs := make([]HandlerFunc, 0)
+	handlerFunc := make([]HandlerFunc, 0)
 
 	// Print list of found songs.
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		c.Notify(telebot.Typing)
 
 		driveFile, err := h.driveFileService.StyleOne(user.State.Context.DriveFileID)
@@ -835,13 +1183,13 @@ func styleSongHandler() (string, []HandlerFunc) {
 		user.State.Context.DriveFileID = driveFile.Id
 		return h.enter(c, user)
 	})
-	return helpers.StyleSongState, handleFuncs
+	return helpers.StyleSongState, handlerFunc
 }
 
 func copySongHandler() (string, []HandlerFunc) {
-	handleFuncs := make([]HandlerFunc, 0)
+	handlerFunc := make([]HandlerFunc, 0)
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		c.Notify(telebot.Typing)
 
 		file, err := h.driveFileService.FindOneByID(user.State.Context.DriveFileID)
@@ -865,13 +1213,13 @@ func copySongHandler() (string, []HandlerFunc) {
 		return h.enter(c, user)
 	})
 
-	return helpers.CopySongState, handleFuncs
+	return helpers.CopySongState, handlerFunc
 }
 
 func createSongHandler() (string, []HandlerFunc) {
-	handleFuncs := make([]HandlerFunc, 0)
+	handlerFunc := make([]HandlerFunc, 0)
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		err := c.Send("Отправь название:", &telebot.ReplyMarkup{
 			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Cancel}}},
 			ResizeKeyboard: true,
@@ -884,7 +1232,7 @@ func createSongHandler() (string, []HandlerFunc) {
 		return nil
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		user.State.Context.CreateSongPayload.Name = c.Text()
 		err := c.Send("Отправь слова:", &telebot.ReplyMarkup{
 			ReplyKeyboard:  helpers.CancelOrSkipKeyboard,
@@ -898,7 +1246,7 @@ func createSongHandler() (string, []HandlerFunc) {
 		return nil
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		switch c.Text() {
 		case helpers.Skip:
 		default:
@@ -917,7 +1265,7 @@ func createSongHandler() (string, []HandlerFunc) {
 		return nil
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		switch c.Text() {
 		case helpers.Skip:
 		default:
@@ -936,7 +1284,7 @@ func createSongHandler() (string, []HandlerFunc) {
 		return nil
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		switch c.Text() {
 		case helpers.Skip:
 		default:
@@ -955,7 +1303,7 @@ func createSongHandler() (string, []HandlerFunc) {
 		return nil
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		switch c.Text() {
 		case helpers.Skip:
 		default:
@@ -997,15 +1345,15 @@ func createSongHandler() (string, []HandlerFunc) {
 		return h.enter(c, user)
 	})
 
-	return helpers.CreateSongState, handleFuncs
+	return helpers.CreateSongState, handlerFunc
 }
 
 //func deleteSongHandler() (string, []HandlerFunc) {
-//	handleFuncs := make([]HandlerFunc, 0)
+//	handlerFunc := make([]HandlerFunc, 0)
 //
 //	// TODO: allow deleting Song only if it belongs to the User's Band.
 //	// TODO: delete from channel.
-//	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+//	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 //		if user.Role == helpers.Admin {
 //			err := h.songService.DeleteOneByID(user.State.Context.DriveFileID)
 //			if err != nil {
@@ -1016,7 +1364,7 @@ func createSongHandler() (string, []HandlerFunc) {
 //			_, _ = h.bot.Send(msg)
 //
 //			user.State = &entities.State{
-//				Name: helpers.MainMenuState,
+//				Role: helpers.MainMenuState,
 //			}
 //			return h.enter(c, user)
 //
@@ -1029,13 +1377,13 @@ func createSongHandler() (string, []HandlerFunc) {
 //		return h.enter(c, user)
 //	})
 //
-//	return helpers.DeleteSongState, handleFuncs
+//	return helpers.DeleteSongState, handlerFunc
 //}
 
 func getVoicesHandler() (string, []HandlerFunc) {
-	handleFuncs := make([]HandlerFunc, 0)
+	handlerFunc := make([]HandlerFunc, 0)
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		song, err := h.songService.FindOneByDriveFileID(user.State.Context.DriveFileID)
 		if err != nil {
 			return err
@@ -1068,7 +1416,7 @@ func getVoicesHandler() (string, []HandlerFunc) {
 		}
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		switch c.Text() {
 		case helpers.Back:
 			user.State = user.State.Prev
@@ -1107,7 +1455,7 @@ func getVoicesHandler() (string, []HandlerFunc) {
 		}
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		switch c.Text() {
 		case helpers.Back:
 			user.State.Index = 0
@@ -1120,13 +1468,13 @@ func getVoicesHandler() (string, []HandlerFunc) {
 		}
 	})
 
-	return helpers.GetVoicesState, handleFuncs
+	return helpers.GetVoicesState, handlerFunc
 }
 
 func uploadVoiceHandler() (string, []HandlerFunc) {
-	handleFuncs := make([]HandlerFunc, 0)
+	handlerFunc := make([]HandlerFunc, 0)
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		err := c.Send("Введи название песни, к которой ты хочешь прикрепить эту партию:", &telebot.ReplyMarkup{
 			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Cancel}}},
 			ResizeKeyboard: true,
@@ -1139,7 +1487,7 @@ func uploadVoiceHandler() (string, []HandlerFunc) {
 		return nil
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 
 		c.Notify(telebot.Typing)
 
@@ -1175,7 +1523,7 @@ func uploadVoiceHandler() (string, []HandlerFunc) {
 		return nil
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 
 		c.Notify(telebot.UploadingDocument)
 
@@ -1189,30 +1537,9 @@ func uploadVoiceHandler() (string, []HandlerFunc) {
 		}
 
 		if foundDriveFile != nil {
-			song, err := h.songService.FindOneByDriveFileID(foundDriveFile.Id)
+			song, err := h.songService.FindOrCreateOneByDriveFileID(foundDriveFile.Id)
 			if err != nil {
-				err = nil
-				driveFile, err := h.driveFileService.FindOneByID(foundDriveFile.Id)
-				if err != nil {
-					return err
-				}
-
-				song = &entities.Song{
-					DriveFileID: driveFile.Id,
-				}
-
-				for _, parentFolderID := range driveFile.Parents {
-					band, err := h.bandService.FindOneByDriveFolderID(parentFolderID)
-					if err == nil {
-						song.BandID = band.ID
-						break
-					}
-				}
-
-				song, err = h.songService.UpdateOne(*song)
-				if err != nil {
-					return err
-				}
+				return err
 			}
 
 			user.State.Context.DriveFileID = song.DriveFileID
@@ -1234,18 +1561,18 @@ func uploadVoiceHandler() (string, []HandlerFunc) {
 
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		user.State.Context.CurrentVoice.Caption = c.Text()
+		user.State.Context.Voice.Caption = c.Text()
 
 		song, err := h.songService.FindOneByDriveFileID(user.State.Context.DriveFileID)
 		if err != nil {
 			return err
 		}
 
-		user.State.Context.CurrentVoice.SongID = song.ID
+		user.State.Context.Voice.SongID = song.ID
 
-		_, err = h.voiceService.UpdateOne(*user.State.Context.CurrentVoice)
+		_, err = h.voiceService.UpdateOne(*user.State.Context.Voice)
 		if err != nil {
 			return err
 		}
@@ -1261,13 +1588,13 @@ func uploadVoiceHandler() (string, []HandlerFunc) {
 		return h.enter(c, user)
 
 	})
-	return helpers.UploadVoiceState, handleFuncs
+	return helpers.UploadVoiceState, handlerFunc
 }
 
 func setlistHandler() (string, []HandlerFunc) {
-	handleFuncs := make([]HandlerFunc, 0)
+	handlerFunc := make([]HandlerFunc, 0)
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		if len(user.State.Context.SongNames) < 1 {
 			user.State.Index = 2
 			return h.enter(c, user)
@@ -1321,7 +1648,7 @@ func setlistHandler() (string, []HandlerFunc) {
 		return nil
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, c.Message().ID)
 
 		switch c.Text() {
@@ -1349,7 +1676,7 @@ func setlistHandler() (string, []HandlerFunc) {
 		return h.enter(c, user)
 	})
 
-	handleFuncs = append(handleFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		c.Notify(telebot.UploadingDocument)
 
 		foundDriveFileIDs := user.State.Context.FoundDriveFileIDs
@@ -1361,30 +1688,9 @@ func setlistHandler() (string, []HandlerFunc) {
 			go func(i int) {
 				defer waitGroup.Done()
 
-				song, err := h.songService.FindOneByDriveFileID(foundDriveFileIDs[i])
+				song, err := h.songService.FindOrCreateOneByDriveFileID(foundDriveFileIDs[i])
 				if err != nil {
-					err = nil
-					driveFile, err := h.driveFileService.FindOneByID(foundDriveFileIDs[i])
-					if err != nil {
-						return
-					}
-
-					song = &entities.Song{
-						DriveFileID: driveFile.Id,
-					}
-
-					for _, parentFolderID := range driveFile.Parents {
-						band, err := h.bandService.FindOneByDriveFolderID(parentFolderID)
-						if err == nil {
-							song.BandID = band.ID
-							break
-						}
-					}
-
-					song, err = h.songService.UpdateOne(*song)
-					if err != nil {
-						return
-					}
+					return
 				}
 
 				if song.HasOutdatedPDF() {
@@ -1489,7 +1795,7 @@ func setlistHandler() (string, []HandlerFunc) {
 		return h.enter(c, user)
 	})
 
-	return helpers.SetlistState, handleFuncs
+	return helpers.SetlistState, handlerFunc
 }
 
 func chunkAlbumBy(items telebot.Album, chunkSize int) (chunks []telebot.Album) {

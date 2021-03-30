@@ -16,6 +16,10 @@ const (
 	CreateSongState    = "CreateSongState"
 	DeleteSongState    = "DeleteSongState"
 	AddBandAdminState  = "AddBandAdminState"
+	GetEventsState     = "GetEventsState"
+	CreateEventState   = "CreateEventState"
+	EventActionsState  = "EventActionsState"
+	CreateRoleState    = "CreateRoleState"
 )
 
 // Buttons constants.
@@ -35,12 +39,16 @@ const (
 	Yes              string = "Да"
 	AppendSection    string = "В конец документа"
 	CreateBand       string = "Создать свою группу"
+	CreateEvent      string = "Добавить собрание"
 	SearchEverywhere string = "Искать во всех группах"
 	CopyToMyBand     string = "Копировать песню в свою группу"
 	Schedule         string = "Расписание"
 	FindChords       string = "Найти аккорды"
 	ChangeBand       string = "Изменить группу"
 	AddAdmin         string = "Добавить администратора"
+	Settings         string = "Настройки"
+	CreateRole       string = "Создать роль"
+	AddMember        string = "Добавить участника"
 )
 
 const (

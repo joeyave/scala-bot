@@ -40,6 +40,37 @@ func (s *SongService) FindOneByDriveFileID(driveFileID string) (*entities.Song, 
 	return s.songRepository.FindOneByDriveFileID(driveFileID)
 }
 
+func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entities.Song, error) {
+	song, err := s.songRepository.FindOneByDriveFileID(driveFileID)
+	if err == nil {
+		return song, nil
+	}
+
+	err = nil
+	driveFile, err := s.driveClient.Files.Get(driveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+	if err != nil {
+		return nil, err
+	}
+
+	song = &entities.Song{
+		DriveFileID: driveFile.Id,
+	}
+
+	for _, parentFolderID := range driveFile.Parents {
+		band, err := s.bandRepository.FindOneByDriveFolderID(parentFolderID)
+		if err == nil {
+			song.BandID = band.ID
+			break
+		}
+	}
+
+	song, err = s.songRepository.UpdateOne(*song)
+	if err != nil {
+		return nil, err
+	}
+	return song, nil
+}
+
 func (s *SongService) UpdateOne(song entities.Song) (*entities.Song, error) {
 	return s.songRepository.UpdateOne(song)
 }

@@ -3,6 +3,7 @@ package entities
 import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
+	"time"
 )
 
 type User struct {
@@ -13,6 +14,8 @@ type User struct {
 
 	BandID primitive.ObjectID `bson:"bandId,omitempty"`
 	Band   *Band              `bson:"band,omitempty"`
+
+	Memberships []*Membership `bson:"memberships,omitempty"`
 }
 
 type State struct {
@@ -33,16 +36,20 @@ type Context struct {
 	FoundDriveFileIDs []string      `bson:"foundSongIds,omitempty"`
 	DriveFiles        []*drive.File `bson:"driveFiles,omitempty"`
 
-	CurrentBandID primitive.ObjectID `bson:"currentBandId,omitempty"`
-
-	CurrentVoice *Voice `bson:"currentVoice,omitempty"`
+	Voice *Voice `bson:"currentVoice,omitempty"`
 
 	Key string `bson:"key,omitempty"`
 
-	Bands       []*Band `bson:"bands,omitempty"`
-	CurrentBand *Band   `bson:"currentBand,omitempty"`
+	BandID primitive.ObjectID `bson:"currentBandId,omitempty"`
+	Band   *Band              `bson:"currentBand,omitempty"`
+	Bands  []*Band            `bson:"bands,omitempty"`
 
-	Events []*Event `bson:"events,omitempty"`
+	RoleID primitive.ObjectID `bson:"roleId,omitempty"`
+
+	EventID primitive.ObjectID `bson:"eventId,omitempty"`
+	Events  []*Event           `bson:"events,omitempty"`
+
+	NotionEvents []*NotionEvent `bson:"notionEvents,omitempty"`
 
 	CreateSongPayload struct {
 		Name   string `bson:"name,omitempty"`
@@ -51,4 +58,7 @@ type Context struct {
 		BPM    string `bson:"bpm,omitempty"`
 		Time   string `bson:"time,omitempty"`
 	} `bson:"createSongPayload,omitempty"`
+
+	Map  map[string]string `bson:"map,omitempty"`
+	Time time.Time         `bson:"time,omitempty"`
 }

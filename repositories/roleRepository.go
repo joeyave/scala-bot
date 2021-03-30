@@ -1,0 +1,115 @@
+package repositories
+
+import (
+	"context"
+	"fmt"
+	"github.com/joeyave/scala-chords-bot/entities"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"os"
+)
+
+type RoleRepository struct {
+	mongoClient *mongo.Client
+}
+
+func NewRoleRepository(mongoClient *mongo.Client) *RoleRepository {
+	return &RoleRepository{
+		mongoClient: mongoClient,
+	}
+}
+
+func (r *RoleRepository) FindAll() ([]*entities.Role, error) {
+	roles, err := r.find(bson.M{"_id": bson.M{"$ne": ""}})
+	if err != nil {
+		return nil, err
+	}
+
+	return roles, nil
+}
+
+func (r *RoleRepository) FindOneByID(ID primitive.ObjectID) (*entities.Role, error) {
+	roles, err := r.find(bson.M{"_id": ID})
+	if err != nil {
+		return nil, err
+	}
+
+	return roles[0], nil
+}
+
+func (r *RoleRepository) find(m bson.M) ([]*entities.Role, error) {
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("roles")
+
+	pipeline := bson.A{
+		bson.M{
+			"$match": m,
+		},
+	}
+
+	cur, err := collection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	var roles []*entities.Role
+	err = cur.All(context.TODO(), &roles)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(roles) == 0 {
+		return nil, fmt.Errorf("not found")
+	}
+
+	return roles, nil
+}
+
+func (r *RoleRepository) UpdateOne(role entities.Role) (*entities.Role, error) {
+	if role.ID.IsZero() {
+		role.ID = r.generateUniqueID()
+	}
+
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("roles")
+
+	filter := bson.M{"_id": role.ID}
+
+	update := bson.M{
+		"$set": role,
+	}
+
+	after := options.After
+	upsert := true
+	opts := options.FindOneAndUpdateOptions{
+		ReturnDocument: &after,
+		Upsert:         &upsert,
+	}
+
+	result := collection.FindOneAndUpdate(context.TODO(), filter, update, &opts)
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	var newRole *entities.Role
+	err := result.Decode(&newRole)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.FindOneByID(newRole.ID)
+}
+
+func (r *RoleRepository) generateUniqueID() primitive.ObjectID {
+	ID := primitive.NilObjectID
+
+	for ID.IsZero() {
+		ID = primitive.NewObjectID()
+		_, err := r.FindOneByID(ID)
+		if err == nil {
+			ID = primitive.NilObjectID
+		}
+	}
+
+	return ID
+}

@@ -12,10 +12,13 @@ type Band struct {
 	Name          string             `bson:"name,omitempty"`
 	DriveFolderID string             `bson:"driveFolderId,omitempty"`
 
+	Roles []*Role `bson:"roles,omitempty"`
+
 	NotionCollection *NotionCollection `bson:"notionCollection"`
 }
 
-type Event struct {
+// TODO: refactor.
+type NotionEvent struct {
 	ID              string    `bson:"id"`
 	Name            string    `bson:"name"`
 	Time            time.Time `bson:"date"`
@@ -24,7 +27,7 @@ type Event struct {
 	LeadVocalistIDs []string  `bson:"leadVocalistIds"`
 }
 
-func (e *Event) GetAlias() string {
+func (e *NotionEvent) GetAlias() string {
 	err := lctime.SetLocale("ru_RU")
 	if err != nil {
 		fmt.Println(err)

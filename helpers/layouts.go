@@ -16,10 +16,18 @@ var RestrictedSongActionsKeyboard = [][]telebot.ReplyButton{
 	{{Text: Back}, {Text: Menu}},
 }
 
+var EventActionsKeyboard = [][]telebot.ReplyButton{
+	{{Text: AddMember}},
+}
+
 var MainMenuKeyboard = [][]telebot.ReplyButton{
 	{{Text: Schedule}},
-	{{Text: CreateDoc}, {Text: ChangeBand}},
-	{{Text: Help}},
+	{{Text: CreateDoc}},
+	{{Text: Settings}},
+}
+
+var SettingsKeyboard = [][]telebot.ReplyButton{
+	{{Text: ChangeBand}, {Text: CreateRole}},
 }
 
 var KeysKeyboard = [][]telebot.ReplyButton{
@@ -42,6 +50,10 @@ var CancelOrSkipKeyboard = [][]telebot.ReplyButton{
 
 var FindChordsKeyboard = [][]telebot.ReplyButton{
 	{{Text: FindChords}},
+	{{Text: Back}, {Text: Menu}},
+}
+
+var BackOrMenuKeyboard = [][]telebot.ReplyButton{
 	{{Text: Back}, {Text: Menu}},
 }
 

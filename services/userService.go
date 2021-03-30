@@ -24,6 +24,10 @@ func (s *UserService) FindMultipleByBandID(bandID primitive.ObjectID) ([]*entiti
 	return s.userRepository.FindMultipleByBandID(bandID)
 }
 
+func (s *UserService) FindMultipleByIDs(IDs []int64) ([]*entities.User, error) {
+	return s.userRepository.FindMultipleByIDs(IDs)
+}
+
 func (s *UserService) UpdateOne(user entities.User) (*entities.User, error) {
 	return s.userRepository.UpdateOne(user)
 }

@@ -37,7 +37,7 @@ func (s *BandService) UpdateOne(band entities.Band) (*entities.Band, error) {
 	return s.bandRepository.UpdateOne(band)
 }
 
-func (s *BandService) GetTodayOrAfterEvents(band entities.Band) ([]*entities.Event, error) {
+func (s *BandService) GetTodayOrAfterEvents(band entities.Band) ([]*entities.NotionEvent, error) {
 	q := []byte(`{
         "aggregations": [
             {
@@ -70,7 +70,7 @@ func (s *BandService) GetTodayOrAfterEvents(band entities.Band) ([]*entities.Eve
 
 	res, _ := s.notionClient.QueryCollection(band.NotionCollection.NotionCollectionID, band.NotionCollection.NotionCollectionViewID, q, nil)
 
-	var events []*entities.Event
+	var events []*entities.NotionEvent
 
 	for _, blockID := range res.Result.BlockIDS {
 		block := res.RecordMap.Blocks[blockID].Block
@@ -79,7 +79,7 @@ func (s *BandService) GetTodayOrAfterEvents(band entities.Band) ([]*entities.Eve
 			continue
 		}
 
-		event := &entities.Event{
+		event := &entities.NotionEvent{
 			ID: block.ID,
 		}
 

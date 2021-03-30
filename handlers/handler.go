@@ -12,12 +12,15 @@ import (
 )
 
 type Handler struct {
-	bot              *telebot.Bot
-	userService      *services.UserService
-	driveFileService *services.DriveFileService
-	songService      *services.SongService
-	voiceService     *services.VoiceService
-	bandService      *services.BandService
+	bot               *telebot.Bot
+	userService       *services.UserService
+	driveFileService  *services.DriveFileService
+	songService       *services.SongService
+	voiceService      *services.VoiceService
+	bandService       *services.BandService
+	membershipService *services.MembershipService
+	eventService      *services.EventService
+	roleService       *services.RoleService
 }
 
 func NewHandler(
@@ -27,15 +30,21 @@ func NewHandler(
 	songService *services.SongService,
 	voiceService *services.VoiceService,
 	bandService *services.BandService,
+	membershipService *services.MembershipService,
+	eventService *services.EventService,
+	roleService *services.RoleService,
 ) *Handler {
 
 	return &Handler{
-		bot:              bot,
-		userService:      userService,
-		driveFileService: driveFileService,
-		songService:      songService,
-		voiceService:     voiceService,
-		bandService:      bandService,
+		bot:               bot,
+		userService:       userService,
+		driveFileService:  driveFileService,
+		songService:       songService,
+		voiceService:      voiceService,
+		bandService:       bandService,
+		membershipService: membershipService,
+		eventService:      eventService,
+		roleService:       roleService,
 	}
 }
 
@@ -48,7 +57,7 @@ func (h *Handler) OnText(c telebot.Context) error {
 
 	// Handle buttons.
 	switch c.Text() {
-	case helpers.Cancel:
+	case helpers.Cancel, helpers.Back:
 		if user.State.Prev != nil {
 			user.State = user.State.Prev
 			user.State.Index = 0
@@ -87,7 +96,7 @@ func (h *Handler) OnVoice(c telebot.Context) error {
 		Index: 0,
 		Name:  helpers.UploadVoiceState,
 		Context: entities.Context{
-			CurrentVoice: &entities.Voice{
+			Voice: &entities.Voice{
 				FileID: c.Message().Voice.FileID,
 			},
 		},
@@ -137,7 +146,9 @@ func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.Handl
 			}
 		}
 
-		user.Name = strings.TrimSpace(fmt.Sprintf("%s %s", c.Chat().FirstName, c.Chat().LastName))
+		if user.Name == "" {
+			user.Name = strings.TrimSpace(fmt.Sprintf("%s %s", c.Chat().FirstName, c.Chat().LastName))
+		}
 
 		if user.BandID == primitive.NilObjectID && user.State.Name != helpers.ChooseBandState && user.State.Name != helpers.CreateBandState {
 			user.State = &entities.State{

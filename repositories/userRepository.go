@@ -54,7 +54,7 @@ func (r *UserRepository) FindMultipleByIDs(IDs []int64) ([]*entities.User, error
 
 func (r *UserRepository) FindMultipleByBandID(bandID primitive.ObjectID) ([]*entities.User, error) {
 	return r.find(bson.M{
-		"_id": bandID,
+		"bandId": bandID,
 	})
 }
 
@@ -77,6 +77,14 @@ func (r *UserRepository) find(m bson.M) ([]*entities.User, error) {
 			"$unwind": bson.M{
 				"path":                       "$band",
 				"preserveNullAndEmptyArrays": true,
+			},
+		},
+		bson.M{
+			"$lookup": bson.M{
+				"from":         "memberships",
+				"localField":   "_id",
+				"foreignField": "userId",
+				"as":           "memberships",
 			},
 		},
 	}
@@ -107,6 +115,7 @@ func (r *UserRepository) UpdateOne(user entities.User) (*entities.User, error) {
 	filter := bson.M{"_id": user.ID}
 
 	user.Band = nil
+	user.Memberships = nil
 	update := bson.M{
 		"$set": user,
 	}

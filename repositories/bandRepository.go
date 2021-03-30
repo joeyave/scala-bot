@@ -55,6 +55,14 @@ func (r *BandRepository) find(m bson.M) ([]*entities.Band, error) {
 		bson.M{
 			"$match": m,
 		},
+		bson.M{
+			"$lookup": bson.M{
+				"from":         "roles",
+				"localField":   "_id",
+				"foreignField": "bandId",
+				"as":           "roles",
+			},
+		},
 	}
 
 	cur, err := collection.Aggregate(context.TODO(), pipeline)
@@ -84,6 +92,7 @@ func (r *BandRepository) UpdateOne(band entities.Band) (*entities.Band, error) {
 
 	filter := bson.M{"_id": band.ID}
 
+	band.Roles = nil
 	update := bson.M{
 		"$set": band,
 	}
