@@ -563,6 +563,11 @@ func eventActionsHandler() (string, []HandlerFunc) {
 			return err
 		}
 
+		eventString, _ := h.eventService.ToHtmlStringByID(event.ID)
+		h.bot.Send(telebot.ChatID(foundUser.ID),
+			fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
+				"Вот план:\n\n%s", eventString), telebot.ModeHTML)
+
 		user.State.Index = 0
 		return h.enter(c, user)
 	})
