@@ -23,12 +23,16 @@ func (s *EventService) FindAll() ([]*entities.Event, error) {
 	return s.eventRepository.FindAll()
 }
 
+func (s *EventService) FindAllFromToday() ([]*entities.Event, error) {
+	return s.eventRepository.FindAllFromToday()
+}
+
 func (s *EventService) FindMultipleByBandID(bandID primitive.ObjectID) ([]*entities.Event, error) {
 	return s.eventRepository.FindMultipleByBandID(bandID)
 }
 
-func (s *EventService) FindMultipleByBandIDFromToday(bandID primitive.ObjectID) ([]*entities.Event, error) {
-	return s.eventRepository.FindMultipleByBandIDFromToday(bandID)
+func (s *EventService) FindMultipleByBandIDFromTodayByBandID(bandID primitive.ObjectID) ([]*entities.Event, error) {
+	return s.eventRepository.FindMultipleByBandIDFromTodayByBandID(bandID)
 }
 
 func (s *EventService) FindOneByID(ID primitive.ObjectID) (*entities.Event, error) {
@@ -46,7 +50,7 @@ func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, error) {
 		return "", err
 	}
 
-	eventString := event.Alias()
+	eventString := fmt.Sprintf("<b>%s</b>", event.Alias())
 	membershipGroups := map[string][]*entities.Membership{}
 	for _, membership := range event.Memberships {
 		if membership.Role == nil {
@@ -56,7 +60,7 @@ func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, error) {
 	}
 
 	for membershipName, memberships := range membershipGroups {
-		eventString = fmt.Sprintf("%s\n\n%s:", eventString, membershipName)
+		eventString = fmt.Sprintf("%s\n\n<b>%s:</b>", eventString, membershipName)
 
 		var userIDs []int64
 		for _, membership := range memberships {

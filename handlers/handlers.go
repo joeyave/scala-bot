@@ -44,6 +44,7 @@ func mainMenuHandler() (string, []HandlerFunc) {
 				Name: helpers.ScheduleState,
 			}
 
+		// TODO
 		case "/schedule_dev":
 			user.State = &entities.State{
 				Name: helpers.GetEventsState,
@@ -270,7 +271,7 @@ func getEventsHandler() (string, []HandlerFunc) {
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		events, err := h.eventService.FindMultipleByBandIDFromToday(user.BandID)
+		events, err := h.eventService.FindMultipleByBandIDFromTodayByBandID(user.BandID)
 		user.State.Context.Events = events
 
 		markup := &telebot.ReplyMarkup{

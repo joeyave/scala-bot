@@ -31,13 +31,26 @@ func (r *EventRepository) FindAll() ([]*entities.Event, error) {
 	return events, nil
 }
 
+func (r *EventRepository) FindAllFromToday() ([]*entities.Event, error) {
+	now := time.Now()
+
+	return r.find(bson.M{
+		"_id": bson.M{
+			"$ne": "",
+		},
+		"time": bson.M{
+			"$gte": time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+		},
+	})
+}
+
 func (r *EventRepository) FindMultipleByBandID(bandID primitive.ObjectID) ([]*entities.Event, error) {
 	return r.find(bson.M{
 		"bandId": bandID,
 	})
 }
 
-func (r *EventRepository) FindMultipleByBandIDFromToday(bandID primitive.ObjectID) ([]*entities.Event, error) {
+func (r *EventRepository) FindMultipleByBandIDFromTodayByBandID(bandID primitive.ObjectID) ([]*entities.Event, error) {
 	now := time.Now()
 
 	return r.find(bson.M{
