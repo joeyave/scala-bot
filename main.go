@@ -102,7 +102,7 @@ func main() {
 	bot.Handle(telebot.OnVoice, handler.OnVoice)
 
 	go func() {
-		for range time.Tick(time.Minute * 1) {
+		for range time.Tick(time.Hour * 2) {
 			events, err := eventService.FindAllFromToday()
 			if err != nil {
 				return
