@@ -9,4 +9,6 @@ type Membership struct {
 
 	RoleID primitive.ObjectID `bson:"roleId,omitempty"`
 	Role   *Role              `bson:"role,omitempty"`
+
+	Notified bool `bson:"notified,omitempty"`
 }
