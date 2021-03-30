@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"os"
+	"time"
 )
 
 type EventRepository struct {
@@ -33,6 +34,25 @@ func (r *EventRepository) FindAll() ([]*entities.Event, error) {
 func (r *EventRepository) FindMultipleByBandID(bandID primitive.ObjectID) ([]*entities.Event, error) {
 	return r.find(bson.M{
 		"bandId": bandID,
+	})
+}
+
+func (r *EventRepository) FindMultipleByBandIDFromToday(bandID primitive.ObjectID) ([]*entities.Event, error) {
+	now := time.Now()
+
+	return r.find(bson.M{
+		"bandId": bandID,
+		"time": bson.M{
+			"$gte": time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+		},
+	})
+}
+
+func (r *EventRepository) FindMultipleByIDs(IDs []primitive.ObjectID) ([]*entities.Event, error) {
+	return r.find(bson.M{
+		"_id": bson.M{
+			"$in": IDs,
+		},
 	})
 }
 
@@ -110,6 +130,11 @@ func (r *EventRepository) find(m bson.M) ([]*entities.Event, error) {
 					},
 				},
 				"as": "memberships",
+			},
+		},
+		bson.M{
+			"$sort": bson.M{
+				"time": 1,
 			},
 		},
 	}

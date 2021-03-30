@@ -6,10 +6,13 @@ import (
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/telebot/v3"
+	"github.com/kjk/notionapi"
 	"github.com/klauspost/lctime"
 	"google.golang.org/api/drive/v3"
 	"regexp"
+	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -37,6 +40,11 @@ func mainMenuHandler() (string, []HandlerFunc) {
 			return err
 
 		case helpers.Schedule:
+			user.State = &entities.State{
+				Name: helpers.ScheduleState,
+			}
+
+		case "/schedule_dev":
 			user.State = &entities.State{
 				Name: helpers.GetEventsState,
 			}
@@ -129,132 +137,132 @@ func createRoleHandler() (string, []HandlerFunc) {
 	return helpers.CreateRoleState, handlerFuncs
 }
 
-//func scheduleHandler() (string, []HandlerFunc) {
-//	handlerFunc := make([]HandlerFunc, 0)
-//
-//	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
-//
-//		c.Notify(telebot.Typing)
-//
-//		events, err := h.bandService.GetTodayOrAfterEvents(*user.Band)
-//		if err != nil {
-//			return err
-//		}
-//
-//		markup := &telebot.ReplyMarkup{
-//			ResizeKeyboard: true,
-//		}
-//
-//		for _, event := range events {
-//			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: event.GetAlias()}})
-//		}
-//		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}})
-//
-//		err = c.Send("Выбери собрание:", markup)
-//		if err != nil {
-//			return err
-//		}
-//
-//		user.State.Context.NotionEvents = events
-//		user.State.Index++
-//
-//		return err
-//	})
-//
-//	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
-//		c.Notify(telebot.Typing)
-//
-//		events := user.State.Context.NotionEvents
-//
-//		var foundEvent *entities.NotionEvent
-//		for _, event := range events {
-//			if event.GetAlias() == c.Text() {
-//				foundEvent = event
-//				break
-//			}
-//		}
-//
-//		if foundEvent != nil {
-//			messageText := fmt.Sprintf("<b><a href=\"https://www.notion.so/%s\">%s</a></b>\n\n",
-//				notionapi.ToNoDashID(foundEvent.ID), foundEvent.GetAlias())
-//
-//			for i, pageID := range foundEvent.SetlistPageIDs {
-//
-//				page, err := h.songService.FindNotionPageByID(pageID)
-//				if err != nil {
-//					continue
-//				}
-//
-//				songTitleProp := page.GetTitle()
-//				if len(songTitleProp) < 1 {
-//					continue
-//				}
-//				songTitle := songTitleProp[0].Text
-//
-//				songKey := "?"
-//				songKeyProp := page.GetProperty("OR>-")
-//				if len(songKeyProp) > 0 {
-//					songKey = songKeyProp[0].Text
-//				}
-//
-//				songBPM := "?"
-//				songBPMProp := page.GetProperty("j0]A")
-//				if len(songBPMProp) > 0 {
-//					songBPM = songBPMProp[0].Text
-//				}
-//
-//				user.State.Context.SongNames = append(user.State.Context.SongNames, songTitle)
-//
-//				messageText += fmt.Sprintf("%d. %s (<a href=\"https://www.notion.so/%s\">%s, %s</a>)\n",
-//					i+1, songTitle, notionapi.ToNoDashID(pageID), songKey, songBPM)
-//			}
-//
-//			err := c.Send(messageText, &telebot.SendOptions{
-//				ReplyMarkup: &telebot.ReplyMarkup{
-//					ReplyKeyboard:  helpers.FindChordsKeyboard,
-//					ResizeKeyboard: true,
-//				},
-//				DisableWebPagePreview: true,
-//				ParseMode:             telebot.ModeHTML,
-//			})
-//			if err != nil {
-//				return err
-//			}
-//
-//			user.State.Index++
-//			return nil
-//		} else {
-//			user.State.Index--
-//			return h.enter(c, user)
-//		}
-//	})
-//
-//	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
-//		switch c.Text() {
-//
-//		case helpers.Back:
-//			user.State.Index = 0
-//			return h.enter(c, user)
-//
-//		case helpers.FindChords:
-//			user.State = &entities.State{
-//				Index:   0,
-//				Role:    helpers.SearchSongState,
-//				Context: entities.Context{Query: strings.Join(user.State.Context.SongNames, "\n")},
-//			}
-//			return h.enter(c, user)
-//
-//		default:
-//			user.State = &entities.State{
-//				Index: 0,
-//				Role:  helpers.SearchSongState,
-//			}
-//			return h.enter(c, user)
-//		}
-//	})
-//
-//	return helpers.ScheduleState, handlerFunc
-//}
+func scheduleHandler() (string, []HandlerFunc) {
+	handlerFunc := make([]HandlerFunc, 0)
+
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		c.Notify(telebot.Typing)
+
+		events, err := h.bandService.GetTodayOrAfterEvents(*user.Band)
+		if err != nil {
+			return err
+		}
+
+		markup := &telebot.ReplyMarkup{
+			ResizeKeyboard: true,
+		}
+
+		for _, event := range events {
+			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: event.GetAlias()}})
+		}
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}})
+
+		err = c.Send("Выбери собрание:", markup)
+		if err != nil {
+			return err
+		}
+
+		user.State.Context.NotionEvents = events
+		user.State.Index++
+
+		return err
+	})
+
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+		c.Notify(telebot.Typing)
+
+		events := user.State.Context.NotionEvents
+
+		var foundEvent *entities.NotionEvent
+		for _, event := range events {
+			if event.GetAlias() == c.Text() {
+				foundEvent = event
+				break
+			}
+		}
+
+		if foundEvent != nil {
+			messageText := fmt.Sprintf("<b><a href=\"https://www.notion.so/%s\">%s</a></b>\n\n",
+				notionapi.ToNoDashID(foundEvent.ID), foundEvent.GetAlias())
+
+			for i, pageID := range foundEvent.SetlistPageIDs {
+
+				page, err := h.songService.FindNotionPageByID(pageID)
+				if err != nil {
+					continue
+				}
+
+				songTitleProp := page.GetTitle()
+				if len(songTitleProp) < 1 {
+					continue
+				}
+				songTitle := songTitleProp[0].Text
+
+				songKey := "?"
+				songKeyProp := page.GetProperty("OR>-")
+				if len(songKeyProp) > 0 {
+					songKey = songKeyProp[0].Text
+				}
+
+				songBPM := "?"
+				songBPMProp := page.GetProperty("j0]A")
+				if len(songBPMProp) > 0 {
+					songBPM = songBPMProp[0].Text
+				}
+
+				user.State.Context.SongNames = append(user.State.Context.SongNames, songTitle)
+
+				messageText += fmt.Sprintf("%d. %s (<a href=\"https://www.notion.so/%s\">%s, %s</a>)\n",
+					i+1, songTitle, notionapi.ToNoDashID(pageID), songKey, songBPM)
+			}
+
+			err := c.Send(messageText, &telebot.SendOptions{
+				ReplyMarkup: &telebot.ReplyMarkup{
+					ReplyKeyboard:  helpers.FindChordsKeyboard,
+					ResizeKeyboard: true,
+				},
+				DisableWebPagePreview: true,
+				ParseMode:             telebot.ModeHTML,
+			})
+			if err != nil {
+				return err
+			}
+
+			user.State.Index++
+			return nil
+		} else {
+			user.State.Index--
+			return h.enter(c, user)
+		}
+	})
+
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+		switch c.Text() {
+
+		case helpers.Back:
+			user.State.Index = 0
+			return h.enter(c, user)
+
+		case helpers.FindChords:
+			user.State = &entities.State{
+				Index:   0,
+				Name:    helpers.SearchSongState,
+				Context: entities.Context{Query: strings.Join(user.State.Context.SongNames, "\n")},
+			}
+			return h.enter(c, user)
+
+		default:
+			user.State = &entities.State{
+				Index: 0,
+				Name:  helpers.SearchSongState,
+			}
+			return h.enter(c, user)
+		}
+	})
+
+	return helpers.ScheduleState, handlerFunc
+}
 
 func getEventsHandler() (string, []HandlerFunc) {
 
@@ -262,7 +270,7 @@ func getEventsHandler() (string, []HandlerFunc) {
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		events, err := h.eventService.FindMultipleByBandID(user.BandID)
+		events, err := h.eventService.FindMultipleByBandIDFromToday(user.BandID)
 		user.State.Context.Events = events
 
 		markup := &telebot.ReplyMarkup{
@@ -272,6 +280,7 @@ func getEventsHandler() (string, []HandlerFunc) {
 		for _, event := range events {
 			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: event.Alias()}})
 		}
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.GetAllEvents}})
 		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Back}, {Text: helpers.CreateEvent}})
 
 		err = c.Send("Выбери собрание:", markup)
@@ -292,6 +301,20 @@ func getEventsHandler() (string, []HandlerFunc) {
 			}
 			user.State.Prev.Index = 0
 			return h.enter(c, user)
+		case helpers.GetAllEvents:
+			for _, event := range user.State.Context.Events {
+				eventString, err := h.eventService.ToHtmlStringByID(event.ID)
+				if err != nil {
+					continue
+				}
+				err = c.Send(eventString, telebot.ModeHTML)
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+
 		default:
 			events := user.State.Context.Events
 
@@ -420,41 +443,15 @@ func eventActionsHandler() (string, []HandlerFunc) {
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		event, err := h.eventService.FindOneByID(user.State.Context.EventID)
+		eventString, err := h.eventService.ToHtmlStringByID(user.State.Context.EventID)
 		if err != nil {
 			return err
-		}
-
-		eventString := event.Alias()
-		membershipGroups := map[string][]*entities.Membership{}
-		for _, membership := range event.Memberships {
-			if membership.Role == nil {
-				continue
-			}
-			membershipGroups[membership.Role.Name] = append(membershipGroups[membership.Role.Name], membership)
-		}
-
-		for membershipName, memberships := range membershipGroups {
-			eventString = fmt.Sprintf("%s\n\n%s:", eventString, membershipName)
-
-			var userIDs []int64
-			for _, membership := range memberships {
-				userIDs = append(userIDs, membership.UserID)
-			}
-			members, err := h.userService.FindMultipleByIDs(userIDs)
-			if err != nil {
-				continue
-			}
-
-			for i, member := range members {
-				eventString = fmt.Sprintf("%s\n%d. %s", eventString, i+1, member.Name)
-			}
 		}
 
 		err = c.Send(eventString, &telebot.ReplyMarkup{
 			ReplyKeyboard:  append(helpers.EventActionsKeyboard, helpers.BackOrMenuKeyboard...),
 			ResizeKeyboard: true,
-		})
+		}, telebot.ModeHTML)
 		if err != nil {
 			return err
 		}
@@ -511,6 +508,9 @@ func eventActionsHandler() (string, []HandlerFunc) {
 		if err != nil {
 			return err
 		}
+		sort.Slice(users, func(i, j int) bool {
+			return len(users[i].Memberships) < len(users[j].Memberships)
+		})
 
 		markup := &telebot.ReplyMarkup{
 			ResizeKeyboard: true,

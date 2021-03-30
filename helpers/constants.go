@@ -49,6 +49,7 @@ const (
 	Settings         string = "Настройки"
 	CreateRole       string = "Создать роль"
 	AddMember        string = "Добавить участника"
+	GetAllEvents     string = "Все собрания"
 )
 
 const (

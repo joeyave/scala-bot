@@ -55,8 +55,9 @@ func main() {
 	bandRepository := repositories.NewBandRepository(mongoClient)
 	bandService := services.NewBandService(bandRepository, notionClient)
 
-	songRepository := repositories.NewSongRepository(mongoClient, driveClient)
 	driveFileService := services.NewDriveFileService(driveClient, docsClient)
+
+	songRepository := repositories.NewSongRepository(mongoClient, driveClient)
 	songService := services.NewSongService(songRepository, voiceRepository, bandRepository, driveClient, notionClient)
 
 	userRepository := repositories.NewUserRepository(mongoClient)
@@ -66,7 +67,7 @@ func main() {
 	membershipService := services.NewMembershipService(membershipRepository)
 
 	eventRepository := repositories.NewEventRepository(mongoClient)
-	eventService := services.NewEventService(eventRepository)
+	eventService := services.NewEventService(eventRepository, userRepository)
 
 	roleRepository := repositories.NewRoleRepository(mongoClient)
 	roleService := services.NewRoleService(roleRepository)
