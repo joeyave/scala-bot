@@ -153,7 +153,7 @@ func (r *EventRepository) find(m bson.M) ([]*entities.Event, error) {
 				"songIds": bson.M{
 					"$cond": bson.M{
 						"if": bson.M{
-							"$ne": bson.A{bson.M{"$type": "songIds"}, "array"},
+							"$ne": bson.A{bson.M{"$type": "$songIds"}, "array"},
 						},
 						"then": bson.A{},
 						"else": "$songIds",
