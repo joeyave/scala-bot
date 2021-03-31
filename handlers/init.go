@@ -31,6 +31,8 @@ func init() {
 		createEventHandler,
 		eventActionsHandler,
 		createRoleHandler,
+		addEventMemberHandler,
+		addEventSongHandler,
 	)
 }
 

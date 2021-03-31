@@ -1,25 +1,27 @@
 package helpers
 
 const (
-	SearchSongState    = "SearchSongState"
-	SetlistState       = "SetlistState"
-	SongActionsState   = "SongActionsState"
-	GetVoicesState     = "GetVoicesState"
-	UploadVoiceState   = "UploadVoiceState"
-	MainMenuState      = "MainMenuState"
-	TransposeSongState = "TransposeSongState"
-	StyleSongState     = "StyleSongState"
-	ChooseBandState    = "ChooseBandState"
-	CreateBandState    = "CreateBandState"
-	CopySongState      = "CopySongState"
-	ScheduleState      = "ScheduleState"
-	CreateSongState    = "CreateSongState"
-	DeleteSongState    = "DeleteSongState"
-	AddBandAdminState  = "AddBandAdminState"
-	GetEventsState     = "GetEventsState"
-	CreateEventState   = "CreateEventState"
-	EventActionsState  = "EventActionsState"
-	CreateRoleState    = "CreateRoleState"
+	SearchSongState     = "SearchSongState"
+	SetlistState        = "SetlistState"
+	SongActionsState    = "SongActionsState"
+	GetVoicesState      = "GetVoicesState"
+	UploadVoiceState    = "UploadVoiceState"
+	MainMenuState       = "MainMenuState"
+	TransposeSongState  = "TransposeSongState"
+	StyleSongState      = "StyleSongState"
+	ChooseBandState     = "ChooseBandState"
+	CreateBandState     = "CreateBandState"
+	CopySongState       = "CopySongState"
+	ScheduleState       = "ScheduleState"
+	CreateSongState     = "CreateSongState"
+	DeleteSongState     = "DeleteSongState"
+	AddBandAdminState   = "AddBandAdminState"
+	GetEventsState      = "GetEventsState"
+	CreateEventState    = "CreateEventState"
+	EventActionsState   = "EventActionsState"
+	CreateRoleState     = "CreateRoleState"
+	AddEventMemberState = "AddEventMemberState"
+	AddEventSongState   = "AddEventSongState"
 )
 
 // Buttons constants.
@@ -50,6 +52,8 @@ const (
 	CreateRole       string = "Создать роль"
 	AddMember        string = "Добавить участника"
 	GetAllEvents     string = "Все собрания"
+	AddSong          string = "Добавить песню"
+	End              string = "Закончить"
 )
 
 const (

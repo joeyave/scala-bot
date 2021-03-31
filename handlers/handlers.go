@@ -308,7 +308,7 @@ func getEventsHandler() (string, []HandlerFunc) {
 				if err != nil {
 					continue
 				}
-				err = c.Send(eventString, telebot.ModeHTML)
+				err = c.Send(eventString, telebot.ModeHTML, telebot.NoPreview)
 				if err != nil {
 					return err
 				}
@@ -452,7 +452,7 @@ func eventActionsHandler() (string, []HandlerFunc) {
 		err = c.Send(eventString, &telebot.ReplyMarkup{
 			ReplyKeyboard:  append(helpers.EventActionsKeyboard, helpers.BackOrMenuKeyboard...),
 			ResizeKeyboard: true,
-		}, telebot.ModeHTML)
+		}, telebot.ModeHTML, telebot.NoPreview)
 		if err != nil {
 			return err
 		}
@@ -460,6 +460,34 @@ func eventActionsHandler() (string, []HandlerFunc) {
 		user.State.Index++
 		return nil
 	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+		switch c.Text() {
+		case helpers.AddMember:
+			user.State = &entities.State{
+				Name:    helpers.AddEventMemberState,
+				Context: user.State.Context,
+				Prev:    user.State,
+			}
+			user.State.Prev.Index = 0
+		case helpers.AddSong:
+			user.State = &entities.State{
+				Name:    helpers.AddEventSongState,
+				Context: user.State.Context,
+				Prev:    user.State,
+			}
+			user.State.Prev.Index = 0
+		}
+
+		return h.enter(c, user)
+	})
+
+	return helpers.EventActionsState, handlerFuncs
+}
+
+func addEventMemberHandler() (string, []HandlerFunc) {
+
+	handlerFuncs := make([]HandlerFunc, 0)
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 		event, err := h.eventService.FindOneByID(user.State.Context.EventID)
@@ -566,13 +594,107 @@ func eventActionsHandler() (string, []HandlerFunc) {
 		eventString, _ := h.eventService.ToHtmlStringByID(event.ID)
 		h.bot.Send(telebot.ChatID(foundUser.ID),
 			fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
-				"Вот план:\n\n%s", eventString), telebot.ModeHTML)
+				"Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
 
 		user.State.Index = 0
 		return h.enter(c, user)
 	})
 
-	return helpers.EventActionsState, handlerFuncs
+	return helpers.AddEventMemberState, handlerFuncs
+}
+
+func addEventSongHandler() (string, []HandlerFunc) {
+	handlerFuncs := make([]HandlerFunc, 0)
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+		err := c.Send("Введи название песни:", &telebot.ReplyMarkup{
+			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.End}}},
+			ResizeKeyboard: true,
+		})
+		if err != nil {
+			return err
+		}
+
+		user.State.Index++
+		return nil
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		if c.Text() == helpers.End {
+			user.State = &entities.State{
+				Name:    helpers.EventActionsState,
+				Context: user.State.Context,
+			}
+			return h.enter(c, user)
+		}
+
+		c.Notify(telebot.Typing)
+
+		query := helpers.CleanUpQuery(c.Text())
+
+		driveFiles, _, err := h.driveFileService.FindSomeByFullTextAndFolderID(query, user.Band.DriveFolderID, "")
+		if err != nil {
+			return err
+		}
+
+		if len(driveFiles) == 0 {
+			return c.Send(fmt.Sprintf("По запросу \"%s\" ничего не найдено.", c.Text()), &telebot.ReplyMarkup{
+				ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.End}}},
+				ResizeKeyboard: true,
+			})
+		}
+
+		markup := &telebot.ReplyMarkup{
+			ResizeKeyboard: true,
+		}
+
+		// TODO: some sort of pagination.
+		for _, song := range driveFiles {
+			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: song.Name}})
+		}
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, helpers.CancelOrSkipKeyboard...)
+
+		err = c.Send(fmt.Sprintf("Выбери песню по запросу \"%s\" или введи другое название:", c.Text()), markup)
+		if err != nil {
+			return err
+		}
+
+		user.State.Index++
+		return nil
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		if c.Text() == helpers.End {
+			user.State = &entities.State{
+				Name:    helpers.EventActionsState,
+				Context: user.State.Context,
+			}
+			return h.enter(c, user)
+		}
+
+		foundDriveFile, err := h.driveFileService.FindOneByName(c.Text(), user.Band.DriveFolderID)
+		if err != nil {
+			user.State.Index--
+			return h.enter(c, user)
+		}
+
+		song, err := h.songService.FindOrCreateOneByDriveFileID(foundDriveFile.Id)
+		if err != nil {
+			return err
+		}
+
+		_, err = h.eventService.PushSongByID(user.State.Context.EventID, song.ID)
+		if err != nil {
+			return err
+		}
+
+		user.State.Index = 0
+		return h.enter(c, user)
+	})
+
+	return helpers.AddEventSongState, handlerFuncs
 }
 
 func chooseBandHandler() (string, []HandlerFunc) {
@@ -843,9 +965,9 @@ func searchSongHandler() (string, []HandlerFunc) {
 			var driveFiles []*drive.File
 			var err error
 			if c.Text() == helpers.SearchEverywhere {
-				driveFiles, _, err = h.driveFileService.FindSomeByNameAndFolderID(query, "", "")
+				driveFiles, _, err = h.driveFileService.FindSomeByFullTextAndFolderID(query, "", "")
 			} else {
-				driveFiles, _, err = h.driveFileService.FindSomeByNameAndFolderID(query, user.Band.DriveFolderID, "")
+				driveFiles, _, err = h.driveFileService.FindSomeByFullTextAndFolderID(query, user.Band.DriveFolderID, "")
 			}
 			if err != nil {
 				return err
@@ -1497,7 +1619,7 @@ func uploadVoiceHandler() (string, []HandlerFunc) {
 
 		c.Notify(telebot.Typing)
 
-		driveFiles, _, err := h.driveFileService.FindSomeByNameAndFolderID(c.Text(), user.Band.DriveFolderID, "")
+		driveFiles, _, err := h.driveFileService.FindSomeByFullTextAndFolderID(c.Text(), user.Band.DriveFolderID, "")
 		if err != nil {
 			return err
 		}
@@ -1613,7 +1735,7 @@ func setlistHandler() (string, []HandlerFunc) {
 
 		c.Notify(telebot.Typing)
 
-		driveFiles, _, err := h.driveFileService.FindSomeByNameAndFolderID(currentSongName, user.Band.DriveFolderID, "")
+		driveFiles, _, err := h.driveFileService.FindSomeByFullTextAndFolderID(currentSongName, user.Band.DriveFolderID, "")
 		if err != nil {
 			return err
 		}

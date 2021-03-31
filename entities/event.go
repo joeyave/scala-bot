@@ -16,6 +16,9 @@ type Event struct {
 
 	BandID primitive.ObjectID `bson:"bandId,omitempty"`
 	Band   *Band              `bson:"band,omitempty"`
+
+	SongIDs []primitive.ObjectID `bson:"songIds,omitempty"`
+	Songs   []*Song              `bson:"songs,omitempty"`
 }
 
 func (e *Event) Alias() string {

@@ -8,17 +8,20 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"google.golang.org/api/drive/v3"
 	"os"
 	"time"
 )
 
 type EventRepository struct {
 	mongoClient *mongo.Client
+	driveClient *drive.Service
 }
 
-func NewEventRepository(mongoClient *mongo.Client) *EventRepository {
+func NewEventRepository(mongoClient *mongo.Client, driveClient *drive.Service) *EventRepository {
 	return &EventRepository{
 		mongoClient: mongoClient,
+		driveClient: driveClient,
 	}
 }
 
@@ -146,6 +149,48 @@ func (r *EventRepository) find(m bson.M) ([]*entities.Event, error) {
 			},
 		},
 		bson.M{
+			"$lookup": bson.M{
+				"from": "songs",
+				"let":  bson.M{"songIds": "$songIds"},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{"$expr": bson.M{"$in": bson.A{"$_id", "$$songIds"}}},
+					},
+					bson.M{
+						"$lookup": bson.M{
+							"from": "bands",
+							"let":  bson.M{"bandId": "$bandId"},
+							"pipeline": bson.A{
+								bson.M{
+									"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$_id", "$$bandId"}}},
+								},
+							},
+							"as": "band",
+						},
+					},
+					bson.M{
+						"$unwind": bson.M{
+							"path":                       "$band",
+							"preserveNullAndEmptyArrays": true,
+						},
+					},
+					bson.M{
+						"$lookup": bson.M{
+							"from": "voices",
+							"let":  bson.M{"songId": "$_id"},
+							"pipeline": bson.A{
+								bson.M{
+									"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$songId", "$$songId"}}},
+								},
+							},
+							"as": "voices",
+						},
+					},
+				},
+				"as": "songs",
+			},
+		},
+		bson.M{
 			"$sort": bson.M{
 				"time": 1,
 			},
@@ -161,6 +206,17 @@ func (r *EventRepository) find(m bson.M) ([]*entities.Event, error) {
 	err = cur.All(context.TODO(), &events)
 	if err != nil {
 		return nil, err
+	}
+
+	for _, event := range events {
+		for _, song := range event.Songs {
+			driveFile, err := r.driveClient.Files.Get(song.DriveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+			if err != nil {
+				continue
+			}
+
+			song.DriveFile = driveFile
+		}
 	}
 
 	if len(events) == 0 {
@@ -181,6 +237,7 @@ func (r *EventRepository) UpdateOne(event entities.Event) (*entities.Event, erro
 
 	event.Memberships = nil
 	event.Band = nil
+	event.Songs = nil
 	update := bson.M{
 		"$set": event,
 	}
@@ -190,6 +247,36 @@ func (r *EventRepository) UpdateOne(event entities.Event) (*entities.Event, erro
 	opts := options.FindOneAndUpdateOptions{
 		ReturnDocument: &after,
 		Upsert:         &upsert,
+	}
+
+	result := collection.FindOneAndUpdate(context.TODO(), filter, update, &opts)
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	var newEvent *entities.Event
+	err := result.Decode(&newEvent)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.FindOneByID(newEvent.ID)
+}
+
+func (r *EventRepository) PushSongByID(eventID primitive.ObjectID, songID primitive.ObjectID) (*entities.Event, error) {
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
+
+	filter := bson.M{"_id": eventID}
+
+	update := bson.M{
+		"$push": bson.M{
+			"songIds": songID,
+		},
+	}
+
+	after := options.After
+	opts := options.FindOneAndUpdateOptions{
+		ReturnDocument: &after,
 	}
 
 	result := collection.FindOneAndUpdate(context.TODO(), filter, update, &opts)

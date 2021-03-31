@@ -43,6 +43,10 @@ func (s *EventService) UpdateOne(event entities.Event) (*entities.Event, error) 
 	return s.eventRepository.UpdateOne(event)
 }
 
+func (s *EventService) PushSongByID(eventID primitive.ObjectID, songID primitive.ObjectID) (*entities.Event, error) {
+	return s.eventRepository.PushSongByID(eventID, songID)
+}
+
 func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, error) {
 
 	event, err := s.eventRepository.FindOneByID(ID)
@@ -73,6 +77,13 @@ func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, error) {
 
 		for i, user := range users {
 			eventString = fmt.Sprintf("%s\n%d. <a href=\"tg://user?id=%d\">%s</a>", eventString, i+1, user.ID, user.Name)
+		}
+	}
+
+	if len(event.Songs) > 0 {
+		eventString = fmt.Sprintf("%s\n\n<b>Список:</b>", eventString)
+		for i, song := range event.Songs {
+			eventString = fmt.Sprintf("%s\n%d. <a href=\"%s\">%s</a>", eventString, i+1, song.DriveFile.WebViewLink, song.DriveFile.Name)
 		}
 	}
 

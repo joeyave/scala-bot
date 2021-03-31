@@ -67,7 +67,7 @@ func main() {
 	membershipRepository := repositories.NewMembershipRepository(mongoClient)
 	membershipService := services.NewMembershipService(membershipRepository)
 
-	eventRepository := repositories.NewEventRepository(mongoClient)
+	eventRepository := repositories.NewEventRepository(mongoClient, driveClient)
 	eventService := services.NewEventService(eventRepository, userRepository)
 
 	roleRepository := repositories.NewRoleRepository(mongoClient)
@@ -118,7 +118,7 @@ func main() {
 						eventString, _ := eventService.ToHtmlStringByID(event.ID)
 						_, err := bot.Send(telebot.ChatID(membership.UserID),
 							fmt.Sprintf("Привет. Ты учавствуешь в собрании через несколько дней! "+
-								"Вот план:\n\n%s", eventString), telebot.ModeHTML)
+								"Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
 						if err != nil {
 							continue
 						}

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"fmt"
 	"github.com/flowchartsman/retry"
 	"github.com/joeyave/chords-transposer/transposer"
@@ -25,7 +26,7 @@ func NewDriveFileService(driveClient *drive.Service, docsClient *docs.Service) *
 	}
 }
 
-func (s *DriveFileService) FindSomeByNameAndFolderID(name string, folderID string, pageToken string) ([]*drive.File, string, error) {
+func (s *DriveFileService) FindSomeByFullTextAndFolderID(name string, folderID string, pageToken string) ([]*drive.File, string, error) {
 	name = helpers.JsonEscape(name)
 
 	q := fmt.Sprintf(`fullText contains '%s'`+
@@ -48,6 +49,32 @@ func (s *DriveFileService) FindSomeByNameAndFolderID(name string, folderID strin
 	}
 
 	return res.Files, res.NextPageToken, nil
+}
+
+func (s *DriveFileService) FindOneByName(name string, folderID string) (*drive.File, error) {
+	name = helpers.JsonEscape(name)
+
+	q := fmt.Sprintf(`name = '%s'`+
+		` and trashed = false`+
+		` and mimeType = 'application/vnd.google-apps.document'`, name)
+
+	if folderID != "" {
+		q += fmt.Sprintf(` and '%s' in parents`, folderID)
+	}
+
+	res, err := s.driveClient.Files.List().
+		Q(q).
+		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink, parents)").
+		PageSize(1).PageToken("").Do()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(res.Files) == 0 {
+		return nil, errors.New("not found")
+	}
+
+	return res.Files[0], nil
 }
 
 func (s *DriveFileService) FindOneByID(ID string) (*drive.File, error) {
