@@ -22,6 +22,7 @@ const (
 	CreateRoleState     = "CreateRoleState"
 	AddEventMemberState = "AddEventMemberState"
 	AddEventSongState   = "AddEventSongState"
+	DeleteEventState    = "DeleteEventState"
 )
 
 // Buttons constants.
@@ -50,9 +51,10 @@ const (
 	AddAdmin         string = "Добавить администратора"
 	Settings         string = "Настройки"
 	CreateRole       string = "Создать роль"
-	AddMember        string = "Добавить участника"
+	Members          string = "Участники"
+	Songs            string = "Песни"
+	Add              string = "Добавить"
 	GetAllEvents     string = "Все собрания"
-	AddSong          string = "Добавить песню"
 	End              string = "Закончить"
 )
 

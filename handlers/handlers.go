@@ -463,14 +463,55 @@ func eventActionsHandler() (string, []HandlerFunc) {
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 		switch c.Text() {
-		case helpers.AddMember:
+		case helpers.Members:
+			err := c.Send("Выбери действие над участником:", &telebot.ReplyMarkup{
+				ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Delete}, {Text: helpers.Add}}},
+				ResizeKeyboard: true,
+			})
+			if err != nil {
+				return err
+			}
+			user.State.Index++
+			return nil
+		case helpers.Songs:
+			err := c.Send("Выбери действие над песней:", &telebot.ReplyMarkup{
+				ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Delete}, {Text: helpers.Add}}},
+				ResizeKeyboard: true,
+			})
+			if err != nil {
+				return err
+			}
+			user.State.Index += 2
+			return nil
+		case helpers.Delete:
+			user.State = &entities.State{
+				Name:    helpers.DeleteEventState,
+				Context: user.State.Context,
+				Prev:    user.State,
+			}
+			user.State.Prev.Index = 0
+		}
+
+		return h.enter(c, user)
+	})
+
+	// Members actions.
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+		switch c.Text() {
+		case helpers.Add:
 			user.State = &entities.State{
 				Name:    helpers.AddEventMemberState,
 				Context: user.State.Context,
 				Prev:    user.State,
 			}
 			user.State.Prev.Index = 0
-		case helpers.AddSong:
+		}
+		return h.enter(c, user)
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+		switch c.Text() {
+		case helpers.Add:
 			user.State = &entities.State{
 				Name:    helpers.AddEventSongState,
 				Context: user.State.Context,
@@ -478,7 +519,6 @@ func eventActionsHandler() (string, []HandlerFunc) {
 			}
 			user.State.Prev.Index = 0
 		}
-
 		return h.enter(c, user)
 	})
 
@@ -700,10 +740,54 @@ func addEventSongHandler() (string, []HandlerFunc) {
 	return helpers.AddEventSongState, handlerFuncs
 }
 
-func chooseBandHandler() (string, []HandlerFunc) {
-	handlerFunc := make([]HandlerFunc, 0)
+func deleteEventHandler() (string, []HandlerFunc) {
+	handlerFuncs := make([]HandlerFunc, 0)
 
-	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+		err := c.Send("Ты уверен?", &telebot.ReplyMarkup{
+			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.No}, {Text: helpers.Yes}}},
+			ResizeKeyboard: true,
+		})
+		if err != nil {
+			return err
+		}
+
+		user.State.Index++
+		return err
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+		if c.Text() == helpers.Yes {
+			err := h.eventService.DeleteOneByID(user.State.Context.EventID)
+			if err != nil {
+				return err
+			}
+
+			err = c.Send("Удаление завершено.")
+			if err != nil {
+				return err
+			}
+			user.State = &entities.State{
+				Name: helpers.GetEventsState,
+			}
+			return h.enter(c, user)
+		} else {
+			err := c.Send("Удаление отменено.")
+			if err != nil {
+				return err
+			}
+			user.State = user.State.Prev
+			return h.enter(c, user)
+		}
+	})
+
+	return helpers.DeleteEventState, handlerFuncs
+}
+
+func chooseBandHandler() (string, []HandlerFunc) {
+	handlerFuncs := make([]HandlerFunc, 0)
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 		bands, err := h.bandService.FindAll()
 		if err != nil {
 			return err
@@ -728,7 +812,7 @@ func chooseBandHandler() (string, []HandlerFunc) {
 		return nil
 	})
 
-	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 		switch c.Text() {
 		case helpers.CreateBand:
 			user.State = &entities.State{
@@ -766,7 +850,7 @@ func chooseBandHandler() (string, []HandlerFunc) {
 		}
 	})
 
-	return helpers.ChooseBandState, handlerFunc
+	return helpers.ChooseBandState, handlerFuncs
 }
 
 func createBandHandler() (string, []HandlerFunc) {

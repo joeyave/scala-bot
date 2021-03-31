@@ -33,6 +33,7 @@ func init() {
 		createRoleHandler,
 		addEventMemberHandler,
 		addEventSongHandler,
+		deleteEventHandler,
 	)
 }
 

@@ -8,14 +8,16 @@ import (
 )
 
 type EventService struct {
-	eventRepository *repositories.EventRepository
-	userRepository  *repositories.UserRepository
+	eventRepository      *repositories.EventRepository
+	userRepository       *repositories.UserRepository
+	membershipRepository *repositories.MembershipRepository
 }
 
-func NewEventService(eventRepository *repositories.EventRepository, userRepository *repositories.UserRepository) *EventService {
+func NewEventService(eventRepository *repositories.EventRepository, userRepository *repositories.UserRepository, membershipRepository *repositories.MembershipRepository) *EventService {
 	return &EventService{
-		eventRepository: eventRepository,
-		userRepository:  userRepository,
+		eventRepository:      eventRepository,
+		userRepository:       userRepository,
+		membershipRepository: membershipRepository,
 	}
 }
 
@@ -45,6 +47,20 @@ func (s *EventService) UpdateOne(event entities.Event) (*entities.Event, error) 
 
 func (s *EventService) PushSongByID(eventID primitive.ObjectID, songID primitive.ObjectID) (*entities.Event, error) {
 	return s.eventRepository.PushSongByID(eventID, songID)
+}
+
+func (s *EventService) DeleteOneByID(ID primitive.ObjectID) error {
+	err := s.eventRepository.DeleteOneByID(ID)
+	if err != nil {
+		return err
+	}
+
+	err = s.membershipRepository.DeleteManyByEventID(ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, error) {

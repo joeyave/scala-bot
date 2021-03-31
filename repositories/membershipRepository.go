@@ -110,6 +110,13 @@ func (r *MembershipRepository) UpdateOne(membership entities.Membership) (*entit
 	return r.FindOneByID(newMembership.ID)
 }
 
+func (r *MembershipRepository) DeleteManyByEventID(eventID primitive.ObjectID) error {
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("memberships")
+
+	_, err := collection.DeleteMany(context.TODO(), bson.M{"eventId": eventID})
+	return err
+}
+
 func (r *MembershipRepository) generateUniqueID() primitive.ObjectID {
 	ID := primitive.NilObjectID
 

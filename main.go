@@ -68,7 +68,7 @@ func main() {
 	membershipService := services.NewMembershipService(membershipRepository)
 
 	eventRepository := repositories.NewEventRepository(mongoClient, driveClient)
-	eventService := services.NewEventService(eventRepository, userRepository)
+	eventService := services.NewEventService(eventRepository, userRepository, membershipRepository)
 
 	roleRepository := repositories.NewRoleRepository(mongoClient)
 	roleService := services.NewRoleService(roleRepository)

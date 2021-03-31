@@ -306,6 +306,13 @@ func (r *EventRepository) PushSongByID(eventID primitive.ObjectID, songID primit
 	return r.FindOneByID(newEvent.ID)
 }
 
+func (r *EventRepository) DeleteOneByID(ID primitive.ObjectID) error {
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
+
+	_, err := collection.DeleteOne(context.TODO(), bson.M{"_id": ID})
+	return err
+}
+
 func (r *EventRepository) generateUniqueID() primitive.ObjectID {
 	ID := primitive.NilObjectID
 
