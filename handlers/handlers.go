@@ -550,7 +550,7 @@ func addEventMemberHandler() (string, []HandlerFunc) {
 		}
 		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}})
 
-		err = c.Send("Выбери участника", markup)
+		err = c.Send("Выбери участника:", markup)
 		if err != nil {
 			return err
 		}
@@ -596,7 +596,10 @@ func addEventMemberHandler() (string, []HandlerFunc) {
 			fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
 				"Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
 
-		user.State.Index = 0
+		user.State = &entities.State{
+			Name:    helpers.EventActionsState,
+			Context: user.State.Context,
+		}
 		return h.enter(c, user)
 	})
 
