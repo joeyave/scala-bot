@@ -33,7 +33,7 @@ type Context struct {
 	Query            string   `bson:"query,omitempty"`
 
 	DriveFileID       string        `bson:"currentSongId,omitempty"`
-	FoundDriveFileIDs []string      `bson:"foundSongIds,omitempty"`
+	FoundDriveFileIDs []string      `bson:"foundDriveFileIds,omitempty"`
 	DriveFiles        []*drive.File `bson:"driveFiles,omitempty"`
 
 	Voice *Voice `bson:"currentVoice,omitempty"`
@@ -49,6 +49,10 @@ type Context struct {
 	EventID primitive.ObjectID `bson:"eventId,omitempty"`
 	Events  []*Event           `bson:"events,omitempty"`
 
+	FoundSongIDs []primitive.ObjectID `bson:"foundSongIds,omitempty"`
+	SongIDs      []primitive.ObjectID `bson:"songIds,omitempty"`
+	Songs        []*Song              `bson:"songs,omitempty"`
+
 	NotionEvents []*NotionEvent `bson:"notionEvents,omitempty"`
 
 	CreateSongPayload struct {
@@ -61,4 +65,6 @@ type Context struct {
 
 	Map  map[string]string `bson:"map,omitempty"`
 	Time time.Time         `bson:"time,omitempty"`
+
+	Index int `bson:"index, omitempty"`
 }

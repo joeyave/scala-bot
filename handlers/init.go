@@ -34,6 +34,7 @@ func init() {
 		addEventMemberHandler,
 		addEventSongHandler,
 		deleteEventHandler,
+		changeSongOrderHandler,
 	)
 }
 

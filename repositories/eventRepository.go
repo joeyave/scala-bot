@@ -199,6 +199,21 @@ func (r *EventRepository) find(m bson.M) ([]*entities.Event, error) {
 							"as": "voices",
 						},
 					},
+					bson.M{
+						"$addFields": bson.M{
+							"sort": bson.M{
+								"$indexOfArray": bson.A{"$$songIds", "$_id"},
+							},
+						},
+					},
+					bson.M{
+						"$sort": bson.M{"sort": 1},
+					},
+					bson.M{
+						"$addFields": bson.M{
+							"sort": "$$REMOVE",
+						},
+					},
 				},
 				"as": "songs",
 			},
