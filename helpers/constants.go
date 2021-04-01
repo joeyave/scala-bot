@@ -47,6 +47,7 @@ const (
 	SearchEverywhere string = "Искать во всех группах"
 	CopyToMyBand     string = "Копировать песню в свою группу"
 	Schedule         string = "Расписание"
+	ScheduleBeta     string = "Расписание (beta)"
 	FindChords       string = "Найти аккорды"
 	ChangeBand       string = "Изменить группу"
 	AddAdmin         string = "Добавить администратора"

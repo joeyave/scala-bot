@@ -24,6 +24,7 @@ var EventActionsKeyboard = [][]telebot.ReplyButton{
 
 var MainMenuKeyboard = [][]telebot.ReplyButton{
 	{{Text: Schedule}},
+	{{Text: ScheduleBeta}},
 	{{Text: CreateDoc}},
 	{{Text: Settings}},
 }

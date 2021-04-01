@@ -45,7 +45,7 @@ func mainMenuHandler() (string, []HandlerFunc) {
 			}
 
 		// TODO
-		case "/schedule_dev":
+		case helpers.ScheduleBeta:
 			user.State = &entities.State{
 				Name: helpers.GetEventsState,
 			}
