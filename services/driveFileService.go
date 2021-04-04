@@ -15,14 +15,14 @@ import (
 )
 
 type DriveFileService struct {
-	driveClient *drive.Service
-	docsClient  *docs.Service
+	driveRepository *drive.Service
+	docsRepository  *docs.Service
 }
 
-func NewDriveFileService(driveClient *drive.Service, docsClient *docs.Service) *DriveFileService {
+func NewDriveFileService(driveRepository *drive.Service, docsRepository *docs.Service) *DriveFileService {
 	return &DriveFileService{
-		driveClient: driveClient,
-		docsClient:  docsClient,
+		driveRepository: driveRepository,
+		docsRepository:  docsRepository,
 	}
 }
 
@@ -37,7 +37,7 @@ func (s *DriveFileService) FindSomeByFullTextAndFolderID(name string, folderID s
 		q += fmt.Sprintf(` and '%s' in parents`, folderID)
 	}
 
-	res, err := s.driveClient.Files.List().
+	res, err := s.driveRepository.Files.List().
 		// Use this for precise search.
 		//Q(fmt.Sprintf("fullText contains '\"%s\"'", name)).
 		Q(q).
@@ -62,7 +62,7 @@ func (s *DriveFileService) FindOneByName(name string, folderID string) (*drive.F
 		q += fmt.Sprintf(` and '%s' in parents`, folderID)
 	}
 
-	res, err := s.driveClient.Files.List().
+	res, err := s.driveRepository.Files.List().
 		Q(q).
 		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink, parents)").
 		PageSize(1).PageToken("").Do()
@@ -78,11 +78,11 @@ func (s *DriveFileService) FindOneByName(name string, folderID string) (*drive.F
 }
 
 func (s *DriveFileService) FindOneByID(ID string) (*drive.File, error) {
-	return s.driveClient.Files.Get(ID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+	return s.driveRepository.Files.Get(ID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
 }
 
 func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key string, BPM string, time string) (*drive.File, error) {
-	newFile, err := s.driveClient.Files.Create(newFile).Do()
+	newFile, err := s.driveRepository.Files.Create(newFile).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -104,14 +104,14 @@ func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key str
 			},
 		})
 
-	res, err := s.docsClient.Documents.BatchUpdate(newFile.Id,
+	res, err := s.docsRepository.Documents.BatchUpdate(newFile.Id,
 		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
 	if err != nil {
 		return nil, err
 	}
 
 	if res.Replies[0].CreateHeader.HeaderId != "" {
-		_, _ = s.docsClient.Documents.BatchUpdate(newFile.Id,
+		_, _ = s.docsRepository.Documents.BatchUpdate(newFile.Id,
 			&docs.BatchUpdateDocumentRequest{
 				Requests: []*docs.Request{
 					getDefaultHeaderRequest(res.Replies[0].CreateHeader.HeaderId, newFile.Name, key, BPM, time),
@@ -119,7 +119,7 @@ func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key str
 			}).Do()
 	}
 
-	doc, err := s.docsClient.Documents.Get(newFile.Id).Do()
+	doc, err := s.docsRepository.Documents.Get(newFile.Id).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -155,14 +155,14 @@ func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key str
 		}
 	}
 
-	_, _ = s.docsClient.Documents.BatchUpdate(newFile.Id,
+	_, _ = s.docsRepository.Documents.BatchUpdate(newFile.Id,
 		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
 
 	return s.FindOneByID(newFile.Id)
 }
 
 func (s *DriveFileService) CloneOne(fileToCloneID string, newFile *drive.File) (*drive.File, error) {
-	newFile, err := s.driveClient.Files.
+	newFile, err := s.driveRepository.Files.
 		Copy(fileToCloneID, newFile).
 		Fields("id, name, modifiedTime, webViewLink, parents").
 		Do()
@@ -175,7 +175,7 @@ func (s *DriveFileService) CloneOne(fileToCloneID string, newFile *drive.File) (
 	}
 
 	// TODO: use pagination here.
-	folderPermissionsList, err := s.driveClient.Permissions.
+	folderPermissionsList, err := s.driveRepository.Permissions.
 		List(newFile.Parents[0]).
 		Fields("*").
 		PageSize(100).Do()
@@ -196,7 +196,7 @@ func (s *DriveFileService) CloneOne(fileToCloneID string, newFile *drive.File) (
 			Role:         "owner",
 			Type:         "user",
 		}
-		_, err = s.driveClient.Permissions.
+		_, err = s.driveRepository.Permissions.
 			Create(newFile.Id, permission).
 			TransferOwnership(true).Do()
 		if err != nil {
@@ -212,7 +212,7 @@ func (s *DriveFileService) DownloadOneByID(ID string) (*io.Reader, error) {
 
 	var reader io.Reader
 	err := retrier.Run(func() error {
-		res, err := s.driveClient.Files.Export(ID, "application/pdf").Download()
+		res, err := s.driveRepository.Files.Export(ID, "application/pdf").Download()
 		if err != nil {
 			return err
 		}
@@ -226,11 +226,11 @@ func (s *DriveFileService) DownloadOneByID(ID string) (*io.Reader, error) {
 }
 
 func (s *DriveFileService) DeleteOneByID(ID string) error {
-	return s.driveClient.Files.Delete(ID).Do()
+	return s.driveRepository.Files.Delete(ID).Do()
 }
 
 func (s *DriveFileService) TransposeOne(ID string, toKey string, sectionIndex int) (*drive.File, error) {
-	doc, err := s.docsClient.Documents.Get(ID).Do()
+	doc, err := s.docsRepository.Documents.Get(ID).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +243,7 @@ func (s *DriveFileService) TransposeOne(ID string, toKey string, sectionIndex in
 			return nil, err
 		}
 
-		doc, err = s.docsClient.Documents.Get(ID).Do()
+		doc, err = s.docsRepository.Documents.Get(ID).Do()
 		if err != nil {
 			return nil, err
 		}
@@ -254,7 +254,7 @@ func (s *DriveFileService) TransposeOne(ID string, toKey string, sectionIndex in
 	requests, key := s.transposeHeader(doc, sections, sectionIndex, toKey)
 	requests = append(requests, s.transposeBody(doc, sections, sectionIndex, key, toKey)...)
 
-	_, err = s.docsClient.Documents.BatchUpdate(doc.DocumentId,
+	_, err = s.docsRepository.Documents.BatchUpdate(doc.DocumentId,
 		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
 
 	return s.FindOneByID(ID)
@@ -263,13 +263,13 @@ func (s *DriveFileService) TransposeOne(ID string, toKey string, sectionIndex in
 func (s *DriveFileService) StyleOne(ID string) (*drive.File, error) {
 	requests := make([]*docs.Request, 0)
 
-	doc, err := s.docsClient.Documents.Get(ID).Do()
+	doc, err := s.docsRepository.Documents.Get(ID).Do()
 	if err != nil {
 		return nil, err
 	}
 
 	if doc.DocumentStyle.DefaultHeaderId == "" {
-		res, err := s.docsClient.Documents.BatchUpdate(ID, &docs.BatchUpdateDocumentRequest{
+		res, err := s.docsRepository.Documents.BatchUpdate(ID, &docs.BatchUpdateDocumentRequest{
 			Requests: []*docs.Request{
 				{
 					CreateHeader: &docs.CreateHeaderRequest{
@@ -281,7 +281,7 @@ func (s *DriveFileService) StyleOne(ID string) (*drive.File, error) {
 
 		if err == nil && res.Replies[0].CreateHeader.HeaderId != "" {
 			doc.DocumentStyle.DefaultHeaderId = res.Replies[0].CreateHeader.HeaderId
-			_, _ = s.docsClient.Documents.BatchUpdate(ID, &docs.BatchUpdateDocumentRequest{
+			_, _ = s.docsRepository.Documents.BatchUpdate(ID, &docs.BatchUpdateDocumentRequest{
 				Requests: []*docs.Request{
 					getDefaultHeaderRequest(doc.DocumentStyle.DefaultHeaderId, doc.Title, "", "", ""),
 				},
@@ -289,7 +289,7 @@ func (s *DriveFileService) StyleOne(ID string) (*drive.File, error) {
 		}
 	}
 
-	doc, err = s.docsClient.Documents.Get(ID).Do()
+	doc, err = s.docsRepository.Documents.Get(ID).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -399,7 +399,7 @@ func (s *DriveFileService) StyleOne(ID string) (*drive.File, error) {
 		},
 	})
 
-	_, err = s.docsClient.Documents.BatchUpdate(ID, &docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
+	_, err = s.docsRepository.Documents.BatchUpdate(ID, &docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -408,7 +408,7 @@ func (s *DriveFileService) StyleOne(ID string) (*drive.File, error) {
 }
 
 func (s *DriveFileService) GetSectionsNumber(ID string) (int, error) {
-	doc, err := s.docsClient.Documents.Get(ID).Do()
+	doc, err := s.docsRepository.Documents.Get(ID).Do()
 	if err != nil {
 		return 0, err
 	}
@@ -453,12 +453,12 @@ func (s *DriveFileService) appendSectionByID(ID string) ([]docs.StructuralElemen
 		},
 	}
 
-	_, err := s.docsClient.Documents.BatchUpdate(ID, requests).Do()
+	_, err := s.docsRepository.Documents.BatchUpdate(ID, requests).Do()
 	if err != nil {
 		return nil, err
 	}
 
-	doc, err := s.docsClient.Documents.Get(ID).Do()
+	doc, err := s.docsRepository.Documents.Get(ID).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -479,12 +479,12 @@ func (s *DriveFileService) appendSectionByID(ID string) ([]docs.StructuralElemen
 		},
 	}
 
-	_, err = s.docsClient.Documents.BatchUpdate(ID, requests).Do()
+	_, err = s.docsRepository.Documents.BatchUpdate(ID, requests).Do()
 	if err != nil {
 		return nil, err
 	}
 
-	doc, err = s.docsClient.Documents.Get(ID).Do()
+	doc, err = s.docsRepository.Documents.Get(ID).Do()
 	if err != nil {
 		return nil, err
 	}

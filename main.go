@@ -38,12 +38,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	driveClient, err := drive.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("GOOGLEAPIS_CREDENTIALS"))))
+	driveRepository, err := drive.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("GOOGLEAPIS_CREDENTIALS"))))
 	if err != nil {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
 	}
 
-	docsClient, err := docs.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("GOOGLEAPIS_CREDENTIALS"))))
+	docsRepository, err := docs.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("GOOGLEAPIS_CREDENTIALS"))))
 	if err != nil {
 		log.Fatalf("Unable to retrieve Docs client: %v", err)
 	}
@@ -56,10 +56,10 @@ func main() {
 	bandRepository := repositories.NewBandRepository(mongoClient)
 	bandService := services.NewBandService(bandRepository, notionClient)
 
-	driveFileService := services.NewDriveFileService(driveClient, docsClient)
+	driveFileService := services.NewDriveFileService(driveRepository, docsRepository)
 
-	songRepository := repositories.NewSongRepository(mongoClient, driveClient)
-	songService := services.NewSongService(songRepository, voiceRepository, bandRepository, driveClient, notionClient)
+	songRepository := repositories.NewSongRepository(mongoClient)
+	songService := services.NewSongService(songRepository, voiceRepository, bandRepository, driveRepository, notionClient)
 
 	userRepository := repositories.NewUserRepository(mongoClient)
 	userService := services.NewUserService(userRepository)
@@ -67,8 +67,8 @@ func main() {
 	membershipRepository := repositories.NewMembershipRepository(mongoClient)
 	membershipService := services.NewMembershipService(membershipRepository)
 
-	eventRepository := repositories.NewEventRepository(mongoClient, driveClient)
-	eventService := services.NewEventService(eventRepository, userRepository, membershipRepository)
+	eventRepository := repositories.NewEventRepository(mongoClient)
+	eventService := services.NewEventService(eventRepository, userRepository, membershipRepository, driveRepository)
 
 	roleRepository := repositories.NewRoleRepository(mongoClient)
 	roleService := services.NewRoleService(roleRepository)

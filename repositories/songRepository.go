@@ -8,19 +8,16 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"google.golang.org/api/drive/v3"
 	"os"
 )
 
 type SongRepository struct {
 	mongoClient *mongo.Client
-	driveClient *drive.Service
 }
 
-func NewSongRepository(mongoClient *mongo.Client, driveClient *drive.Service) *SongRepository {
+func NewSongRepository(mongoClient *mongo.Client) *SongRepository {
 	return &SongRepository{
 		mongoClient: mongoClient,
-		driveClient: driveClient,
 	}
 }
 
@@ -87,13 +84,6 @@ func (r *SongRepository) find(m bson.M) ([]*entities.Song, error) {
 		if err != nil {
 			continue
 		}
-
-		driveFile, err := r.driveClient.Files.Get(song.DriveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
-		if err != nil {
-			continue
-		}
-
-		song.DriveFile = driveFile
 
 		songs = append(songs, song)
 	}

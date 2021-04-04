@@ -9,8 +9,7 @@ import (
 type Song struct {
 	ID primitive.ObjectID `bson:"_id,omitempty"`
 
-	DriveFileID string      `bson:"driveFileId,omitempty"`
-	DriveFile   *drive.File `bson:"-"`
+	DriveFileID string `bson:"driveFileId,omitempty"`
 
 	BandID primitive.ObjectID `bson:"bandId,omitempty"`
 	Band   *Band              `bson:"band,omitempty"`
@@ -26,8 +25,8 @@ type PDF struct {
 	TgChannelMessageID int    `bson:"tgChannelMessageId,omitempty"`
 }
 
-func (s *Song) HasOutdatedPDF() bool {
-	if s.PDF.ModifiedTime == "" || s.DriveFile == nil {
+func (s *Song) HasOutdatedPDF(driveFile *drive.File) bool {
+	if s.PDF.ModifiedTime == "" || driveFile == nil {
 		return true
 	}
 
@@ -36,7 +35,7 @@ func (s *Song) HasOutdatedPDF() bool {
 		return true
 	}
 
-	driveFileModifiedTime, err := time.Parse(time.RFC3339, s.DriveFile.ModifiedTime)
+	driveFileModifiedTime, err := time.Parse(time.RFC3339, driveFile.ModifiedTime)
 	if err != nil {
 		return true
 	}

@@ -5,47 +5,47 @@ import (
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/repositories"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"google.golang.org/api/drive/v3"
 )
 
 type EventService struct {
 	eventRepository      *repositories.EventRepository
 	userRepository       *repositories.UserRepository
 	membershipRepository *repositories.MembershipRepository
+	driveRepository      *drive.Service
 }
 
-func NewEventService(eventRepository *repositories.EventRepository, userRepository *repositories.UserRepository, membershipRepository *repositories.MembershipRepository) *EventService {
+func NewEventService(eventRepository *repositories.EventRepository, userRepository *repositories.UserRepository, membershipRepository *repositories.MembershipRepository, driveRepository *drive.Service) *EventService {
 	return &EventService{
 		eventRepository:      eventRepository,
 		userRepository:       userRepository,
 		membershipRepository: membershipRepository,
+		driveRepository:      driveRepository,
 	}
-}
-
-func (s *EventService) FindAll() ([]*entities.Event, error) {
-	return s.eventRepository.FindAll()
 }
 
 func (s *EventService) FindAllFromToday() ([]*entities.Event, error) {
 	return s.eventRepository.FindAllFromToday()
 }
 
-func (s *EventService) FindMultipleByBandID(bandID primitive.ObjectID) ([]*entities.Event, error) {
-	return s.eventRepository.FindMultipleByBandID(bandID)
-}
-
-func (s *EventService) FindMultipleByBandIDFromTodayByBandID(bandID primitive.ObjectID) ([]*entities.Event, error) {
-	return s.eventRepository.FindMultipleByBandIDFromTodayByBandID(bandID)
+func (s *EventService) FindManyFromTodayByBandID(bandID primitive.ObjectID) ([]*entities.Event, error) {
+	return s.eventRepository.FindManyFromTodayByBandID(bandID)
 }
 
 func (s *EventService) FindOneByID(ID primitive.ObjectID) (*entities.Event, error) {
-	return s.eventRepository.FindOneByID(ID)
+	event, err := s.eventRepository.FindOneByID(ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return event, err
 }
 
 func (s *EventService) UpdateOne(event entities.Event) (*entities.Event, error) {
 	return s.eventRepository.UpdateOne(event)
 }
 
-func (s *EventService) PushSongByID(eventID primitive.ObjectID, songID primitive.ObjectID) (*entities.Event, error) {
+func (s *EventService) PushSongID(eventID primitive.ObjectID, songID primitive.ObjectID) (*entities.Event, error) {
 	return s.eventRepository.PushSongByID(eventID, songID)
 }
 
@@ -99,7 +99,12 @@ func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, error) {
 	if len(event.Songs) > 0 {
 		eventString = fmt.Sprintf("%s\n\n<b>Список:</b>", eventString)
 		for i, song := range event.Songs {
-			eventString = fmt.Sprintf("%s\n%d. <a href=\"%s\">%s</a>", eventString, i+1, song.DriveFile.WebViewLink, song.DriveFile.Name)
+			driveFile, err := s.driveRepository.Files.Get(song.DriveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+			if err != nil {
+				continue
+			}
+
+			eventString = fmt.Sprintf("%s\n%d. <a href=\"%s\">%s</a>", eventString, i+1, driveFile.WebViewLink, driveFile.Name)
 		}
 	}
 

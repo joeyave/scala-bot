@@ -271,7 +271,7 @@ func getEventsHandler() (string, []HandlerFunc) {
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		events, err := h.eventService.FindMultipleByBandIDFromTodayByBandID(user.BandID)
+		events, err := h.eventService.FindManyFromTodayByBandID(user.BandID)
 		user.State.Context.Events = events
 
 		markup := &telebot.ReplyMarkup{
@@ -317,6 +317,8 @@ func getEventsHandler() (string, []HandlerFunc) {
 			return nil
 
 		default:
+			c.Notify(telebot.Typing)
+
 			events := user.State.Context.Events
 
 			var foundEvent *entities.Event
@@ -565,8 +567,12 @@ func changeSongOrderHandler() (string, []HandlerFunc) {
 		}
 
 		for _, song := range event.Songs {
-			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: song.DriveFile.Name}})
-			user.State.Context.DriveFiles = append(user.State.Context.DriveFiles, song.DriveFile)
+			driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
+			if err != nil {
+				continue
+			}
+			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: driveFile.Name}})
+			user.State.Context.DriveFiles = append(user.State.Context.DriveFiles, driveFile)
 		}
 		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}})
 
@@ -810,7 +816,7 @@ func addEventSongHandler() (string, []HandlerFunc) {
 			return err
 		}
 
-		_, err = h.eventService.PushSongByID(user.State.Context.EventID, song.ID)
+		_, err = h.eventService.PushSongID(user.State.Context.EventID, song.ID)
 		if err != nil {
 			return err
 		}
@@ -1222,8 +1228,13 @@ func songActionsHandler() (string, []HandlerFunc) {
 			return err
 		}
 
+		driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
+		if err != nil {
+			return err
+		}
+
 		markup := &telebot.ReplyMarkup{
-			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: song.DriveFile.Name}}},
+			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: driveFile.Name}}},
 			ResizeKeyboard: true,
 		}
 
@@ -1242,7 +1253,7 @@ func songActionsHandler() (string, []HandlerFunc) {
 			msg, err := h.bot.Send(c.Recipient(), &telebot.Document{
 				File:     telebot.FromReader(*reader),
 				MIME:     "application/pdf",
-				FileName: fmt.Sprintf("%s.pdf", song.DriveFile.Name),
+				FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
 			}, markup)
 			if err != nil {
 				return nil, err
@@ -1251,7 +1262,7 @@ func songActionsHandler() (string, []HandlerFunc) {
 		}
 
 		var sentMessage *telebot.Message
-		if song.HasOutdatedPDF() {
+		if song.HasOutdatedPDF(driveFile) {
 			sentMessage, err = sendDocumentByReader()
 			if err != nil {
 				return err
@@ -1260,7 +1271,7 @@ func songActionsHandler() (string, []HandlerFunc) {
 			sentMessage, err = h.bot.Send(c.Recipient(), &telebot.Document{
 				File:     telebot.File{FileID: song.PDF.TgFileID},
 				MIME:     "application/pdf",
-				FileName: fmt.Sprintf("%s.pdf", song.DriveFile.Name),
+				FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
 			}, markup)
 			if err != nil {
 				sentMessage, err = sendDocumentByReader()
@@ -1272,11 +1283,11 @@ func songActionsHandler() (string, []HandlerFunc) {
 
 		song.PDF.TgFileID = sentMessage.Document.FileID
 
-		if song.HasOutdatedPDF() || song.PDF.TgChannelMessageID == 0 {
+		if song.HasOutdatedPDF(driveFile) || song.PDF.TgChannelMessageID == 0 {
 			song = helpers.SendToChannel(h.bot, song)
 		}
 
-		song.PDF.ModifiedTime = song.DriveFile.ModifiedTime
+		song.PDF.ModifiedTime = driveFile.ModifiedTime
 
 		song, err = h.songService.UpdateOne(*song)
 		if err != nil {
@@ -1291,6 +1302,11 @@ func songActionsHandler() (string, []HandlerFunc) {
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		song, err := h.songService.FindOneByDriveFileID(user.State.Context.DriveFileID)
+		if err != nil {
+			return err
+		}
+
+		driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
 		if err != nil {
 			return err
 		}
@@ -1351,8 +1367,8 @@ func songActionsHandler() (string, []HandlerFunc) {
 			}
 			user.State.Prev.Index = 0
 
-		case song.DriveFile.Name:
-			return c.Send(song.DriveFile.WebViewLink)
+		case driveFile.Name:
+			return c.Send(driveFile.WebViewLink)
 
 		default:
 			user.State = &entities.State{
@@ -1990,7 +2006,12 @@ func setlistHandler() (string, []HandlerFunc) {
 					return
 				}
 
-				if song.HasOutdatedPDF() {
+				driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
+				if err != nil {
+					return
+				}
+
+				if song.HasOutdatedPDF(driveFile) {
 					reader, err := h.driveFileService.DownloadOneByID(song.DriveFileID)
 					if err != nil {
 						return
@@ -1999,7 +2020,7 @@ func setlistHandler() (string, []HandlerFunc) {
 					documents[i] = &telebot.Document{
 						File:     telebot.FromReader(*reader),
 						MIME:     "application/pdf",
-						FileName: fmt.Sprintf("%s.pdf", song.DriveFile.Name),
+						FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
 					}
 				} else {
 					documents[i] = &telebot.Document{
@@ -2067,13 +2088,18 @@ func setlistHandler() (string, []HandlerFunc) {
 					return err
 				}
 
+				driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
+				if err != nil {
+					return err
+				}
+
 				song.PDF.TgFileID = responses[j].Document.FileID
 
-				if song.HasOutdatedPDF() || song.PDF.TgChannelMessageID == 0 {
+				if song.HasOutdatedPDF(driveFile) || song.PDF.TgChannelMessageID == 0 {
 					song = helpers.SendToChannel(h.bot, song)
 				}
 
-				song.PDF.ModifiedTime = song.DriveFile.ModifiedTime
+				song.PDF.ModifiedTime = driveFile.ModifiedTime
 
 				_, _ = h.songService.UpdateOne(*song)
 			}

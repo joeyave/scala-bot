@@ -8,20 +8,17 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"google.golang.org/api/drive/v3"
 	"os"
 	"time"
 )
 
 type EventRepository struct {
 	mongoClient *mongo.Client
-	driveClient *drive.Service
 }
 
-func NewEventRepository(mongoClient *mongo.Client, driveClient *drive.Service) *EventRepository {
+func NewEventRepository(mongoClient *mongo.Client) *EventRepository {
 	return &EventRepository{
 		mongoClient: mongoClient,
-		driveClient: driveClient,
 	}
 }
 
@@ -53,7 +50,7 @@ func (r *EventRepository) FindMultipleByBandID(bandID primitive.ObjectID) ([]*en
 	})
 }
 
-func (r *EventRepository) FindMultipleByBandIDFromTodayByBandID(bandID primitive.ObjectID) ([]*entities.Event, error) {
+func (r *EventRepository) FindManyFromTodayByBandID(bandID primitive.ObjectID) ([]*entities.Event, error) {
 	now := time.Now()
 
 	return r.find(bson.M{
@@ -234,17 +231,6 @@ func (r *EventRepository) find(m bson.M) ([]*entities.Event, error) {
 	err = cur.All(context.TODO(), &events)
 	if err != nil {
 		return nil, err
-	}
-
-	for _, event := range events {
-		for _, song := range event.Songs {
-			driveFile, err := r.driveClient.Files.Get(song.DriveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
-			if err != nil {
-				continue
-			}
-
-			song.DriveFile = driveFile
-		}
 	}
 
 	if len(events) == 0 {
