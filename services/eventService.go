@@ -46,7 +46,11 @@ func (s *EventService) UpdateOne(event entities.Event) (*entities.Event, error) 
 }
 
 func (s *EventService) PushSongID(eventID primitive.ObjectID, songID primitive.ObjectID) (*entities.Event, error) {
-	return s.eventRepository.PushSongByID(eventID, songID)
+	return s.eventRepository.PushSongID(eventID, songID)
+}
+
+func (s *EventService) ChangeSongIDPosition(eventID primitive.ObjectID, songID primitive.ObjectID, newPosition int) (*entities.Event, error) {
+	return s.eventRepository.ChangeSongIDPosition(eventID, songID, newPosition)
 }
 
 func (s *EventService) DeleteOneByID(ID primitive.ObjectID) error {

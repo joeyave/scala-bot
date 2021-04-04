@@ -539,22 +539,24 @@ func changeSongOrderHandler() (string, []HandlerFunc) {
 	handlerFuncs := make([]HandlerFunc, 0)
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
-		event, err := h.eventService.FindOneByID(user.State.Context.EventID)
-		if err != nil {
-			return err
-		}
 
-		if user.State.Context.Index == len(event.SongIDs) {
+		if user.State.Context.Index == 0 {
 			event, err := h.eventService.FindOneByID(user.State.Context.EventID)
 			if err != nil {
 				return err
 			}
-			event.SongIDs = user.State.Context.FoundSongIDs
-			_, err = h.eventService.UpdateOne(*event)
-			if err != nil {
-				return err
-			}
 
+			for _, song := range event.Songs {
+				driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
+				if err != nil {
+					continue
+				}
+
+				user.State.Context.DriveFiles = append(user.State.Context.DriveFiles, driveFile)
+			}
+		}
+
+		if len(user.State.Context.DriveFiles) == 0 || c.Text() == helpers.End {
 			user.State = &entities.State{
 				Name:    helpers.EventActionsState,
 				Context: entities.Context{EventID: user.State.Context.EventID},
@@ -566,17 +568,12 @@ func changeSongOrderHandler() (string, []HandlerFunc) {
 			ResizeKeyboard: true,
 		}
 
-		for _, song := range event.Songs {
-			driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
-			if err != nil {
-				continue
-			}
+		for _, driveFile := range user.State.Context.DriveFiles {
 			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: driveFile.Name}})
-			user.State.Context.DriveFiles = append(user.State.Context.DriveFiles, driveFile)
 		}
-		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}})
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.End}})
 
-		err = c.Send(fmt.Sprintf("Выбери песню номер %d:", user.State.Context.Index+1), markup)
+		err := c.Send(fmt.Sprintf("Выбери песню номер %d:", user.State.Context.Index+1), markup)
 		if err != nil {
 			return err
 		}
@@ -588,9 +585,12 @@ func changeSongOrderHandler() (string, []HandlerFunc) {
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
 		var foundDriveFile *drive.File
-		for _, driveFile := range user.State.Context.DriveFiles {
+		for i, driveFile := range user.State.Context.DriveFiles {
 			if driveFile.Name == c.Text() {
 				foundDriveFile = driveFile
+				user.State.Context.DriveFiles = append(user.State.Context.DriveFiles[:i],
+					user.State.Context.DriveFiles[i+1:]...)
+				break
 			}
 		}
 
@@ -603,7 +603,12 @@ func changeSongOrderHandler() (string, []HandlerFunc) {
 		if err != nil {
 			return err
 		}
-		user.State.Context.FoundSongIDs = append(user.State.Context.FoundSongIDs, song.ID)
+
+		_, err = h.eventService.ChangeSongIDPosition(user.State.Context.EventID, song.ID, user.State.Context.Index)
+		if err != nil {
+			user.State.Index--
+			return h.enter(c, user)
+		}
 
 		user.State.Context.Index++
 		user.State.Index--
