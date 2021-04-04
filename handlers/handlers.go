@@ -635,7 +635,7 @@ func addEventMemberHandler() (string, []HandlerFunc) {
 		for _, role := range event.Band.Roles {
 			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: role.Name}})
 		}
-		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}})
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Back}})
 
 		err = c.Send("Кем будет этот участник?", markup)
 		if err != nil {
@@ -724,14 +724,30 @@ func addEventMemberHandler() (string, []HandlerFunc) {
 			return err
 		}
 
-		eventString, _ := h.eventService.ToHtmlStringByID(event.ID)
-		h.bot.Send(telebot.ChatID(foundUser.ID),
-			fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
-				"Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
+		go func() {
+			eventString, _ := h.eventService.ToHtmlStringByID(event.ID)
+			h.bot.Send(telebot.ChatID(foundUser.ID),
+				fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
+					"Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
+		}()
+
+		role, err := h.roleService.FindOneByID(user.State.Context.RoleID)
+		if err != nil {
+			err = c.Send(fmt.Sprintf("%s добавлен.", foundUser.Name))
+			if err != nil {
+				return err
+			}
+		} else {
+			err = c.Send(fmt.Sprintf("%s добавлен как %s", foundUser.Name, role.Name))
+			if err != nil {
+				return err
+			}
+		}
 
 		user.State = &entities.State{
-			Name:    helpers.EventActionsState,
+			Name:    helpers.AddEventMemberState,
 			Context: user.State.Context,
+			Prev:    user.State.Prev,
 		}
 		return h.enter(c, user)
 	})
