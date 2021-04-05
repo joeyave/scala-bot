@@ -351,6 +351,36 @@ func (r *EventRepository) ChangeSongIDPosition(eventID primitive.ObjectID, songI
 	return r.FindOneByID(newEvent.ID)
 }
 
+func (r *EventRepository) PullSongID(eventID primitive.ObjectID, songID primitive.ObjectID) (*entities.Event, error) {
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
+
+	filter := bson.M{"_id": eventID}
+
+	update := bson.M{
+		"$pull": bson.M{
+			"songIds": songID,
+		},
+	}
+
+	after := options.After
+	opts := options.FindOneAndUpdateOptions{
+		ReturnDocument: &after,
+	}
+
+	result := collection.FindOneAndUpdate(context.TODO(), filter, update, &opts)
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	var newEvent *entities.Event
+	err := result.Decode(&newEvent)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.FindOneByID(newEvent.ID)
+}
+
 func (r *EventRepository) DeleteOneByID(ID primitive.ObjectID) error {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
 

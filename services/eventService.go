@@ -49,6 +49,9 @@ func (s *EventService) PushSongID(eventID primitive.ObjectID, songID primitive.O
 	return s.eventRepository.PushSongID(eventID, songID)
 }
 
+func (s *EventService) PullSongID(eventID primitive.ObjectID, songID primitive.ObjectID) (*entities.Event, error) {
+	return s.eventRepository.PullSongID(eventID, songID)
+}
 func (s *EventService) ChangeSongIDPosition(eventID primitive.ObjectID, songID primitive.ObjectID, newPosition int) (*entities.Event, error) {
 	return s.eventRepository.ChangeSongIDPosition(eventID, songID, newPosition)
 }
@@ -74,7 +77,7 @@ func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, error) {
 		return "", err
 	}
 
-	eventString := fmt.Sprintf("<b>%s</b>          <a href=\"\">&#8204;</a>", event.Alias())
+	eventString := fmt.Sprintf("<b>%s</b>     <a href=\"\">&#8204;</a>", event.Alias())
 	membershipGroups := map[string][]*entities.Membership{}
 	for _, membership := range event.Memberships {
 		if membership.Role == nil {

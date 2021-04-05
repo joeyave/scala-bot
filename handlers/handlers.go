@@ -946,6 +946,81 @@ func addEventSongHandler() (int, []HandlerFunc) {
 	return helpers.AddEventSongState, handlerFuncs
 }
 
+func deleteEventSongHandler() (int, []HandlerFunc) {
+	handlerFuncs := make([]HandlerFunc, 0)
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		state, index, payload := helpers.ParseCallbackData(c.Callback().Data)
+
+		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
+		if err != nil {
+			return err
+		}
+
+		event, err := h.eventService.FindOneByID(eventID)
+		if err != nil {
+			return err
+		}
+
+		markup := &telebot.ReplyMarkup{}
+
+		for _, song := range event.Songs {
+			driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
+			if err != nil {
+				continue
+			}
+
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: driveFile.Name, Data: helpers.AggregateCallbackData(state, index+1, song.ID.Hex())}})
+		}
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, payload)}})
+
+		return c.Edit(markup)
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		_, _, songIDHex := helpers.ParseCallbackData(c.Callback().Data)
+
+		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
+		if err != nil {
+			return err
+		}
+
+		songID, err := primitive.ObjectIDFromHex(songIDHex)
+		if err != nil {
+			return err
+		}
+
+		_, err = h.eventService.PullSongID(eventID, songID)
+		if err != nil {
+			return err
+		}
+
+		//go func() {
+		//	eventString, _ := h.eventService.ToHtmlStringByID(event.ID)
+		//	h.bot.Send(telebot.ChatID(foundUser.ID),
+		//		fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
+		//			"Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
+		//}()
+
+		eventString, err := h.eventService.ToHtmlStringByID(eventID)
+		if err != nil {
+			return err
+		}
+
+		q := user.State.CallbackData.Query()
+		q.Set("eventId", eventID.Hex())
+		user.State.CallbackData.RawQuery = q.Encode()
+
+		return c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), &telebot.ReplyMarkup{
+			InlineKeyboard: helpers.EventActionsKeyboard,
+		}, telebot.ModeHTML, telebot.NoPreview)
+	})
+
+	return helpers.DeleteEventSongState, handlerFuncs
+}
+
 func deleteEventHandler() (int, []HandlerFunc) {
 	handlerFuncs := make([]HandlerFunc, 0)
 

@@ -22,8 +22,8 @@ var EventActionsKeyboard = [][]telebot.InlineButton{
 		{Text: AddMember, Data: AggregateCallbackData(AddEventMemberState, 0, "")},
 	},
 	{
-		{Text: AddSong, Data: AggregateCallbackData(AddEventSongState, 0, "")},
 		{Text: DeleteSong, Data: AggregateCallbackData(DeleteEventSongState, 0, "")},
+		{Text: AddSong, Data: AggregateCallbackData(AddEventSongState, 0, "")},
 	},
 	{
 		{Text: ChangeSongsOrder, Data: AggregateCallbackData(ChangeSongOrderState, 0, "")},
