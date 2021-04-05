@@ -8,6 +8,7 @@ import (
 	"github.com/joeyave/scala-chords-bot/services"
 	"github.com/joeyave/telebot/v3"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"strconv"
 	"strings"
 )
 
@@ -113,6 +114,22 @@ func (h *Handler) OnVoice(c telebot.Context) error {
 	return err
 }
 
+func (h *Handler) OnCallback(c telebot.Context) error {
+	user, err := h.userService.FindOneByID(c.Chat().ID)
+	if err != nil {
+		return err
+	}
+
+	err = h.enter(c, user)
+	if err != nil {
+		return err
+	}
+
+	//_, err = h.userService.UpdateOne(*user)
+
+	return nil
+}
+
 func (h *Handler) OnError(botErr error, c telebot.Context) {
 	c.Send("Произошла ошибка. Поправим.")
 
@@ -163,12 +180,46 @@ func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.Handl
 }
 
 func (h *Handler) enter(c telebot.Context, user *entities.User) error {
-	handlerFuncs, ok := handlers[user.State.Name]
 
-	if ok == false || user.State.Index < 0 || user.State.Index >= len(handlerFuncs) {
-		user.State = &entities.State{Name: helpers.MainMenuState}
-		handlerFuncs = handlers[user.State.Name]
+	if c.Callback() != nil {
+		state, index, _ := h.parseCallbackData(c.Callback().Data)
+
+		// Handle error.
+		handlerFuncs, _ := handlers[state]
+
+		return handlerFuncs[index](h, c, user)
+
+	} else {
+		handlerFuncs, ok := handlers[user.State.Name]
+
+		if ok == false || user.State.Index < 0 || user.State.Index >= len(handlerFuncs) {
+			user.State = &entities.State{Name: helpers.MainMenuState}
+			handlerFuncs = handlers[user.State.Name]
+		}
+
+		return handlerFuncs[user.State.Index](h, c, user)
+	}
+}
+
+func (h *Handler) parseCallbackData(data string) (int, int, string) {
+	parsedData := strings.Split(data, ":")
+	stateStr := parsedData[0]
+	indexStr := parsedData[1]
+	payload := strings.Join(parsedData[2:], ":")
+
+	state, err := strconv.Atoi(stateStr)
+	if err != nil {
+		state = 0 // TODO
 	}
 
-	return handlerFuncs[user.State.Index](h, c, user)
+	index, err := strconv.Atoi(indexStr)
+	if err != nil {
+		index = 0 // TODO
+	}
+
+	return state, index, payload
+}
+
+func (h *Handler) aggregateInlineData(state int, index int, payload string) string {
+	return fmt.Sprintf("%d:%d:%s", state, index, payload)
 }

@@ -20,7 +20,7 @@ type User struct {
 
 type State struct {
 	Index   int     `bson:"index,omitempty"`
-	Name    string  `bson:"name,omitempty"`
+	Name    int     `bson:"name,omitempty"`
 	Context Context `bson:"context,omitempty"`
 
 	Prev *State `bson:"prev,omitempty"`

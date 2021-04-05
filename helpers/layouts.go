@@ -17,7 +17,6 @@ var RestrictedSongActionsKeyboard = [][]telebot.ReplyButton{
 }
 
 var EventActionsKeyboard = [][]telebot.ReplyButton{
-	{{Text: Members}},
 	{{Text: Songs}},
 	{{Text: Delete}},
 }

@@ -100,6 +100,7 @@ func main() {
 
 	bot.Handle(telebot.OnText, handler.OnText)
 	bot.Handle(telebot.OnVoice, handler.OnVoice)
+	bot.Handle(telebot.OnCallback, handler.OnCallback)
 
 	go func() {
 		for range time.Tick(time.Hour * 2) {

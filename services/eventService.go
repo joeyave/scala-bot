@@ -112,5 +112,6 @@ func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, error) {
 		}
 	}
 
+	eventString = fmt.Sprintf("%s\n\neventId:%s", eventString, ID.Hex())
 	return eventString, nil
 }

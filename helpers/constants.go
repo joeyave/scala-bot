@@ -1,29 +1,31 @@
 package helpers
 
 const (
-	SearchSongState      = "SearchSongState"
-	SetlistState         = "SetlistState"
-	SongActionsState     = "SongActionsState"
-	GetVoicesState       = "GetVoicesState"
-	UploadVoiceState     = "UploadVoiceState"
-	MainMenuState        = "MainMenuState"
-	TransposeSongState   = "TransposeSongState"
-	StyleSongState       = "StyleSongState"
-	ChooseBandState      = "ChooseBandState"
-	CreateBandState      = "CreateBandState"
-	CopySongState        = "CopySongState"
-	ScheduleState        = "ScheduleState"
-	CreateSongState      = "CreateSongState"
-	DeleteSongState      = "DeleteSongState"
-	AddBandAdminState    = "AddBandAdminState"
-	GetEventsState       = "GetEventsState"
-	CreateEventState     = "CreateEventState"
-	EventActionsState    = "EventActionsState"
-	CreateRoleState      = "CreateRoleState"
-	AddEventMemberState  = "AddEventMemberState"
-	AddEventSongState    = "AddEventSongState"
-	DeleteEventState     = "DeleteEventState"
-	ChangeSongOrderState = "ChangeSongOrderState"
+	SearchSongState = iota
+	SetlistState
+	SongActionsState
+	GetVoicesState
+	UploadVoiceState
+	MainMenuState
+	TransposeSongState
+	StyleSongState
+	ChooseBandState
+	CreateBandState
+	CopySongState
+	ScheduleState
+	CreateSongState
+	DeleteSongState
+	AddBandAdminState
+	GetEventsState
+	CreateEventState
+	EventActionsState
+	CreateRoleState
+	AddEventMemberState
+	AddEventSongState
+	DeleteEventState
+	ChangeSongOrderState
+	AddEventMemberCallbackState
+	DeleteEventMemberCallbackState
 )
 
 // Buttons constants.

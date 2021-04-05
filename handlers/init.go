@@ -7,7 +7,7 @@ import (
 
 type HandlerFunc = func(h *Handler, c telebot.Context, user *entities.User) error
 
-var handlers = make(map[string][]HandlerFunc, 0)
+var handlers = make(map[int][]HandlerFunc, 0)
 
 // Register your handlers here.
 func init() {
@@ -35,10 +35,11 @@ func init() {
 		addEventSongHandler,
 		deleteEventHandler,
 		changeSongOrderHandler,
+		addEventMemberCallbackHandler,
 	)
 }
 
-func registerHandlers(funcs ...func() (name string, funcs []HandlerFunc)) {
+func registerHandlers(funcs ...func() (name int, funcs []HandlerFunc)) {
 	for _, f := range funcs {
 		name, hf := f()
 		handlers[name] = hf

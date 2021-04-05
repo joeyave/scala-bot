@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"github.com/joeyave/chords-transposer/transposer"
 	"github.com/joeyave/scala-chords-bot/entities"
@@ -8,6 +9,7 @@ import (
 	"github.com/joeyave/telebot/v3"
 	"github.com/kjk/notionapi"
 	"github.com/klauspost/lctime"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
 	"regexp"
 	"sort"
@@ -17,7 +19,7 @@ import (
 	"time"
 )
 
-func mainMenuHandler() (string, []HandlerFunc) {
+func mainMenuHandler() (int, []HandlerFunc) {
 	handlerFuncs := make([]HandlerFunc, 0)
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -99,7 +101,7 @@ func mainMenuHandler() (string, []HandlerFunc) {
 	return helpers.MainMenuState, handlerFuncs
 }
 
-func createRoleHandler() (string, []HandlerFunc) {
+func createRoleHandler() (int, []HandlerFunc) {
 
 	handlerFuncs := make([]HandlerFunc, 0)
 
@@ -138,7 +140,7 @@ func createRoleHandler() (string, []HandlerFunc) {
 	return helpers.CreateRoleState, handlerFuncs
 }
 
-func scheduleHandler() (string, []HandlerFunc) {
+func scheduleHandler() (int, []HandlerFunc) {
 	handlerFunc := make([]HandlerFunc, 0)
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -265,7 +267,7 @@ func scheduleHandler() (string, []HandlerFunc) {
 	return helpers.ScheduleState, handlerFunc
 }
 
-func getEventsHandler() (string, []HandlerFunc) {
+func getEventsHandler() (int, []HandlerFunc) {
 
 	handlerFuncs := make([]HandlerFunc, 0)
 
@@ -308,7 +310,12 @@ func getEventsHandler() (string, []HandlerFunc) {
 				if err != nil {
 					continue
 				}
-				err = c.Send(eventString, telebot.ModeHTML, telebot.NoPreview)
+				err = c.Send(eventString, &telebot.ReplyMarkup{
+					InlineKeyboard: [][]telebot.InlineButton{{
+						{Text: helpers.Add, Data: h.aggregateInlineData(helpers.AddEventMemberCallbackState, 0, "")},
+						{Text: helpers.Delete, Data: h.aggregateInlineData(helpers.DeleteEventMemberCallbackState, 0, "")},
+					}},
+				}, telebot.ModeHTML, telebot.NoPreview)
 				if err != nil {
 					return err
 				}
@@ -337,7 +344,7 @@ func getEventsHandler() (string, []HandlerFunc) {
 					},
 					Prev: user.State,
 				}
-				user.State.Prev.Index = 0
+				user.State.Prev.Index = 1
 				return h.enter(c, user)
 			} else {
 				user.State.Index--
@@ -349,7 +356,7 @@ func getEventsHandler() (string, []HandlerFunc) {
 	return helpers.GetEventsState, handlerFuncs
 }
 
-func createEventHandler() (string, []HandlerFunc) {
+func createEventHandler() (int, []HandlerFunc) {
 
 	handlerFuncs := make([]HandlerFunc, 0)
 
@@ -441,101 +448,104 @@ func createEventHandler() (string, []HandlerFunc) {
 	return helpers.CreateEventState, handlerFuncs
 }
 
-func eventActionsHandler() (string, []HandlerFunc) {
+func eventActionsHandler() (int, []HandlerFunc) {
 	handlerFuncs := make([]HandlerFunc, 0)
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		eventString, err := h.eventService.ToHtmlStringByID(user.State.Context.EventID)
+		var eventID primitive.ObjectID
+		if c.Callback() != nil {
+			re := regexp.MustCompile(`eventId:(.*)`)
+			matches := re.FindStringSubmatch(c.Text())
+			if len(matches) < 2 {
+				return errors.New("sdf")
+			}
+			eventIDFromCallback, err := primitive.ObjectIDFromHex(matches[1])
+			if err != nil {
+				return err
+			}
+			eventID = eventIDFromCallback
+		} else {
+			eventID = user.State.Context.EventID
+		}
+
+		eventString, err := h.eventService.ToHtmlStringByID(eventID)
 		if err != nil {
 			return err
 		}
 
-		err = c.Send(eventString, &telebot.ReplyMarkup{
-			ReplyKeyboard:  append(helpers.EventActionsKeyboard, helpers.BackOrMenuKeyboard...),
-			ResizeKeyboard: true,
-		}, telebot.ModeHTML, telebot.NoPreview)
-		if err != nil {
-			return err
+		options := &telebot.SendOptions{
+			ReplyMarkup: &telebot.ReplyMarkup{
+				InlineKeyboard: [][]telebot.InlineButton{{
+					{Text: helpers.Add, Data: h.aggregateInlineData(helpers.AddEventMemberCallbackState, 0, "")},
+					{Text: helpers.Delete, Data: h.aggregateInlineData(helpers.DeleteEventMemberCallbackState, 0, "")},
+				}},
+			},
+			DisableWebPagePreview: true,
+			ParseMode:             telebot.ModeHTML,
 		}
 
-		user.State.Index++
-		return nil
-	})
-
-	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
-		switch c.Text() {
-		case helpers.Members:
-			err := c.Send("Выбери действие над участником:", &telebot.ReplyMarkup{
-				ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Delete}, {Text: helpers.Add}}},
-				ResizeKeyboard: true,
-			})
+		if c.Callback() != nil {
+			return c.Edit(eventString, options)
+		} else {
+			err := c.Send(eventString, options)
 			if err != nil {
 				return err
 			}
-			user.State.Index++
+			user.State = user.State.Prev
 			return nil
-		case helpers.Songs:
-			err := c.Send("Выбери действие над песней:", &telebot.ReplyMarkup{
-				ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.ChangeOrder}}, {{Text: helpers.Delete}, {Text: helpers.Add}}},
-				ResizeKeyboard: true,
-			})
-			if err != nil {
-				return err
-			}
-			user.State.Index += 2
-			return nil
-		case helpers.Delete:
-			user.State = &entities.State{
-				Name:    helpers.DeleteEventState,
-				Context: user.State.Context,
-				Prev:    user.State,
-			}
-			user.State.Prev.Index = 0
 		}
-
-		return h.enter(c, user)
 	})
 
-	// Members actions.
-	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
-		switch c.Text() {
-		case helpers.Add:
-			user.State = &entities.State{
-				Name:    helpers.AddEventMemberState,
-				Context: user.State.Context,
-				Prev:    user.State,
-			}
-			user.State.Prev.Index = 0
-		}
-		return h.enter(c, user)
-	})
-
-	// Songs actions.
-	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
-		switch c.Text() {
-		case helpers.Add:
-			user.State = &entities.State{
-				Name:    helpers.AddEventSongState,
-				Context: user.State.Context,
-				Prev:    user.State,
-			}
-			user.State.Prev.Index = 0
-		case helpers.ChangeOrder:
-			user.State = &entities.State{
-				Name:    helpers.ChangeSongOrderState,
-				Context: user.State.Context,
-				Prev:    user.State,
-			}
-			user.State.Prev.Index = 0
-		}
-		return h.enter(c, user)
-	})
+	//handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	//	switch c.Text() {
+	//	case helpers.Songs:
+	//		err := c.Send("Выбери действие над песней:", &telebot.ReplyMarkup{
+	//			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.ChangeOrder}}, {{Text: helpers.Delete}, {Text: helpers.Add}}},
+	//			ResizeKeyboard: true,
+	//		})
+	//		if err != nil {
+	//			return err
+	//		}
+	//		user.State.Index++
+	//		return nil
+	//	case helpers.Delete:
+	//		user.State = &entities.State{
+	//			Name:    helpers.DeleteEventState,
+	//			Context: user.State.Context,
+	//			Prev:    user.State,
+	//		}
+	//		user.State.Prev.Index = 0
+	//	}
+	//
+	//	return h.enter(c, user)
+	//})
+	//
+	//// Songs actions.
+	//handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+	//	switch c.Text() {
+	//	case helpers.Add:
+	//		user.State = &entities.State{
+	//			Name:    helpers.AddEventSongState,
+	//			Context: user.State.Context,
+	//			Prev:    user.State,
+	//		}
+	//		user.State.Prev.Index = 0
+	//	case helpers.ChangeOrder:
+	//		user.State = &entities.State{
+	//			Name:    helpers.ChangeSongOrderState,
+	//			Context: user.State.Context,
+	//			Prev:    user.State,
+	//		}
+	//		user.State.Prev.Index = 0
+	//	}
+	//	return h.enter(c, user)
+	//})
 
 	return helpers.EventActionsState, handlerFuncs
 }
 
-func changeSongOrderHandler() (string, []HandlerFunc) {
+func changeSongOrderHandler() (int, []HandlerFunc) {
 	handlerFuncs := make([]HandlerFunc, 0)
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -618,7 +628,141 @@ func changeSongOrderHandler() (string, []HandlerFunc) {
 	return helpers.ChangeSongOrderState, handlerFuncs
 }
 
-func addEventMemberHandler() (string, []HandlerFunc) {
+func addEventMemberCallbackHandler() (int, []HandlerFunc) {
+	handlerFuncs := make([]HandlerFunc, 0)
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		state, index, payload := h.parseCallbackData(c.Callback().Data)
+
+		re := regexp.MustCompile(`eventId:(.*)`)
+		matches := re.FindStringSubmatch(c.Text())
+		if len(matches) < 2 {
+			return errors.New("sdf")
+		}
+
+		eventID, err := primitive.ObjectIDFromHex(matches[1])
+		if err != nil {
+			return err
+		}
+
+		event, err := h.eventService.FindOneByID(eventID)
+		if err != nil {
+			return err
+		}
+
+		markup := &telebot.ReplyMarkup{}
+
+		for _, role := range event.Band.Roles {
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: role.Name, Data: h.aggregateInlineData(state, index+1, fmt.Sprintf("%s", role.ID.Hex()))}})
+		}
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: h.aggregateInlineData(helpers.EventActionsState, index, payload)}})
+
+		return c.Edit(markup)
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		state, index, payload := h.parseCallbackData(c.Callback().Data)
+
+		re := regexp.MustCompile(`eventId:(.*)`)
+		matches := re.FindStringSubmatch(c.Text())
+		if len(matches) < 2 {
+			return errors.New("sdf")
+		}
+
+		eventID, err := primitive.ObjectIDFromHex(matches[1])
+		if err != nil {
+			return err
+		}
+
+		event, err := h.eventService.FindOneByID(eventID)
+		if err != nil {
+			return err
+		}
+
+		users, err := h.userService.FindMultipleByBandID(event.BandID)
+		if err != nil {
+			return err
+		}
+		sort.Slice(users, func(i, j int) bool {
+			return len(users[i].Memberships) < len(users[j].Memberships)
+		})
+
+		markup := &telebot.ReplyMarkup{}
+
+		for _, user := range users {
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
+				{Text: fmt.Sprintf("%s / %d", user.Name, len(user.Memberships)), Data: h.aggregateInlineData(state, index+1, fmt.Sprintf("%s:%d", payload, user.ID))},
+			})
+		}
+		// TODO
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Cancel, Data: h.aggregateInlineData(state, index, payload)}})
+
+		return c.Edit(markup)
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		_, _, payload := h.parseCallbackData(c.Callback().Data)
+
+		parsedPayload := strings.Split(payload, ":")
+
+		re := regexp.MustCompile(`eventId:(.*)`)
+		matches := re.FindStringSubmatch(c.Text())
+		if len(matches) < 2 {
+			return errors.New("sdf")
+		}
+
+		eventID, err := primitive.ObjectIDFromHex(matches[1])
+		if err != nil {
+			return err
+		}
+
+		userID, err := strconv.ParseInt(parsedPayload[1], 10, 0)
+		if err != nil {
+			return err
+		}
+
+		roleID, err := primitive.ObjectIDFromHex(parsedPayload[0])
+		if err != nil {
+			return err
+		}
+
+		_, err = h.membershipService.UpdateOne(entities.Membership{
+			EventID: eventID,
+			UserID:  userID,
+			RoleID:  roleID,
+		})
+		if err != nil {
+			return err
+		}
+
+		//go func() {
+		//	eventString, _ := h.eventService.ToHtmlStringByID(event.ID)
+		//	h.bot.Send(telebot.ChatID(foundUser.ID),
+		//		fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
+		//			"Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
+		//}()
+
+		eventString, err := h.eventService.ToHtmlStringByID(eventID)
+		if err != nil {
+			return err
+		}
+
+		return c.Edit(eventString, &telebot.ReplyMarkup{
+			InlineKeyboard: [][]telebot.InlineButton{{
+				{Text: helpers.Add, Data: h.aggregateInlineData(helpers.AddEventMemberCallbackState, 0, "")},
+				{Text: helpers.Delete, Data: h.aggregateInlineData(helpers.DeleteEventMemberCallbackState, 0, "")},
+			}},
+		}, telebot.ModeHTML, telebot.NoPreview)
+
+	})
+
+	return helpers.AddEventMemberCallbackState, handlerFuncs
+}
+
+func addEventMemberHandler() (int, []HandlerFunc) {
 
 	handlerFuncs := make([]HandlerFunc, 0)
 
@@ -755,7 +899,7 @@ func addEventMemberHandler() (string, []HandlerFunc) {
 	return helpers.AddEventMemberState, handlerFuncs
 }
 
-func addEventSongHandler() (string, []HandlerFunc) {
+func addEventSongHandler() (int, []HandlerFunc) {
 	handlerFuncs := make([]HandlerFunc, 0)
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -849,7 +993,7 @@ func addEventSongHandler() (string, []HandlerFunc) {
 	return helpers.AddEventSongState, handlerFuncs
 }
 
-func deleteEventHandler() (string, []HandlerFunc) {
+func deleteEventHandler() (int, []HandlerFunc) {
 	handlerFuncs := make([]HandlerFunc, 0)
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -893,7 +1037,7 @@ func deleteEventHandler() (string, []HandlerFunc) {
 	return helpers.DeleteEventState, handlerFuncs
 }
 
-func chooseBandHandler() (string, []HandlerFunc) {
+func chooseBandHandler() (int, []HandlerFunc) {
 	handlerFuncs := make([]HandlerFunc, 0)
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -962,7 +1106,7 @@ func chooseBandHandler() (string, []HandlerFunc) {
 	return helpers.ChooseBandState, handlerFuncs
 }
 
-func createBandHandler() (string, []HandlerFunc) {
+func createBandHandler() (int, []HandlerFunc) {
 	handlerFunc := make([]HandlerFunc, 0)
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -1026,7 +1170,7 @@ func createBandHandler() (string, []HandlerFunc) {
 	return helpers.CreateBandState, handlerFunc
 }
 
-//func addBandAdminHandler() (string, []HandlerFunc) {
+//func addBandAdminHandler() (int, []HandlerFunc) {
 //	handlerFunc := make([]HandlerFunc, 0)
 //
 //	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -1112,7 +1256,7 @@ func createBandHandler() (string, []HandlerFunc) {
 //	return helpers.AddBandAdminState, handlerFunc
 //}
 
-func searchSongHandler() (string, []HandlerFunc) {
+func searchSongHandler() (int, []HandlerFunc) {
 	handlerFunc := make([]HandlerFunc, 0)
 
 	// Print list of found songs.
@@ -1236,7 +1380,7 @@ func searchSongHandler() (string, []HandlerFunc) {
 	return helpers.SearchSongState, handlerFunc
 }
 
-func songActionsHandler() (string, []HandlerFunc) {
+func songActionsHandler() (int, []HandlerFunc) {
 	handlerFunc := make([]HandlerFunc, 0)
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -1403,7 +1547,7 @@ func songActionsHandler() (string, []HandlerFunc) {
 	return helpers.SongActionsState, handlerFunc
 }
 
-func transposeSongHandler() (string, []HandlerFunc) {
+func transposeSongHandler() (int, []HandlerFunc) {
 	handlerFunc := make([]HandlerFunc, 0)
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -1488,7 +1632,7 @@ func transposeSongHandler() (string, []HandlerFunc) {
 	return helpers.TransposeSongState, handlerFunc
 }
 
-func styleSongHandler() (string, []HandlerFunc) {
+func styleSongHandler() (int, []HandlerFunc) {
 	handlerFunc := make([]HandlerFunc, 0)
 
 	// Print list of found songs.
@@ -1520,7 +1664,7 @@ func styleSongHandler() (string, []HandlerFunc) {
 	return helpers.StyleSongState, handlerFunc
 }
 
-func copySongHandler() (string, []HandlerFunc) {
+func copySongHandler() (int, []HandlerFunc) {
 	handlerFunc := make([]HandlerFunc, 0)
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -1550,7 +1694,7 @@ func copySongHandler() (string, []HandlerFunc) {
 	return helpers.CopySongState, handlerFunc
 }
 
-func createSongHandler() (string, []HandlerFunc) {
+func createSongHandler() (int, []HandlerFunc) {
 	handlerFunc := make([]HandlerFunc, 0)
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -1682,7 +1826,7 @@ func createSongHandler() (string, []HandlerFunc) {
 	return helpers.CreateSongState, handlerFunc
 }
 
-//func deleteSongHandler() (string, []HandlerFunc) {
+//func deleteSongHandler() (int, []HandlerFunc) {
 //	handlerFunc := make([]HandlerFunc, 0)
 //
 //	// TODO: allow deleting Song only if it belongs to the User's Band.
@@ -1714,7 +1858,7 @@ func createSongHandler() (string, []HandlerFunc) {
 //	return helpers.DeleteSongState, handlerFunc
 //}
 
-func getVoicesHandler() (string, []HandlerFunc) {
+func getVoicesHandler() (int, []HandlerFunc) {
 	handlerFunc := make([]HandlerFunc, 0)
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -1805,7 +1949,7 @@ func getVoicesHandler() (string, []HandlerFunc) {
 	return helpers.GetVoicesState, handlerFunc
 }
 
-func uploadVoiceHandler() (string, []HandlerFunc) {
+func uploadVoiceHandler() (int, []HandlerFunc) {
 	handlerFunc := make([]HandlerFunc, 0)
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -1925,7 +2069,7 @@ func uploadVoiceHandler() (string, []HandlerFunc) {
 	return helpers.UploadVoiceState, handlerFunc
 }
 
-func setlistHandler() (string, []HandlerFunc) {
+func setlistHandler() (int, []HandlerFunc) {
 	handlerFunc := make([]HandlerFunc, 0)
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
