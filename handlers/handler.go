@@ -8,6 +8,8 @@ import (
 	"github.com/joeyave/scala-chords-bot/services"
 	"github.com/joeyave/telebot/v3"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -180,6 +182,29 @@ func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.Handl
 }
 
 func (h *Handler) enter(c telebot.Context, user *entities.User) error {
+
+	if c.Callback() != nil {
+		for _, entity := range c.Callback().Message.Entities {
+			if entity.Type == telebot.EntityTextLink {
+				re := regexp.MustCompile(`t\.me/callbackData.*`)
+				matches := re.FindStringSubmatch(entity.URL)
+
+				if len(matches) > 0 {
+					u, err := url.Parse(matches[0])
+					if err != nil {
+						return err
+					}
+
+					user.State.CallbackData = u
+					break
+				}
+			}
+		}
+	}
+
+	if user.State.CallbackData == nil {
+		user.State.CallbackData, _ = url.Parse("t.me/callbackData")
+	}
 
 	if c.Callback() != nil {
 		state, index, _ := h.parseCallbackData(c.Callback().Data)

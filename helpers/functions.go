@@ -2,11 +2,17 @@ package helpers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/telebot/v3"
 	"regexp"
 	"strings"
 )
+
+func AddCallbackData(message string, url string) string {
+	message = fmt.Sprintf("%s\n<a href=\"%s\">&#8203;</a>", message, url)
+	return message
+}
 
 func JsonEscape(i string) string {
 	b, err := json.Marshal(i)

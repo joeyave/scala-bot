@@ -3,6 +3,7 @@ package entities
 import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
+	"net/url"
 	"time"
 )
 
@@ -19,9 +20,10 @@ type User struct {
 }
 
 type State struct {
-	Index   int     `bson:"index,omitempty"`
-	Name    int     `bson:"name,omitempty"`
-	Context Context `bson:"context,omitempty"`
+	Index        int      `bson:"index,omitempty"`
+	Name         int      `bson:"name,omitempty"`
+	Context      Context  `bson:"context,omitempty"`
+	CallbackData *url.URL `bson:"-"`
 
 	Prev *State `bson:"prev,omitempty"`
 	Next *State `bson:"next,omitempty"`

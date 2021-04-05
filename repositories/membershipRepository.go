@@ -110,6 +110,13 @@ func (r *MembershipRepository) UpdateOne(membership entities.Membership) (*entit
 	return r.FindOneByID(newMembership.ID)
 }
 
+func (r *MembershipRepository) DeleteOneByID(ID primitive.ObjectID) error {
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("memberships")
+
+	_, err := collection.DeleteOne(context.TODO(), bson.M{"_id": ID})
+	return err
+}
+
 func (r *MembershipRepository) DeleteManyByEventID(eventID primitive.ObjectID) error {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("memberships")
 

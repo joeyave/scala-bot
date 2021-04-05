@@ -3,6 +3,7 @@ package services
 import (
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/repositories"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type MembershipService struct {
@@ -30,4 +31,8 @@ func (s *MembershipService) UpdateOne(membership entities.Membership) (*entities
 	}
 
 	return s.membershipRepository.UpdateOne(membership)
+}
+
+func (s *MembershipService) DeleteOneByID(ID primitive.ObjectID) error {
+	return s.membershipRepository.DeleteOneByID(ID)
 }
