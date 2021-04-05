@@ -74,7 +74,7 @@ func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, error) {
 		return "", err
 	}
 
-	eventString := fmt.Sprintf("<b>%s</b>", event.Alias())
+	eventString := fmt.Sprintf("<b>%s</b>          <a href=\"\">&#8204;</a>", event.Alias())
 	membershipGroups := map[string][]*entities.Membership{}
 	for _, membership := range event.Memberships {
 		if membership.Role == nil {

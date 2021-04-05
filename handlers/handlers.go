@@ -491,7 +491,12 @@ func eventActionsHandler() (int, []HandlerFunc) {
 			if err != nil {
 				return err
 			}
+			if user.State.Next != nil {
+				user.State = user.State.Next
+				return h.enter(c, user)
+			}
 			user.State = user.State.Prev
+
 			return nil
 		}
 	})
@@ -864,6 +869,9 @@ func addEventSongHandler() (int, []HandlerFunc) {
 				Name:    helpers.EventActionsState,
 				Context: user.State.Context,
 			}
+			user.State.Next = &entities.State{
+				Name: helpers.GetEventsState,
+			}
 			return h.enter(c, user)
 		}
 
@@ -908,6 +916,9 @@ func addEventSongHandler() (int, []HandlerFunc) {
 			user.State = &entities.State{
 				Name:    helpers.EventActionsState,
 				Context: user.State.Context,
+			}
+			user.State.Next = &entities.State{
+				Name: helpers.GetEventsState,
 			}
 			return h.enter(c, user)
 		}
