@@ -315,10 +315,7 @@ func getEventsHandler() (int, []HandlerFunc) {
 				user.State.CallbackData.RawQuery = q.Encode()
 
 				err = c.Send(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), &telebot.ReplyMarkup{
-					InlineKeyboard: [][]telebot.InlineButton{{
-						{Text: helpers.Delete, Data: h.aggregateInlineData(helpers.DeleteEventMemberCallbackState, 0, "")},
-						{Text: helpers.Add, Data: h.aggregateInlineData(helpers.AddEventMemberCallbackState, 0, "")},
-					}},
+					InlineKeyboard: helpers.EventActionsKeyboard,
 				}, telebot.ModeHTML, telebot.NoPreview)
 				if err != nil {
 					return err
@@ -475,10 +472,7 @@ func eventActionsHandler() (int, []HandlerFunc) {
 
 		options := &telebot.SendOptions{
 			ReplyMarkup: &telebot.ReplyMarkup{
-				InlineKeyboard: [][]telebot.InlineButton{{
-					{Text: helpers.Delete, Data: h.aggregateInlineData(helpers.DeleteEventMemberCallbackState, 0, "")},
-					{Text: helpers.Add, Data: h.aggregateInlineData(helpers.AddEventMemberCallbackState, 0, "")},
-				}},
+				InlineKeyboard: helpers.EventActionsKeyboard,
 			},
 			DisableWebPagePreview: true,
 			ParseMode:             telebot.ModeHTML,
@@ -486,6 +480,8 @@ func eventActionsHandler() (int, []HandlerFunc) {
 
 		q := user.State.CallbackData.Query()
 		q.Set("eventId", eventID.Hex())
+		q.Del("index")
+		q.Del("driveFileIds")
 		user.State.CallbackData.RawQuery = q.Encode()
 
 		if c.Callback() != nil {
@@ -504,7 +500,7 @@ func eventActionsHandler() (int, []HandlerFunc) {
 	//	switch c.Text() {
 	//	case helpers.Songs:
 	//		err := c.Send("Выбери действие над песней:", &telebot.ReplyMarkup{
-	//			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.ChangeOrder}}, {{Text: helpers.Delete}, {Text: helpers.Add}}},
+	//			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.ChangeOrder}}, {{Text: helpers.DeleteMember}, {Text: helpers.AddMember}}},
 	//			ResizeKeyboard: true,
 	//		})
 	//		if err != nil {
@@ -512,7 +508,7 @@ func eventActionsHandler() (int, []HandlerFunc) {
 	//		}
 	//		user.State.Index++
 	//		return nil
-	//	case helpers.Delete:
+	//	case helpers.DeleteMember:
 	//		user.State = &entities.State{
 	//			Name:    helpers.DeleteEventState,
 	//			Context: user.State.Context,
@@ -527,7 +523,7 @@ func eventActionsHandler() (int, []HandlerFunc) {
 	//// Songs actions.
 	//handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 	//	switch c.Text() {
-	//	case helpers.Add:
+	//	case helpers.AddMember:
 	//		user.State = &entities.State{
 	//			Name:    helpers.AddEventSongState,
 	//			Context: user.State.Context,
@@ -553,90 +549,94 @@ func changeSongOrderHandler() (int, []HandlerFunc) {
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		if user.State.Context.Index == 0 {
-			event, err := h.eventService.FindOneByID(user.State.Context.EventID)
+		state, index, chosenDriveFileID := helpers.ParseCallbackData(c.Callback().Data)
+
+		if user.State.CallbackData.Query().Get("index") == "" {
+
+			eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
 			if err != nil {
 				return err
 			}
 
+			event, err := h.eventService.FindOneByID(eventID)
+			if err != nil {
+				return err
+			}
+
+			q := user.State.CallbackData.Query()
 			for _, song := range event.Songs {
-				driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
-				if err != nil {
-					continue
+				q.Add("driveFileIds", song.DriveFileID)
+			}
+
+			q.Set("index", "0")
+			user.State.CallbackData.RawQuery = q.Encode()
+		}
+
+		songIndex, err := strconv.Atoi(user.State.CallbackData.Query().Get("index"))
+		if err != nil {
+			return err
+		}
+
+		if chosenDriveFileID != "" {
+			q := user.State.CallbackData.Query()
+			for i, driveFileID := range user.State.CallbackData.Query()["driveFileIds"] {
+				if driveFileID == chosenDriveFileID {
+					q["driveFileIds"] = append(q["driveFileIds"][:i], q["driveFileIds"][i+1:]...)
+					user.State.CallbackData.RawQuery = q.Encode()
+					break
 				}
+			}
 
-				user.State.Context.DriveFiles = append(user.State.Context.DriveFiles, driveFile)
+			song, err := h.songService.FindOrCreateOneByDriveFileID(chosenDriveFileID)
+			if err != nil {
+				return err
+			}
+
+			eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
+			if err != nil {
+				return err
+			}
+
+			_, err = h.eventService.ChangeSongIDPosition(eventID, song.ID, songIndex)
+			if err != nil {
+				return err
 			}
 		}
 
-		if len(user.State.Context.DriveFiles) == 0 || c.Text() == helpers.End {
-			user.State = &entities.State{
-				Name:    helpers.EventActionsState,
-				Context: entities.Context{EventID: user.State.Context.EventID},
+		if len(user.State.CallbackData.Query()["driveFileIds"]) == 0 {
+			c.Callback().Data = helpers.AggregateCallbackData(helpers.EventActionsState, 0, "")
+			return h.enter(c, user)
+		}
+
+		markup := &telebot.ReplyMarkup{}
+
+		for _, driveFileID := range user.State.CallbackData.Query()["driveFileIds"] {
+			driveFile, err := h.driveFileService.FindOneByID(driveFileID)
+			if err != nil {
+				return err
 			}
-			return h.enter(c, user)
+
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: driveFile.Name, Data: helpers.AggregateCallbackData(state, index, driveFileID)}})
 		}
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.End, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, "")}})
 
-		markup := &telebot.ReplyMarkup{
-			ResizeKeyboard: true,
-		}
+		q := user.State.CallbackData.Query()
+		q.Set("index", strconv.Itoa(songIndex+1))
+		user.State.CallbackData.RawQuery = q.Encode()
 
-		for _, driveFile := range user.State.Context.DriveFiles {
-			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: driveFile.Name}})
-		}
-		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.End}})
-
-		err := c.Send(fmt.Sprintf("Выбери песню номер %d:", user.State.Context.Index+1), markup)
-		if err != nil {
-			return err
-		}
-
-		user.State.Index++
-		return nil
-	})
-
-	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
-
-		var foundDriveFile *drive.File
-		for i, driveFile := range user.State.Context.DriveFiles {
-			if driveFile.Name == c.Text() {
-				foundDriveFile = driveFile
-				user.State.Context.DriveFiles = append(user.State.Context.DriveFiles[:i],
-					user.State.Context.DriveFiles[i+1:]...)
-				break
-			}
-		}
-
-		if foundDriveFile == nil {
-			user.State.Index--
-			return h.enter(c, user)
-		}
-
-		song, err := h.songService.FindOrCreateOneByDriveFileID(foundDriveFile.Id)
-		if err != nil {
-			return err
-		}
-
-		_, err = h.eventService.ChangeSongIDPosition(user.State.Context.EventID, song.ID, user.State.Context.Index)
-		if err != nil {
-			user.State.Index--
-			return h.enter(c, user)
-		}
-
-		user.State.Context.Index++
-		user.State.Index--
-		return h.enter(c, user)
+		return c.Edit(helpers.AddCallbackData(fmt.Sprintf("Выбери песню номер %d:", songIndex+1),
+			user.State.CallbackData.String()), markup, telebot.ModeHTML)
 	})
 
 	return helpers.ChangeSongOrderState, handlerFuncs
 }
 
-func addEventMemberCallbackHandler() (int, []HandlerFunc) {
+func addEventMemberHandler() (int, []HandlerFunc) {
 	handlerFuncs := make([]HandlerFunc, 0)
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		state, index, payload := h.parseCallbackData(c.Callback().Data)
+		state, index, payload := helpers.ParseCallbackData(c.Callback().Data)
 
 		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
 		if err != nil {
@@ -651,16 +651,16 @@ func addEventMemberCallbackHandler() (int, []HandlerFunc) {
 		markup := &telebot.ReplyMarkup{}
 
 		for _, role := range event.Band.Roles {
-			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: role.Name, Data: h.aggregateInlineData(state, index+1, fmt.Sprintf("%s", role.ID.Hex()))}})
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: role.Name, Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s", role.ID.Hex()))}})
 		}
-		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: h.aggregateInlineData(helpers.EventActionsState, 0, payload)}})
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, payload)}})
 
 		return c.Edit(markup)
 	})
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		state, index, payload := h.parseCallbackData(c.Callback().Data)
+		state, index, payload := helpers.ParseCallbackData(c.Callback().Data)
 
 		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
 		if err != nil {
@@ -684,18 +684,18 @@ func addEventMemberCallbackHandler() (int, []HandlerFunc) {
 
 		for _, user := range users {
 			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
-				{Text: fmt.Sprintf("%s / %d", user.Name, len(user.Memberships)), Data: h.aggregateInlineData(state, index+1, fmt.Sprintf("%s:%d", payload, user.ID))},
+				{Text: fmt.Sprintf("%s / %d", user.Name, len(user.Memberships)), Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s:%d", payload, user.ID))},
 			})
 		}
 		// TODO
-		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Cancel, Data: h.aggregateInlineData(helpers.EventActionsState, 0, payload)}})
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Cancel, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, payload)}})
 
 		return c.Edit(markup)
 	})
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		_, _, payload := h.parseCallbackData(c.Callback().Data)
+		_, _, payload := helpers.ParseCallbackData(c.Callback().Data)
 
 		parsedPayload := strings.Split(payload, ":")
 
@@ -740,23 +740,20 @@ func addEventMemberCallbackHandler() (int, []HandlerFunc) {
 		user.State.CallbackData.RawQuery = q.Encode()
 
 		return c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), &telebot.ReplyMarkup{
-			InlineKeyboard: [][]telebot.InlineButton{{
-				{Text: helpers.Delete, Data: h.aggregateInlineData(helpers.DeleteEventMemberCallbackState, 0, "")},
-				{Text: helpers.Add, Data: h.aggregateInlineData(helpers.AddEventMemberCallbackState, 0, "")},
-			}},
+			InlineKeyboard: helpers.EventActionsKeyboard,
 		}, telebot.ModeHTML, telebot.NoPreview)
 
 	})
 
-	return helpers.AddEventMemberCallbackState, handlerFuncs
+	return helpers.AddEventMemberState, handlerFuncs
 }
 
-func deleteEventMemberCallbackHandler() (int, []HandlerFunc) {
+func deleteEventMemberHandler() (int, []HandlerFunc) {
 	handlerFuncs := make([]HandlerFunc, 0)
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		state, index, payload := h.parseCallbackData(c.Callback().Data)
+		state, index, payload := helpers.ParseCallbackData(c.Callback().Data)
 
 		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
 		if err != nil {
@@ -776,16 +773,16 @@ func deleteEventMemberCallbackHandler() (int, []HandlerFunc) {
 				continue
 			}
 
-			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: user.Name + " / " + membership.Role.Name, Data: h.aggregateInlineData(state, index+1, fmt.Sprintf("%s", membership.ID.Hex()))}})
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: user.Name + " / " + membership.Role.Name, Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s", membership.ID.Hex()))}})
 		}
-		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: h.aggregateInlineData(helpers.EventActionsState, 0, payload)}})
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, payload)}})
 
 		return c.Edit(markup)
 	})
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		_, _, membershipHex := h.parseCallbackData(c.Callback().Data)
+		_, _, membershipHex := helpers.ParseCallbackData(c.Callback().Data)
 
 		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
 		if err != nil {
@@ -819,157 +816,29 @@ func deleteEventMemberCallbackHandler() (int, []HandlerFunc) {
 		user.State.CallbackData.RawQuery = q.Encode()
 
 		return c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), &telebot.ReplyMarkup{
-			InlineKeyboard: [][]telebot.InlineButton{{
-				{Text: helpers.Delete, Data: h.aggregateInlineData(helpers.DeleteEventMemberCallbackState, 0, "")},
-				{Text: helpers.Add, Data: h.aggregateInlineData(helpers.AddEventMemberCallbackState, 0, "")},
-			}},
+			InlineKeyboard: helpers.EventActionsKeyboard,
 		}, telebot.ModeHTML, telebot.NoPreview)
 	})
 
-	return helpers.DeleteEventMemberCallbackState, handlerFuncs
-}
-
-func addEventMemberHandler() (int, []HandlerFunc) {
-
-	handlerFuncs := make([]HandlerFunc, 0)
-
-	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
-		event, err := h.eventService.FindOneByID(user.State.Context.EventID)
-		if err != nil {
-			return err
-		}
-
-		markup := &telebot.ReplyMarkup{
-			ResizeKeyboard: true,
-		}
-
-		for _, role := range event.Band.Roles {
-			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: role.Name}})
-		}
-		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Back}})
-
-		err = c.Send("Кем будет этот участник?", markup)
-		if err != nil {
-			return err
-		}
-
-		user.State.Index++
-		return nil
-	})
-
-	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
-		event, err := h.eventService.FindOneByID(user.State.Context.EventID)
-		if err != nil {
-			return err
-		}
-
-		var foundRole *entities.Role
-		for _, role := range event.Band.Roles {
-			if role.Name == c.Text() {
-				foundRole = role
-			}
-		}
-
-		if foundRole == nil {
-			user.State.Index--
-			return h.enter(c, user)
-		}
-
-		user.State.Context.RoleID = foundRole.ID
-
-		users, err := h.userService.FindMultipleByBandID(event.BandID)
-		if err != nil {
-			return err
-		}
-		sort.Slice(users, func(i, j int) bool {
-			return len(users[i].Memberships) < len(users[j].Memberships)
-		})
-
-		markup := &telebot.ReplyMarkup{
-			ResizeKeyboard: true,
-		}
-
-		for _, user := range users {
-			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: user.Name}})
-		}
-		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}})
-
-		err = c.Send("Выбери участника:", markup)
-		if err != nil {
-			return err
-		}
-
-		user.State.Index++
-		return nil
-	})
-
-	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
-		event, err := h.eventService.FindOneByID(user.State.Context.EventID)
-		if err != nil {
-			return err
-		}
-
-		users, err := h.userService.FindMultipleByBandID(event.BandID)
-		if err != nil {
-			return err
-		}
-
-		var foundUser *entities.User
-		for _, user := range users {
-			if user.Name == c.Text() {
-				foundUser = user
-			}
-		}
-
-		if foundUser == nil {
-			user.State.Index--
-			return h.enter(c, user)
-		}
-
-		_, err = h.membershipService.UpdateOne(entities.Membership{
-			EventID: user.State.Context.EventID,
-			UserID:  foundUser.ID,
-			RoleID:  user.State.Context.RoleID,
-		})
-		if err != nil {
-			return err
-		}
-
-		go func() {
-			eventString, _ := h.eventService.ToHtmlStringByID(event.ID)
-			h.bot.Send(telebot.ChatID(foundUser.ID),
-				fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
-					"Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
-		}()
-
-		role, err := h.roleService.FindOneByID(user.State.Context.RoleID)
-		if err != nil {
-			err = c.Send(fmt.Sprintf("%s добавлен.", foundUser.Name))
-			if err != nil {
-				return err
-			}
-		} else {
-			err = c.Send(fmt.Sprintf("%s добавлен как %s", foundUser.Name, role.Name))
-			if err != nil {
-				return err
-			}
-		}
-
-		user.State = &entities.State{
-			Name:    helpers.AddEventMemberState,
-			Context: user.State.Context,
-			Prev:    user.State.Prev,
-		}
-		return h.enter(c, user)
-	})
-
-	return helpers.AddEventMemberState, handlerFuncs
+	return helpers.DeleteEventMemberState, handlerFuncs
 }
 
 func addEventSongHandler() (int, []HandlerFunc) {
 	handlerFuncs := make([]HandlerFunc, 0)
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		var eventID primitive.ObjectID
+		if c.Callback() != nil {
+			eventIDFromCallback, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
+			if err != nil {
+				return err
+			}
+			eventID = eventIDFromCallback
+		} else {
+			eventID = user.State.Context.EventID
+		}
+
 		err := c.Send("Введи название песни:", &telebot.ReplyMarkup{
 			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.End}}},
 			ResizeKeyboard: true,
@@ -978,7 +847,13 @@ func addEventSongHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		user.State.Index++
+		user.State = &entities.State{
+			Index: 1,
+			Name:  helpers.AddEventSongState,
+			Context: entities.Context{
+				EventID: eventID,
+			},
+		}
 		return nil
 	})
 
@@ -1589,7 +1464,7 @@ func songActionsHandler() (int, []HandlerFunc) {
 			}
 			user.State.Prev.Index = 0
 
-		case helpers.Delete:
+		case helpers.DeleteMember:
 			user.State = &entities.State{
 				Name: helpers.DeleteSongState,
 				Context: entities.Context{
@@ -2005,7 +1880,7 @@ func getVoicesHandler() (int, []HandlerFunc) {
 		case helpers.Back:
 			user.State.Index = 0
 			return h.enter(c, user)
-		case helpers.Delete:
+		case helpers.DeleteMember:
 			// TODO: handle delete
 			return nil
 		default:

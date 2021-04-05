@@ -20,12 +20,12 @@ const (
 	CreateEventState
 	EventActionsState
 	CreateRoleState
-	AddEventMemberState
 	AddEventSongState
 	DeleteEventState
 	ChangeSongOrderState
-	AddEventMemberCallbackState
-	DeleteEventMemberCallbackState
+	AddEventMemberState
+	DeleteEventMemberState
+	DeleteEventSongState
 )
 
 // Buttons constants.
@@ -39,7 +39,6 @@ const (
 	Transpose        string = "Изменить тональность"
 	Style            string = "Стилизовать"
 	Menu             string = "Меню"
-	Delete           string = "Удалить"
 	Back             string = "Назад"
 	No               string = "Нет"
 	Yes              string = "Да"
@@ -57,10 +56,14 @@ const (
 	CreateRole       string = "Создать роль"
 	Members          string = "Участники"
 	Songs            string = "Песни"
-	Add              string = "Добавить"
+	AddMember        string = "Добавить участника"
+	DeleteMember     string = "Удалить участника"
+	AddSong          string = "Добавить песню"
+	DeleteSong       string = "Удалить песню"
+	ChangeSongsOrder string = "Изменить порядок песен"
 	GetAllEvents     string = "Все собрания"
 	End              string = "Закончить"
-	ChangeOrder      string = "Изменить порядок"
+	Delete           string = "Удалить"
 )
 
 const (

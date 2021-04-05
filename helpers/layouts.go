@@ -16,9 +16,18 @@ var RestrictedSongActionsKeyboard = [][]telebot.ReplyButton{
 	{{Text: Back}, {Text: Menu}},
 }
 
-var EventActionsKeyboard = [][]telebot.ReplyButton{
-	{{Text: Songs}},
-	{{Text: Delete}},
+var EventActionsKeyboard = [][]telebot.InlineButton{
+	{
+		{Text: DeleteMember, Data: AggregateCallbackData(DeleteEventMemberState, 0, "")},
+		{Text: AddMember, Data: AggregateCallbackData(AddEventMemberState, 0, "")},
+	},
+	{
+		{Text: AddSong, Data: AggregateCallbackData(AddEventSongState, 0, "")},
+		{Text: DeleteSong, Data: AggregateCallbackData(DeleteEventSongState, 0, "")},
+	},
+	{
+		{Text: ChangeSongsOrder, Data: AggregateCallbackData(ChangeSongOrderState, 0, "")},
+	},
 }
 
 var MainMenuKeyboard = [][]telebot.ReplyButton{

@@ -10,7 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/url"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -127,7 +126,7 @@ func (h *Handler) OnCallback(c telebot.Context) error {
 		return err
 	}
 
-	//_, err = h.userService.UpdateOne(*user)
+	_, err = h.userService.UpdateOne(*user)
 
 	return nil
 }
@@ -207,7 +206,7 @@ func (h *Handler) enter(c telebot.Context, user *entities.User) error {
 	}
 
 	if c.Callback() != nil {
-		state, index, _ := h.parseCallbackData(c.Callback().Data)
+		state, index, _ := helpers.ParseCallbackData(c.Callback().Data)
 
 		// Handle error.
 		handlerFuncs, _ := handlers[state]
@@ -224,27 +223,4 @@ func (h *Handler) enter(c telebot.Context, user *entities.User) error {
 
 		return handlerFuncs[user.State.Index](h, c, user)
 	}
-}
-
-func (h *Handler) parseCallbackData(data string) (int, int, string) {
-	parsedData := strings.Split(data, ":")
-	stateStr := parsedData[0]
-	indexStr := parsedData[1]
-	payload := strings.Join(parsedData[2:], ":")
-
-	state, err := strconv.Atoi(stateStr)
-	if err != nil {
-		state = 0 // TODO
-	}
-
-	index, err := strconv.Atoi(indexStr)
-	if err != nil {
-		index = 0 // TODO
-	}
-
-	return state, index, payload
-}
-
-func (h *Handler) aggregateInlineData(state int, index int, payload string) string {
-	return fmt.Sprintf("%d:%d:%s", state, index, payload)
 }
