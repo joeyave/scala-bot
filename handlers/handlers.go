@@ -119,10 +119,67 @@ func createRoleHandler() (int, []HandlerFunc) {
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		role, err := h.roleService.UpdateOne(entities.Role{
-			Name:   c.Text(),
-			BandID: user.BandID,
-		})
+		user.State.Context.Role = &entities.Role{
+			Name: c.Text(),
+		}
+
+		markup := &telebot.ReplyMarkup{
+			ResizeKeyboard: true,
+		}
+
+		if len(user.Band.Roles) == 0 {
+			user.State.Context.Role.Priority = 1
+			user.State.Index++
+			return nil
+		}
+
+		for _, role := range user.Band.Roles {
+			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: role.Name}})
+		}
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}})
+
+		err := c.Send("После какой роли должна быть эта роль?", markup)
+		if err != nil {
+			return err
+		}
+
+		user.State.Index++
+		return nil
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		if user.State.Context.Role.Priority == 0 {
+
+			var foundRole *entities.Role
+			for _, role := range user.Band.Roles {
+				if c.Text() == role.Name {
+					foundRole = role
+					break
+				}
+			}
+
+			if foundRole == nil {
+				user.State.Index--
+				return h.enter(c, user)
+			}
+
+			user.State.Context.Role.Priority = foundRole.Priority + 1
+
+			for _, role := range user.Band.Roles {
+				if role.Priority > foundRole.Priority {
+					role.Priority++
+					h.roleService.UpdateOne(*role)
+				}
+			}
+		}
+
+		role, err := h.roleService.UpdateOne(
+			entities.Role{
+				Name:     user.State.Context.Role.Name,
+				BandID:   user.BandID,
+				Priority: user.State.Context.Role.Priority,
+			})
 		if err != nil {
 			return err
 		}
@@ -499,6 +556,31 @@ func eventActionsHandler() (int, []HandlerFunc) {
 
 			return nil
 		}
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
+		if err != nil {
+			return err
+		}
+
+		event, err := h.eventService.FindOneByID(eventID)
+		if err != nil {
+			return err
+		}
+
+		var driveFileIDs []string
+		for _, song := range event.Songs {
+			driveFileIDs = append(driveFileIDs, song.DriveFileID)
+		}
+
+		err = h.sendPDFAlbum(driveFileIDs, c)
+		if err != nil {
+			return err
+		}
+
+		return c.Respond()
 	})
 
 	//handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -2320,4 +2402,119 @@ func chunkAlbumBy(items telebot.Album, chunkSize int) (chunks []telebot.Album) {
 	}
 
 	return append(chunks, items)
+}
+
+func (h *Handler) sendPDFAlbum(foundDriveFileIDs []string, c telebot.Context) error {
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(len(foundDriveFileIDs))
+	documents := make([]telebot.InputMedia, len(foundDriveFileIDs))
+	for i := range foundDriveFileIDs {
+		go func(i int) {
+			defer waitGroup.Done()
+
+			song, err := h.songService.FindOrCreateOneByDriveFileID(foundDriveFileIDs[i])
+			if err != nil {
+				return
+			}
+
+			driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
+			if err != nil {
+				return
+			}
+
+			if song.HasOutdatedPDF(driveFile) {
+				reader, err := h.driveFileService.DownloadOneByID(song.DriveFileID)
+				if err != nil {
+					return
+				}
+
+				documents[i] = &telebot.Document{
+					File:     telebot.FromReader(*reader),
+					MIME:     "application/pdf",
+					FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
+				}
+			} else {
+				documents[i] = &telebot.Document{
+					File: telebot.File{FileID: song.PDF.TgFileID},
+				}
+			}
+		}(i)
+	}
+	waitGroup.Wait()
+
+	const chunkSize = 10
+	chunks := chunkAlbumBy(documents, chunkSize)
+
+	for i, album := range chunks {
+		responses, err := h.bot.SendAlbum(c.Recipient(), album)
+
+		// TODO: check for bugs.
+		if err != nil {
+			fromIndex := 0
+			toIndex := 0 + len(album)
+
+			if i-1 > 0 && i-1 < len(chunks) {
+				fromIndex = i * len(chunks[i-1])
+				toIndex = fromIndex + len(chunks[i])
+			}
+
+			foundDriveFileIDs := foundDriveFileIDs[fromIndex:toIndex]
+
+			var waitGroup sync.WaitGroup
+			waitGroup.Add(len(foundDriveFileIDs))
+			documents := make([]telebot.InputMedia, len(foundDriveFileIDs))
+			for i := range foundDriveFileIDs {
+				go func(i int) {
+					defer waitGroup.Done()
+					reader, err := h.driveFileService.DownloadOneByID(foundDriveFileIDs[i])
+					if err != nil {
+						return
+					}
+
+					driveFile, err := h.driveFileService.FindOneByID(foundDriveFileIDs[i])
+					if err != nil {
+						return
+					}
+
+					documents[i] = &telebot.Document{
+						File:     telebot.FromReader(*reader),
+						MIME:     "application/pdf",
+						FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
+					}
+				}(i)
+			}
+			waitGroup.Wait()
+
+			responses, err = h.bot.SendAlbum(c.Recipient(), documents)
+			if err != nil {
+				continue
+			}
+		}
+
+		for j := range responses {
+			foundDriveFileID := foundDriveFileIDs[j+(i*len(album))]
+
+			song, err := h.songService.FindOneByDriveFileID(foundDriveFileID)
+			if err != nil {
+				return err
+			}
+
+			driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
+			if err != nil {
+				return err
+			}
+
+			song.PDF.TgFileID = responses[j].Document.FileID
+
+			if song.HasOutdatedPDF(driveFile) || song.PDF.TgChannelMessageID == 0 {
+				song = helpers.SendToChannel(h.bot, song)
+			}
+
+			song.PDF.ModifiedTime = driveFile.ModifiedTime
+
+			_, _ = h.songService.UpdateOne(*song)
+		}
+	}
+
+	return nil
 }

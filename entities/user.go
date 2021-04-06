@@ -46,6 +46,7 @@ type Context struct {
 	Band   *Band              `bson:"currentBand,omitempty"`
 	Bands  []*Band            `bson:"bands,omitempty"`
 
+	Role   *Role              `bson:"role,omitempty"`
 	RoleID primitive.ObjectID `bson:"roleId,omitempty"`
 
 	EventID primitive.ObjectID `bson:"eventId,omitempty"`

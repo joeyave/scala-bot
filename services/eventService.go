@@ -6,6 +6,8 @@ import (
 	"github.com/joeyave/scala-chords-bot/repositories"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
+	"strings"
+	"sync"
 )
 
 type EventService struct {
@@ -13,14 +15,16 @@ type EventService struct {
 	userRepository       *repositories.UserRepository
 	membershipRepository *repositories.MembershipRepository
 	driveRepository      *drive.Service
+	driveFileService     *DriveFileService
 }
 
-func NewEventService(eventRepository *repositories.EventRepository, userRepository *repositories.UserRepository, membershipRepository *repositories.MembershipRepository, driveRepository *drive.Service) *EventService {
+func NewEventService(eventRepository *repositories.EventRepository, userRepository *repositories.UserRepository, membershipRepository *repositories.MembershipRepository, driveRepository *drive.Service, driveFileService *DriveFileService) *EventService {
 	return &EventService{
 		eventRepository:      eventRepository,
 		userRepository:       userRepository,
 		membershipRepository: membershipRepository,
 		driveRepository:      driveRepository,
+		driveFileService:     driveFileService,
 	}
 }
 
@@ -105,14 +109,29 @@ func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, error) {
 
 	if len(event.Songs) > 0 {
 		eventString = fmt.Sprintf("%s\n\n<b>Список:</b>", eventString)
-		for i, song := range event.Songs {
-			driveFile, err := s.driveRepository.Files.Get(song.DriveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
-			if err != nil {
-				continue
-			}
 
-			eventString = fmt.Sprintf("%s\n%d. <a href=\"%s\">%s</a>", eventString, i+1, driveFile.WebViewLink, driveFile.Name)
+		var waitGroup sync.WaitGroup
+		waitGroup.Add(len(event.Songs))
+		songNames := make([]string, len(event.Songs))
+		for i := range event.Songs {
+			go func(i int) {
+				defer waitGroup.Done()
+
+				driveFile, err := s.driveFileService.FindOneByID(event.Songs[i].DriveFileID)
+				if err != nil {
+					return
+				}
+
+				//key, BPM, _ := s.driveFileService.GetMetadata(event.Songs[i].DriveFileID)
+
+				//songName := fmt.Sprintf("%d. <a href=\"%s\">%s</a> (%s, %s)", i+1, driveFile.WebViewLink, driveFile.Name, key, BPM)
+				songName := fmt.Sprintf("%d. <a href=\"%s\">%s</a>", i+1, driveFile.WebViewLink, driveFile.Name)
+				songNames[i] = songName
+			}(i)
 		}
+		waitGroup.Wait()
+
+		eventString += "\n" + strings.Join(songNames, "\n")
 	}
 
 	return eventString, nil

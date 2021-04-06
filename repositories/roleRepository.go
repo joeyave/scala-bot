@@ -46,6 +46,11 @@ func (r *RoleRepository) find(m bson.M) ([]*entities.Role, error) {
 		bson.M{
 			"$match": m,
 		},
+		bson.M{
+			"$sort": bson.M{
+				"priority": 1,
+			},
+		},
 	}
 
 	cur, err := collection.Aggregate(context.TODO(), pipeline)

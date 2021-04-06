@@ -101,6 +101,11 @@ func (r *EventRepository) find(m bson.M) ([]*entities.Event, error) {
 								bson.M{
 									"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$bandId", "$$bandId"}}},
 								},
+								bson.M{
+									"$sort": bson.M{
+										"priority": 1,
+									},
+								},
 							},
 							"as": "roles",
 						},
@@ -139,6 +144,11 @@ func (r *EventRepository) find(m bson.M) ([]*entities.Event, error) {
 						"$unwind": bson.M{
 							"path":                       "$role",
 							"preserveNullAndEmptyArrays": true,
+						},
+					},
+					bson.M{
+						"$sort": bson.M{
+							"role.priority": 1,
 						},
 					},
 				},

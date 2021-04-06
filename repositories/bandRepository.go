@@ -56,6 +56,11 @@ func (r *BandRepository) find(m bson.M) ([]*entities.Band, error) {
 			"$match": m,
 		},
 		bson.M{
+			"$sort": bson.M{
+				"priority": 1,
+			},
+		},
+		bson.M{
 			"$lookup": bson.M{
 				"from":         "roles",
 				"localField":   "_id",

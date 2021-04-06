@@ -67,10 +67,31 @@ func (r *UserRepository) find(m bson.M) ([]*entities.User, error) {
 		},
 		bson.M{
 			"$lookup": bson.M{
-				"from":         "bands",
-				"localField":   "bandId",
-				"foreignField": "_id",
-				"as":           "band",
+				"from": "bands",
+				"let":  bson.M{"bandId": "$bandId"},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$_id", "$$bandId"}}},
+					},
+					bson.M{
+						"$lookup": bson.M{
+							"from": "roles",
+							"let":  bson.M{"bandId": "$_id"},
+							"pipeline": bson.A{
+								bson.M{
+									"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$bandId", "$$bandId"}}},
+								},
+								bson.M{
+									"$sort": bson.M{
+										"priority": 1,
+									},
+								},
+							},
+							"as": "roles",
+						},
+					},
+				},
+				"as": "band",
 			},
 		},
 		bson.M{
@@ -81,10 +102,32 @@ func (r *UserRepository) find(m bson.M) ([]*entities.User, error) {
 		},
 		bson.M{
 			"$lookup": bson.M{
-				"from":         "memberships",
-				"localField":   "_id",
-				"foreignField": "userId",
-				"as":           "memberships",
+				"from": "memberships",
+				"let":  bson.M{"eventId": "$_id"},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$eventId", "$$eventId"}}},
+					},
+					bson.M{
+						"$lookup": bson.M{
+							"from": "roles",
+							"let":  bson.M{"roleId": "$roleId"},
+							"pipeline": bson.A{
+								bson.M{
+									"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$_id", "$$roleId"}}},
+								},
+							},
+							"as": "role",
+						},
+					},
+					bson.M{
+						"$unwind": bson.M{
+							"path":                       "$role",
+							"preserveNullAndEmptyArrays": true,
+						},
+					},
+				},
+				"as": "memberships",
 			},
 		},
 	}

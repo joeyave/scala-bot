@@ -18,6 +18,9 @@ var RestrictedSongActionsKeyboard = [][]telebot.ReplyButton{
 
 var EventActionsKeyboard = [][]telebot.InlineButton{
 	{
+		{Text: FindChords, Data: AggregateCallbackData(EventActionsState, 1, "")},
+	},
+	{
 		{Text: DeleteMember, Data: AggregateCallbackData(DeleteEventMemberState, 0, "")},
 		{Text: AddMember, Data: AggregateCallbackData(AddEventMemberState, 0, "")},
 	},

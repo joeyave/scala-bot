@@ -9,6 +9,7 @@ import (
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
 	"io"
+	"io/ioutil"
 	"regexp"
 	"strings"
 	"time"
@@ -85,6 +86,38 @@ func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key str
 	newFile, err := s.driveRepository.Files.Create(newFile).Do()
 	if err != nil {
 		return nil, err
+	}
+
+	if len(newFile.Parents) > 0 {
+		// TODO: use pagination here.
+		folderPermissionsList, err := s.driveRepository.Permissions.
+			List(newFile.Parents[0]).
+			Fields("*").
+			PageSize(100).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		var folderOwnerPermission *drive.Permission
+		for _, permission := range folderPermissionsList.Permissions {
+			if permission.Role == "owner" {
+				folderOwnerPermission = permission
+			}
+		}
+
+		if folderOwnerPermission != nil {
+			permission := &drive.Permission{
+				EmailAddress: folderOwnerPermission.EmailAddress,
+				Role:         "owner",
+				Type:         "user",
+			}
+			_, err = s.driveRepository.Permissions.
+				Create(newFile.Id, permission).
+				TransferOwnership(true).Do()
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	requests := make([]*docs.Request, 0)
@@ -414,6 +447,51 @@ func (s *DriveFileService) GetSectionsNumber(ID string) (int, error) {
 	}
 
 	return len(s.getSections(doc)), nil
+}
+
+func (s *DriveFileService) GetMetadata(ID string) (string, string, string) {
+	retrier := retry.NewRetrier(5, 100*time.Millisecond, time.Second)
+
+	var reader io.Reader
+	err := retrier.Run(func() error {
+		res, err := s.driveRepository.Files.Export(ID, "text/plain").Download()
+		if err != nil {
+			return err
+		}
+
+		reader = res.Body
+
+		return nil
+	})
+
+	var driveFileText string
+	b, err := ioutil.ReadAll(reader)
+	if err == nil {
+		driveFileText = string(b)
+	}
+
+	key := ""
+	keyRegex := regexp.MustCompile(`(?i)key:(.*?);`)
+	keyMatches := keyRegex.FindStringSubmatch(driveFileText)
+	if len(keyMatches) > 1 {
+		key = strings.TrimSpace(keyMatches[1])
+	}
+
+	BPM := ""
+	BPMRegex := regexp.MustCompile(`(?i)bpm:(.*?);`)
+	BPMMatches := BPMRegex.FindStringSubmatch(driveFileText)
+	if len(BPMMatches) > 1 {
+		BPM = strings.TrimSpace(BPMMatches[1])
+	}
+
+	time := ""
+	timeRegex := regexp.MustCompile(`(?i)time:(.*?);`)
+	timeMatches := timeRegex.FindStringSubmatch(driveFileText)
+	if len(timeMatches) > 1 {
+		time = strings.TrimSpace(timeMatches[1])
+	}
+
+	return key, BPM, time
 }
 
 //
