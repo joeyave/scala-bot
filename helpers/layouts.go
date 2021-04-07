@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/telebot/v3"
 )
 
@@ -16,21 +17,48 @@ var RestrictedSongActionsKeyboard = [][]telebot.ReplyButton{
 	{{Text: Back}, {Text: Menu}},
 }
 
-var EventActionsKeyboard = [][]telebot.InlineButton{
-	{
-		{Text: FindChords, Data: AggregateCallbackData(EventActionsState, 1, "")},
-	},
-	{
-		{Text: DeleteMember, Data: AggregateCallbackData(DeleteEventMemberState, 0, "")},
-		{Text: AddMember, Data: AggregateCallbackData(AddEventMemberState, 0, "")},
-	},
-	{
-		{Text: DeleteSong, Data: AggregateCallbackData(DeleteEventSongState, 0, "")},
-		{Text: AddSong, Data: AggregateCallbackData(AddEventSongState, 0, "")},
-	},
-	{
-		{Text: ChangeSongsOrder, Data: AggregateCallbackData(ChangeSongOrderState, 0, "")},
-	},
+func GetEventActionsKeyboard(user entities.User, event entities.Event) [][]telebot.InlineButton {
+	if user.Role == Admin {
+		return [][]telebot.InlineButton{
+			{
+				{Text: FindChords, Data: AggregateCallbackData(EventActionsState, 1, "")},
+			},
+			{
+				{Text: DeleteMember, Data: AggregateCallbackData(DeleteEventMemberState, 0, "")},
+				{Text: AddMember, Data: AggregateCallbackData(AddEventMemberState, 0, "")},
+			},
+			{
+				{Text: DeleteSong, Data: AggregateCallbackData(DeleteEventSongState, 0, "")},
+				{Text: AddSong, Data: AggregateCallbackData(AddEventSongState, 0, "")},
+			},
+			{
+				{Text: ChangeSongsOrder, Data: AggregateCallbackData(ChangeSongOrderState, 0, "")},
+			},
+		}
+	}
+
+	for _, membership := range event.Memberships {
+		if user.ID == membership.UserID {
+			return [][]telebot.InlineButton{
+				{
+					{Text: FindChords, Data: AggregateCallbackData(EventActionsState, 1, "")},
+				},
+				{
+					{Text: DeleteSong, Data: AggregateCallbackData(DeleteEventSongState, 0, "")},
+					{Text: AddSong, Data: AggregateCallbackData(AddEventSongState, 0, "")},
+				},
+				{
+					{Text: ChangeSongsOrder, Data: AggregateCallbackData(ChangeSongOrderState, 0, "")},
+				},
+			}
+		}
+	}
+
+	return [][]telebot.InlineButton{
+		{
+			{Text: FindChords, Data: AggregateCallbackData(EventActionsState, 1, "")},
+		},
+	}
 }
 
 var MainMenuKeyboard = [][]telebot.ReplyButton{

@@ -116,7 +116,7 @@ func main() {
 							continue
 						}
 
-						eventString, _ := eventService.ToHtmlStringByID(event.ID)
+						eventString, _, _ := eventService.ToHtmlStringByID(event.ID)
 						_, err := bot.Send(telebot.ChatID(membership.UserID),
 							fmt.Sprintf("Привет. Ты учавствуешь в собрании через несколько дней! "+
 								"Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)

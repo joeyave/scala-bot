@@ -66,6 +66,7 @@ const (
 	Delete           string = "Удалить"
 )
 
+// Roles.
 const (
 	Admin string = "Admin"
 )

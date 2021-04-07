@@ -100,36 +100,6 @@ func (r *UserRepository) find(m bson.M) ([]*entities.User, error) {
 				"preserveNullAndEmptyArrays": true,
 			},
 		},
-		bson.M{
-			"$lookup": bson.M{
-				"from": "memberships",
-				"let":  bson.M{"eventId": "$_id"},
-				"pipeline": bson.A{
-					bson.M{
-						"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$eventId", "$$eventId"}}},
-					},
-					bson.M{
-						"$lookup": bson.M{
-							"from": "roles",
-							"let":  bson.M{"roleId": "$roleId"},
-							"pipeline": bson.A{
-								bson.M{
-									"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$_id", "$$roleId"}}},
-								},
-							},
-							"as": "role",
-						},
-					},
-					bson.M{
-						"$unwind": bson.M{
-							"path":                       "$role",
-							"preserveNullAndEmptyArrays": true,
-						},
-					},
-				},
-				"as": "memberships",
-			},
-		},
 	}
 
 	cur, err := collection.Aggregate(context.TODO(), pipeline)
@@ -158,7 +128,6 @@ func (r *UserRepository) UpdateOne(user entities.User) (*entities.User, error) {
 	filter := bson.M{"_id": user.ID}
 
 	user.Band = nil
-	user.Memberships = nil
 	update := bson.M{
 		"$set": user,
 	}

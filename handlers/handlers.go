@@ -11,7 +11,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -362,7 +361,7 @@ func getEventsHandler() (int, []HandlerFunc) {
 			return h.enter(c, user)
 		case helpers.GetAllEvents:
 			for _, event := range user.State.Context.Events {
-				eventString, err := h.eventService.ToHtmlStringByID(event.ID)
+				eventString, _, err := h.eventService.ToHtmlStringByID(event.ID)
 				if err != nil {
 					continue
 				}
@@ -372,7 +371,7 @@ func getEventsHandler() (int, []HandlerFunc) {
 				user.State.CallbackData.RawQuery = q.Encode()
 
 				err = c.Send(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), &telebot.ReplyMarkup{
-					InlineKeyboard: helpers.EventActionsKeyboard,
+					InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
 				}, telebot.ModeHTML, telebot.NoPreview)
 				if err != nil {
 					return err
@@ -522,14 +521,14 @@ func eventActionsHandler() (int, []HandlerFunc) {
 			eventID = user.State.Context.EventID
 		}
 
-		eventString, err := h.eventService.ToHtmlStringByID(eventID)
+		eventString, event, err := h.eventService.ToHtmlStringByID(eventID)
 		if err != nil {
 			return err
 		}
 
 		options := &telebot.SendOptions{
 			ReplyMarkup: &telebot.ReplyMarkup{
-				InlineKeyboard: helpers.EventActionsKeyboard,
+				InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
 			},
 			DisableWebPagePreview: true,
 			ParseMode:             telebot.ModeHTML,
@@ -763,15 +762,12 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 		if err != nil {
 			return err
 		}
-		sort.Slice(users, func(i, j int) bool {
-			return len(users[i].Memberships) < len(users[j].Memberships)
-		})
 
 		markup := &telebot.ReplyMarkup{}
 
 		for _, user := range users {
 			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
-				{Text: fmt.Sprintf("%s / %d", user.Name, len(user.Memberships)), Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s:%d", payload, user.ID))},
+				{Text: fmt.Sprintf("%s", user.Name), Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s:%d", payload, user.ID))},
 			})
 		}
 		// TODO
@@ -817,7 +813,7 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 		//			"Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
 		//}()
 
-		eventString, err := h.eventService.ToHtmlStringByID(eventID)
+		eventString, event, err := h.eventService.ToHtmlStringByID(eventID)
 		if err != nil {
 			return err
 		}
@@ -827,7 +823,7 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 		user.State.CallbackData.RawQuery = q.Encode()
 
 		return c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), &telebot.ReplyMarkup{
-			InlineKeyboard: helpers.EventActionsKeyboard,
+			InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
 		}, telebot.ModeHTML, telebot.NoPreview)
 
 	})
@@ -893,7 +889,7 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 		//			"Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
 		//}()
 
-		eventString, err := h.eventService.ToHtmlStringByID(eventID)
+		eventString, event, err := h.eventService.ToHtmlStringByID(eventID)
 		if err != nil {
 			return err
 		}
@@ -903,7 +899,7 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 		user.State.CallbackData.RawQuery = q.Encode()
 
 		return c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), &telebot.ReplyMarkup{
-			InlineKeyboard: helpers.EventActionsKeyboard,
+			InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
 		}, telebot.ModeHTML, telebot.NoPreview)
 	})
 
@@ -1086,7 +1082,7 @@ func deleteEventSongHandler() (int, []HandlerFunc) {
 		//			"Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
 		//}()
 
-		eventString, err := h.eventService.ToHtmlStringByID(eventID)
+		eventString, event, err := h.eventService.ToHtmlStringByID(eventID)
 		if err != nil {
 			return err
 		}
@@ -1096,7 +1092,7 @@ func deleteEventSongHandler() (int, []HandlerFunc) {
 		user.State.CallbackData.RawQuery = q.Encode()
 
 		return c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), &telebot.ReplyMarkup{
-			InlineKeyboard: helpers.EventActionsKeyboard,
+			InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
 		}, telebot.ModeHTML, telebot.NoPreview)
 	})
 

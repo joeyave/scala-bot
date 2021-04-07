@@ -74,11 +74,11 @@ func (s *EventService) DeleteOneByID(ID primitive.ObjectID) error {
 	return nil
 }
 
-func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, error) {
+func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, *entities.Event, error) {
 
 	event, err := s.eventRepository.FindOneByID(ID)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	eventString := fmt.Sprintf("<b>%s</b>     <a href=\"\">&#8204;</a>", event.Alias())
@@ -134,5 +134,5 @@ func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, error) {
 		eventString += "\n" + strings.Join(songNames, "\n")
 	}
 
-	return eventString, nil
+	return eventString, event, nil
 }

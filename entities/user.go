@@ -15,8 +15,6 @@ type User struct {
 
 	BandID primitive.ObjectID `bson:"bandId,omitempty"`
 	Band   *Band              `bson:"band,omitempty"`
-
-	Memberships []*Membership `bson:"memberships,omitempty"`
 }
 
 type State struct {
