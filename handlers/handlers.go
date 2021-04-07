@@ -822,7 +822,7 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 		for _, user := range usersWithLatestEvent {
 			var buttonText string
 			if user.LatestEvent == nil {
-				buttonText = user.User.Name + "sdf"
+				buttonText = user.User.Name
 			} else {
 				buttonText = fmt.Sprintf("%s / %v", user.User.Name, lctime.Strftime("%d %b", user.LatestEvent.Time))
 			}
