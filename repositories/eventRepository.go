@@ -78,10 +78,62 @@ func (r *EventRepository) FindOneByID(ID primitive.ObjectID) (*entities.Event, e
 	return events[0], nil
 }
 
-func (r *EventRepository) find(m bson.M) ([]*entities.Event, error) {
+func (r *EventRepository) FindOneLatestByUserIDInMemberships(userID int64) (*entities.Event, error) {
+	events, err := r.find(
+		bson.M{
+			"memberships.userId": userID,
+		},
+		bson.M{
+			"$limit": 1,
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return events[0], nil
+}
+
+func (r *EventRepository) find(m bson.M, opts ...bson.M) ([]*entities.Event, error) {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
 
 	pipeline := bson.A{
+		bson.M{
+			"$lookup": bson.M{
+				"from": "memberships",
+				"let":  bson.M{"eventId": "$_id"},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$eventId", "$$eventId"}}},
+					},
+					bson.M{
+						"$lookup": bson.M{
+							"from": "roles",
+							"let":  bson.M{"roleId": "$roleId"},
+							"pipeline": bson.A{
+								bson.M{
+									"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$_id", "$$roleId"}}},
+								},
+							},
+							"as": "role",
+						},
+					},
+					bson.M{
+						"$unwind": bson.M{
+							"path":                       "$role",
+							"preserveNullAndEmptyArrays": true,
+						},
+					},
+					bson.M{
+						"$sort": bson.M{
+							"role.priority": 1,
+						},
+					},
+				},
+				"as": "memberships",
+			},
+		},
 		bson.M{
 			"$match": m,
 		},
@@ -118,41 +170,6 @@ func (r *EventRepository) find(m bson.M) ([]*entities.Event, error) {
 			"$unwind": bson.M{
 				"path":                       "$band",
 				"preserveNullAndEmptyArrays": true,
-			},
-		},
-		bson.M{
-			"$lookup": bson.M{
-				"from": "memberships",
-				"let":  bson.M{"eventId": "$_id"},
-				"pipeline": bson.A{
-					bson.M{
-						"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$eventId", "$$eventId"}}},
-					},
-					bson.M{
-						"$lookup": bson.M{
-							"from": "roles",
-							"let":  bson.M{"roleId": "$roleId"},
-							"pipeline": bson.A{
-								bson.M{
-									"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$_id", "$$roleId"}}},
-								},
-							},
-							"as": "role",
-						},
-					},
-					bson.M{
-						"$unwind": bson.M{
-							"path":                       "$role",
-							"preserveNullAndEmptyArrays": true,
-						},
-					},
-					bson.M{
-						"$sort": bson.M{
-							"role.priority": 1,
-						},
-					},
-				},
-				"as": "memberships",
 			},
 		},
 		bson.M{
@@ -230,6 +247,10 @@ func (r *EventRepository) find(m bson.M) ([]*entities.Event, error) {
 				"time": 1,
 			},
 		},
+	}
+
+	for _, o := range opts {
+		pipeline = append(pipeline, o)
 	}
 
 	cur, err := collection.Aggregate(context.TODO(), pipeline)

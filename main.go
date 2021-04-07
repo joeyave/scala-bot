@@ -8,6 +8,7 @@ import (
 	"github.com/joeyave/scala-chords-bot/services"
 	"github.com/joeyave/telebot/v3"
 	"github.com/kjk/notionapi"
+	"github.com/klauspost/lctime"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -20,6 +21,11 @@ import (
 )
 
 func main() {
+	err := lctime.SetLocale("ru_RU")
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	mongoClient, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("MONGODB_URI")))
 	if err != nil {
 		log.Fatal(err)

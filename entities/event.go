@@ -22,11 +22,6 @@ type Event struct {
 }
 
 func (e *Event) Alias() string {
-	err := lctime.SetLocale("ru_RU")
-	if err != nil {
-		fmt.Println(err)
-	}
-
 	timeStr := lctime.Strftime("%A / %d %b", e.Time)
 
 	return fmt.Sprintf("%s / %s", timeStr, e.Name)

@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -423,10 +424,6 @@ func createEventHandler() (int, []HandlerFunc) {
 			ResizeKeyboard: true,
 		}
 
-		err := lctime.SetLocale("ru_RU")
-		if err != nil {
-			fmt.Println(err)
-		}
 		start := time.Now()
 		end := start.AddDate(0, 1, 0)
 
@@ -436,7 +433,7 @@ func createEventHandler() (int, []HandlerFunc) {
 		}
 		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}})
 
-		err = c.Send("Выбери дату:", markup)
+		err := c.Send("Выбери дату:", markup)
 		if err != nil {
 			return err
 		}
@@ -765,11 +762,45 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 
 		markup := &telebot.ReplyMarkup{}
 
-		for _, user := range users {
+		type UserWithLatestEvent struct {
+			User        *entities.User
+			LatestEvent *entities.Event
+		}
+		var usersWithLatestEvent []*UserWithLatestEvent
+
+		var waitGroup sync.WaitGroup
+		waitGroup.Add(len(users))
+		for i := range users {
+			go func(i int) {
+				defer waitGroup.Done()
+				latestUserEvent, _ := h.eventService.FindOneLatestByUserIDInMemberships(users[i].ID)
+				usersWithLatestEvent = append(usersWithLatestEvent, &UserWithLatestEvent{
+					User:        users[i],
+					LatestEvent: latestUserEvent,
+				})
+			}(i)
+		}
+		waitGroup.Wait()
+
+		sort.Slice(usersWithLatestEvent, func(i, j int) bool {
+			if usersWithLatestEvent[i].LatestEvent != nil && usersWithLatestEvent[j].LatestEvent != nil {
+				return usersWithLatestEvent[i].LatestEvent.Time.Before(usersWithLatestEvent[j].LatestEvent.Time)
+			}
+			return false
+		})
+
+		for _, user := range usersWithLatestEvent {
+			var buttonText string
+			if user.LatestEvent == nil {
+				buttonText = user.User.Name
+			} else {
+				buttonText = fmt.Sprintf("%s / %v", user.User.Name, lctime.Strftime("%d %b", user.LatestEvent.Time))
+			}
 			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
-				{Text: fmt.Sprintf("%s", user.Name), Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s:%d", payload, user.ID))},
+				{Text: fmt.Sprintf("%s", buttonText), Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s:%d", payload, user.User.ID))},
 			})
 		}
+
 		// TODO
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Cancel, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, payload)}})
 
