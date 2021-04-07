@@ -38,6 +38,7 @@ func init() {
 		addEventMemberHandler,
 		deleteEventMemberHandler,
 		deleteEventSongHandler,
+		addBandAdminHandler,
 	)
 }
 

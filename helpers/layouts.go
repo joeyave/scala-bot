@@ -69,7 +69,8 @@ var MainMenuKeyboard = [][]telebot.ReplyButton{
 }
 
 var SettingsKeyboard = [][]telebot.ReplyButton{
-	{{Text: ChangeBand}, {Text: CreateRole}},
+	{{Text: BandSettings}, {Text: ProfileSettings}},
+	//{{Text: ChangeBand}, {Text: CreateRole}},
 }
 
 var KeysKeyboard = [][]telebot.ReplyButton{

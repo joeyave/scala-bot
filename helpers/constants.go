@@ -64,6 +64,8 @@ const (
 	GetAllEvents     string = "Все собрания"
 	End              string = "Закончить"
 	Delete           string = "Удалить"
+	BandSettings     string = "Настройки группы"
+	ProfileSettings  string = "Настройки профиля"
 )
 
 // Roles.

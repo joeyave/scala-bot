@@ -44,6 +44,22 @@ func (r *UserRepository) FindOneByID(ID int64) (*entities.User, error) {
 	return users[0], nil
 }
 
+func (r *UserRepository) FindOneByName(name string) (*entities.User, error) {
+	users, err := r.find(
+		bson.M{
+			"name": name,
+		},
+		bson.M{
+			"$limit": 1,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return users[0], err
+}
+
 func (r *UserRepository) FindMultipleByIDs(IDs []int64) ([]*entities.User, error) {
 	return r.find(bson.M{
 		"_id": bson.M{
@@ -58,7 +74,7 @@ func (r *UserRepository) FindMultipleByBandID(bandID primitive.ObjectID) ([]*ent
 	})
 }
 
-func (r *UserRepository) find(m bson.M) ([]*entities.User, error) {
+func (r *UserRepository) find(m bson.M, opts ...bson.M) ([]*entities.User, error) {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("users")
 
 	pipeline := bson.A{
@@ -102,6 +118,10 @@ func (r *UserRepository) find(m bson.M) ([]*entities.User, error) {
 		},
 	}
 
+	for _, o := range opts {
+		pipeline = append(pipeline, o)
+	}
+
 	cur, err := collection.Aggregate(context.TODO(), pipeline)
 	if err != nil {
 		return nil, err
@@ -123,10 +143,9 @@ func (r *UserRepository) find(m bson.M) ([]*entities.User, error) {
 func (r *UserRepository) UpdateOne(user entities.User) (*entities.User, error) {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("users")
 
-	// TODO: check for ID.
-
 	filter := bson.M{"_id": user.ID}
 
+	user.ID = 0
 	user.Band = nil
 	update := bson.M{
 		"$set": user,
@@ -151,19 +170,4 @@ func (r *UserRepository) UpdateOne(user entities.User) (*entities.User, error) {
 	}
 
 	return r.FindOneByID(newUser.ID)
-}
-
-func (r *UserRepository) UpdateMultiple(users []entities.User) ([]*entities.User, error) {
-	var newUsers []*entities.User
-
-	for _, user := range users {
-		newUser, err := r.UpdateOne(user)
-		if err != nil {
-			return nil, err
-		}
-
-		newUsers = append(newUsers, newUser)
-	}
-
-	return newUsers, nil
 }

@@ -52,25 +52,44 @@ func mainMenuHandler() (int, []HandlerFunc) {
 			}
 
 		case helpers.Settings:
-			err := c.Send("Настройки:", &telebot.ReplyMarkup{
+			return c.Send(helpers.Settings+":", &telebot.ReplyMarkup{
 				ReplyKeyboard:  helpers.SettingsKeyboard,
 				ResizeKeyboard: true,
+			})
+
+		case helpers.BandSettings:
+			err := c.Send(helpers.BandSettings+":", &telebot.ReplyMarkup{
+				ResizeKeyboard: true,
+				ReplyKeyboard: [][]telebot.ReplyButton{
+					{
+						{Text: helpers.CreateRole}, {Text: helpers.AddAdmin},
+					},
+				},
 			})
 			if err != nil {
 				return err
 			}
+			user.State.Index++
+			return nil
 
+		case helpers.ProfileSettings:
+			err := c.Send(helpers.ProfileSettings+":", &telebot.ReplyMarkup{
+				ResizeKeyboard: true,
+				ReplyKeyboard: [][]telebot.ReplyButton{
+					{
+						{Text: helpers.ChangeBand},
+					},
+				},
+			})
+			if err != nil {
+				return err
+			}
 			user.State.Index++
 			return nil
 
 		case helpers.CreateDoc:
 			user.State = &entities.State{
 				Name: helpers.CreateSongState,
-			}
-
-		case helpers.AddAdmin:
-			user.State = &entities.State{
-				Name: helpers.AddBandAdminState,
 			}
 
 		default:
@@ -88,9 +107,15 @@ func mainMenuHandler() (int, []HandlerFunc) {
 			user.State = &entities.State{
 				Name: helpers.ChooseBandState,
 			}
+
 		case helpers.CreateRole:
 			user.State = &entities.State{
 				Name: helpers.CreateRoleState,
+			}
+
+		case helpers.AddAdmin:
+			user.State = &entities.State{
+				Name: helpers.AddBandAdminState,
 			}
 		}
 
@@ -1312,91 +1337,62 @@ func createBandHandler() (int, []HandlerFunc) {
 	return helpers.CreateBandState, handlerFunc
 }
 
-//func addBandAdminHandler() (int, []HandlerFunc) {
-//	handlerFunc := make([]HandlerFunc, 0)
-//
-//	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
-//		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выбери пользователя, которого ты хочешь сделать администратором:")
-//		keyboard := tgbotapi.NewReplyKeyboard()
-//
-//		band, err := h.bandService.FindOneByID(user.BandID)
-//		if err != nil {
-//			return nil, err
-//		}
-//
-//		users, err := h.userService.FindMultipleByBandID(band.ID)
-//		if err != nil {
-//			return nil, err
-//		}
-//
-//		for _, bandUser := range users {
-//			keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(
-//				tgbotapi.NewKeyboardButton(bandUser.Role),
-//			))
-//		}
-//
-//		keyboard.Keyboard = append(keyboard.Keyboard, tgbotapi.NewKeyboardButtonRow(
-//			tgbotapi.NewKeyboardButton(helpers.Cancel),
-//		))
-//
-//		msg.ReplyMarkup = keyboard
-//
-//		_, err = h.bot.Send(msg)
-//		if err != nil {
-//			return nil, err
-//		}
-//
-//		user.State.Index++
-//		user.State.Context.BandID = band.ID
-//		return nil
-//	})
-//
-//	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
-//		switch update.Message.Text {
-//		case "":
-//			user.State.Index--
-//			return h.enter(c, user)
-//		default:
-//			band, err := h.bandService.FindOneByID(user.State.Context.BandID)
-//			if err != nil {
-//				return nil, err
-//			}
-//
-//			users, err := h.userService.FindMultipleByBandID(band.ID)
-//			if err != nil {
-//				return nil, err
-//			}
-//
-//			var foundUser *entities.User
-//			for _, bandUser := range users {
-//				if bandUser.Role == update.Message.Text {
-//					foundUser = bandUser
-//				}
-//			}
-//
-//			if foundUser == nil {
-//				return h.enter(c, user)
-//			}
-//			foundUser.Role = helpers.Admin
-//			_, err = h.userService.UpdateOne(*foundUser)
-//			if err != nil {
-//				return nil, err
-//			}
-//
-//			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Пользователь %s повышен до администратора группы %s.",
-//				foundUser.Role, band.Role))
-//			h.bot.Send(msg)
-//
-//			user.State = &entities.State{
-//				Role: helpers.MainMenuState,
-//			}
-//
-//			return h.enter(c, user)
-//		}
-//	})
-//
-//	return helpers.AddBandAdminState, handlerFunc
-//}
+func addBandAdminHandler() (int, []HandlerFunc) {
+	handlerFunc := make([]HandlerFunc, 0)
+
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		markup := &telebot.ReplyMarkup{
+			ResizeKeyboard: true,
+		}
+
+		users, err := h.userService.FindMultipleByBandID(user.BandID)
+		if err != nil {
+			return err
+		}
+
+		for _, user := range users {
+			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: user.Name}})
+		}
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}})
+
+		err = c.Send("Выбери пользователя, которого ты хочешь сделать администратором:", markup)
+		if err != nil {
+			return err
+		}
+
+		user.State.Index++
+		return nil
+	})
+
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		chosenUser, err := h.userService.FindOneByName(c.Text())
+		if err != nil {
+			user.State.Index--
+			return h.enter(c, user)
+		}
+
+		chosenUser.Role = helpers.Admin
+		_, err = h.userService.UpdateOne(*chosenUser)
+		if err != nil {
+			return err
+		}
+
+		err = c.Send(fmt.Sprintf("Пользователь %s повышен до администратора.", chosenUser.Name))
+		if err != nil {
+			return err
+		}
+
+		user.State = &entities.State{
+			Name: helpers.MainMenuState,
+		}
+
+		return h.enter(c, user)
+	})
+
+	return helpers.AddBandAdminState, handlerFunc
+}
 
 func searchSongHandler() (int, []HandlerFunc) {
 	handlerFunc := make([]HandlerFunc, 0)

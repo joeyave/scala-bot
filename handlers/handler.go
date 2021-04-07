@@ -153,15 +153,9 @@ func (h *Handler) OnError(botErr error, c telebot.Context) {
 
 func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.HandlerFunc {
 	return func(c telebot.Context) error {
-		user, err := h.userService.FindOneByID(c.Chat().ID)
+		user, err := h.userService.FindOneOrCreateByID(c.Chat().ID)
 		if err != nil {
-			user = &entities.User{
-				ID: c.Chat().ID,
-				State: &entities.State{
-					Index: 0,
-					Name:  helpers.MainMenuState,
-				},
-			}
+			return err
 		}
 
 		if user.Name == "" {
