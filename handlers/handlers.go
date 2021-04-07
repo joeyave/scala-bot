@@ -743,7 +743,7 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		state, index, payload := helpers.ParseCallbackData(c.Callback().Data)
+		state, index, roleIDHex := helpers.ParseCallbackData(c.Callback().Data)
 
 		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
 		if err != nil {
@@ -756,6 +756,11 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 		}
 
 		users, err := h.userService.FindMultipleByBandID(event.BandID)
+		if err != nil {
+			return err
+		}
+
+		roleID, err := primitive.ObjectIDFromHex(roleIDHex)
 		if err != nil {
 			return err
 		}
@@ -773,7 +778,7 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 		for i := range users {
 			go func(i int) {
 				defer waitGroup.Done()
-				latestUserEvent, _ := h.eventService.FindOneLatestByUserIDInMemberships(users[i].ID)
+				latestUserEvent, _ := h.eventService.FindOneLatestByUserIDAndRoleIDInMemberships(users[i].ID, roleID)
 				usersWithLatestEvent = append(usersWithLatestEvent, &UserWithLatestEvent{
 					User:        users[i],
 					LatestEvent: latestUserEvent,
@@ -792,17 +797,17 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 		for _, user := range usersWithLatestEvent {
 			var buttonText string
 			if user.LatestEvent == nil {
-				buttonText = user.User.Name
+				buttonText = user.User.Name + "sdf"
 			} else {
 				buttonText = fmt.Sprintf("%s / %v", user.User.Name, lctime.Strftime("%d %b", user.LatestEvent.Time))
 			}
 			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
-				{Text: fmt.Sprintf("%s", buttonText), Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s:%d", payload, user.User.ID))},
+				{Text: buttonText, Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s:%d", roleIDHex, user.User.ID))},
 			})
 		}
 
 		// TODO
-		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Cancel, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, payload)}})
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Cancel, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, roleIDHex)}})
 
 		return c.Edit(markup)
 	})

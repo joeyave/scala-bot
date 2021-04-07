@@ -78,10 +78,13 @@ func (r *EventRepository) FindOneByID(ID primitive.ObjectID) (*entities.Event, e
 	return events[0], nil
 }
 
-func (r *EventRepository) FindOneLatestByUserIDInMemberships(userID int64) (*entities.Event, error) {
+func (r *EventRepository) FindOneLatestByUserIDAndRoleIDInMemberships(userID int64, roleID primitive.ObjectID) (*entities.Event, error) {
 	events, err := r.find(
 		bson.M{
-			"memberships.userId": userID,
+			"$and": bson.A{
+				bson.M{"memberships.userId": userID},
+				bson.M{"memberships.role._id": roleID},
+			},
 		},
 		bson.M{
 			"$limit": 1,

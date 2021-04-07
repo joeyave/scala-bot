@@ -74,8 +74,8 @@ func (s *EventService) DeleteOneByID(ID primitive.ObjectID) error {
 	return nil
 }
 
-func (s *EventService) FindOneLatestByUserIDInMemberships(userID int64) (*entities.Event, error) {
-	return s.eventRepository.FindOneLatestByUserIDInMemberships(userID)
+func (s *EventService) FindOneLatestByUserIDAndRoleIDInMemberships(userID int64, roleID primitive.ObjectID) (*entities.Event, error) {
+	return s.eventRepository.FindOneLatestByUserIDAndRoleIDInMemberships(userID, roleID)
 }
 
 func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, *entities.Event, error) {
