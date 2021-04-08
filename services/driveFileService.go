@@ -15,6 +15,8 @@ import (
 	"time"
 )
 
+const PageSize = 50
+
 type DriveFileService struct {
 	driveRepository *drive.Service
 	docsRepository  *docs.Service
@@ -25,6 +27,22 @@ func NewDriveFileService(driveRepository *drive.Service, docsRepository *docs.Se
 		driveRepository: driveRepository,
 		docsRepository:  docsRepository,
 	}
+}
+
+func (s *DriveFileService) FindAllByFolderID(folderID string, nextPageToken string) ([]*drive.File, string, error) {
+
+	q := fmt.Sprintf(`trashed = false and mimeType = 'application/vnd.google-apps.document' and '%s' in parents`, folderID)
+
+	res, err := s.driveRepository.Files.List().
+		Q(q).
+		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink, parents)").
+		PageSize(PageSize).PageToken(nextPageToken).Do()
+
+	if err != nil {
+		return nil, "", err
+	}
+
+	return res.Files, res.NextPageToken, nil
 }
 
 func (s *DriveFileService) FindSomeByFullTextAndFolderID(name string, folderID string, pageToken string) ([]*drive.File, string, error) {
@@ -43,7 +61,7 @@ func (s *DriveFileService) FindSomeByFullTextAndFolderID(name string, folderID s
 		//Q(fmt.Sprintf("fullText contains '\"%s\"'", name)).
 		Q(q).
 		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink, parents)").
-		PageSize(90).PageToken(pageToken).Do()
+		PageSize(PageSize).PageToken(pageToken).Do()
 
 	if err != nil {
 		return nil, "", err
@@ -66,7 +84,7 @@ func (s *DriveFileService) FindOneByName(name string, folderID string) (*drive.F
 	res, err := s.driveRepository.Files.List().
 		Q(q).
 		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink, parents)").
-		PageSize(1).PageToken("").Do()
+		PageSize(1).Do()
 	if err != nil {
 		return nil, err
 	}

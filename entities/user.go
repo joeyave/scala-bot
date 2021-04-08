@@ -31,6 +31,7 @@ type Context struct {
 	SongNames        []string `bson:"songNames,omitempty"`
 	MessagesToDelete []int    `bson:"messagesToDelete,omitempty"`
 	Query            string   `bson:"query,omitempty"`
+	QueryType        string   `bson:"queryType,omitempty"`
 
 	DriveFileID       string        `bson:"currentSongId,omitempty"`
 	FoundDriveFileIDs []string      `bson:"foundDriveFileIds,omitempty"`
@@ -68,4 +69,11 @@ type Context struct {
 	Time time.Time         `bson:"time,omitempty"`
 
 	Index int `bson:"index, omitempty"`
+
+	NextPageToken *NextPageToken `bson:"nextPageToken,omitempty"`
+}
+
+type NextPageToken struct {
+	Token         string         `bson:"token"`
+	PrevPageToken *NextPageToken `bson:"prevPageToken,omitempty"`
 }

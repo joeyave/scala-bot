@@ -36,20 +36,50 @@ func mainMenuHandler() (int, []HandlerFunc) {
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 		switch c.Text() {
 
-		case helpers.Help:
-			err := c.Send("Для поиска документа, отправь боту название.\n\nРедактировать документ можно на гугл диске.\n\nДля добавления партии, отправь боту голосовое сообщение.")
-			return err
+		//case helpers.Help:
+		//	err := c.Send("Для поиска документа, отправь боту название.\n\nРедактировать документ можно на гугл диске.\n\nДля добавления партии, отправь боту голосовое сообщение.")
+		//	return err
 
 		case helpers.Schedule:
 			user.State = &entities.State{
-				Name: helpers.ScheduleState,
-			}
-
-		// TODO
-		case helpers.ScheduleBeta:
-			user.State = &entities.State{
 				Name: helpers.GetEventsState,
 			}
+
+		case helpers.Songs:
+			return c.Send(helpers.Songs+":", &telebot.ReplyMarkup{
+				ReplyKeyboard: [][]telebot.ReplyButton{
+					{
+						{Text: helpers.AllSongs},
+					},
+					{
+						{Text: helpers.SongsByLastDateOfPerforming},
+					},
+					{
+						{Text: helpers.SongsByNumberOfPerforming},
+					},
+					{
+						{Text: helpers.CreateDoc},
+					},
+				},
+				ResizeKeyboard: true,
+			})
+
+		case helpers.AllSongs:
+
+		case helpers.CreateDoc:
+			user.State = &entities.State{
+				Name: helpers.CreateSongState,
+			}
+
+		//case helpers.Members:
+		//	return c.Send(helpers.Members+":", &telebot.ReplyMarkup{
+		//		ReplyKeyboard: [][]telebot.ReplyButton{
+		//			{
+		//				{Text: "TODO"},
+		//			},
+		//		},
+		//		ResizeKeyboard: true,
+		//	})
 
 		case helpers.Settings:
 			return c.Send(helpers.Settings+":", &telebot.ReplyMarkup{
@@ -86,11 +116,6 @@ func mainMenuHandler() (int, []HandlerFunc) {
 			}
 			user.State.Index++
 			return nil
-
-		case helpers.CreateDoc:
-			user.State = &entities.State{
-				Name: helpers.CreateSongState,
-			}
 
 		default:
 			user.State = &entities.State{
@@ -1402,10 +1427,15 @@ func searchSongHandler() (int, []HandlerFunc) {
 		{
 			c.Notify(telebot.Typing)
 
-			query := c.Text()
-
-			if query == helpers.SearchEverywhere || query == helpers.Back || query == helpers.FindChords {
+			var query string
+			switch c.Text() {
+			case helpers.SearchEverywhere, helpers.AllSongs:
+				user.State.Context.QueryType = c.Text()
 				query = user.State.Context.Query
+			case helpers.PrevPage, helpers.NextPage:
+				query = user.State.Context.Query
+			default:
+				query = c.Text()
 			}
 
 			query = helpers.CleanUpQuery(query)
@@ -1441,14 +1471,45 @@ func searchSongHandler() (int, []HandlerFunc) {
 			}
 
 			var driveFiles []*drive.File
+			var nextPageToken string
 			var err error
-			if c.Text() == helpers.SearchEverywhere {
-				driveFiles, _, err = h.driveFileService.FindSomeByFullTextAndFolderID(query, "", "")
-			} else {
-				driveFiles, _, err = h.driveFileService.FindSomeByFullTextAndFolderID(query, user.Band.DriveFolderID, "")
+
+			if c.Text() == helpers.PrevPage {
+				if user.State.Context.NextPageToken != nil &&
+					user.State.Context.NextPageToken.PrevPageToken != nil {
+					user.State.Context.NextPageToken = user.State.Context.NextPageToken.PrevPageToken.PrevPageToken
+				}
 			}
+
+			if user.State.Context.NextPageToken == nil {
+				user.State.Context.NextPageToken = &entities.NextPageToken{}
+			}
+
+			switch user.State.Context.QueryType {
+			case helpers.SearchEverywhere:
+				_driveFiles, _nextPageToken, _err := h.driveFileService.FindSomeByFullTextAndFolderID(query, "", user.State.Context.NextPageToken.Token)
+				driveFiles = _driveFiles
+				nextPageToken = _nextPageToken
+				err = _err
+			case helpers.AllSongs:
+				_driveFiles, _nextPageToken, _err := h.driveFileService.FindAllByFolderID(user.Band.DriveFolderID, user.State.Context.NextPageToken.Token)
+				driveFiles = _driveFiles
+				nextPageToken = _nextPageToken
+				err = _err
+			default:
+				_driveFiles, _nextPageToken, _err := h.driveFileService.FindSomeByFullTextAndFolderID(query, user.Band.DriveFolderID, user.State.Context.NextPageToken.Token)
+				driveFiles = _driveFiles
+				nextPageToken = _nextPageToken
+				err = _err
+			}
+
 			if err != nil {
 				return err
+			}
+
+			user.State.Context.NextPageToken = &entities.NextPageToken{
+				Token:         nextPageToken,
+				PrevPageToken: user.State.Context.NextPageToken,
 			}
 
 			if len(driveFiles) == 0 {
@@ -1462,12 +1523,27 @@ func searchSongHandler() (int, []HandlerFunc) {
 				ResizeKeyboard: true,
 			}
 
-			// TODO: some sort of pagination.
 			for _, song := range driveFiles {
 				markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: song.Name}})
 			}
 
-			markup.ReplyKeyboard = append(markup.ReplyKeyboard, helpers.SearchEverywhereKeyboard...)
+			if c.Text() != helpers.SearchEverywhere || c.Text() != helpers.AllSongs {
+				markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.SearchEverywhere}})
+			}
+
+			if user.State.Context.NextPageToken.Token != "" {
+				if user.State.Context.NextPageToken.PrevPageToken != nil && user.State.Context.NextPageToken.PrevPageToken.Token != "" {
+					markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.PrevPage}, {Text: helpers.NextPage}})
+				} else {
+					markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Menu}, {Text: helpers.NextPage}})
+				}
+			} else {
+				if user.State.Context.NextPageToken.PrevPageToken.Token != "" {
+					markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.PrevPage}, {Text: helpers.Menu}})
+				} else {
+					markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Menu}, {Text: helpers.NextPage}})
+				}
+			}
 
 			err = c.Send("Выбери песню:", markup)
 			if err != nil {
@@ -1483,7 +1559,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		switch c.Text() {
 
-		case helpers.SearchEverywhere:
+		case helpers.SearchEverywhere, helpers.NextPage:
 			user.State.Index--
 			return h.enter(c, user)
 
