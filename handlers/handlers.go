@@ -65,6 +65,9 @@ func mainMenuHandler() (int, []HandlerFunc) {
 			})
 
 		case helpers.AllSongs:
+			user.State = &entities.State{
+				Name: helpers.SearchSongState,
+			}
 
 		case helpers.CreateDoc:
 			user.State = &entities.State{
@@ -841,7 +844,7 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 			if usersWithLatestEvent[i].LatestEvent != nil && usersWithLatestEvent[j].LatestEvent != nil {
 				return usersWithLatestEvent[i].LatestEvent.Time.Before(usersWithLatestEvent[j].LatestEvent.Time)
 			}
-                        if usersWithLatestEvent[i].LatestEvent == nil {
+			if usersWithLatestEvent[i].LatestEvent == nil {
 				return false
 			}
 			return true
