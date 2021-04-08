@@ -819,9 +819,7 @@ func addEventMemberHandler() (int, []HandlerFunc) {
                         if usersWithLatestEvent[i].LatestEvent == nil {
 				return true
 			}
-                        if usersWithLatestEvent[j].LatestEvent == nil {
-				return false
-			}
+			return false
 		})
 
 		for _, user := range usersWithLatestEvent {
