@@ -101,7 +101,10 @@ func (s *DriveFileService) FindOneByID(ID string) (*drive.File, error) {
 }
 
 func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key string, BPM string, time string) (*drive.File, error) {
-	newFile, err := s.driveRepository.Files.Create(newFile).Do()
+	newFile, err := s.driveRepository.Files.
+		Create(newFile).
+		Fields("id, name, modifiedTime, webViewLink, parents").
+		Do()
 	if err != nil {
 		return nil, err
 	}
@@ -140,13 +143,14 @@ func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key str
 
 	requests := make([]*docs.Request, 0)
 
-	requests = append(requests,
-		&docs.Request{
-			CreateHeader: &docs.CreateHeaderRequest{
-				Type: "DEFAULT",
-			},
+	requests = append(requests, &docs.Request{
+		CreateHeader: &docs.CreateHeaderRequest{
+			Type: "DEFAULT",
 		},
-		&docs.Request{
+	})
+
+	if lyrics != "" {
+		requests = append(requests, &docs.Request{
 			InsertText: &docs.InsertTextRequest{
 				EndOfSegmentLocation: &docs.EndOfSegmentLocation{
 					SegmentId: "",
@@ -154,6 +158,7 @@ func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key str
 				Text: lyrics,
 			},
 		})
+	}
 
 	res, err := s.docsRepository.Documents.BatchUpdate(newFile.Id,
 		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()

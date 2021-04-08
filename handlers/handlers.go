@@ -1069,7 +1069,7 @@ func addEventSongHandler() (int, []HandlerFunc) {
 		for _, song := range driveFiles {
 			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: song.Name}})
 		}
-		markup.ReplyKeyboard = append(markup.ReplyKeyboard, helpers.CancelOrSkipKeyboard...)
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.End}})
 
 		err = c.Send(fmt.Sprintf("Выбери песню по запросу \"%s\" или введи другое название:", c.Text()), markup)
 		if err != nil {
