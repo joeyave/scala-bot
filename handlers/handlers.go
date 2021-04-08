@@ -817,9 +817,9 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 				return usersWithLatestEvent[i].LatestEvent.Time.Before(usersWithLatestEvent[j].LatestEvent.Time)
 			}
                         if usersWithLatestEvent[i].LatestEvent == nil {
-				return true
+				return false
 			}
-			return false
+			return true
 		})
 
 		for _, user := range usersWithLatestEvent {
