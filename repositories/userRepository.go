@@ -247,21 +247,7 @@ func (r *UserRepository) FindManyByBandIDAndRoleID(bandID primitive.ObjectID, ro
 			},
 		},
 		bson.M{
-			"$addFields": bson.M{
-				"hasEvents": bson.M{
-					"$cond": bson.M{
-						"if": bson.M{
-							"$eq": bson.A{bson.M{"$size": "$events"}, 0},
-						},
-						"then": false,
-						"else": true,
-					},
-				},
-			},
-		},
-		bson.M{
 			"$sort": bson.M{
-				"hasEvents":     -1,
 				"events.0.time": 1,
 			},
 		},

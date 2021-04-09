@@ -492,8 +492,6 @@ func createEventHandler() (int, []HandlerFunc) {
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		user.State.Context.Map = map[string]string{"eventName": c.Text()}
-
 		markup := &telebot.ReplyMarkup{}
 
 		now := time.Now()
@@ -506,6 +504,8 @@ func createEventHandler() (int, []HandlerFunc) {
 			monthFirstDayDate, _ = time.Parse(time.RFC3339, monthFirstDateStr)
 			monthLastDayDate = monthFirstDayDate.AddDate(0, 1, -1)
 		} else {
+			user.State.Context.Map = map[string]string{"eventName": c.Text()}
+
 			monthFirstDayDate = time.Now().AddDate(0, 0, -now.Day()+1)
 			monthLastDayDate = time.Now().AddDate(0, 1, -now.Day())
 		}
