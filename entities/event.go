@@ -23,6 +23,5 @@ type Event struct {
 
 func (e *Event) Alias() string {
 	timeStr := lctime.Strftime("%A / %d %b", e.Time)
-
 	return fmt.Sprintf("%s / %s", timeStr, e.Name)
 }

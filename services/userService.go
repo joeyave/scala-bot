@@ -44,13 +44,17 @@ func (s *UserService) FindOneByName(name string) (*entities.User, error) {
 }
 
 func (s *UserService) FindMultipleByBandID(bandID primitive.ObjectID) ([]*entities.User, error) {
-	return s.userRepository.FindMultipleByBandID(bandID)
+	return s.userRepository.FindManyByBandID(bandID)
 }
 
 func (s *UserService) FindMultipleByIDs(IDs []int64) ([]*entities.User, error) {
-	return s.userRepository.FindMultipleByIDs(IDs)
+	return s.userRepository.FindManyByIDs(IDs)
 }
 
 func (s *UserService) UpdateOne(user entities.User) (*entities.User, error) {
 	return s.userRepository.UpdateOne(user)
+}
+
+func (s *UserService) FindManyByBandIDAndRoleID(bandID, roleID primitive.ObjectID) ([]*entities.UserExtra, error) {
+	return s.userRepository.FindManyByBandIDAndRoleID(bandID, roleID)
 }

@@ -78,6 +78,15 @@ func (r *EventRepository) FindOneByID(ID primitive.ObjectID) (*entities.Event, e
 	return events[0], nil
 }
 
+func (r *EventRepository) FindOneByName(name string) (*entities.Event, error) {
+	events, err := r.find(bson.M{"name": name})
+	if err != nil {
+		return nil, err
+	}
+
+	return events[0], nil
+}
+
 func (r *EventRepository) FindOneLatestByUserIDAndRoleIDInMemberships(userID int64, roleID primitive.ObjectID) (*entities.Event, error) {
 	events, err := r.find(
 		bson.M{
@@ -125,6 +134,59 @@ func (r *EventRepository) find(m bson.M, opts ...bson.M) ([]*entities.Event, err
 					bson.M{
 						"$unwind": bson.M{
 							"path":                       "$role",
+							"preserveNullAndEmptyArrays": true,
+						},
+					},
+					bson.M{
+						"$lookup": bson.M{
+							"from": "users",
+							"let":  bson.M{"userId": "$userId"},
+							"pipeline": bson.A{
+								bson.M{
+									"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$_id", "$$userId"}}},
+								},
+								bson.M{
+									"$lookup": bson.M{
+										"from": "bands",
+										"let":  bson.M{"bandId": "$bandId"},
+										"pipeline": bson.A{
+											bson.M{
+												"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$_id", "$$bandId"}}},
+											},
+											bson.M{
+												"$lookup": bson.M{
+													"from": "roles",
+													"let":  bson.M{"bandId": "$_id"},
+													"pipeline": bson.A{
+														bson.M{
+															"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$bandId", "$$bandId"}}},
+														},
+														bson.M{
+															"$sort": bson.M{
+																"priority": 1,
+															},
+														},
+													},
+													"as": "roles",
+												},
+											},
+										},
+										"as": "band",
+									},
+								},
+								bson.M{
+									"$unwind": bson.M{
+										"path":                       "$band",
+										"preserveNullAndEmptyArrays": true,
+									},
+								},
+							},
+							"as": "user",
+						},
+					},
+					bson.M{
+						"$unwind": bson.M{
+							"path":                       "$user",
 							"preserveNullAndEmptyArrays": true,
 						},
 					},

@@ -11,7 +11,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -383,7 +382,6 @@ func getEventsHandler() (int, []HandlerFunc) {
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
 		events, err := h.eventService.FindManyFromTodayByBandID(user.BandID)
-		user.State.Context.Events = events
 
 		markup := &telebot.ReplyMarkup{
 			ResizeKeyboard: true,
@@ -413,8 +411,14 @@ func getEventsHandler() (int, []HandlerFunc) {
 			}
 			user.State.Prev.Index = 0
 			return h.enter(c, user)
+
 		case helpers.GetAllEvents:
-			for _, event := range user.State.Context.Events {
+			events, err := h.eventService.FindManyFromTodayByBandID(user.BandID)
+			if err != nil {
+				return err
+			}
+
+			for _, event := range events {
 				eventString, _, err := h.eventService.ToHtmlStringByID(event.ID)
 				if err != nil {
 					continue
@@ -437,30 +441,23 @@ func getEventsHandler() (int, []HandlerFunc) {
 		default:
 			c.Notify(telebot.Typing)
 
-			events := user.State.Context.Events
-
-			var foundEvent *entities.Event
-			for _, event := range events {
-				if c.Text() == event.Alias() {
-					foundEvent = event
-					break
-				}
-			}
-
-			if foundEvent != nil {
-				user.State = &entities.State{
-					Name: helpers.EventActionsState,
-					Context: entities.Context{
-						EventID: foundEvent.ID,
-					},
-					Prev: user.State,
-				}
-				user.State.Prev.Index = 1
-				return h.enter(c, user)
-			} else {
+			foundEvent, err := h.eventService.FindOneByAlias(c.Text())
+			if err != nil {
 				user.State.Index--
 				return h.enter(c, user)
 			}
+
+			foundEvent.Alias()
+
+			user.State = &entities.State{
+				Name: helpers.EventActionsState,
+				Context: entities.Context{
+					EventID: foundEvent.ID,
+				},
+				Prev: user.State,
+			}
+			user.State.Prev.Index = 1
+			return h.enter(c, user)
 		}
 	})
 
@@ -808,57 +805,27 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		users, err := h.userService.FindMultipleByBandID(event.BandID)
+		roleID, err := primitive.ObjectIDFromHex(roleIDHex)
 		if err != nil {
 			return err
 		}
 
-		roleID, err := primitive.ObjectIDFromHex(roleIDHex)
+		usersExtra, err := h.userService.FindManyByBandIDAndRoleID(event.BandID, roleID)
 		if err != nil {
 			return err
 		}
 
 		markup := &telebot.ReplyMarkup{}
 
-		type UserWithLatestEvent struct {
-			User        *entities.User
-			LatestEvent *entities.Event
-		}
-		var usersWithLatestEvent []*UserWithLatestEvent
-
-		var waitGroup sync.WaitGroup
-		waitGroup.Add(len(users))
-		for i := range users {
-			go func(i int) {
-				defer waitGroup.Done()
-				latestUserEvent, _ := h.eventService.FindOneLatestByUserIDAndRoleIDInMemberships(users[i].ID, roleID)
-				usersWithLatestEvent = append(usersWithLatestEvent, &UserWithLatestEvent{
-					User:        users[i],
-					LatestEvent: latestUserEvent,
-				})
-			}(i)
-		}
-		waitGroup.Wait()
-
-		sort.Slice(usersWithLatestEvent, func(i, j int) bool {
-			if usersWithLatestEvent[i].LatestEvent != nil && usersWithLatestEvent[j].LatestEvent != nil {
-				return usersWithLatestEvent[i].LatestEvent.Time.Before(usersWithLatestEvent[j].LatestEvent.Time)
-			}
-			if usersWithLatestEvent[i].LatestEvent == nil {
-				return false
-			}
-			return true
-		})
-
-		for _, user := range usersWithLatestEvent {
+		for _, userExtra := range usersExtra {
 			var buttonText string
-			if user.LatestEvent == nil {
-				buttonText = user.User.Name
+			if len(userExtra.Events) == 0 {
+				buttonText = userExtra.User.Name
 			} else {
-				buttonText = fmt.Sprintf("%s / %v", user.User.Name, lctime.Strftime("%d %b", user.LatestEvent.Time))
+				buttonText = fmt.Sprintf("%s | %v | %d", userExtra.User.Name, lctime.Strftime("%d %b", userExtra.Events[0].Time), len(userExtra.Events))
 			}
 			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
-				{Text: buttonText, Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s:%d", roleIDHex, user.User.ID))},
+				{Text: buttonText, Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s:%d", roleIDHex, userExtra.User.ID))},
 			})
 		}
 

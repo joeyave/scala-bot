@@ -1,11 +1,13 @@
 package services
 
 import (
+	"errors"
 	"fmt"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/repositories"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
+	"regexp"
 	"strings"
 	"sync"
 )
@@ -37,12 +39,20 @@ func (s *EventService) FindManyFromTodayByBandID(bandID primitive.ObjectID) ([]*
 }
 
 func (s *EventService) FindOneByID(ID primitive.ObjectID) (*entities.Event, error) {
-	event, err := s.eventRepository.FindOneByID(ID)
-	if err != nil {
-		return nil, err
+	return s.eventRepository.FindOneByID(ID)
+}
+
+func (s *EventService) FindOneByAlias(alias string) (*entities.Event, error) {
+
+	regex := regexp.MustCompile(`.* /(.*)`)
+	matches := regex.FindStringSubmatch(alias)
+	if len(matches) < 2 {
+		return nil, errors.New("not found")
 	}
 
-	return event, err
+	name := strings.TrimSpace(matches[1])
+
+	return s.eventRepository.FindOneByName(name)
 }
 
 func (s *EventService) UpdateOne(event entities.Event) (*entities.Event, error) {
@@ -86,29 +96,19 @@ func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, *entitie
 	}
 
 	eventString := fmt.Sprintf("<b>%s</b>", event.Alias())
-	membershipGroups := map[string][]*entities.Membership{}
+
+	var currRoleID primitive.ObjectID
 	for _, membership := range event.Memberships {
-		if membership.Role == nil {
-			continue
-		}
-		membershipGroups[membership.Role.Name] = append(membershipGroups[membership.Role.Name], membership)
-	}
-
-	for membershipName, memberships := range membershipGroups {
-		eventString = fmt.Sprintf("%s\n\n<b>%s:</b>", eventString, membershipName)
-
-		var userIDs []int64
-		for _, membership := range memberships {
-			userIDs = append(userIDs, membership.UserID)
-		}
-		users, err := s.userRepository.FindMultipleByIDs(userIDs)
-		if err != nil {
+		if membership.User == nil {
 			continue
 		}
 
-		for i, user := range users {
-			eventString = fmt.Sprintf("%s\n%d. <a href=\"tg://user?id=%d\">%s</a>", eventString, i+1, user.ID, user.Name)
+		if currRoleID != membership.RoleID {
+			currRoleID = membership.RoleID
+			eventString = fmt.Sprintf("%s\n\n<b>%s:</b>", eventString, membership.Role.Name)
 		}
+
+		eventString = fmt.Sprintf("%s\n - <a href=\"tg://user?id=%d\">%s</a>", eventString, membership.User.ID, membership.User.Name)
 	}
 
 	if len(event.Songs) > 0 {

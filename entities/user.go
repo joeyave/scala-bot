@@ -17,6 +17,12 @@ type User struct {
 	Band   *Band              `bson:"band,omitempty"`
 }
 
+type UserExtra struct {
+	User *User `bson:",inline"`
+
+	Events []*Event `bson:"events,omitempty"`
+}
+
 type State struct {
 	Index        int      `bson:"index,omitempty"`
 	Name         int      `bson:"name,omitempty"`
@@ -49,7 +55,6 @@ type Context struct {
 	RoleID primitive.ObjectID `bson:"roleId,omitempty"`
 
 	EventID primitive.ObjectID `bson:"eventId,omitempty"`
-	Events  []*Event           `bson:"events,omitempty"`
 
 	FoundSongIDs []primitive.ObjectID `bson:"foundSongIds,omitempty"`
 	SongIDs      []primitive.ObjectID `bson:"songIds,omitempty"`

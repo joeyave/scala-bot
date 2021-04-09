@@ -8,9 +8,11 @@ import (
 	"github.com/joeyave/scala-chords-bot/services"
 	"github.com/joeyave/telebot/v3"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"log"
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type Handler struct {
@@ -153,10 +155,12 @@ func (h *Handler) OnError(botErr error, c telebot.Context) {
 
 func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.HandlerFunc {
 	return func(c telebot.Context) error {
+		start := time.Now()
 		user, err := h.userService.FindOneOrCreateByID(c.Chat().ID)
 		if err != nil {
 			return err
 		}
+		log.Printf("getting user took %v", time.Since(start))
 
 		if user.Name == "" {
 			user.Name = strings.TrimSpace(fmt.Sprintf("%s %s", c.Chat().FirstName, c.Chat().LastName))

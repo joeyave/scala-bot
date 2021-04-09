@@ -55,6 +55,59 @@ func (r *MembershipRepository) find(m bson.M) ([]*entities.Membership, error) {
 		bson.M{
 			"$match": m,
 		},
+		bson.M{
+			"$lookup": bson.M{
+				"from": "users",
+				"let":  bson.M{"userId": "$userId"},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$_id", "$$userId"}}},
+					},
+					bson.M{
+						"$lookup": bson.M{
+							"from": "bands",
+							"let":  bson.M{"bandId": "$bandId"},
+							"pipeline": bson.A{
+								bson.M{
+									"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$_id", "$$bandId"}}},
+								},
+								bson.M{
+									"$lookup": bson.M{
+										"from": "roles",
+										"let":  bson.M{"bandId": "$_id"},
+										"pipeline": bson.A{
+											bson.M{
+												"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$bandId", "$$bandId"}}},
+											},
+											bson.M{
+												"$sort": bson.M{
+													"priority": 1,
+												},
+											},
+										},
+										"as": "roles",
+									},
+								},
+							},
+							"as": "band",
+						},
+					},
+					bson.M{
+						"$unwind": bson.M{
+							"path":                       "$band",
+							"preserveNullAndEmptyArrays": true,
+						},
+					},
+				},
+				"as": "user",
+			},
+		},
+		bson.M{
+			"$unwind": bson.M{
+				"path":                       "$user",
+				"preserveNullAndEmptyArrays": true,
+			},
+		},
 	}
 
 	cur, err := collection.Aggregate(context.TODO(), pipeline)
@@ -84,6 +137,7 @@ func (r *MembershipRepository) UpdateOne(membership entities.Membership) (*entit
 
 	filter := bson.M{"_id": membership.ID}
 
+	membership.User = nil
 	membership.Role = nil
 	update := bson.M{
 		"$set": membership,
