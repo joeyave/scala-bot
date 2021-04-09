@@ -22,6 +22,6 @@ type Event struct {
 }
 
 func (e *Event) Alias() string {
-	timeStr := lctime.Strftime("%A | %d %b", e.Time)
+	timeStr := lctime.Strftime("%A | %d.%m.%Y", e.Time)
 	return fmt.Sprintf("%s | %s", timeStr, e.Name)
 }

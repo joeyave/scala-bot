@@ -382,7 +382,7 @@ func getEventsHandler() (int, []HandlerFunc) {
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
 		events, err := h.eventService.FindManyFromTodayByBandID(user.BandID)
-		user.State.Context.Events = events
+		//user.State.Context.Events = events
 
 		markup := &telebot.ReplyMarkup{
 			ResizeKeyboard: true,
@@ -442,30 +442,36 @@ func getEventsHandler() (int, []HandlerFunc) {
 		default:
 			c.Notify(telebot.Typing)
 
-			events := user.State.Context.Events
+			//events := user.State.Context.Events
 
-			var foundEvent *entities.Event
-			for _, event := range events {
-				if c.Text() == event.Alias() {
-					foundEvent = event
-					break
-				}
-			}
-
-			if foundEvent != nil {
-				user.State = &entities.State{
-					Name: helpers.EventActionsState,
-					Context: entities.Context{
-						EventID: foundEvent.ID,
-					},
-					Prev: user.State,
-				}
-				user.State.Prev.Index = 1
-				return h.enter(c, user)
-			} else {
+			regex := regexp.MustCompile(`.* \| (\d{2}\.\d{2}\.\d{4}) \| (.*)`)
+			matches := regex.FindStringSubmatch(c.Text())
+			if len(matches) < 3 {
 				user.State.Index--
 				return h.enter(c, user)
 			}
+
+			eventTime, err := time.Parse("02.01.2006", strings.TrimSpace(matches[1]))
+			if err != nil {
+				user.State.Index--
+				return h.enter(c, user)
+			}
+
+			foundEvent, err := h.eventService.FindOneByNameAndTime(strings.TrimSpace(matches[2]), eventTime)
+			if err != nil {
+				user.State.Index--
+				return h.enter(c, user)
+			}
+
+			user.State = &entities.State{
+				Name: helpers.EventActionsState,
+				Context: entities.Context{
+					EventID: foundEvent.ID,
+				},
+				Prev: user.State,
+			}
+			user.State.Prev.Index = 1
+			return h.enter(c, user)
 		}
 	})
 

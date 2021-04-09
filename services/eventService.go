@@ -8,6 +8,7 @@ import (
 	"google.golang.org/api/drive/v3"
 	"strings"
 	"sync"
+	"time"
 )
 
 type EventService struct {
@@ -40,6 +41,10 @@ func (s *EventService) FindOneByID(ID primitive.ObjectID) (*entities.Event, erro
 	return s.eventRepository.FindOneByID(ID)
 }
 
+func (s *EventService) FindOneByNameAndTime(name string, time time.Time) (*entities.Event, error) {
+	return s.eventRepository.FindOneByNameAndTime(name, time)
+}
+
 func (s *EventService) UpdateOne(event entities.Event) (*entities.Event, error) {
 	return s.eventRepository.UpdateOne(event)
 }
@@ -67,10 +72,6 @@ func (s *EventService) DeleteOneByID(ID primitive.ObjectID) error {
 	}
 
 	return nil
-}
-
-func (s *EventService) FindOneLatestByUserIDAndRoleIDInMemberships(userID int64, roleID primitive.ObjectID) (*entities.Event, error) {
-	return s.eventRepository.FindOneLatestByUserIDAndRoleIDInMemberships(userID, roleID)
 }
 
 func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, *entities.Event, error) {
