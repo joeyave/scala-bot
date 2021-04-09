@@ -70,6 +70,7 @@ const (
 	SongsByLastDateOfPerforming string = "По последнему исполнению"
 	NextPage                    string = "Следующая страница"
 	PrevPage                    string = "Предыдущая страница"
+	Today                       string = "Сегодня"
 )
 
 // Roles.

@@ -478,49 +478,7 @@ func createEventHandler() (int, []HandlerFunc) {
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		markup := &telebot.ReplyMarkup{
-			ResizeKeyboard: true,
-		}
-
-		start := time.Now()
-		end := start.AddDate(0, 1, 0)
-
-		for d := start; d.After(end) == false; d = d.AddDate(0, 0, 1) {
-			timeStr := lctime.Strftime("%A | %d %b", d)
-			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: timeStr}})
-		}
-		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}})
-
-		err := c.Send("Выбери дату:", markup)
-		if err != nil {
-			return err
-		}
-
-		user.State.Index++
-		return nil
-	})
-
-	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
-
-		re := regexp.MustCompile(`(\d{1,2}).(\d{1,2}).(\d{4})`)
-		matches := re.FindStringSubmatch(c.Text())
-
-		if len(matches) < 4 {
-			return c.Send("Неверный формат. Введи дату в формате 01.02.2021.")
-		}
-
-		year, _ := strconv.Atoi(matches[3])
-		month, _ := strconv.Atoi(matches[2])
-		day, _ := strconv.Atoi(matches[1])
-
-		parsedTime, err := time.Parse("02-01-2006", fmt.Sprintf("%02d-%02d-%d", day, month, year))
-		if err != nil {
-			return c.Send("Что-то не так. Введи дату в формате 01.02.2021.")
-		}
-
-		user.State.Context.Map = map[string]string{"time": parsedTime.Format(time.RFC3339)}
-
-		err = c.Send("Введи название этого собрания:", &telebot.ReplyMarkup{
+		err := c.Send("Введи название этого собрания:", &telebot.ReplyMarkup{
 			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Cancel}}},
 			ResizeKeyboard: true,
 		})
@@ -533,7 +491,75 @@ func createEventHandler() (int, []HandlerFunc) {
 	})
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
-		parsedTime, err := time.Parse(time.RFC3339, user.State.Context.Map["time"])
+
+		user.State.Context.Map = map[string]string{"eventName": c.Text()}
+
+		markup := &telebot.ReplyMarkup{}
+
+		now := time.Now()
+		var monthFirstDayDate time.Time
+		var monthLastDayDate time.Time
+
+		if c.Callback() != nil {
+			_, _, monthFirstDateStr := helpers.ParseCallbackData(c.Callback().Data)
+
+			monthFirstDayDate, _ = time.Parse(time.RFC3339, monthFirstDateStr)
+			monthLastDayDate = monthFirstDayDate.AddDate(0, 1, -1)
+		} else {
+			monthFirstDayDate = time.Now().AddDate(0, 0, -now.Day()+1)
+			monthLastDayDate = time.Now().AddDate(0, 1, -now.Day())
+		}
+
+		currCol := 4
+		colNum := 4
+		for d := monthFirstDayDate; d.After(monthLastDayDate) == false; d = d.AddDate(0, 0, 1) {
+			timeStr := lctime.Strftime("%d | %a", d)
+
+			if now.Day() == d.Day() && now.Month() == d.Month() && now.Year() == d.Year() {
+				timeStr = helpers.Today
+			}
+			if currCol == colNum {
+				markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{})
+				currCol = 0
+			}
+
+			markup.InlineKeyboard[len(markup.InlineKeyboard)-1] =
+				append(markup.InlineKeyboard[len(markup.InlineKeyboard)-1], telebot.InlineButton{
+					Text: timeStr,
+					Data: helpers.AggregateCallbackData(helpers.CreateEventState, 2, d.Format(time.RFC3339)),
+				})
+			currCol++
+		}
+
+		prevMonthLastDate := monthFirstDayDate.AddDate(0, 0, -1)
+		prevMonthFirstDateStr := prevMonthLastDate.AddDate(0, 0, -prevMonthLastDate.Day()+1).Format(time.RFC3339)
+		nextMonthFirstDateStr := monthLastDayDate.AddDate(0, 0, 1).Format(time.RFC3339)
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
+			{
+				Text: "prev",
+				Data: helpers.AggregateCallbackData(helpers.CreateEventState, 1, prevMonthFirstDateStr),
+			},
+			{
+				Text: "next",
+				Data: helpers.AggregateCallbackData(helpers.CreateEventState, 1, nextMonthFirstDateStr),
+			},
+		})
+
+		msg := fmt.Sprintf("Выбери дату:\n\n<b>%s</b>", lctime.Strftime("%B %Y", monthFirstDayDate))
+		if c.Callback() != nil {
+			c.Edit(msg, markup, telebot.ModeHTML)
+		} else {
+			c.Send(msg, markup, telebot.ModeHTML)
+		}
+
+		return nil
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		_, _, eventTime := helpers.ParseCallbackData(c.Callback().Data)
+
+		parsedTime, err := time.Parse(time.RFC3339, eventTime)
 		if err != nil {
 			user.State = &entities.State{Name: helpers.CreateEventState}
 			return h.enter(c, user)
@@ -541,20 +567,24 @@ func createEventHandler() (int, []HandlerFunc) {
 
 		event, err := h.eventService.UpdateOne(entities.Event{
 			Time:   parsedTime,
-			Name:   c.Text(),
+			Name:   user.State.Context.Map["eventName"],
 			BandID: user.BandID,
 		})
 		if err != nil {
 			return err
 		}
 
+		c.Callback().Data = helpers.AggregateCallbackData(helpers.EventActionsState, 0, "")
+		q := user.State.CallbackData.Query()
+		q.Set("eventId", event.ID.Hex())
+		user.State.CallbackData.RawQuery = q.Encode()
+
+		h.enter(c, user)
+
 		user.State = &entities.State{
-			Name: helpers.EventActionsState,
-			Context: entities.Context{
-				EventID: event.ID,
-			},
+			Name: helpers.GetEventsState,
 		}
-		return h.enter(c, user)
+		return h.enterReplyHandler(c, user)
 	})
 
 	return helpers.CreateEventState, handlerFuncs

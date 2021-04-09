@@ -173,6 +173,10 @@ func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.Handl
 			}
 		}
 
+		if user.State.CallbackData == nil {
+			user.State.CallbackData, _ = url.Parse("t.me/callbackData")
+		}
+
 		_, err = h.userService.UpdateOne(*user)
 		return next(c)
 	}
@@ -210,7 +214,6 @@ func (h *Handler) enter(c telebot.Context, user *entities.User) error {
 		handlerFuncs, _ := handlers[state]
 
 		return handlerFuncs[index](h, c, user)
-
 	} else {
 		handlerFuncs, ok := handlers[user.State.Name]
 
@@ -221,4 +224,42 @@ func (h *Handler) enter(c telebot.Context, user *entities.User) error {
 
 		return handlerFuncs[user.State.Index](h, c, user)
 	}
+}
+
+func (h *Handler) enterInlineHandler(c telebot.Context, user *entities.User) error {
+	for _, entity := range c.Callback().Message.Entities {
+		if entity.Type == telebot.EntityTextLink {
+			re := regexp.MustCompile(`t\.me/callbackData.*`)
+			matches := re.FindStringSubmatch(entity.URL)
+
+			if len(matches) > 0 {
+				u, err := url.Parse(matches[0])
+				if err != nil {
+					return err
+				}
+
+				user.State.CallbackData = u
+				break
+			}
+		}
+	}
+
+	state, index, _ := helpers.ParseCallbackData(c.Callback().Data)
+
+	// Handle error.
+	handlerFuncs, _ := handlers[state]
+
+	return handlerFuncs[index](h, c, user)
+}
+
+func (h *Handler) enterReplyHandler(c telebot.Context, user *entities.User) error {
+	handlerFuncs, ok := handlers[user.State.Name]
+
+	if ok == false || user.State.Index < 0 || user.State.Index >= len(handlerFuncs) {
+		user.State = &entities.State{Name: helpers.MainMenuState}
+		handlerFuncs = handlers[user.State.Name]
+	}
+
+	return handlerFuncs[user.State.Index](h, c, user)
+
 }

@@ -79,41 +79,6 @@ func main() {
 	roleRepository := repositories.NewRoleRepository(mongoClient)
 	roleService := services.NewRoleService(roleRepository)
 
-	//bid, err := primitive.ObjectIDFromHex("6037711ebabcba41d446e401")
-	//song1, _ := primitive.ObjectIDFromHex("6061c8328750643343a6d434")
-	//song2, _ := primitive.ObjectIDFromHex("6061dd699865cdb0a44092f4")
-	//song3, _ := primitive.ObjectIDFromHex("6061e5d26af2e8bfbfb5b1b8")
-	//song4, _ := primitive.ObjectIDFromHex("6062fc4bb222aa2a5fb89498")
-	//song5, _ := primitive.ObjectIDFromHex("606f79a7fe43159e21b7c483")
-	//song6, _ := primitive.ObjectIDFromHex("606f79b5fe43159e21b7c486")
-	//
-	//roleID, _ := primitive.ObjectIDFromHex("606310e4f216783ac62ce66d")
-	//for i := 0; i < 1000; i++ {
-	//	event, err := eventService.UpdateOne(entities.Event{
-	//		Time:    time.Now(),
-	//		Name:    string(rune(i)),
-	//		BandID:  bid,
-	//		SongIDs: []primitive.ObjectID{song1, song2, song3, song4, song5, song6},
-	//	})
-	//	if err != nil {
-	//		continue
-	//	}
-	//
-	//	membershipService.UpdateOne(entities.Membership{
-	//		EventID: event.ID,
-	//		UserID:  195295372,
-	//		RoleID:  roleID,
-	//	})
-	//
-	//	for i := 0; i < 5; i++ {
-	//		membershipService.UpdateOne(entities.Membership{
-	//			EventID: event.ID,
-	//			UserID:  int64(i),
-	//			RoleID:  roleID,
-	//		})
-	//	}
-	//}
-
 	bot, err := telebot.NewBot(telebot.Settings{
 		Token:       os.Getenv("BOT_TOKEN"),
 		Poller:      &telebot.LongPoller{Timeout: 10 * time.Second},
