@@ -1452,6 +1452,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 			case helpers.PrevPage, helpers.NextPage:
 				query = user.State.Context.Query
 			default:
+				user.State.Context.NextPageToken = nil
 				query = c.Text()
 			}
 
