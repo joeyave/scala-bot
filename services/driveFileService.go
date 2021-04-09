@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -97,7 +98,42 @@ func (s *DriveFileService) FindOneByName(name string, folderID string) (*drive.F
 }
 
 func (s *DriveFileService) FindOneByID(ID string) (*drive.File, error) {
-	return s.driveRepository.Files.Get(ID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+	retrier := retry.NewRetrier(5, 100*time.Millisecond, time.Second)
+
+	var driveFile *drive.File
+	err := retrier.Run(func() error {
+		_driveFile, err := s.driveRepository.Files.Get(ID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+		if err != nil {
+			return err
+		}
+
+		driveFile = _driveFile
+		return nil
+	})
+
+	return driveFile, err
+}
+
+func (s *DriveFileService) FindManyByIDs(IDs []string) ([]*drive.File, error) {
+
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(len(IDs))
+	driveFiles := make([]*drive.File, len(IDs))
+	var err error
+	for i := range IDs {
+		go func(i int) {
+			defer waitGroup.Done()
+
+			driveFile, _err := s.FindOneByID(IDs[i])
+			if _err != nil {
+				err = _err
+			}
+			driveFiles[i] = driveFile
+		}(i)
+	}
+	waitGroup.Wait()
+
+	return driveFiles, err
 }
 
 func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key string, BPM string, time string) (*drive.File, error) {
