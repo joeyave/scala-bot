@@ -55,6 +55,7 @@ type Context struct {
 	RoleID primitive.ObjectID `bson:"roleId,omitempty"`
 
 	EventID primitive.ObjectID `bson:"eventId,omitempty"`
+	Events  []*Event           `bson:"events,omitempty"`
 
 	FoundSongIDs []primitive.ObjectID `bson:"foundSongIds,omitempty"`
 	SongIDs      []primitive.ObjectID `bson:"songIds,omitempty"`

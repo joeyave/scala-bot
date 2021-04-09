@@ -1,13 +1,11 @@
 package services
 
 import (
-	"errors"
 	"fmt"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/repositories"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
-	"regexp"
 	"strings"
 	"sync"
 )
@@ -40,19 +38,6 @@ func (s *EventService) FindManyFromTodayByBandID(bandID primitive.ObjectID) ([]*
 
 func (s *EventService) FindOneByID(ID primitive.ObjectID) (*entities.Event, error) {
 	return s.eventRepository.FindOneByID(ID)
-}
-
-func (s *EventService) FindOneByAlias(alias string) (*entities.Event, error) {
-
-	regex := regexp.MustCompile(`.* /(.*)`)
-	matches := regex.FindStringSubmatch(alias)
-	if len(matches) < 2 {
-		return nil, errors.New("not found")
-	}
-
-	name := strings.TrimSpace(matches[1])
-
-	return s.eventRepository.FindOneByName(name)
 }
 
 func (s *EventService) UpdateOne(event entities.Event) (*entities.Event, error) {

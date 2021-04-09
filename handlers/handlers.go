@@ -382,6 +382,7 @@ func getEventsHandler() (int, []HandlerFunc) {
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
 		events, err := h.eventService.FindManyFromTodayByBandID(user.BandID)
+		user.State.Context.Events = events
 
 		markup := &telebot.ReplyMarkup{
 			ResizeKeyboard: true,
@@ -441,23 +442,30 @@ func getEventsHandler() (int, []HandlerFunc) {
 		default:
 			c.Notify(telebot.Typing)
 
-			foundEvent, err := h.eventService.FindOneByAlias(c.Text())
-			if err != nil {
+			events := user.State.Context.Events
+
+			var foundEvent *entities.Event
+			for _, event := range events {
+				if c.Text() == event.Alias() {
+					foundEvent = event
+					break
+				}
+			}
+
+			if foundEvent != nil {
+				user.State = &entities.State{
+					Name: helpers.EventActionsState,
+					Context: entities.Context{
+						EventID: foundEvent.ID,
+					},
+					Prev: user.State,
+				}
+				user.State.Prev.Index = 1
+				return h.enter(c, user)
+			} else {
 				user.State.Index--
 				return h.enter(c, user)
 			}
-
-			foundEvent.Alias()
-
-			user.State = &entities.State{
-				Name: helpers.EventActionsState,
-				Context: entities.Context{
-					EventID: foundEvent.ID,
-				},
-				Prev: user.State,
-			}
-			user.State.Prev.Index = 1
-			return h.enter(c, user)
 		}
 	})
 
@@ -478,7 +486,7 @@ func createEventHandler() (int, []HandlerFunc) {
 		end := start.AddDate(0, 1, 0)
 
 		for d := start; d.After(end) == false; d = d.AddDate(0, 0, 1) {
-			timeStr := lctime.Strftime("%A / %d.%m.%Y", d)
+			timeStr := lctime.Strftime("%A | %d %b", d)
 			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: timeStr}})
 		}
 		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}})
@@ -915,7 +923,7 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 				continue
 			}
 
-			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: user.Name + " / " + membership.Role.Name, Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s", membership.ID.Hex()))}})
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: user.Name + " | " + membership.Role.Name, Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s", membership.ID.Hex()))}})
 		}
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, payload)}})
 
