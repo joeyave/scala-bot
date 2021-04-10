@@ -80,6 +80,11 @@ func mainMenuHandler() (int, []HandlerFunc) {
 			}
 
 			usersStr := ""
+			event, err := h.eventService.FindOneOldestByBandID(user.BandID)
+			if err == nil {
+				usersStr = fmt.Sprintf("Статистика ведется с %s", lctime.Strftime("%d %B, %Y", event.Time))
+			}
+
 			for _, user := range users {
 				if user.User == nil || user.User.Name == "" {
 					continue

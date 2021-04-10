@@ -44,10 +44,25 @@ func (r *EventRepository) FindAllFromToday() ([]*entities.Event, error) {
 	})
 }
 
-func (r *EventRepository) FindMultipleByBandID(bandID primitive.ObjectID) ([]*entities.Event, error) {
-	return r.find(bson.M{
-		"bandId": bandID,
-	})
+func (r *EventRepository) FindOneOldestByBandID(bandID primitive.ObjectID) (*entities.Event, error) {
+	event, err := r.find(
+		bson.M{
+			"bandId": bandID,
+		},
+		bson.M{
+			"$sort": bson.M{
+				"time": 1,
+			},
+		},
+		bson.M{
+			"$limit": 1,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return event[0], err
 }
 
 func (r *EventRepository) FindManyFromTodayByBandID(bandID primitive.ObjectID) ([]*entities.Event, error) {
