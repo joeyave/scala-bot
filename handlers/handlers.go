@@ -519,7 +519,7 @@ func createEventHandler() (int, []HandlerFunc) {
 		currCol := 4
 		colNum := 4
 		for d := monthFirstDayDate; d.After(monthLastDayDate) == false; d = d.AddDate(0, 0, 1) {
-			timeStr := lctime.Strftime("%d | %a", d)
+			timeStr := lctime.Strftime("%d %a", d)
 
 			if now.Day() == d.Day() && now.Month() == d.Month() && now.Year() == d.Year() {
 				timeStr = helpers.Today
@@ -542,11 +542,11 @@ func createEventHandler() (int, []HandlerFunc) {
 		nextMonthFirstDateStr := monthLastDayDate.AddDate(0, 0, 1).Format(time.RFC3339)
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
 			{
-				Text: "prev",
+				Text: helpers.Back,
 				Data: helpers.AggregateCallbackData(helpers.CreateEventState, 1, prevMonthFirstDateStr),
 			},
 			{
-				Text: "next",
+				Text: helpers.Forward,
 				Data: helpers.AggregateCallbackData(helpers.CreateEventState, 1, nextMonthFirstDateStr),
 			},
 		})

@@ -40,6 +40,7 @@ const (
 	Style                       string = "Стилизовать"
 	Menu                        string = "Меню"
 	Back                        string = "Назад"
+	Forward                     string = "Вперед"
 	No                          string = "Нет"
 	Yes                         string = "Да"
 	AppendSection               string = "В конец документа"
