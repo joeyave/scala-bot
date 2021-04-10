@@ -1583,7 +1583,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 
 			if user.State.Context.NextPageToken.Token != "" {
 				if user.State.Context.NextPageToken.PrevPageToken != nil && user.State.Context.NextPageToken.PrevPageToken.Token != "" {
-					markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.PrevPage}, {Text: helpers.NextPage}})
+					markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.PrevPage}, {Text: helpers.Menu}, {Text: helpers.NextPage}})
 				} else {
 					markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Menu}, {Text: helpers.NextPage}})
 				}
