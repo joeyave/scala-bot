@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"os"
+	"time"
 )
 
 type UserRepository struct {
@@ -246,9 +247,26 @@ func (r *UserRepository) FindManyByBandIDAndRoleID(bandID primitive.ObjectID, ro
 				"as": "events",
 			},
 		},
+
+		bson.M{
+			"$addFields": bson.M{
+				"lastEventTime": bson.M{
+					"$cond": bson.M{
+						"if": bson.M{
+							"$eq": bson.A{bson.M{"$size": "$events"}, 0},
+						},
+						"then": time.Now().AddDate(10, 0, 0),
+						"else": bson.M{
+							"$first": "$events.time",
+						},
+					},
+				},
+			},
+		},
+
 		bson.M{
 			"$sort": bson.M{
-				"events.0.time": 1,
+				"lastEventTime": -1,
 			},
 		},
 	}
