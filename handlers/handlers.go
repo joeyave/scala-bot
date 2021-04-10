@@ -73,15 +73,41 @@ func mainMenuHandler() (int, []HandlerFunc) {
 				Name: helpers.CreateSongState,
 			}
 
-		//case helpers.Members:
-		//	return c.Send(helpers.Members+":", &telebot.ReplyMarkup{
-		//		ReplyKeyboard: [][]telebot.ReplyButton{
-		//			{
-		//				{Text: "TODO"},
-		//			},
-		//		},
-		//		ResizeKeyboard: true,
-		//	})
+		case helpers.Members:
+			users, err := h.userService.FindManyExtraByBandID(user.BandID)
+			if err != nil {
+				return err
+			}
+
+			usersStr := ""
+			for _, user := range users {
+				if user.User == nil || user.User.Name == "" {
+					continue
+				}
+
+				usersStr = fmt.Sprintf("%s\n\n<b><a href=\"tg://user?id=%d\">%s</a></b>\nВсего участий: %d", usersStr, user.User.ID, user.User.Name, len(user.Events))
+
+				if len(user.Events) > 0 {
+					usersStr = fmt.Sprintf("%s\nИз них:", usersStr)
+				}
+
+				mp := map[entities.Role]int{}
+
+				for _, event := range user.Events {
+					for _, membership := range event.Memberships {
+						if membership.UserID == user.User.ID {
+							mp[*membership.Role]++
+							break
+						}
+					}
+				}
+
+				for role, num := range mp {
+					usersStr = fmt.Sprintf("%s\n - %s: %d", usersStr, role.Name, num)
+				}
+			}
+
+			return c.Send(usersStr, telebot.ModeHTML)
 
 		case helpers.Settings:
 			return c.Send(helpers.Settings+":", &telebot.ReplyMarkup{

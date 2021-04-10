@@ -173,7 +173,7 @@ func (r *UserRepository) UpdateOne(user entities.User) (*entities.User, error) {
 	return r.FindOneByID(newUser.ID)
 }
 
-func (r *UserRepository) FindManyByBandIDAndRoleID(bandID primitive.ObjectID, roleID primitive.ObjectID) ([]*entities.UserExtra, error) {
+func (r *UserRepository) FindManyExtraByBandIDAndRoleID(bandID primitive.ObjectID, roleID primitive.ObjectID) ([]*entities.UserExtra, error) {
 	pipeline := bson.A{
 		bson.M{
 			"$match": bson.M{
@@ -267,6 +267,114 @@ func (r *UserRepository) FindManyByBandIDAndRoleID(bandID primitive.ObjectID, ro
 		bson.M{
 			"$sort": bson.M{
 				"lastEventTime": -1,
+			},
+		},
+	}
+
+	return r.findWithExtra(pipeline)
+}
+
+func (r *UserRepository) FindManyExtraByBandID(bandID primitive.ObjectID) ([]*entities.UserExtra, error) {
+	pipeline := bson.A{
+		bson.M{
+			"$match": bson.M{
+				"bandId": bandID,
+			},
+		},
+		bson.M{
+			"$lookup": bson.M{
+				"from": "bands",
+				"let":  bson.M{"bandId": "$bandId"},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$_id", "$$bandId"}}},
+					},
+					bson.M{
+						"$lookup": bson.M{
+							"from": "roles",
+							"let":  bson.M{"bandId": "$_id"},
+							"pipeline": bson.A{
+								bson.M{
+									"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$bandId", "$$bandId"}}},
+								},
+								bson.M{
+									"$sort": bson.M{
+										"priority": 1,
+									},
+								},
+							},
+							"as": "roles",
+						},
+					},
+				},
+				"as": "band",
+			},
+		},
+		bson.M{
+			"$unwind": bson.M{
+				"path":                       "$band",
+				"preserveNullAndEmptyArrays": true,
+			},
+		},
+		bson.M{
+			"$lookup": bson.M{
+				"from": "events",
+				"let":  bson.M{"userId": "$_id"},
+				"pipeline": bson.A{
+					bson.M{
+						"$lookup": bson.M{
+							"from": "memberships",
+							"let":  bson.M{"eventId": "$_id"},
+							"pipeline": bson.A{
+								bson.M{
+									"$match": bson.M{
+										"$expr": bson.M{"$eq": bson.A{"$eventId", "$$eventId"}},
+									},
+								},
+								bson.M{
+									"$lookup": bson.M{
+										"from": "roles",
+										"let":  bson.M{"roleId": "$roleId"},
+										"pipeline": bson.A{
+											bson.M{
+												"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$_id", "$$roleId"}}},
+											},
+										},
+										"as": "role",
+									},
+								},
+								bson.M{
+									"$unwind": bson.M{
+										"path":                       "$role",
+										"preserveNullAndEmptyArrays": true,
+									},
+								},
+								bson.M{
+									"$sort": bson.M{
+										"role.priority": 1,
+									},
+								},
+							},
+							"as": "memberships",
+						},
+					},
+					bson.M{
+						"$match": bson.M{"$expr": bson.M{"$in": bson.A{"$$userId", "$memberships.userId"}}},
+					},
+				},
+				"as": "events",
+			},
+		},
+
+		bson.M{
+			"$addFields": bson.M{
+				"eventsSize": bson.M{"$size": "$events"},
+			},
+		},
+
+		bson.M{
+			"$sort": bson.M{
+				"eventsSize": -1,
 			},
 		},
 	}

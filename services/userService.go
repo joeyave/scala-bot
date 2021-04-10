@@ -56,5 +56,9 @@ func (s *UserService) UpdateOne(user entities.User) (*entities.User, error) {
 }
 
 func (s *UserService) FindManyByBandIDAndRoleID(bandID, roleID primitive.ObjectID) ([]*entities.UserExtra, error) {
-	return s.userRepository.FindManyByBandIDAndRoleID(bandID, roleID)
+	return s.userRepository.FindManyExtraByBandIDAndRoleID(bandID, roleID)
+}
+
+func (s *UserService) FindManyExtraByBandID(bandID primitive.ObjectID) ([]*entities.UserExtra, error) {
+	return s.userRepository.FindManyExtraByBandID(bandID)
 }
