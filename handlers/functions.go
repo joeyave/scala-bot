@@ -15,7 +15,7 @@ func SendSongToUser(h *Handler, c telebot.Context, user *entities.User, song *en
 		ResizeKeyboard: true,
 	}
 
-	markup.ReplyKeyboard = helpers.GetSongActionsKeyboard(*user, *song)
+	markup.ReplyKeyboard = append(markup.ReplyKeyboard, helpers.GetSongActionsKeyboard(*user, *song)...)
 
 	sendDocumentByReader := func() (*telebot.Message, error) {
 		reader, err := h.driveFileService.DownloadOneByID(song.DriveFileID)

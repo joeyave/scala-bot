@@ -67,10 +67,8 @@ func GetEventActionsKeyboard(user entities.User, event entities.Event) [][]teleb
 }
 
 var MainMenuKeyboard = [][]telebot.ReplyButton{
-	//{{Text: Schedule}},
 	{{Text: Schedule}},
 	{{Text: Songs}, {Text: Members}},
-	//{{Text: CreateDoc}},
 	{{Text: Settings}},
 }
 
