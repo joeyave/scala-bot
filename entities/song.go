@@ -25,6 +25,6 @@ type PDF struct {
 
 	Name string `bson:"name,omitempty"`
 	Key  string `bson:"key,omitempty"`
-	BPM  int    `bson:"bpm,omitempty"`
+	BPM  string `bson:"bpm,omitempty"`
 	Time string `bson:"time,omitempty"`
 }

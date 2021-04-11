@@ -11,7 +11,6 @@ import (
 	"io"
 	"io/ioutil"
 	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -509,7 +508,7 @@ func (s *DriveFileService) GetSectionsNumber(ID string) (int, error) {
 	return len(s.getSections(doc)), nil
 }
 
-func (s *DriveFileService) GetMetadata(ID string) (string, int, string) {
+func (s *DriveFileService) GetMetadata(ID string) (string, string, string) {
 	retrier := retry.NewRetrier(5, 100*time.Millisecond, time.Second)
 
 	var reader io.Reader
@@ -530,24 +529,21 @@ func (s *DriveFileService) GetMetadata(ID string) (string, int, string) {
 		driveFileText = string(b)
 	}
 
-	key := ""
+	key := "?"
 	keyRegex := regexp.MustCompile(`(?i)key:(.*?);`)
 	keyMatches := keyRegex.FindStringSubmatch(driveFileText)
 	if len(keyMatches) > 1 {
 		key = strings.TrimSpace(keyMatches[1])
 	}
 
-	BPM := 0
+	BPM := "?"
 	BPMRegex := regexp.MustCompile(`(?i)bpm:(.*?);`)
 	BPMMatches := BPMRegex.FindStringSubmatch(driveFileText)
 	if len(BPMMatches) > 1 {
-		BPM, err = strconv.Atoi(strings.TrimSpace(BPMMatches[1]))
-		if err != nil {
-			BPM = 0
-		}
+		BPM = strings.TrimSpace(BPMMatches[1])
 	}
 
-	time := ""
+	time := "?"
 	timeRegex := regexp.MustCompile(`(?i)time:(.*?);`)
 	timeMatches := timeRegex.FindStringSubmatch(driveFileText)
 	if len(timeMatches) > 1 {

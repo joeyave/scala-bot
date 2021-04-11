@@ -61,7 +61,8 @@ func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entitie
 		}
 	}
 
-	if songHasOutdatedPDF(song, driveFile) {
+	if songHasOutdatedPDF(song, driveFile) ||
+		song.PDF.Key == "" || song.PDF.BPM == "" || song.PDF.Time == "" {
 		song.PDF.Name = driveFile.Name
 		song.PDF.Key, song.PDF.BPM, song.PDF.Time = s.driveFileService.GetMetadata(driveFile.Id)
 		song.PDF.TgFileID = ""
