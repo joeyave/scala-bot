@@ -5,16 +5,21 @@ import (
 	"github.com/joeyave/telebot/v3"
 )
 
-var SongActionsKeyboard = [][]telebot.ReplyButton{
-	{{Text: Voices}, {Text: Audios}},
-	{{Text: Transpose}, {Text: Style}},
-	{{Text: Back}, {Text: Menu}},
-}
+func GetSongActionsKeyboard(user entities.User, song entities.Song) [][]telebot.ReplyButton {
+	if song.BandID == user.BandID {
+		return [][]telebot.ReplyButton{
+			{{Text: Voices}, {Text: Audios}},
+			{{Text: Transpose}, {Text: Style}},
+			{{Text: Back}, {Text: Menu}},
+		}
+	} else {
+		return [][]telebot.ReplyButton{
+			{{Text: CopyToMyBand}},
+			{{Text: Voices}, {Text: Audios}},
+			{{Text: Back}, {Text: Menu}},
+		}
+	}
 
-var RestrictedSongActionsKeyboard = [][]telebot.ReplyButton{
-	{{Text: CopyToMyBand}},
-	{{Text: Voices}, {Text: Audios}},
-	{{Text: Back}, {Text: Menu}},
 }
 
 func GetEventActionsKeyboard(user entities.User, event entities.Event) [][]telebot.InlineButton {

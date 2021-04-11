@@ -13,7 +13,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -460,9 +459,10 @@ func getEventsHandler() (int, []HandlerFunc) {
 				q.Set("eventId", event.ID.Hex())
 				user.State.CallbackData.RawQuery = q.Encode()
 
-				err = c.Send(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), &telebot.ReplyMarkup{
-					InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
-				}, telebot.ModeHTML, telebot.NoPreview)
+				err = c.Send(helpers.AddCallbackData(eventString, user.State.CallbackData.String()),
+					&telebot.ReplyMarkup{
+						InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
+					}, telebot.ModeHTML, telebot.NoPreview)
 				if err != nil {
 					return err
 				}
@@ -697,7 +697,7 @@ func eventActionsHandler() (int, []HandlerFunc) {
 			driveFileIDs = append(driveFileIDs, song.DriveFileID)
 		}
 
-		err = h.sendPDFAlbum(driveFileIDs, c)
+		err = sendSongsAlbum(h, c, user, driveFileIDs)
 		if err != nil {
 			return err
 		}
@@ -1657,66 +1657,16 @@ func songActionsHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
+		toUserMsg, err := SendSongToUser(h, c, user, song)
 		if err != nil {
 			return err
 		}
 
-		markup := &telebot.ReplyMarkup{
-			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: driveFile.Name}}},
-			ResizeKeyboard: true,
+		song.PDF.TgFileID = toUserMsg.Document.FileID
+		msg, err := SendSongToChannel(h, c, user, song)
+		if err == nil {
+			song.PDF.TgChannelMessageID = msg.ID
 		}
-
-		if song.BandID == user.BandID {
-			markup.ReplyKeyboard = append(markup.ReplyKeyboard, helpers.SongActionsKeyboard...)
-		} else {
-			markup.ReplyKeyboard = append(markup.ReplyKeyboard, helpers.RestrictedSongActionsKeyboard...)
-		}
-
-		sendDocumentByReader := func() (*telebot.Message, error) {
-			reader, err := h.driveFileService.DownloadOneByID(driveFileID)
-			if err != nil {
-				return nil, err
-			}
-
-			msg, err := h.bot.Send(c.Recipient(), &telebot.Document{
-				File:     telebot.FromReader(*reader),
-				MIME:     "application/pdf",
-				FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
-			}, markup)
-			if err != nil {
-				return nil, err
-			}
-			return msg, nil
-		}
-
-		var sentMessage *telebot.Message
-		if song.HasOutdatedPDF(driveFile) {
-			sentMessage, err = sendDocumentByReader()
-			if err != nil {
-				return err
-			}
-		} else {
-			sentMessage, err = h.bot.Send(c.Recipient(), &telebot.Document{
-				File:     telebot.File{FileID: song.PDF.TgFileID},
-				MIME:     "application/pdf",
-				FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
-			}, markup)
-			if err != nil {
-				sentMessage, err = sendDocumentByReader()
-				if err != nil {
-					return err
-				}
-			}
-		}
-
-		song.PDF.TgFileID = sentMessage.Document.FileID
-
-		if song.HasOutdatedPDF(driveFile) || song.PDF.TgChannelMessageID == 0 {
-			song = helpers.SendToChannel(h.bot, song)
-		}
-
-		song.PDF.ModifiedTime = driveFile.ModifiedTime
 
 		song, err = h.songService.UpdateOne(*song)
 		if err != nil {
@@ -2421,117 +2371,11 @@ func setlistHandler() (int, []HandlerFunc) {
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		c.Notify(telebot.UploadingDocument)
 
-		foundDriveFileIDs := user.State.Context.FoundDriveFileIDs
+		driveFileIDs := user.State.Context.FoundDriveFileIDs
 
-		var waitGroup sync.WaitGroup
-		waitGroup.Add(len(foundDriveFileIDs))
-		documents := make([]telebot.InputMedia, len(foundDriveFileIDs))
-		for i := range user.State.Context.FoundDriveFileIDs {
-			go func(i int) {
-				defer waitGroup.Done()
-
-				song, err := h.songService.FindOrCreateOneByDriveFileID(foundDriveFileIDs[i])
-				if err != nil {
-					return
-				}
-
-				driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
-				if err != nil {
-					return
-				}
-
-				if song.HasOutdatedPDF(driveFile) {
-					reader, err := h.driveFileService.DownloadOneByID(song.DriveFileID)
-					if err != nil {
-						return
-					}
-
-					documents[i] = &telebot.Document{
-						File:     telebot.FromReader(*reader),
-						MIME:     "application/pdf",
-						FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
-					}
-				} else {
-					documents[i] = &telebot.Document{
-						File: telebot.File{FileID: song.PDF.TgFileID},
-					}
-				}
-			}(i)
-		}
-		waitGroup.Wait()
-
-		const chunkSize = 10
-		chunks := chunkAlbumBy(documents, chunkSize)
-
-		for i, album := range chunks {
-			responses, err := h.bot.SendAlbum(c.Recipient(), album)
-
-			// TODO: check for bugs.
-			if err != nil {
-				fromIndex := 0
-				toIndex := 0 + len(album)
-
-				if i-1 > 0 && i-1 < len(chunks) {
-					fromIndex = i * len(chunks[i-1])
-					toIndex = fromIndex + len(chunks[i])
-				}
-
-				foundDriveFileIDs := user.State.Context.FoundDriveFileIDs[fromIndex:toIndex]
-
-				var waitGroup sync.WaitGroup
-				waitGroup.Add(len(foundDriveFileIDs))
-				documents := make([]telebot.InputMedia, len(foundDriveFileIDs))
-				for i := range foundDriveFileIDs {
-					go func(i int) {
-						defer waitGroup.Done()
-						reader, err := h.driveFileService.DownloadOneByID(foundDriveFileIDs[i])
-						if err != nil {
-							return
-						}
-
-						driveFile, err := h.driveFileService.FindOneByID(foundDriveFileIDs[i])
-						if err != nil {
-							return
-						}
-
-						documents[i] = &telebot.Document{
-							File:     telebot.FromReader(*reader),
-							MIME:     "application/pdf",
-							FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
-						}
-					}(i)
-				}
-				waitGroup.Wait()
-
-				responses, err = h.bot.SendAlbum(c.Recipient(), documents)
-				if err != nil {
-					continue
-				}
-			}
-
-			for j := range responses {
-				foundDriveFileID := user.State.Context.FoundDriveFileIDs[j+(i*len(album))]
-
-				song, err := h.songService.FindOneByDriveFileID(foundDriveFileID)
-				if err != nil {
-					return err
-				}
-
-				driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
-				if err != nil {
-					return err
-				}
-
-				song.PDF.TgFileID = responses[j].Document.FileID
-
-				if song.HasOutdatedPDF(driveFile) || song.PDF.TgChannelMessageID == 0 {
-					song = helpers.SendToChannel(h.bot, song)
-				}
-
-				song.PDF.ModifiedTime = driveFile.ModifiedTime
-
-				_, _ = h.songService.UpdateOne(*song)
-			}
+		err := sendSongsAlbum(h, c, user, driveFileIDs)
+		if err != nil {
+			return err
 		}
 
 		for _, messageID := range user.State.Context.MessagesToDelete {
@@ -2556,119 +2400,4 @@ func chunkAlbumBy(items telebot.Album, chunkSize int) (chunks []telebot.Album) {
 	}
 
 	return append(chunks, items)
-}
-
-func (h *Handler) sendPDFAlbum(foundDriveFileIDs []string, c telebot.Context) error {
-	var waitGroup sync.WaitGroup
-	waitGroup.Add(len(foundDriveFileIDs))
-	documents := make([]telebot.InputMedia, len(foundDriveFileIDs))
-	for i := range foundDriveFileIDs {
-		go func(i int) {
-			defer waitGroup.Done()
-
-			song, err := h.songService.FindOrCreateOneByDriveFileID(foundDriveFileIDs[i])
-			if err != nil {
-				return
-			}
-
-			driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
-			if err != nil {
-				return
-			}
-
-			if song.HasOutdatedPDF(driveFile) {
-				reader, err := h.driveFileService.DownloadOneByID(song.DriveFileID)
-				if err != nil {
-					return
-				}
-
-				documents[i] = &telebot.Document{
-					File:     telebot.FromReader(*reader),
-					MIME:     "application/pdf",
-					FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
-				}
-			} else {
-				documents[i] = &telebot.Document{
-					File: telebot.File{FileID: song.PDF.TgFileID},
-				}
-			}
-		}(i)
-	}
-	waitGroup.Wait()
-
-	const chunkSize = 10
-	chunks := chunkAlbumBy(documents, chunkSize)
-
-	for i, album := range chunks {
-		responses, err := h.bot.SendAlbum(c.Recipient(), album)
-
-		// TODO: check for bugs.
-		if err != nil {
-			fromIndex := 0
-			toIndex := 0 + len(album)
-
-			if i-1 > 0 && i-1 < len(chunks) {
-				fromIndex = i * len(chunks[i-1])
-				toIndex = fromIndex + len(chunks[i])
-			}
-
-			foundDriveFileIDs := foundDriveFileIDs[fromIndex:toIndex]
-
-			var waitGroup sync.WaitGroup
-			waitGroup.Add(len(foundDriveFileIDs))
-			documents := make([]telebot.InputMedia, len(foundDriveFileIDs))
-			for i := range foundDriveFileIDs {
-				go func(i int) {
-					defer waitGroup.Done()
-					reader, err := h.driveFileService.DownloadOneByID(foundDriveFileIDs[i])
-					if err != nil {
-						return
-					}
-
-					driveFile, err := h.driveFileService.FindOneByID(foundDriveFileIDs[i])
-					if err != nil {
-						return
-					}
-
-					documents[i] = &telebot.Document{
-						File:     telebot.FromReader(*reader),
-						MIME:     "application/pdf",
-						FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
-					}
-				}(i)
-			}
-			waitGroup.Wait()
-
-			responses, err = h.bot.SendAlbum(c.Recipient(), documents)
-			if err != nil {
-				continue
-			}
-		}
-
-		for j := range responses {
-			foundDriveFileID := foundDriveFileIDs[j+(i*len(album))]
-
-			song, err := h.songService.FindOneByDriveFileID(foundDriveFileID)
-			if err != nil {
-				return err
-			}
-
-			driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
-			if err != nil {
-				return err
-			}
-
-			song.PDF.TgFileID = responses[j].Document.FileID
-
-			if song.HasOutdatedPDF(driveFile) || song.PDF.TgChannelMessageID == 0 {
-				song = helpers.SendToChannel(h.bot, song)
-			}
-
-			song.PDF.ModifiedTime = driveFile.ModifiedTime
-
-			_, _ = h.songService.UpdateOne(*song)
-		}
-	}
-
-	return nil
 }

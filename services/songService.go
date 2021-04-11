@@ -7,24 +7,27 @@ import (
 	"github.com/kjk/notionapi"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
+	"time"
 )
 
 type SongService struct {
-	songRepository  *repositories.SongRepository
-	voiceRepository *repositories.VoiceRepository
-	bandRepository  *repositories.BandRepository
-	driveClient     *drive.Service
-	notionClient    *notionapi.Client
+	songRepository   *repositories.SongRepository
+	voiceRepository  *repositories.VoiceRepository
+	bandRepository   *repositories.BandRepository
+	driveClient      *drive.Service
+	notionClient     *notionapi.Client
+	driveFileService *DriveFileService
 }
 
 func NewSongService(songRepository *repositories.SongRepository, voiceRepository *repositories.VoiceRepository, bandRepository *repositories.BandRepository,
-	driveClient *drive.Service, notionClient *notionapi.Client) *SongService {
+	driveClient *drive.Service, notionClient *notionapi.Client, driveFileService *DriveFileService) *SongService {
 	return &SongService{
-		songRepository:  songRepository,
-		voiceRepository: voiceRepository,
-		bandRepository:  bandRepository,
-		driveClient:     driveClient,
-		notionClient:    notionClient,
+		songRepository:   songRepository,
+		voiceRepository:  voiceRepository,
+		bandRepository:   bandRepository,
+		driveClient:      driveClient,
+		notionClient:     notionClient,
+		driveFileService: driveFileService,
 	}
 }
 
@@ -41,34 +44,31 @@ func (s *SongService) FindOneByDriveFileID(driveFileID string) (*entities.Song, 
 }
 
 func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entities.Song, error) {
-	song, err := s.songRepository.FindOneByDriveFileID(driveFileID)
-	if err == nil {
-		return song, nil
-	}
-
-	err = nil
 	driveFile, err := s.driveClient.Files.Get(driveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+
+	song, err := s.songRepository.FindOneByDriveFileID(driveFileID)
 	if err != nil {
-		return nil, err
-	}
+		song = &entities.Song{
+			DriveFileID: driveFile.Id,
+		}
 
-	song = &entities.Song{
-		DriveFileID: driveFile.Id,
-	}
-
-	for _, parentFolderID := range driveFile.Parents {
-		band, err := s.bandRepository.FindOneByDriveFolderID(parentFolderID)
-		if err == nil {
-			song.BandID = band.ID
-			break
+		for _, parentFolderID := range driveFile.Parents {
+			band, err := s.bandRepository.FindOneByDriveFolderID(parentFolderID)
+			if err == nil {
+				song.BandID = band.ID
+				break
+			}
 		}
 	}
 
-	song, err = s.songRepository.UpdateOne(*song)
-	if err != nil {
-		return nil, err
+	if songHasOutdatedPDF(song, driveFile) {
+		song.PDF.Name = driveFile.Name
+		song.PDF.Key, song.PDF.BPM, song.PDF.Time = s.driveFileService.GetMetadata(driveFile.Id)
+		song.PDF.TgFileID = ""
+		song.PDF.ModifiedTime = driveFile.ModifiedTime
 	}
-	return song, nil
+
+	return s.songRepository.UpdateOne(*song)
 }
 
 func (s *SongService) UpdateOne(song entities.Song) (*entities.Song, error) {
@@ -96,4 +96,26 @@ func (s *SongService) FindNotionPageByID(pageID string) (*notionapi.Block, error
 	}
 
 	return block, nil
+}
+
+func songHasOutdatedPDF(song *entities.Song, driveFile *drive.File) bool {
+	if song.PDF.ModifiedTime == "" || driveFile == nil {
+		return true
+	}
+
+	pdfModifiedTime, err := time.Parse(time.RFC3339, song.PDF.ModifiedTime)
+	if err != nil {
+		return true
+	}
+
+	driveFileModifiedTime, err := time.Parse(time.RFC3339, driveFile.ModifiedTime)
+	if err != nil {
+		return true
+	}
+
+	if driveFileModifiedTime.After(pdfModifiedTime) {
+		return true
+	}
+
+	return false
 }

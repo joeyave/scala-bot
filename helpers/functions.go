@@ -3,8 +3,6 @@ package helpers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/joeyave/scala-chords-bot/entities"
-	"github.com/joeyave/telebot/v3"
 	"regexp"
 	"strconv"
 	"strings"
@@ -60,38 +58,4 @@ func SplitQueryByNewlines(query string) []string {
 	}
 
 	return songNames
-}
-
-// TODO: переписать пачелавечески
-func SendToChannel(bot *telebot.Bot, song *entities.Song) *entities.Song {
-	sendNew := func() {
-		msg, err := bot.Send(telebot.ChatID(FilesChannelID), &telebot.Document{
-			File: telebot.File{FileID: song.PDF.TgFileID},
-		}, telebot.Silent)
-		if err == nil {
-			song.PDF.TgChannelMessageID = msg.ID
-		}
-	}
-
-	edit := func() {
-		_, err := bot.EditMedia(&telebot.Message{
-			ID:   song.PDF.TgChannelMessageID,
-			Chat: &telebot.Chat{ID: FilesChannelID},
-		}, &telebot.Document{
-			File: telebot.File{FileID: song.PDF.TgFileID},
-			MIME: "application/pdf",
-		})
-
-		if err != nil {
-			sendNew()
-		}
-	}
-
-	if song.PDF.TgChannelMessageID == 0 {
-		sendNew()
-	} else {
-		edit()
-	}
-
-	return song
 }
