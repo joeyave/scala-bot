@@ -116,10 +116,10 @@ func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, *entitie
 					return
 				}
 
-				//key, BPM, _ := s.driveFileService.GetMetadata(event.Songs[i].DriveFileID)
+				key, BPM, _ := s.driveFileService.GetMetadata(event.Songs[i].DriveFileID)
 
-				//songName := fmt.Sprintf("%d. <a href=\"%s\">%s</a> (%s, %s)", i+1, driveFile.WebViewLink, driveFile.Name, key, BPM)
-				songName := fmt.Sprintf("%d. <a href=\"%s\">%s</a>", i+1, driveFile.WebViewLink, driveFile.Name)
+				songName := fmt.Sprintf("%d. <a href=\"%s\">%s</a> (%s, %s)", i+1, driveFile.WebViewLink, driveFile.Name, key, BPM)
+				//songName := fmt.Sprintf("%d. <a href=\"%s\">%s</a>", i+1, driveFile.WebViewLink, driveFile.Name)
 				songNames[i] = songName
 			}(i)
 		}
