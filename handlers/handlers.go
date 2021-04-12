@@ -689,13 +689,14 @@ func eventActionsHandler() (int, []HandlerFunc) {
 		if c.Callback() != nil {
 			return c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), options)
 		} else {
+			if user.State.Next != nil {
+				user.State = user.State.Next
+				h.enter(c, user)
+			}
+
 			err := c.Send(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), options)
 			if err != nil {
 				return err
-			}
-			if user.State.Next != nil {
-				user.State = user.State.Next
-				return h.enter(c, user)
 			}
 			user.State = user.State.Prev
 
@@ -1031,6 +1032,7 @@ func addEventSongHandler() (int, []HandlerFunc) {
 				return err
 			}
 			eventID = eventIDFromCallback
+			c.Respond()
 		} else {
 			eventID = user.State.Context.EventID
 		}

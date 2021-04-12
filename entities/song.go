@@ -31,5 +31,5 @@ type PDF struct {
 }
 
 func (s *Song) Caption() string {
-	return fmt.Sprintf("key: %s, bpm: %s, time: %s", s.PDF.Key, s.PDF.BPM, s.PDF.Time)
+	return fmt.Sprintf("%s, %s, %s", s.PDF.Key, s.PDF.BPM, s.PDF.Time)
 }
