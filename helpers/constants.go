@@ -62,6 +62,7 @@ const (
 	DeleteSong                  string = "Удалить песню"
 	ChangeSongsOrder            string = "Изменить порядок песен"
 	GetAllEvents                string = "Все собрания"
+	GetEventsWithMe             string = "Собрания, где я учавствую"
 	End                         string = "Закончить"
 	Delete                      string = "Удалить"
 	BandSettings                string = "Настройки группы"

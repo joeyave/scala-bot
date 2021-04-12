@@ -76,6 +76,18 @@ func (r *EventRepository) FindManyFromTodayByBandID(bandID primitive.ObjectID) (
 	})
 }
 
+func (r *EventRepository) FindManyFromTodayByBandIDAndUserID(bandID primitive.ObjectID, userID int64) ([]*entities.Event, error) {
+	now := time.Now()
+
+	return r.find(bson.M{
+		"bandId":             bandID,
+		"memberships.userId": userID,
+		"time": bson.M{
+			"$gte": time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+		},
+	})
+}
+
 func (r *EventRepository) FindMultipleByIDs(IDs []primitive.ObjectID) ([]*entities.Event, error) {
 	return r.find(bson.M{
 		"_id": bson.M{

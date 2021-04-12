@@ -37,6 +37,10 @@ func (s *EventService) FindManyFromTodayByBandID(bandID primitive.ObjectID) ([]*
 	return s.eventRepository.FindManyFromTodayByBandID(bandID)
 }
 
+func (s *EventService) FindManyFromTodayByBandIDAndUserID(bandID primitive.ObjectID, userID int64) ([]*entities.Event, error) {
+	return s.eventRepository.FindManyFromTodayByBandIDAndUserID(bandID, userID)
+}
+
 func (s *EventService) FindOneOldestByBandID(bandID primitive.ObjectID) (*entities.Event, error) {
 	return s.eventRepository.FindOneOldestByBandID(bandID)
 }

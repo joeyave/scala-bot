@@ -407,7 +407,6 @@ func getEventsHandler() (int, []HandlerFunc) {
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
 		events, err := h.eventService.FindManyFromTodayByBandID(user.BandID)
-		//user.State.Context.Events = events
 
 		markup := &telebot.ReplyMarkup{
 			ResizeKeyboard: true,
@@ -416,7 +415,7 @@ func getEventsHandler() (int, []HandlerFunc) {
 		for _, event := range events {
 			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: event.Alias()}})
 		}
-		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.GetAllEvents}})
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.GetEventsWithMe}, {Text: helpers.GetAllEvents}})
 		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Back}, {Text: helpers.CreateEvent}})
 
 		err = c.Send("Выбери собрание:", markup)
@@ -437,6 +436,33 @@ func getEventsHandler() (int, []HandlerFunc) {
 			}
 			user.State.Prev.Index = 0
 			return h.enter(c, user)
+
+		case helpers.GetEventsWithMe:
+			events, err := h.eventService.FindManyFromTodayByBandIDAndUserID(user.BandID, user.ID)
+			if err != nil {
+				return err
+			}
+
+			for _, event := range events {
+				eventString, _, err := h.eventService.ToHtmlStringByID(event.ID)
+				if err != nil {
+					continue
+				}
+
+				q := user.State.CallbackData.Query()
+				q.Set("eventId", event.ID.Hex())
+				user.State.CallbackData.RawQuery = q.Encode()
+
+				err = c.Send(helpers.AddCallbackData(eventString, user.State.CallbackData.String()),
+					&telebot.ReplyMarkup{
+						InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
+					}, telebot.ModeHTML, telebot.NoPreview)
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
 
 		case helpers.GetAllEvents:
 			events, err := h.eventService.FindManyFromTodayByBandID(user.BandID)
@@ -471,13 +497,17 @@ func getEventsHandler() (int, []HandlerFunc) {
 			regex := regexp.MustCompile(`.* \| (\d{2}\.\d{2}\.\d{4}) \| (.*)`)
 			matches := regex.FindStringSubmatch(c.Text())
 			if len(matches) < 3 {
-				user.State.Index--
+				user.State = &entities.State{
+					Name: helpers.SearchSongState,
+				}
 				return h.enter(c, user)
 			}
 
 			eventTime, err := time.Parse("02.01.2006", strings.TrimSpace(matches[1]))
 			if err != nil {
-				user.State.Index--
+				user.State = &entities.State{
+					Name: helpers.SearchSongState,
+				}
 				return h.enter(c, user)
 			}
 
