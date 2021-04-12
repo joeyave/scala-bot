@@ -7,6 +7,7 @@ import (
 	"github.com/kjk/notionapi"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
+	"sync"
 	"time"
 )
 
@@ -71,6 +72,30 @@ func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entitie
 
 	song, err = s.songRepository.UpdateOne(*song)
 	return song, driveFile, err
+}
+
+func (s *SongService) FindOrCreateManyByDriveFileIDs(driveFileIDs []string) ([]*entities.Song, []*drive.File, error) {
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(len(driveFileIDs))
+	songs := make([]*entities.Song, len(driveFileIDs))
+	driveFiles := make([]*drive.File, len(driveFileIDs))
+	var err error
+	for i := range driveFileIDs {
+		go func(i int) {
+			defer waitGroup.Done()
+
+			song, driveFile, _err := s.FindOrCreateOneByDriveFileID(driveFileIDs[i])
+			if _err != nil {
+				err = _err
+			}
+			songs[i] = song
+			driveFiles[i] = driveFile
+		}(i)
+	}
+	waitGroup.Wait()
+
+	return songs, driveFiles, err
+
 }
 
 func (s *SongService) UpdateOne(song entities.Song) (*entities.Song, error) {

@@ -798,13 +798,13 @@ func changeSongOrderHandler() (int, []HandlerFunc) {
 
 		markup := &telebot.ReplyMarkup{}
 
-		driveFiles, err := h.driveFileService.FindManyByIDs(user.State.CallbackData.Query()["driveFileIds"])
+		songs, driveFiles, err := h.songService.FindOrCreateManyByDriveFileIDs(user.State.CallbackData.Query()["driveFileIds"])
 		if err != nil {
 			return err
 		}
 
-		for _, driveFile := range driveFiles {
-			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: driveFile.Name, Data: helpers.AggregateCallbackData(state, index, driveFile.Id)}})
+		for i, driveFile := range driveFiles {
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: fmt.Sprintf("%s (%s)", driveFile.Name, songs[i].Caption()), Data: helpers.AggregateCallbackData(state, index, driveFile.Id)}})
 		}
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.End, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, "")}})
 
