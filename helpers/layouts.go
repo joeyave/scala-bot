@@ -3,20 +3,24 @@ package helpers
 import (
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/telebot/v3"
+	"google.golang.org/api/drive/v3"
 )
 
-func GetSongActionsKeyboard(user entities.User, song entities.Song) [][]telebot.ReplyButton {
+func GetSongActionsKeyboard(user entities.User, song entities.Song, driveFile drive.File) [][]telebot.InlineButton {
 	if song.BandID == user.BandID {
-		return [][]telebot.ReplyButton{
-			{{Text: Voices}, {Text: Audios}},
-			{{Text: Transpose}, {Text: Style}},
-			{{Text: Back}, {Text: Menu}},
+		return [][]telebot.InlineButton{
+			{{Text: LinkToTheDoc, URL: driveFile.WebViewLink}},
+			{{Text: Voices, Data: AggregateCallbackData(GetVoicesState, 0, "")}},
+			{
+				{Text: Transpose, Data: AggregateCallbackData(TransposeSongState, 0, "")},
+				{Text: Style, Data: AggregateCallbackData(StyleSongState, 0, "")},
+			},
 		}
 	} else {
-		return [][]telebot.ReplyButton{
+		return [][]telebot.InlineButton{
+			{{Text: driveFile.Name, URL: driveFile.WebViewLink}},
 			{{Text: CopyToMyBand}},
-			{{Text: Voices}, {Text: Audios}},
-			{{Text: Back}, {Text: Menu}},
+			{{Text: Voices}},
 		}
 	}
 
@@ -97,10 +101,6 @@ var CancelOrSkipKeyboard = [][]telebot.ReplyButton{
 
 var FindChordsKeyboard = [][]telebot.ReplyButton{
 	{{Text: FindChords}},
-	{{Text: Back}, {Text: Menu}},
-}
-
-var BackOrMenuKeyboard = [][]telebot.ReplyButton{
 	{{Text: Back}, {Text: Menu}},
 }
 

@@ -71,7 +71,7 @@ func (s *DriveFileService) FindSomeByFullTextAndFolderID(name string, folderID s
 	return res.Files, res.NextPageToken, nil
 }
 
-func (s *DriveFileService) FindOneByName(name string, folderID string) (*drive.File, error) {
+func (s *DriveFileService) FindOneByNameAndFolderID(name string, folderID string) (*drive.File, error) {
 	name = helpers.JsonEscape(name)
 
 	q := fmt.Sprintf(`name = '%s'`+
@@ -533,21 +533,30 @@ func (s *DriveFileService) GetMetadata(ID string) (string, string, string) {
 	keyRegex := regexp.MustCompile(`(?i)key:(.*?);`)
 	keyMatches := keyRegex.FindStringSubmatch(driveFileText)
 	if len(keyMatches) > 1 {
-		key = strings.TrimSpace(keyMatches[1])
+		keyTrimmed := strings.TrimSpace(keyMatches[1])
+		if keyTrimmed != "" {
+			key = keyTrimmed
+		}
 	}
 
 	BPM := "?"
 	BPMRegex := regexp.MustCompile(`(?i)bpm:(.*?);`)
 	BPMMatches := BPMRegex.FindStringSubmatch(driveFileText)
 	if len(BPMMatches) > 1 {
-		BPM = strings.TrimSpace(BPMMatches[1])
+		BPMTrimmed := strings.TrimSpace(BPMMatches[1])
+		if BPMTrimmed != "" {
+			BPM = BPMTrimmed
+		}
 	}
 
 	time := "?"
 	timeRegex := regexp.MustCompile(`(?i)time:(.*?);`)
 	timeMatches := timeRegex.FindStringSubmatch(driveFileText)
 	if len(timeMatches) > 1 {
-		time = strings.TrimSpace(timeMatches[1])
+		timeTrimmed := strings.TrimSpace(timeMatches[1])
+		if timeTrimmed != "" {
+			time = timeTrimmed
+		}
 	}
 
 	return key, BPM, time

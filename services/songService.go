@@ -43,7 +43,7 @@ func (s *SongService) FindOneByDriveFileID(driveFileID string) (*entities.Song, 
 	return s.songRepository.FindOneByDriveFileID(driveFileID)
 }
 
-func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entities.Song, error) {
+func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entities.Song, *drive.File, error) {
 	driveFile, err := s.driveClient.Files.Get(driveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
 
 	song, err := s.songRepository.FindOneByDriveFileID(driveFileID)
@@ -69,7 +69,8 @@ func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entitie
 		song.PDF.ModifiedTime = driveFile.ModifiedTime
 	}
 
-	return s.songRepository.UpdateOne(*song)
+	song, err = s.songRepository.UpdateOne(*song)
+	return song, driveFile, err
 }
 
 func (s *SongService) UpdateOne(song entities.Song) (*entities.Song, error) {

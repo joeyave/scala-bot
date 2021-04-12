@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -27,4 +28,8 @@ type PDF struct {
 	Key  string `bson:"key,omitempty"`
 	BPM  string `bson:"bpm,omitempty"`
 	Time string `bson:"time,omitempty"`
+}
+
+func (s *Song) Caption() string {
+	return fmt.Sprintf("key: %s, bpm: %s, time: %s", s.PDF.Key, s.PDF.BPM, s.PDF.Time)
 }

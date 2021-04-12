@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/joeyave/chords-transposer/transposer"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/telebot/v3"
@@ -33,10 +32,6 @@ func mainMenuHandler() (int, []HandlerFunc) {
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 		switch c.Text() {
-
-		//case helpers.Help:
-		//	err := c.Send("Для поиска документа, отправь боту название.\n\nРедактировать документ можно на гугл диске.\n\nДля добавления партии, отправь боту голосовое сообщение.")
-		//	return err
 
 		case helpers.Schedule:
 			user.State = &entities.State{
@@ -473,8 +468,6 @@ func getEventsHandler() (int, []HandlerFunc) {
 		default:
 			c.Notify(telebot.Typing)
 
-			//events := user.State.Context.Events
-
 			regex := regexp.MustCompile(`.* \| (\d{2}\.\d{2}\.\d{4}) \| (.*)`)
 			matches := regex.FindStringSubmatch(c.Text())
 			if len(matches) < 3 {
@@ -697,58 +690,13 @@ func eventActionsHandler() (int, []HandlerFunc) {
 			driveFileIDs = append(driveFileIDs, song.DriveFileID)
 		}
 
-		err = sendSongsAlbum(h, c, user, driveFileIDs)
+		err = sendDriveFilesAlbum(h, c, user, driveFileIDs)
 		if err != nil {
 			return err
 		}
 
 		return c.Respond()
 	})
-
-	//handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
-	//	switch c.Text() {
-	//	case helpers.Songs:
-	//		err := c.Send("Выбери действие над песней:", &telebot.ReplyMarkup{
-	//			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.ChangeOrder}}, {{Text: helpers.DeleteMember}, {Text: helpers.AddMember}}},
-	//			ResizeKeyboard: true,
-	//		})
-	//		if err != nil {
-	//			return err
-	//		}
-	//		user.State.Index++
-	//		return nil
-	//	case helpers.DeleteMember:
-	//		user.State = &entities.State{
-	//			Name:    helpers.DeleteEventState,
-	//			Context: user.State.Context,
-	//			Prev:    user.State,
-	//		}
-	//		user.State.Prev.Index = 0
-	//	}
-	//
-	//	return h.enter(c, user)
-	//})
-	//
-	//// Songs actions.
-	//handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
-	//	switch c.Text() {
-	//	case helpers.AddMember:
-	//		user.State = &entities.State{
-	//			Name:    helpers.AddEventSongState,
-	//			Context: user.State.Context,
-	//			Prev:    user.State,
-	//		}
-	//		user.State.Prev.Index = 0
-	//	case helpers.ChangeOrder:
-	//		user.State = &entities.State{
-	//			Name:    helpers.ChangeSongOrderState,
-	//			Context: user.State.Context,
-	//			Prev:    user.State,
-	//		}
-	//		user.State.Prev.Index = 0
-	//	}
-	//	return h.enter(c, user)
-	//})
 
 	return helpers.EventActionsState, handlerFuncs
 }
@@ -796,7 +744,7 @@ func changeSongOrderHandler() (int, []HandlerFunc) {
 				}
 			}
 
-			song, err := h.songService.FindOrCreateOneByDriveFileID(chosenDriveFileID)
+			song, _, err := h.songService.FindOrCreateOneByDriveFileID(chosenDriveFileID)
 			if err != nil {
 				return err
 			}
@@ -1136,13 +1084,13 @@ func addEventSongHandler() (int, []HandlerFunc) {
 			return h.enter(c, user)
 		}
 
-		foundDriveFile, err := h.driveFileService.FindOneByName(c.Text(), user.Band.DriveFolderID)
+		foundDriveFile, err := h.driveFileService.FindOneByNameAndFolderID(c.Text(), user.Band.DriveFolderID)
 		if err != nil {
 			user.State.Index--
 			return h.enter(c, user)
 		}
 
-		song, err := h.songService.FindOrCreateOneByDriveFileID(foundDriveFile.Id)
+		song, _, err := h.songService.FindOrCreateOneByDriveFileID(foundDriveFile.Id)
 		if err != nil {
 			return err
 		}
@@ -1648,34 +1596,24 @@ func songActionsHandler() (int, []HandlerFunc) {
 	handlerFunc := make([]HandlerFunc, 0)
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
-		c.Notify(telebot.UploadingDocument)
 
-		driveFileID := user.State.Context.DriveFileID
+		var driveFileID string
 
-		song, err := h.songService.FindOrCreateOneByDriveFileID(driveFileID)
+		if c.Callback() != nil {
+			driveFileID = user.State.CallbackData.Query().Get("driveFileId")
+		} else {
+			c.Notify(telebot.UploadingDocument)
+			driveFileID = user.State.Context.DriveFileID
+		}
+
+		err := SendDriveFileToUser(h, c, user, driveFileID)
 		if err != nil {
 			return err
 		}
 
-		toUserMsg, err := SendSongToUser(h, c, user, song)
-		if err != nil {
-			return err
+		if c.Callback() == nil {
+			user.State = user.State.Prev
 		}
-
-		song.PDF.TgFileID = toUserMsg.Document.FileID
-		msg, err := SendSongToChannel(h, c, user, song)
-		if err == nil {
-			song.PDF.TgChannelMessageID = msg.ID
-		}
-
-		song, err = h.songService.UpdateOne(*song)
-		if err != nil {
-			return fmt.Errorf("failed to cache file %v", err)
-		}
-
-		user.State.Index++
-		user.State.Context.DriveFileID = song.DriveFileID
-
 		return nil
 	})
 
@@ -1762,65 +1700,105 @@ func songActionsHandler() (int, []HandlerFunc) {
 }
 
 func transposeSongHandler() (int, []HandlerFunc) {
+
 	handlerFunc := make([]HandlerFunc, 0)
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
-		err := c.Send("Выбери новую тональность:", &telebot.ReplyMarkup{
-			ReplyKeyboard:  append(helpers.KeysKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}}),
-			ResizeKeyboard: true,
-		})
+
+		state, index, _ := helpers.ParseCallbackData(c.Callback().Data)
+
+		err := c.EditCaption(helpers.AddCallbackData("Выбери новую тональность:", user.State.CallbackData.String()),
+			&telebot.ReplyMarkup{
+				InlineKeyboard: [][]telebot.InlineButton{
+					{
+						{Text: "C | Am", Data: helpers.AggregateCallbackData(state, index+1, "C")},
+						{Text: "C# | A#m", Data: helpers.AggregateCallbackData(state, index+1, "C#")},
+						{Text: "Db | Bbm", Data: helpers.AggregateCallbackData(state, index+1, "Db")},
+					},
+					{
+						{Text: "D | Bm", Data: helpers.AggregateCallbackData(state, index+1, "D")},
+						{Text: "D# | Cm", Data: helpers.AggregateCallbackData(state, index+1, "D#")},
+						{Text: "Eb | Cm", Data: helpers.AggregateCallbackData(state, index+1, "Eb")},
+					},
+					{
+						{Text: "E | C#m", Data: helpers.AggregateCallbackData(state, index+1, "E")},
+					},
+					{
+						{Text: "F | Dm", Data: helpers.AggregateCallbackData(state, index+1, "F")},
+						{Text: "F# | D#m", Data: helpers.AggregateCallbackData(state, index+1, "F#")},
+						{Text: "Gb | Ebm", Data: helpers.AggregateCallbackData(state, index+1, "Gb")},
+					},
+					{
+						{Text: "G | Em", Data: helpers.AggregateCallbackData(state, index+1, "G")},
+						{Text: "G# | Fm", Data: helpers.AggregateCallbackData(state, index+1, "G#")},
+						{Text: "Ab | Fm", Data: helpers.AggregateCallbackData(state, index+1, "Ab")},
+					},
+					{
+						{Text: "A | F#m", Data: helpers.AggregateCallbackData(state, index+1, "A")},
+						{Text: "A# | Gm", Data: helpers.AggregateCallbackData(state, index+1, "A#")},
+						{Text: "Bb | Gm", Data: helpers.AggregateCallbackData(state, index+1, "Bb")},
+					},
+					{
+						{Text: "B | G#m", Data: helpers.AggregateCallbackData(state, index+1, "B")},
+					},
+					{
+						{Text: helpers.Cancel, Data: helpers.AggregateCallbackData(helpers.SongActionsState, 0, "")},
+					},
+				},
+			}, telebot.ModeHTML)
 		if err != nil {
 			return err
 		}
 
-		user.State.Index++
 		return nil
 	})
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
-		_, err := transposer.ParseChord(c.Text())
-		if err != nil {
-			user.State.Index--
-			return h.enter(c, user)
-		}
-		user.State.Context.Key = c.Text()
+
+		state, index, key := helpers.ParseCallbackData(c.Callback().Data)
+
+		q := user.State.CallbackData.Query()
+		q.Set("key", key)
+		user.State.CallbackData.RawQuery = q.Encode()
 
 		markup := &telebot.ReplyMarkup{
-			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.AppendSection}}},
-			ResizeKeyboard: true,
+			InlineKeyboard: [][]telebot.InlineButton{
+				{
+					{Text: helpers.AppendSection, Data: helpers.AggregateCallbackData(state, index+1, "-1")},
+				},
+			},
 		}
 
-		sectionsNumber, err := h.driveFileService.GetSectionsNumber(user.State.Context.DriveFileID)
+		sectionsNumber, err := h.driveFileService.GetSectionsNumber(user.State.CallbackData.Query().Get("driveFileId"))
 		if err != nil {
 			return err
 		}
 
 		for i := 0; i < sectionsNumber; i++ {
-			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: fmt.Sprintf("Вместо %d-й секции", i+1)}})
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
+				{Text: fmt.Sprintf("Вместо %d-й секции", i+1), Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%d", i))},
+			})
 		}
-		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}})
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
+			{Text: helpers.Cancel, Data: helpers.AggregateCallbackData(helpers.SongActionsState, 0, "")},
+		})
 
-		err = c.Send("Куда ты хочешь вставить новую тональность?", markup)
-		if err != nil {
-			return err
-		}
+		c.EditCaption(helpers.AddCallbackData("Куда ты хочешь вставить новую тональность?", user.State.CallbackData.String()),
+			markup, telebot.ModeHTML)
 
-		user.State.Index++
-		return err
+		return nil
 	})
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
-		c.Notify(telebot.UploadingDocument)
 
-		re := regexp.MustCompile("[1-9]+")
-		sectionIndex, err := strconv.Atoi(re.FindString(c.Text()))
-		if err != nil {
-			sectionIndex = -1
-		} else {
-			sectionIndex--
-		}
+		_, _, sectionIndexStr := helpers.ParseCallbackData(c.Callback().Data)
 
-		driveFile, err := h.driveFileService.TransposeOne(user.State.Context.DriveFileID, user.State.Context.Key, sectionIndex)
+		sectionIndex, _ := strconv.Atoi(sectionIndexStr)
+
+		driveFile, err := h.driveFileService.TransposeOne(
+			user.State.CallbackData.Query().Get("driveFileId"),
+			user.State.CallbackData.Query().Get("key"),
+			sectionIndex)
 		if err != nil {
 			return err
 		}
@@ -1834,13 +1812,9 @@ func transposeSongHandler() (int, []HandlerFunc) {
 		song.PDF.ModifiedTime = fakeTime.Format(time.RFC3339)
 
 		_, err = h.songService.UpdateOne(*song)
-		if err != nil {
-			return err
-		}
 
-		user.State = user.State.Prev
-		user.State.Context.DriveFileID = driveFile.Id
-		return h.enter(c, user)
+		c.Callback().Data = helpers.AggregateCallbackData(helpers.SongActionsState, 0, "")
+		return h.enterInlineHandler(c, user)
 	})
 
 	return helpers.TransposeSongState, handlerFunc
@@ -1851,9 +1825,12 @@ func styleSongHandler() (int, []HandlerFunc) {
 
 	// Print list of found songs.
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+
 		c.Notify(telebot.Typing)
 
-		driveFile, err := h.driveFileService.StyleOne(user.State.Context.DriveFileID)
+		driveFileID := user.State.CallbackData.Query().Get("driveFileId")
+
+		driveFile, err := h.driveFileService.StyleOne(driveFileID)
 		if err != nil {
 			return err
 		}
@@ -1871,9 +1848,8 @@ func styleSongHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		user.State = user.State.Prev
-		user.State.Context.DriveFileID = driveFile.Id
-		return h.enter(c, user)
+		c.Callback().Data = helpers.AggregateCallbackData(helpers.SongActionsState, 0, "")
+		return h.enterInlineHandler(c, user)
 	})
 	return helpers.StyleSongState, handlerFunc
 }
@@ -2076,75 +2052,114 @@ func getVoicesHandler() (int, []HandlerFunc) {
 	handlerFunc := make([]HandlerFunc, 0)
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
-		song, err := h.songService.FindOneByDriveFileID(user.State.Context.DriveFileID)
+
+		state, index, _ := helpers.ParseCallbackData(c.Callback().Data)
+
+		song, driveFileID, err := h.songService.FindOrCreateOneByDriveFileID(user.State.CallbackData.Query().Get("driveFileId"))
 		if err != nil {
 			return err
 		}
 
 		if song.Voices == nil || len(song.Voices) == 0 {
-			err := c.Send("У этой песни нет партий. Чтобы добавить, отправь мне голосовое сообщение.")
-			if err != nil {
-				return err
-			}
-			user.State = user.State.Prev
-			return err
+			c.EditCaption(helpers.AddCallbackData("У этой песни нет партий. Чтобы добавить, отправь мне голосовое сообщение.",
+				user.State.CallbackData.String()), &telebot.ReplyMarkup{
+				InlineKeyboard: helpers.GetSongActionsKeyboard(*user, *song, *driveFileID),
+			}, telebot.ModeHTML)
+			return nil
 		} else {
-			markup := &telebot.ReplyMarkup{
-				ResizeKeyboard: true,
-			}
+			markup := &telebot.ReplyMarkup{}
 
 			for _, voice := range song.Voices {
-				markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: voice.Caption}})
+				markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
+					{Text: voice.Name, Data: helpers.AggregateCallbackData(state, index+1, voice.ID.Hex())},
+				})
 			}
-			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Back}})
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
+				{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.SongActionsState, 0, "")},
+			})
 
-			err := c.Send("Выбери партию:", markup)
-			if err != nil {
-				return err
-			}
+			c.EditCaption(helpers.AddCallbackData("Выбери партию:", user.State.CallbackData.String()),
+				markup, telebot.ModeHTML)
 
-			user.State.Index++
 			return nil
 		}
 	})
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
-		switch c.Text() {
-		case helpers.Back:
-			user.State = user.State.Prev
-			user.State.Index = 0
-			return h.enter(c, user)
-		default:
-			song, err := h.songService.FindOneByDriveFileID(user.State.Context.DriveFileID)
+
+		state, index, voiceIDHex := helpers.ParseCallbackData(c.Callback().Data)
+
+		voiceID, err := primitive.ObjectIDFromHex(voiceIDHex)
+		if err != nil {
+			return err
+		}
+
+		voice, err := h.voiceService.FindOneByID(voiceID)
+		if err != nil {
+			return err
+		}
+
+		markup := &telebot.ReplyMarkup{
+			InlineKeyboard: [][]telebot.InlineButton{
+				{
+					{Text: helpers.Back, Data: helpers.AggregateCallbackData(state, index-1, "")},
+				},
+				//{
+				//	{Text: helpers.Delete},
+				//},
+			},
+		}
+
+		song, driveFile, err := h.songService.FindOrCreateOneByDriveFileID(user.State.CallbackData.Query().Get("driveFileId"))
+		getPerformer := func() string {
+			if driveFile != nil {
+				return driveFile.Name
+			} else {
+				return ""
+			}
+		}
+		getCaption := func() string {
+			if song != nil {
+				return song.Caption()
+			} else {
+				return "-"
+			}
+		}
+
+		if voice.AudioFileID == "" {
+			file, err := h.bot.File(&telebot.File{FileID: voice.FileID})
 			if err != nil {
 				return err
 			}
 
-			var foundVoice *entities.Voice
-			for _, voice := range song.Voices {
-				if voice.Caption == c.Text() {
-					foundVoice = voice
-				}
+			msg, err := h.bot.EditMedia(
+				c.Callback().Message,
+				&telebot.Audio{
+					File:      telebot.FromReader(file),
+					Title:     voice.Name,
+					Performer: getPerformer(),
+					Caption:   helpers.AddCallbackData(getCaption(), user.State.CallbackData.String()),
+				},
+				markup, telebot.ModeHTML)
+			if err != nil {
+				return c.Respond()
 			}
-
-			if foundVoice != nil {
-				err := c.Send(&telebot.Voice{
-					File:    telebot.File{FileID: foundVoice.FileID},
-					Caption: foundVoice.Caption,
-				}, &telebot.ReplyMarkup{
-					ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Back}}, {{Text: helpers.Delete}}},
-					ResizeKeyboard: true,
-				})
-				if err != nil {
-					return err
-				}
-
-				user.State.Index++
-				return nil
-			} else {
-				return c.Send("Нет партии c таким названием. Попробуй еще раз.")
-			}
+			voice.AudioFileID = msg.Audio.FileID
+			h.voiceService.UpdateOne(*voice)
+		} else {
+			h.bot.EditMedia(
+				c.Callback().Message,
+				&telebot.Audio{
+					File:      telebot.File{FileID: voice.AudioFileID},
+					Title:     voice.Name,
+					Performer: getPerformer(),
+					Caption:   helpers.AddCallbackData(getCaption(), user.State.CallbackData.String()),
+				},
+				markup, telebot.ModeHTML)
 		}
+
+		c.Respond()
+		return nil
 	})
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -2210,7 +2225,6 @@ func uploadVoiceHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		user.State.Context.DriveFiles = driveFiles
 		user.State.Index++
 		return nil
 	})
@@ -2219,43 +2233,34 @@ func uploadVoiceHandler() (int, []HandlerFunc) {
 
 		c.Notify(telebot.UploadingDocument)
 
-		driveFiles := user.State.Context.DriveFiles
-		var foundDriveFile *drive.File
-		for _, driveFile := range driveFiles {
-			if driveFile.Name == c.Text() {
-				foundDriveFile = driveFile
-				break
-			}
-		}
-
-		if foundDriveFile != nil {
-			song, err := h.songService.FindOrCreateOneByDriveFileID(foundDriveFile.Id)
-			if err != nil {
-				return err
-			}
-
-			user.State.Context.DriveFileID = song.DriveFileID
-
-			err = c.Send("Отправь мне название этой партии:", &telebot.ReplyMarkup{
-				ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Cancel}}},
-				ResizeKeyboard: true,
-			})
-			if err != nil {
-				return err
-			}
-
-			user.State.Index++
-			return nil
-		} else {
+		foundDriveFile, err := h.driveFileService.FindOneByNameAndFolderID(c.Text(), user.Band.DriveFolderID)
+		if err != nil {
 			user.State.Index--
 			return h.enter(c, user)
 		}
 
+		song, _, err := h.songService.FindOrCreateOneByDriveFileID(foundDriveFile.Id)
+		if err != nil {
+			return err
+		}
+
+		user.State.Context.DriveFileID = song.DriveFileID
+
+		err = c.Send("Отправь мне название этой партии:", &telebot.ReplyMarkup{
+			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Cancel}}},
+			ResizeKeyboard: true,
+		})
+		if err != nil {
+			return err
+		}
+
+		user.State.Index++
+		return nil
 	})
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		user.State.Context.Voice.Caption = c.Text()
+		user.State.Context.Voice.Name = c.Text()
 
 		song, err := h.songService.FindOneByDriveFileID(user.State.Context.DriveFileID)
 		if err != nil {
@@ -2334,9 +2339,7 @@ func setlistHandler() (int, []HandlerFunc) {
 		}
 
 		user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, msg.ID)
-		user.State.Context.DriveFiles = driveFiles
 		user.State.Index++
-
 		return nil
 	})
 
@@ -2349,19 +2352,11 @@ func setlistHandler() (int, []HandlerFunc) {
 			return h.enter(c, user)
 		}
 
-		driveFiles := user.State.Context.DriveFiles
-		var foundDriveFile *drive.File
-		for _, driveFile := range driveFiles {
-			if driveFile.Name == c.Text() {
-				foundDriveFile = driveFile
-				break
-			}
-		}
-
-		if foundDriveFile != nil {
-			user.State.Context.FoundDriveFileIDs = append(user.State.Context.FoundDriveFileIDs, foundDriveFile.Id)
-		} else {
+		foundDriveFile, err := h.driveFileService.FindOneByNameAndFolderID(c.Text(), user.Band.DriveFolderID)
+		if err != nil {
 			user.State.Context.SongNames = append([]string{c.Text()}, user.State.Context.SongNames...)
+		} else {
+			user.State.Context.FoundDriveFileIDs = append(user.State.Context.FoundDriveFileIDs, foundDriveFile.Id)
 		}
 
 		user.State.Index = 0
@@ -2373,7 +2368,7 @@ func setlistHandler() (int, []HandlerFunc) {
 
 		driveFileIDs := user.State.Context.FoundDriveFileIDs
 
-		err := sendSongsAlbum(h, c, user, driveFileIDs)
+		err := sendDriveFilesAlbum(h, c, user, driveFileIDs)
 		if err != nil {
 			return err
 		}

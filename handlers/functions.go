@@ -9,37 +9,76 @@ import (
 	"sync"
 )
 
-func SendSongToUser(h *Handler, c telebot.Context, user *entities.User, song *entities.Song) (*telebot.Message, error) {
-	markup := &telebot.ReplyMarkup{
-		ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: song.PDF.Name}}},
-		ResizeKeyboard: true,
+func SendDriveFileToUser(h *Handler, c telebot.Context, user *entities.User, driveFileID string) error {
+
+	q := user.State.CallbackData.Query()
+	q.Set("driveFileId", driveFileID)
+	user.State.CallbackData.RawQuery = q.Encode()
+
+	song, driveFile, err := h.songService.FindOrCreateOneByDriveFileID(driveFileID)
+	if err != nil {
+		return err
 	}
 
-	markup.ReplyKeyboard = append(markup.ReplyKeyboard, helpers.GetSongActionsKeyboard(*user, *song)...)
+	markup := &telebot.ReplyMarkup{}
+
+	markup.InlineKeyboard = helpers.GetSongActionsKeyboard(*user, *song, *driveFile)
 
 	sendDocumentByReader := func() (*telebot.Message, error) {
-		reader, err := h.driveFileService.DownloadOneByID(song.DriveFileID)
+		reader, err := h.driveFileService.DownloadOneByID(driveFile.Id)
 		if err != nil {
 			return nil, err
 		}
 
-		return h.bot.Send(c.Recipient(), &telebot.Document{
-			File:     telebot.FromReader(*reader),
-			MIME:     "application/pdf",
-			FileName: fmt.Sprintf("%s.pdf", song.PDF.Name),
-		}, markup)
+		if c.Callback() != nil {
+			return h.bot.EditMedia(
+				&telebot.Message{
+					ID:   c.Callback().Message.ID,
+					Chat: c.Callback().Message.Chat,
+				}, &telebot.Document{
+					File:     telebot.FromReader(*reader),
+					MIME:     "application/pdf",
+					FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
+					Caption:  helpers.AddCallbackData(song.Caption(), user.State.CallbackData.String()),
+				}, markup, telebot.ModeHTML)
+		} else {
+			return h.bot.Send(
+				c.Recipient(),
+				&telebot.Document{
+					File:     telebot.FromReader(*reader),
+					MIME:     "application/pdf",
+					FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
+					Caption:  helpers.AddCallbackData(song.Caption(), user.State.CallbackData.String()),
+				}, markup, telebot.ModeHTML)
+		}
 	}
 
 	sendDocumentByFileID := func() (*telebot.Message, error) {
-		return h.bot.Send(c.Recipient(), &telebot.Document{
-			File:     telebot.File{FileID: song.PDF.TgFileID},
-			MIME:     "application/pdf",
-			FileName: fmt.Sprintf("%s.pdf", song.PDF.Name),
-		}, markup)
+		if c.Callback() != nil {
+			return h.bot.EditMedia(
+				&telebot.Message{
+					ID:   c.Callback().Message.ID,
+					Chat: c.Callback().Message.Chat,
+				},
+				&telebot.Document{
+					File:     telebot.File{FileID: song.PDF.TgFileID},
+					MIME:     "application/pdf",
+					FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
+					Caption:  helpers.AddCallbackData(song.Caption(), user.State.CallbackData.String()),
+				}, markup, telebot.ModeHTML)
+		} else {
+			return h.bot.Send(
+				c.Recipient(),
+				&telebot.Document{
+					File:     telebot.File{FileID: song.PDF.TgFileID},
+					MIME:     "application/pdf",
+					FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
+					Caption:  helpers.AddCallbackData(song.Caption(), user.State.CallbackData.String()),
+				}, markup, telebot.ModeHTML)
+		}
 	}
 
 	var msg *telebot.Message
-	var err error
 	if song.PDF.TgFileID == "" {
 		msg, err = sendDocumentByReader()
 	} else {
@@ -48,11 +87,21 @@ func SendSongToUser(h *Handler, c telebot.Context, user *entities.User, song *en
 			msg, err = sendDocumentByReader()
 		}
 	}
+	if err != nil {
+		return err
+	}
 
-	return msg, err
+	song.PDF.TgFileID = msg.Document.FileID
+	err = SendSongToChannel(h, c, user, song)
+	if err != nil {
+		return err
+	}
+
+	song, err = h.songService.UpdateOne(*song)
+	return err
 }
 
-func SendSongToChannel(h *Handler, c telebot.Context, user *entities.User, song *entities.Song) (*telebot.Message, error) {
+func SendSongToChannel(h *Handler, c telebot.Context, user *entities.User, song *entities.Song) error {
 	send := func() (*telebot.Message, error) {
 		return h.bot.Send(
 			telebot.ChatID(helpers.FilesChannelID),
@@ -70,40 +119,51 @@ func SendSongToChannel(h *Handler, c telebot.Context, user *entities.User, song 
 			}, &telebot.Document{
 				File: telebot.File{FileID: song.PDF.TgFileID},
 				MIME: "application/pdf",
-			})
+			},
+		)
 	}
 
 	var msg *telebot.Message
 	var err error
 	if song.PDF.TgChannelMessageID == 0 {
 		msg, err = send()
+		if err != nil {
+			return err
+		}
+		song.PDF.TgChannelMessageID = msg.ID
 	} else {
 		msg, err = edit()
 		if err != nil {
 			if !errors.Is(err, telebot.ErrSameMessageContent) {
 				msg, err = send()
+				if err != nil {
+					return err
+				}
+				song.PDF.TgChannelMessageID = msg.ID
 			}
 		}
 	}
 
-	return msg, err
+	return nil
 }
 
-func sendSongsAlbum(h *Handler, c telebot.Context, user *entities.User, driveFileIDs []string) error {
+func sendDriveFilesAlbum(h *Handler, c telebot.Context, user *entities.User, driveFileIDs []string) error {
+
 	var waitGroup sync.WaitGroup
 	waitGroup.Add(len(driveFileIDs))
 	documents := make([]telebot.InputMedia, len(driveFileIDs))
+
 	for i := range driveFileIDs {
 		go func(i int) {
 			defer waitGroup.Done()
 
-			song, err := h.songService.FindOrCreateOneByDriveFileID(driveFileIDs[i])
+			song, driveFile, err := h.songService.FindOrCreateOneByDriveFileID(driveFileIDs[i])
 			if err != nil {
 				return
 			}
 
 			if song.PDF.TgFileID == "" {
-				reader, err := h.driveFileService.DownloadOneByID(song.DriveFileID)
+				reader, err := h.driveFileService.DownloadOneByID(driveFile.Id)
 				if err != nil {
 					return
 				}
@@ -143,6 +203,7 @@ func sendSongsAlbum(h *Handler, c telebot.Context, user *entities.User, driveFil
 			var waitGroup sync.WaitGroup
 			waitGroup.Add(len(foundDriveFileIDs))
 			documents := make([]telebot.InputMedia, len(foundDriveFileIDs))
+
 			for i := range foundDriveFileIDs {
 				go func(i int) {
 					defer waitGroup.Done()
@@ -174,15 +235,15 @@ func sendSongsAlbum(h *Handler, c telebot.Context, user *entities.User, driveFil
 		for j := range responses {
 			foundDriveFileID := driveFileIDs[j+(i*len(album))]
 
-			song, err := h.songService.FindOrCreateOneByDriveFileID(foundDriveFileID)
+			song, err := h.songService.FindOneByDriveFileID(foundDriveFileID)
 			if err != nil {
-				return err
+				continue
 			}
 
 			song.PDF.TgFileID = responses[j].Document.FileID
-			msg, err := SendSongToChannel(h, c, user, song)
-			if err == nil {
-				song.PDF.TgChannelMessageID = msg.ID
+			err = SendSongToChannel(h, c, user, song)
+			if err != nil {
+				continue
 			}
 
 			_, _ = h.songService.UpdateOne(*song)

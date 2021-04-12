@@ -36,7 +36,7 @@ const (
 	CreateDoc                   string = "Создать документ"
 	Voices                      string = "Партии"
 	Audios                      string = "Аудио"
-	Transpose                   string = "Изменить тональность"
+	Transpose                   string = "Транспонировать"
 	Style                       string = "Стилизовать"
 	Menu                        string = "Меню"
 	Back                        string = "Назад"
@@ -72,6 +72,7 @@ const (
 	NextPage                    string = "Следующая страница"
 	PrevPage                    string = "Предыдущая страница"
 	Today                       string = "Сегодня"
+	LinkToTheDoc                string = "Ссылка на документ"
 )
 
 // Roles.
