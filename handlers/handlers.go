@@ -1826,8 +1826,6 @@ func styleSongHandler() (int, []HandlerFunc) {
 	// Print list of found songs.
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		c.Notify(telebot.Typing)
-
 		driveFileID := user.State.CallbackData.Query().Get("driveFileId")
 
 		driveFile, err := h.driveFileService.StyleOne(driveFileID)
