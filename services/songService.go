@@ -15,7 +15,7 @@ type SongService struct {
 	songRepository   *repositories.SongRepository
 	voiceRepository  *repositories.VoiceRepository
 	bandRepository   *repositories.BandRepository
-	driveClient      *drive.Service
+	driveRepository  *drive.Service
 	notionClient     *notionapi.Client
 	driveFileService *DriveFileService
 }
@@ -26,7 +26,7 @@ func NewSongService(songRepository *repositories.SongRepository, voiceRepository
 		songRepository:   songRepository,
 		voiceRepository:  voiceRepository,
 		bandRepository:   bandRepository,
-		driveClient:      driveClient,
+		driveRepository:  driveClient,
 		notionClient:     notionClient,
 		driveFileService: driveFileService,
 	}
@@ -45,7 +45,7 @@ func (s *SongService) FindOneByDriveFileID(driveFileID string) (*entities.Song, 
 }
 
 func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entities.Song, *drive.File, error) {
-	driveFile, err := s.driveClient.Files.Get(driveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+	driveFile, err := s.driveRepository.Files.Get(driveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
 
 	song, err := s.songRepository.FindOneByDriveFileID(driveFileID)
 	if err != nil {
@@ -102,8 +102,18 @@ func (s *SongService) UpdateOne(song entities.Song) (*entities.Song, error) {
 	return s.songRepository.UpdateOne(song)
 }
 
-func (s *SongService) DeleteOneByID(ID string) error {
-	return s.songRepository.DeleteOneByID(ID)
+func (s *SongService) DeleteOneByDriveFileID(driveFileID string) error {
+	err := s.driveRepository.Files.Delete(driveFileID).Do()
+	if err != nil {
+		return err
+	}
+
+	err = s.songRepository.DeleteOneByDriveFileID(driveFileID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *SongService) FindNotionPageByID(pageID string) (*notionapi.Block, error) {

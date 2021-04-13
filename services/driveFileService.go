@@ -317,10 +317,6 @@ func (s *DriveFileService) DownloadOneByID(ID string) (*io.Reader, error) {
 	return &reader, err
 }
 
-func (s *DriveFileService) DeleteOneByID(ID string) error {
-	return s.driveRepository.Files.Delete(ID).Do()
-}
-
 func (s *DriveFileService) TransposeOne(ID string, toKey string, sectionIndex int) (*drive.File, error) {
 	doc, err := s.docsRepository.Documents.Get(ID).Do()
 	if err != nil {

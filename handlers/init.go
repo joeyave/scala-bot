@@ -13,7 +13,6 @@ var handlers = make(map[int][]HandlerFunc, 0)
 func init() {
 	registerHandlers(
 		mainMenuHandler,
-		scheduleHandler,
 		//addBandAdminHandler,
 		createSongHandler,
 		copySongHandler,
@@ -39,6 +38,7 @@ func init() {
 		deleteEventMemberHandler,
 		deleteEventSongHandler,
 		addBandAdminHandler,
+		deleteSongHandler,
 	)
 }
 

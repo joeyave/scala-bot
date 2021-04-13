@@ -5,7 +5,6 @@ import (
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/telebot/v3"
-	"github.com/kjk/notionapi"
 	"github.com/klauspost/lctime"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
@@ -271,133 +270,6 @@ func createRoleHandler() (int, []HandlerFunc) {
 	})
 
 	return helpers.CreateRoleState, handlerFuncs
-}
-
-func scheduleHandler() (int, []HandlerFunc) {
-	handlerFunc := make([]HandlerFunc, 0)
-
-	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
-
-		c.Notify(telebot.Typing)
-
-		events, err := h.bandService.GetTodayOrAfterEvents(*user.Band)
-		if err != nil {
-			return err
-		}
-
-		markup := &telebot.ReplyMarkup{
-			ResizeKeyboard: true,
-		}
-
-		for _, event := range events {
-			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: event.GetAlias()}})
-		}
-		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}})
-
-		err = c.Send("Выбери собрание:", markup)
-		if err != nil {
-			return err
-		}
-
-		user.State.Context.NotionEvents = events
-		user.State.Index++
-
-		return err
-	})
-
-	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
-		c.Notify(telebot.Typing)
-
-		events := user.State.Context.NotionEvents
-
-		var foundEvent *entities.NotionEvent
-		for _, event := range events {
-			if event.GetAlias() == c.Text() {
-				foundEvent = event
-				break
-			}
-		}
-
-		if foundEvent != nil {
-			messageText := fmt.Sprintf("<b><a href=\"https://www.notion.so/%s\">%s</a></b>\n\n",
-				notionapi.ToNoDashID(foundEvent.ID), foundEvent.GetAlias())
-
-			for i, pageID := range foundEvent.SetlistPageIDs {
-
-				page, err := h.songService.FindNotionPageByID(pageID)
-				if err != nil {
-					continue
-				}
-
-				songTitleProp := page.GetTitle()
-				if len(songTitleProp) < 1 {
-					continue
-				}
-				songTitle := songTitleProp[0].Text
-
-				songKey := "?"
-				songKeyProp := page.GetProperty("OR>-")
-				if len(songKeyProp) > 0 {
-					songKey = songKeyProp[0].Text
-				}
-
-				songBPM := "?"
-				songBPMProp := page.GetProperty("j0]A")
-				if len(songBPMProp) > 0 {
-					songBPM = songBPMProp[0].Text
-				}
-
-				user.State.Context.SongNames = append(user.State.Context.SongNames, songTitle)
-
-				messageText += fmt.Sprintf("%d. %s (<a href=\"https://www.notion.so/%s\">%s, %s</a>)\n",
-					i+1, songTitle, notionapi.ToNoDashID(pageID), songKey, songBPM)
-			}
-
-			err := c.Send(messageText, &telebot.SendOptions{
-				ReplyMarkup: &telebot.ReplyMarkup{
-					ReplyKeyboard:  helpers.FindChordsKeyboard,
-					ResizeKeyboard: true,
-				},
-				DisableWebPagePreview: true,
-				ParseMode:             telebot.ModeHTML,
-			})
-			if err != nil {
-				return err
-			}
-
-			user.State.Index++
-			return nil
-		} else {
-			user.State.Index--
-			return h.enter(c, user)
-		}
-	})
-
-	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
-		switch c.Text() {
-
-		case helpers.Back:
-			user.State.Index = 0
-			return h.enter(c, user)
-
-		case helpers.FindChords:
-			user.State = &entities.State{
-				Index:   0,
-				Name:    helpers.SearchSongState,
-				Context: entities.Context{Query: strings.Join(user.State.Context.SongNames, "\n")},
-			}
-			return h.enter(c, user)
-
-		default:
-			user.State = &entities.State{
-				Index: 0,
-				Name:  helpers.SearchSongState,
-			}
-			return h.enter(c, user)
-		}
-	})
-
-	return helpers.ScheduleState, handlerFunc
 }
 
 func getEventsHandler() (int, []HandlerFunc) {
@@ -725,7 +597,9 @@ func eventActionsHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		return c.Respond()
+		c.Respond()
+
+		return nil
 	})
 
 	return helpers.EventActionsState, handlerFuncs
@@ -1666,6 +1540,7 @@ func songActionsHandler() (int, []HandlerFunc) {
 		c.Respond()
 		return nil
 	})
+
 	//handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 	//
 	//	song, err := h.songService.FindOneByDriveFileID(user.State.Context.DriveFileID)
@@ -1679,41 +1554,7 @@ func songActionsHandler() (int, []HandlerFunc) {
 	//	}
 	//
 	//	switch c.Text() {
-	//	case helpers.Back:
-	//		user.State = user.State.Prev
-	//
-	//	case helpers.Voices:
-	//		user.State = &entities.State{
-	//			Name: helpers.GetVoicesState,
-	//			Context: entities.Context{
-	//				DriveFileID: user.State.Context.DriveFileID,
-	//			},
-	//			Prev: user.State,
-	//		}
-	//
-	//	case helpers.Audios:
-	//		return c.Send("Функция еще не реалилованна. В будущем планируется хранинть тут аудиозаписи песни в нужной тональности.")
-	//
-	//	case helpers.Transpose:
-	//		user.State = &entities.State{
-	//			Name: helpers.TransposeSongState,
-	//			Context: entities.Context{
-	//				DriveFileID: user.State.Context.DriveFileID,
-	//			},
-	//			Prev: user.State,
-	//		}
-	//		user.State.Prev.Index = 0
-	//
-	//	case helpers.Style:
-	//		user.State = &entities.State{
-	//			Name: helpers.StyleSongState,
-	//			Context: entities.Context{
-	//				DriveFileID: user.State.Context.DriveFileID,
-	//			},
-	//			Prev: user.State,
-	//		}
-	//		user.State.Prev.Index = 0
-	//
+
 	//	case helpers.CopyToMyBand:
 	//		user.State = &entities.State{
 	//			Name: helpers.CopySongState,
@@ -1724,7 +1565,7 @@ func songActionsHandler() (int, []HandlerFunc) {
 	//		}
 	//		user.State.Prev.Index = 0
 	//
-	//	case helpers.DeleteMember:
+	//	case helpers.Delete:
 	//		user.State = &entities.State{
 	//			Name: helpers.DeleteSongState,
 	//			Context: entities.Context{
@@ -1733,15 +1574,6 @@ func songActionsHandler() (int, []HandlerFunc) {
 	//			Prev: user.State,
 	//		}
 	//		user.State.Prev.Index = 0
-	//
-	//	case driveFile.Name:
-	//		return c.Send(driveFile.WebViewLink)
-	//
-	//	default:
-	//		user.State = &entities.State{
-	//			Name: helpers.SearchSongState,
-	//		}
-	//	}
 	//
 	//	return h.enter(c, user)
 	//})
@@ -2065,37 +1897,24 @@ func createSongHandler() (int, []HandlerFunc) {
 	return helpers.CreateSongState, handlerFunc
 }
 
-//func deleteSongHandler() (int, []HandlerFunc) {
-//	handlerFunc := make([]HandlerFunc, 0)
-//
-//	// TODO: allow deleting Song only if it belongs to the User's Band.
-//	// TODO: delete from channel.
-//	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
-//		if user.Role == helpers.Admin {
-//			err := h.songService.DeleteOneByID(user.State.Context.DriveFileID)
-//			if err != nil {
-//				return nil, err
-//			}
-//
-//			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Удалено.")
-//			_, _ = h.bot.Send(msg)
-//
-//			user.State = &entities.State{
-//				Role: helpers.MainMenuState,
-//			}
-//			return h.enter(c, user)
-//
-//		} else {
-//			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Для удаления песни нужно быть администратором группы.")
-//			_, _ = h.bot.Send(msg)
-//		}
-//
-//		user.State = user.State.Prev
-//		return h.enter(c, user)
-//	})
-//
-//	return helpers.DeleteSongState, handlerFunc
-//}
+func deleteSongHandler() (int, []HandlerFunc) {
+	handlerFunc := make([]HandlerFunc, 0)
+
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+		if user.Role == helpers.Admin {
+			err := h.songService.DeleteOneByDriveFileID(user.State.CallbackData.Query().Get("driveFileId"))
+			if err != nil {
+				return err
+			}
+
+			c.EditCaption("Удалено")
+		}
+
+		return nil
+	})
+
+	return helpers.DeleteSongState, handlerFunc
+}
 
 func getVoicesHandler() (int, []HandlerFunc) {
 	handlerFunc := make([]HandlerFunc, 0)

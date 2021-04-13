@@ -142,10 +142,10 @@ func (r *SongRepository) UpdateOne(song entities.Song) (*entities.Song, error) {
 	return r.FindOneByID(newSong.ID)
 }
 
-func (r *SongRepository) DeleteOneByID(ID string) error {
+func (r *SongRepository) DeleteOneByDriveFileID(driveFileID string) error {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
 
-	_, err := collection.DeleteOne(context.TODO(), bson.M{"_id": ID})
+	_, err := collection.DeleteOne(context.TODO(), bson.M{"driveFileId": driveFileID})
 	return err
 }
 
