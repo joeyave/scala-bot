@@ -693,7 +693,7 @@ func eventActionsHandler() (int, []HandlerFunc) {
 			if err != nil {
 				return err
 			}
-                        if user.State.Next != nil {
+			if user.State.Next != nil {
 				user.State = user.State.Next
 				h.enter(c, user)
 			}
@@ -1895,6 +1895,7 @@ func styleSongHandler() (int, []HandlerFunc) {
 			return err
 		}
 
+		c.Respond()
 		c.Callback().Data = helpers.AggregateCallbackData(helpers.SongActionsState, 0, "")
 		return h.enterInlineHandler(c, user)
 	})
