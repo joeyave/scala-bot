@@ -79,13 +79,6 @@ func main() {
 	roleRepository := repositories.NewRoleRepository(mongoClient)
 	roleService := services.NewRoleService(roleRepository)
 
-	//songs, _ := songService.FindAll()
-	//for _, song := range songs {
-	//	t, _ := time.Parse("2006", "2006")
-	//	song.PDF.ModifiedTime = t.Format(time.RFC3339)
-	//	songService.UpdateOne(*song)
-	//}
-
 	bot, err := telebot.NewBot(telebot.Settings{
 		Token:       os.Getenv("BOT_TOKEN"),
 		Poller:      &telebot.LongPoller{Timeout: 10 * time.Second},

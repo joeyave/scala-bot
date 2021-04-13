@@ -78,7 +78,7 @@ var MainMenuKeyboard = [][]telebot.ReplyButton{
 
 var SettingsKeyboard = [][]telebot.ReplyButton{
 	{{Text: BandSettings}, {Text: ProfileSettings}},
-	//{{Text: ChangeBand}, {Text: CreateRole}},
+	{{Text: Back}},
 }
 
 var KeysKeyboard = [][]telebot.ReplyButton{
@@ -97,11 +97,6 @@ var TimesKeyboard = [][]telebot.ReplyButton{
 
 var CancelOrSkipKeyboard = [][]telebot.ReplyButton{
 	{{Text: Cancel}, {Text: Skip}},
-}
-
-var FindChordsKeyboard = [][]telebot.ReplyButton{
-	{{Text: FindChords}},
-	{{Text: Back}, {Text: Menu}},
 }
 
 var SearchEverywhereKeyboard = [][]telebot.ReplyButton{

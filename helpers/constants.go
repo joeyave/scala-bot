@@ -12,7 +12,6 @@ const (
 	ChooseBandState
 	CreateBandState
 	CopySongState
-	ScheduleState
 	CreateSongState
 	DeleteSongState
 	AddBandAdminState
