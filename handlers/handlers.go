@@ -32,21 +32,6 @@ func mainMenuHandler() (int, []HandlerFunc) {
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 		switch c.Text() {
 
-		case "гы":
-			nextPageToken := ""
-			for {
-				driveFiles, pageToken, _ := h.driveFileService.FindAllByFolderID(user.Band.DriveFolderID, nextPageToken)
-				nextPageToken = pageToken
-
-				for _, driveFile := range driveFiles {
-					SendDriveFileToUser(h, c, user, driveFile.Id)
-				}
-
-				if nextPageToken == "" {
-					break
-				}
-			}
-
 		case helpers.Schedule:
 			user.State = &entities.State{
 				Name: helpers.GetEventsState,
