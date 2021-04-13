@@ -22,7 +22,12 @@ func SendDriveFileToUser(h *Handler, c telebot.Context, user *entities.User, dri
 
 	markup := &telebot.ReplyMarkup{}
 
-	markup.InlineKeyboard = helpers.GetSongActionsKeyboard(*user, *song, *driveFile)
+	//markup.InlineKeyboard = helpers.GetSongActionsKeyboard(*user, *song, *driveFile)
+	markup.InlineKeyboard = [][]telebot.InlineButton{
+		{
+			{Text: "Кнопочки", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 1, "")},
+		},
+	}
 
 	sendDocumentByReader := func() (*telebot.Message, error) {
 		reader, err := h.driveFileService.DownloadOneByID(driveFile.Id)

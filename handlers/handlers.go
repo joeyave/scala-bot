@@ -1650,83 +1650,101 @@ func songActionsHandler() (int, []HandlerFunc) {
 	})
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
-		song, err := h.songService.FindOneByDriveFileID(user.State.Context.DriveFileID)
+
+		song, driveFile, err :=
+			h.songService.FindOrCreateOneByDriveFileID(user.State.CallbackData.Query().Get("driveFileId"))
 		if err != nil {
 			return err
 		}
 
-		driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
-		if err != nil {
-			return err
-		}
+		markup := &telebot.ReplyMarkup{}
+		markup.InlineKeyboard = helpers.GetSongActionsKeyboard(*user, *song, *driveFile)
 
-		switch c.Text() {
-		case helpers.Back:
-			user.State = user.State.Prev
-
-		case helpers.Voices:
-			user.State = &entities.State{
-				Name: helpers.GetVoicesState,
-				Context: entities.Context{
-					DriveFileID: user.State.Context.DriveFileID,
-				},
-				Prev: user.State,
-			}
-
-		case helpers.Audios:
-			return c.Send("Функция еще не реалилованна. В будущем планируется хранинть тут аудиозаписи песни в нужной тональности.")
-
-		case helpers.Transpose:
-			user.State = &entities.State{
-				Name: helpers.TransposeSongState,
-				Context: entities.Context{
-					DriveFileID: user.State.Context.DriveFileID,
-				},
-				Prev: user.State,
-			}
-			user.State.Prev.Index = 0
-
-		case helpers.Style:
-			user.State = &entities.State{
-				Name: helpers.StyleSongState,
-				Context: entities.Context{
-					DriveFileID: user.State.Context.DriveFileID,
-				},
-				Prev: user.State,
-			}
-			user.State.Prev.Index = 0
-
-		case helpers.CopyToMyBand:
-			user.State = &entities.State{
-				Name: helpers.CopySongState,
-				Context: entities.Context{
-					DriveFileID: user.State.Context.DriveFileID,
-				},
-				Prev: user.State,
-			}
-			user.State.Prev.Index = 0
-
-		case helpers.DeleteMember:
-			user.State = &entities.State{
-				Name: helpers.DeleteSongState,
-				Context: entities.Context{
-					DriveFileID: user.State.Context.DriveFileID,
-				},
-				Prev: user.State,
-			}
-			user.State.Prev.Index = 0
-
-		case driveFile.Name:
-			return c.Send(driveFile.WebViewLink)
-
-		default:
-			user.State = &entities.State{
-				Name: helpers.SearchSongState,
-			}
-		}
-
-		return h.enter(c, user)
+		h.bot.EditReplyMarkup(
+			c.Callback().Message,
+			markup,
+		)
+		return nil
 	})
+	//handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+	//
+	//	song, err := h.songService.FindOneByDriveFileID(user.State.Context.DriveFileID)
+	//	if err != nil {
+	//		return err
+	//	}
+	//
+	//	driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
+	//	if err != nil {
+	//		return err
+	//	}
+	//
+	//	switch c.Text() {
+	//	case helpers.Back:
+	//		user.State = user.State.Prev
+	//
+	//	case helpers.Voices:
+	//		user.State = &entities.State{
+	//			Name: helpers.GetVoicesState,
+	//			Context: entities.Context{
+	//				DriveFileID: user.State.Context.DriveFileID,
+	//			},
+	//			Prev: user.State,
+	//		}
+	//
+	//	case helpers.Audios:
+	//		return c.Send("Функция еще не реалилованна. В будущем планируется хранинть тут аудиозаписи песни в нужной тональности.")
+	//
+	//	case helpers.Transpose:
+	//		user.State = &entities.State{
+	//			Name: helpers.TransposeSongState,
+	//			Context: entities.Context{
+	//				DriveFileID: user.State.Context.DriveFileID,
+	//			},
+	//			Prev: user.State,
+	//		}
+	//		user.State.Prev.Index = 0
+	//
+	//	case helpers.Style:
+	//		user.State = &entities.State{
+	//			Name: helpers.StyleSongState,
+	//			Context: entities.Context{
+	//				DriveFileID: user.State.Context.DriveFileID,
+	//			},
+	//			Prev: user.State,
+	//		}
+	//		user.State.Prev.Index = 0
+	//
+	//	case helpers.CopyToMyBand:
+	//		user.State = &entities.State{
+	//			Name: helpers.CopySongState,
+	//			Context: entities.Context{
+	//				DriveFileID: user.State.Context.DriveFileID,
+	//			},
+	//			Prev: user.State,
+	//		}
+	//		user.State.Prev.Index = 0
+	//
+	//	case helpers.DeleteMember:
+	//		user.State = &entities.State{
+	//			Name: helpers.DeleteSongState,
+	//			Context: entities.Context{
+	//				DriveFileID: user.State.Context.DriveFileID,
+	//			},
+	//			Prev: user.State,
+	//		}
+	//		user.State.Prev.Index = 0
+	//
+	//	case driveFile.Name:
+	//		return c.Send(driveFile.WebViewLink)
+	//
+	//	default:
+	//		user.State = &entities.State{
+	//			Name: helpers.SearchSongState,
+	//		}
+	//	}
+	//
+	//	return h.enter(c, user)
+	//})
 
 	return helpers.SongActionsState, handlerFunc
 }
