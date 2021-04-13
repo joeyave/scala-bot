@@ -1663,6 +1663,7 @@ func songActionsHandler() (int, []HandlerFunc) {
 			c.Callback().Message,
 			markup,
 		)
+		c.Respond()
 		return nil
 	})
 	//handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
