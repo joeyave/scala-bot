@@ -173,10 +173,6 @@ func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.Handl
 			}
 		}
 
-		if user.State.CallbackData == nil {
-			user.State.CallbackData, _ = url.Parse("t.me/callbackData")
-		}
-
 		_, err = h.userService.UpdateOne(*user)
 		return next(c)
 	}
@@ -184,69 +180,39 @@ func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.Handl
 
 func (h *Handler) enter(c telebot.Context, user *entities.User) error {
 
-	if c.Callback() != nil {
-		re := regexp.MustCompile(`t\.me/callbackData.*`)
-
-		for _, entity := range c.Callback().Message.CaptionEntities {
-			if entity.Type == telebot.EntityTextLink {
-				matches := re.FindStringSubmatch(entity.URL)
-
-				if len(matches) > 0 {
-					u, err := url.Parse(matches[0])
-					if err != nil {
-						return err
-					}
-
-					user.State.CallbackData = u
-					break
-				}
-			}
-		}
-
-		for _, entity := range c.Callback().Message.Entities {
-			if entity.Type == telebot.EntityTextLink {
-				matches := re.FindStringSubmatch(entity.URL)
-
-				if len(matches) > 0 {
-					u, err := url.Parse(matches[0])
-					if err != nil {
-						return err
-					}
-
-					user.State.CallbackData = u
-					break
-				}
-			}
-		}
-	}
-
 	if user.State.CallbackData == nil {
 		user.State.CallbackData, _ = url.Parse("t.me/callbackData")
 	}
 
 	if c.Callback() != nil {
-		state, index, _ := helpers.ParseCallbackData(c.Callback().Data)
-
-		// Handle error.
-		handlerFuncs, _ := handlers[state]
-
-		return handlerFuncs[index](h, c, user)
+		return h.enterInlineHandler(c, user)
 	} else {
-		handlerFuncs, ok := handlers[user.State.Name]
-
-		if ok == false || user.State.Index < 0 || user.State.Index >= len(handlerFuncs) {
-			user.State = &entities.State{Name: helpers.MainMenuState}
-			handlerFuncs = handlers[user.State.Name]
-		}
-
-		return handlerFuncs[user.State.Index](h, c, user)
+		return h.enterReplyHandler(c, user)
 	}
 }
 
 func (h *Handler) enterInlineHandler(c telebot.Context, user *entities.User) error {
+
+	re := regexp.MustCompile(`t\.me/callbackData.*`)
+
+	for _, entity := range c.Callback().Message.CaptionEntities {
+		if entity.Type == telebot.EntityTextLink {
+			matches := re.FindStringSubmatch(entity.URL)
+
+			if len(matches) > 0 {
+				u, err := url.Parse(matches[0])
+				if err != nil {
+					return err
+				}
+
+				user.State.CallbackData = u
+				break
+			}
+		}
+	}
+
 	for _, entity := range c.Callback().Message.Entities {
 		if entity.Type == telebot.EntityTextLink {
-			re := regexp.MustCompile(`t\.me/callbackData.*`)
 			matches := re.FindStringSubmatch(entity.URL)
 
 			if len(matches) > 0 {
@@ -278,5 +244,4 @@ func (h *Handler) enterReplyHandler(c telebot.Context, user *entities.User) erro
 	}
 
 	return handlerFuncs[user.State.Index](h, c, user)
-
 }

@@ -32,21 +32,6 @@ func mainMenuHandler() (int, []HandlerFunc) {
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 		switch c.Text() {
 
-		case "гы":
-			nextPageToken := ""
-			for {
-				driveFiles, pageToken, _ := h.driveFileService.FindAllByFolderID(user.Band.DriveFolderID, nextPageToken)
-				nextPageToken = pageToken
-
-				for _, driveFile := range driveFiles {
-					SendDriveFileToUser(h, c, user, driveFile.Id)
-				}
-
-				if nextPageToken == "" {
-					break
-				}
-			}
-
 		case helpers.Schedule:
 			user.State = &entities.State{
 				Name: helpers.GetEventsState,
@@ -1533,7 +1518,9 @@ func songActionsHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		if c.Callback() == nil {
+		if c.Callback() != nil {
+			c.Respond()
+		} else {
 			user.State = user.State.Prev
 		}
 		return nil
@@ -1550,10 +1537,7 @@ func songActionsHandler() (int, []HandlerFunc) {
 		markup := &telebot.ReplyMarkup{}
 		markup.InlineKeyboard = helpers.GetSongActionsKeyboard(*user, *song, *driveFile)
 
-		h.bot.EditReplyMarkup(
-			c.Callback().Message,
-			markup,
-		)
+		h.bot.EditReplyMarkup(c.Callback().Message, markup)
 		c.Respond()
 		return nil
 	})
@@ -1745,7 +1729,7 @@ func styleSongHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		c.Respond()
+		//c.Respond()
 		c.Callback().Data = helpers.AggregateCallbackData(helpers.SongActionsState, 0, "")
 		return h.enterInlineHandler(c, user)
 	})
