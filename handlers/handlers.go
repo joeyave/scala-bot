@@ -569,7 +569,7 @@ func eventActionsHandler() (int, []HandlerFunc) {
 			}
 			if user.State.Next != nil {
 				user.State = user.State.Next
-				h.enter(c, user)
+				return h.enter(c, user)
 			}
 			user.State = user.State.Prev
 
