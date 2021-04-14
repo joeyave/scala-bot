@@ -483,6 +483,7 @@ func createEventHandler() (int, []HandlerFunc) {
 		msg := fmt.Sprintf("Выбери дату:\n\n<b>%s</b>", lctime.Strftime("%B %Y", monthFirstDayDate))
 		if c.Callback() != nil {
 			c.Edit(msg, markup, telebot.ModeHTML)
+			c.Respond()
 		} else {
 			c.Send(msg, markup, telebot.ModeHTML)
 		}
@@ -561,7 +562,9 @@ func eventActionsHandler() (int, []HandlerFunc) {
 		user.State.CallbackData.RawQuery = q.Encode()
 
 		if c.Callback() != nil {
-			return c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), options)
+			c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), options)
+			c.Respond()
+			return nil
 		} else {
 			err := c.Send(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), options)
 			if err != nil {
@@ -570,10 +573,10 @@ func eventActionsHandler() (int, []HandlerFunc) {
 			if user.State.Next != nil {
 				user.State = user.State.Next
 				return h.enter(c, user)
+			} else {
+				user.State = user.State.Prev
+				return nil
 			}
-			user.State = user.State.Prev
-
-			return nil
 		}
 	})
 
@@ -687,8 +690,10 @@ func changeSongOrderHandler() (int, []HandlerFunc) {
 		q.Set("index", strconv.Itoa(songIndex+1))
 		user.State.CallbackData.RawQuery = q.Encode()
 
-		return c.Edit(helpers.AddCallbackData(fmt.Sprintf("Выбери песню номер %d:", songIndex+1),
+		c.Edit(helpers.AddCallbackData(fmt.Sprintf("Выбери песню номер %d:", songIndex+1),
 			user.State.CallbackData.String()), markup, telebot.ModeHTML)
+		c.Respond()
+		return nil
 	})
 
 	return helpers.ChangeSongOrderState, handlerFuncs
@@ -718,7 +723,9 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 		}
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, payload)}})
 
-		return c.Edit(markup)
+		c.Edit(markup)
+		c.Respond()
+		return nil
 	})
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -762,7 +769,9 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 		// TODO
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Cancel, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, roleIDHex)}})
 
-		return c.Edit(markup)
+		c.Edit(markup)
+		c.Respond()
+		return nil
 	})
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -811,10 +820,11 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 		q.Set("eventId", eventID.Hex())
 		user.State.CallbackData.RawQuery = q.Encode()
 
-		return c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), &telebot.ReplyMarkup{
+		c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), &telebot.ReplyMarkup{
 			InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
 		}, telebot.ModeHTML, telebot.NoPreview)
-
+		c.Respond()
+		return nil
 	})
 
 	return helpers.AddEventMemberState, handlerFuncs
@@ -849,7 +859,9 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 		}
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, payload)}})
 
-		return c.Edit(markup)
+		c.Edit(markup)
+		c.Respond()
+		return nil
 	})
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -887,9 +899,11 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 		q.Set("eventId", eventID.Hex())
 		user.State.CallbackData.RawQuery = q.Encode()
 
-		return c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), &telebot.ReplyMarkup{
+		c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), &telebot.ReplyMarkup{
 			InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
 		}, telebot.ModeHTML, telebot.NoPreview)
+		c.Respond()
+		return nil
 	})
 
 	return helpers.DeleteEventMemberState, handlerFuncs
@@ -1043,7 +1057,9 @@ func deleteEventSongHandler() (int, []HandlerFunc) {
 		}
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, payload)}})
 
-		return c.Edit(markup)
+		c.Edit(markup)
+		c.Respond()
+		return nil
 	})
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
@@ -1081,9 +1097,11 @@ func deleteEventSongHandler() (int, []HandlerFunc) {
 		q.Set("eventId", eventID.Hex())
 		user.State.CallbackData.RawQuery = q.Encode()
 
-		return c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), &telebot.ReplyMarkup{
+		c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), &telebot.ReplyMarkup{
 			InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
 		}, telebot.ModeHTML, telebot.NoPreview)
+		c.Respond()
+		return nil
 	})
 
 	return helpers.DeleteEventSongState, handlerFuncs
