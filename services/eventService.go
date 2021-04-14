@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"github.com/joeyave/scala-chords-bot/entities"
+	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/scala-chords-bot/repositories"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
@@ -106,7 +107,7 @@ func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, *entitie
 	}
 
 	if len(event.Songs) > 0 {
-		eventString = fmt.Sprintf("%s\n\n<b>Список:</b>", eventString)
+		eventString = fmt.Sprintf("%s\n\n<b>%s:</b>", eventString, helpers.Setlist)
 
 		var waitGroup sync.WaitGroup
 		waitGroup.Add(len(event.Songs))

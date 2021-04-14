@@ -73,6 +73,7 @@ const (
 	PrevPage                    string = "Предыдущая страница"
 	Today                       string = "Сегодня"
 	LinkToTheDoc                string = "Ссылка на документ"
+	Setlist                     string = "📝 Список"
 )
 
 // Roles.
