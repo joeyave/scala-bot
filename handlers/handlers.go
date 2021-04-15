@@ -1539,7 +1539,13 @@ func songActionsHandler() (int, []HandlerFunc) {
 		if c.Callback() != nil {
 			c.Respond()
 		} else {
-			user.State = user.State.Prev
+			if user.State.Next != nil {
+				user.State = user.State.Next
+				return h.enter(c, user)
+			} else {
+				user.State = user.State.Prev
+				return nil
+			}
 		}
 		return nil
 	})
@@ -1907,6 +1913,9 @@ func createSongHandler() (int, []HandlerFunc) {
 			Name:  helpers.SongActionsState,
 			Context: entities.Context{
 				DriveFileID: newFile.Id,
+			},
+			Next: &entities.State{
+				Name: helpers.MainMenuState,
 			},
 		}
 
