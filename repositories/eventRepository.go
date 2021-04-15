@@ -422,18 +422,25 @@ func (r *EventRepository) PushSongID(eventID primitive.ObjectID, songID primitiv
 func (r *EventRepository) ChangeSongIDPosition(eventID primitive.ObjectID, songID primitive.ObjectID, newPosition int) (*entities.Event, error) {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
 
+	upsert := false
+	opts := options.UpdateOptions{
+		Upsert: &upsert,
+	}
 	_, err := collection.UpdateOne(context.TODO(),
 		bson.M{"_id": eventID},
 		bson.M{
 			"$pull": bson.M{
 				"songIds": songID,
 			},
-		})
+		}, &opts)
 	if err != nil {
 		return nil, err
 	}
 
-	filter := bson.M{"_id": eventID}
+	filter := bson.M{
+		"_id":     eventID,
+		"songIds": bson.M{"$nin": bson.A{songID}},
+	}
 
 	update := bson.M{
 		"$push": bson.M{
@@ -445,11 +452,11 @@ func (r *EventRepository) ChangeSongIDPosition(eventID primitive.ObjectID, songI
 	}
 
 	after := options.After
-	opts := options.FindOneAndUpdateOptions{
+	opts2 := options.FindOneAndUpdateOptions{
 		ReturnDocument: &after,
 	}
 
-	result := collection.FindOneAndUpdate(context.TODO(), filter, update, &opts)
+	result := collection.FindOneAndUpdate(context.TODO(), filter, update, &opts2)
 	if result.Err() != nil {
 		return nil, result.Err()
 	}
