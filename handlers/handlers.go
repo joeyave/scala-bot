@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/telebot/v3"
 	"github.com/klauspost/lctime"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/api/drive/v3"
 	"regexp"
 	"strconv"
@@ -1017,7 +1019,9 @@ func addEventSongHandler() (int, []HandlerFunc) {
 		}
 
 		_, err = h.eventService.PushSongID(user.State.Context.EventID, song.ID)
-		if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			c.Send("Вероятнее всего, эта песня уже есть в списке.")
+		} else if err != nil {
 			return err
 		}
 

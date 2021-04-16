@@ -392,7 +392,10 @@ func (r *EventRepository) UpdateOne(event entities.Event) (*entities.Event, erro
 func (r *EventRepository) PushSongID(eventID primitive.ObjectID, songID primitive.ObjectID) (*entities.Event, error) {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
 
-	filter := bson.M{"_id": eventID}
+	filter := bson.M{
+		"_id":     eventID,
+		"songIds": bson.M{"$nin": bson.A{songID}},
+	}
 
 	update := bson.M{
 		"$push": bson.M{
