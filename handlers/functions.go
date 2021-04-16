@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"fmt"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
@@ -140,7 +139,7 @@ func SendSongToChannel(h *Handler, c telebot.Context, user *entities.User, song 
 	} else {
 		msg, err = edit()
 		if err != nil {
-			if !errors.Is(err, telebot.ErrSameMessageContent) {
+			if fmt.Sprint(err) == "telegram unknown: Bad Request: MESSAGE_ID_INVALID (400)" {
 				msg, err = send()
 				if err != nil {
 					return err
