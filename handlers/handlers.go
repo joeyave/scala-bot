@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/api/drive/v3"
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -673,7 +674,9 @@ func changeSongOrderHandler() (int, []HandlerFunc) {
 
 		markup := &telebot.ReplyMarkup{}
 
+		start := time.Now()
 		songsStr, _, err := h.eventService.GetSongsAsHTMLStringByID(eventID)
+		log.Printf("getting songs for event took %v", time.Since(start))
 
 		songs, driveFiles, err := h.songService.FindOrCreateManyByDriveFileIDs(user.State.CallbackData.Query()["driveFileIds"])
 		if err != nil {
