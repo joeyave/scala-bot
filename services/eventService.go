@@ -58,14 +58,14 @@ func (s *EventService) UpdateOne(event entities.Event) (*entities.Event, error) 
 	return s.eventRepository.UpdateOne(event)
 }
 
-func (s *EventService) PushSongID(eventID primitive.ObjectID, songID primitive.ObjectID) (*entities.Event, error) {
+func (s *EventService) PushSongID(eventID primitive.ObjectID, songID primitive.ObjectID) error {
 	return s.eventRepository.PushSongID(eventID, songID)
 }
 
-func (s *EventService) PullSongID(eventID primitive.ObjectID, songID primitive.ObjectID) (*entities.Event, error) {
+func (s *EventService) PullSongID(eventID primitive.ObjectID, songID primitive.ObjectID) error {
 	return s.eventRepository.PullSongID(eventID, songID)
 }
-func (s *EventService) ChangeSongIDPosition(eventID primitive.ObjectID, songID primitive.ObjectID, newPosition int) (*entities.Event, error) {
+func (s *EventService) ChangeSongIDPosition(eventID primitive.ObjectID, songID primitive.ObjectID, newPosition int) error {
 	return s.eventRepository.ChangeSongIDPosition(eventID, songID, newPosition)
 }
 
@@ -81,6 +81,41 @@ func (s *EventService) DeleteOneByID(ID primitive.ObjectID) error {
 	}
 
 	return nil
+}
+
+func (s *EventService) GetSongsAsHTMLStringByID(eventID primitive.ObjectID) (string, []*entities.Song, error) {
+	songs, err := s.eventRepository.GetSongs(eventID)
+	if err != nil {
+		return "", nil, err
+	}
+
+	str := ""
+	if len(songs) > 0 {
+		str = fmt.Sprintf("%s\n\n<b>%s:</b>", str, helpers.Setlist)
+
+		var waitGroup sync.WaitGroup
+		waitGroup.Add(len(songs))
+		songNames := make([]string, len(songs))
+		for i := range songs {
+			go func(i int) {
+				defer waitGroup.Done()
+
+				driveFile, err := s.driveFileService.FindOneByID(songs[i].DriveFileID)
+				if err != nil {
+					return
+				}
+
+				songName := fmt.Sprintf("%d. <a href=\"%s\">%s</a>  (%s)",
+					i+1, driveFile.WebViewLink, driveFile.Name, songs[i].Caption())
+				songNames[i] = songName
+			}(i)
+		}
+		waitGroup.Wait()
+
+		str += "\n" + strings.Join(songNames, "\n")
+	}
+
+	return str, songs, nil
 }
 
 func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, *entities.Event, error) {

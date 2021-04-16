@@ -389,7 +389,83 @@ func (r *EventRepository) UpdateOne(event entities.Event) (*entities.Event, erro
 	return r.FindOneByID(newEvent.ID)
 }
 
-func (r *EventRepository) PushSongID(eventID primitive.ObjectID, songID primitive.ObjectID) (*entities.Event, error) {
+func (r *EventRepository) DeleteOneByID(ID primitive.ObjectID) error {
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
+
+	_, err := collection.DeleteOne(context.TODO(), bson.M{"_id": ID})
+	return err
+}
+
+func (r *EventRepository) GetSongs(eventID primitive.ObjectID) ([]*entities.Song, error) {
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
+
+	pipeline := bson.A{
+		bson.M{
+			"$match": bson.M{
+				"_id": eventID,
+			},
+		},
+		bson.M{
+			"$addFields": bson.M{
+				"songIds": bson.M{
+					"$cond": bson.M{
+						"if": bson.M{
+							"$ne": bson.A{bson.M{"$type": "$songIds"}, "array"},
+						},
+						"then": bson.A{},
+						"else": "$songIds",
+					},
+				},
+			},
+		},
+		bson.M{
+			"$lookup": bson.M{
+				"from": "songs",
+				"let":  bson.M{"songIds": "$songIds"},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{"$expr": bson.M{"$in": bson.A{"$_id", "$$songIds"}}},
+					},
+					bson.M{
+						"$addFields": bson.M{
+							"sort": bson.M{
+								"$indexOfArray": bson.A{"$$songIds", "$_id"},
+							},
+						},
+					},
+					bson.M{
+						"$sort": bson.M{"sort": 1},
+					},
+					bson.M{
+						"$addFields": bson.M{
+							"sort": "$$REMOVE",
+						},
+					},
+				},
+				"as": "songs",
+			},
+		},
+	}
+
+	cur, err := collection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	var events []*entities.Event
+	err = cur.All(context.TODO(), &events)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(events) == 0 {
+		return []*entities.Song{}, nil
+	}
+
+	return events[0].Songs, nil
+}
+
+func (r *EventRepository) PushSongID(eventID primitive.ObjectID, songID primitive.ObjectID) error {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
 
 	filter := bson.M{
@@ -403,49 +479,31 @@ func (r *EventRepository) PushSongID(eventID primitive.ObjectID, songID primitiv
 		},
 	}
 
-	after := options.After
-	opts := options.FindOneAndUpdateOptions{
-		ReturnDocument: &after,
-	}
-
-	result := collection.FindOneAndUpdate(context.TODO(), filter, update, &opts)
-	if result.Err() != nil {
-		return nil, result.Err()
-	}
-
-	var newEvent *entities.Event
-	err := result.Decode(&newEvent)
-	if err != nil {
-		return nil, err
-	}
-
-	return r.FindOneByID(newEvent.ID)
+	_, err := collection.UpdateOne(context.TODO(), filter, update)
+	return err
 }
 
-func (r *EventRepository) ChangeSongIDPosition(eventID primitive.ObjectID, songID primitive.ObjectID, newPosition int) (*entities.Event, error) {
+func (r *EventRepository) ChangeSongIDPosition(eventID primitive.ObjectID, songID primitive.ObjectID, newPosition int) error {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
 
-	upsert := false
-	opts := options.UpdateOptions{
-		Upsert: &upsert,
-	}
-	_, err := collection.UpdateOne(context.TODO(),
-		bson.M{"_id": eventID},
-		bson.M{
-			"$pull": bson.M{
-				"songIds": songID,
-			},
-		}, &opts)
-	if err != nil {
-		return nil, err
+	filter := bson.M{
+		"_id": eventID,
 	}
 
-	filter := bson.M{
+	update := bson.M{
+		"$pull": bson.M{
+			"songIds": songID,
+		},
+	}
+
+	_, err := collection.UpdateOne(context.TODO(), filter, update)
+
+	filter = bson.M{
 		"_id":     eventID,
 		"songIds": bson.M{"$nin": bson.A{songID}},
 	}
 
-	update := bson.M{
+	update = bson.M{
 		"$push": bson.M{
 			"songIds": bson.M{
 				"$each":     bson.A{songID},
@@ -454,26 +512,11 @@ func (r *EventRepository) ChangeSongIDPosition(eventID primitive.ObjectID, songI
 		},
 	}
 
-	after := options.After
-	opts2 := options.FindOneAndUpdateOptions{
-		ReturnDocument: &after,
-	}
-
-	result := collection.FindOneAndUpdate(context.TODO(), filter, update, &opts2)
-	if result.Err() != nil {
-		return nil, result.Err()
-	}
-
-	var newEvent *entities.Event
-	err = result.Decode(&newEvent)
-	if err != nil {
-		return nil, err
-	}
-
-	return r.FindOneByID(newEvent.ID)
+	_, err = collection.UpdateOne(context.TODO(), filter, update)
+	return err
 }
 
-func (r *EventRepository) PullSongID(eventID primitive.ObjectID, songID primitive.ObjectID) (*entities.Event, error) {
+func (r *EventRepository) PullSongID(eventID primitive.ObjectID, songID primitive.ObjectID) error {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
 
 	filter := bson.M{"_id": eventID}
@@ -484,29 +527,7 @@ func (r *EventRepository) PullSongID(eventID primitive.ObjectID, songID primitiv
 		},
 	}
 
-	after := options.After
-	opts := options.FindOneAndUpdateOptions{
-		ReturnDocument: &after,
-	}
-
-	result := collection.FindOneAndUpdate(context.TODO(), filter, update, &opts)
-	if result.Err() != nil {
-		return nil, result.Err()
-	}
-
-	var newEvent *entities.Event
-	err := result.Decode(&newEvent)
-	if err != nil {
-		return nil, err
-	}
-
-	return r.FindOneByID(newEvent.ID)
-}
-
-func (r *EventRepository) DeleteOneByID(ID primitive.ObjectID) error {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
-
-	_, err := collection.DeleteOne(context.TODO(), bson.M{"_id": ID})
+	_, err := collection.UpdateOne(context.TODO(), filter, update)
 	return err
 }
 

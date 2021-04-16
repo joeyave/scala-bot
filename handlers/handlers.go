@@ -619,12 +619,12 @@ func changeSongOrderHandler() (int, []HandlerFunc) {
 
 		state, index, chosenDriveFileID := helpers.ParseCallbackData(c.Callback().Data)
 
-		if user.State.CallbackData.Query().Get("index") == "" {
+		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
+		if err != nil {
+			return err
+		}
 
-			eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
-			if err != nil {
-				return err
-			}
+		if user.State.CallbackData.Query().Get("index") == "" {
 
 			event, err := h.eventService.FindOneByID(eventID)
 			if err != nil {
@@ -636,7 +636,7 @@ func changeSongOrderHandler() (int, []HandlerFunc) {
 				q.Add("driveFileIds", song.DriveFileID)
 			}
 
-			q.Set("index", "0")
+			q.Set("index", "-1")
 			user.State.CallbackData.RawQuery = q.Encode()
 		}
 
@@ -660,12 +660,7 @@ func changeSongOrderHandler() (int, []HandlerFunc) {
 				return err
 			}
 
-			eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
-			if err != nil {
-				return err
-			}
-
-			_, err = h.eventService.ChangeSongIDPosition(eventID, song.ID, songIndex)
+			err = h.eventService.ChangeSongIDPosition(eventID, song.ID, songIndex)
 			if err != nil {
 				return err
 			}
@@ -677,6 +672,8 @@ func changeSongOrderHandler() (int, []HandlerFunc) {
 		}
 
 		markup := &telebot.ReplyMarkup{}
+
+		songsStr, _, err := h.eventService.GetSongsAsHTMLStringByID(eventID)
 
 		songs, driveFiles, err := h.songService.FindOrCreateManyByDriveFileIDs(user.State.CallbackData.Query()["driveFileIds"])
 		if err != nil {
@@ -692,8 +689,8 @@ func changeSongOrderHandler() (int, []HandlerFunc) {
 		q.Set("index", strconv.Itoa(songIndex+1))
 		user.State.CallbackData.RawQuery = q.Encode()
 
-		c.Edit(helpers.AddCallbackData(fmt.Sprintf("Выбери песню номер %d:", songIndex+1),
-			user.State.CallbackData.String()), markup, telebot.ModeHTML)
+		c.Edit(helpers.AddCallbackData(fmt.Sprintf("%s\n\nВыбери песню номер %d:", songsStr, songIndex+2),
+			user.State.CallbackData.String()), markup, telebot.ModeHTML, telebot.NoPreview)
 		c.Respond()
 		return nil
 	})
@@ -1018,7 +1015,7 @@ func addEventSongHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		_, err = h.eventService.PushSongID(user.State.Context.EventID, song.ID)
+		err = h.eventService.PushSongID(user.State.Context.EventID, song.ID)
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			c.Send("Вероятнее всего, эта песня уже есть в списке.")
 		} else if err != nil {
@@ -1080,7 +1077,7 @@ func deleteEventSongHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		_, err = h.eventService.PullSongID(eventID, songID)
+		err = h.eventService.PullSongID(eventID, songID)
 		if err != nil {
 			return err
 		}
