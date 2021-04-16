@@ -35,9 +35,6 @@ func (r *EventRepository) FindAllFromToday() ([]*entities.Event, error) {
 	now := time.Now()
 
 	return r.find(bson.M{
-		"_id": bson.M{
-			"$ne": "",
-		},
 		"time": bson.M{
 			"$gte": time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
 		},

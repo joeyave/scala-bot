@@ -518,7 +518,7 @@ func createEventHandler() (int, []HandlerFunc) {
 		q.Set("eventId", event.ID.Hex())
 		user.State.CallbackData.RawQuery = q.Encode()
 
-		h.enter(c, user)
+		h.enterInlineHandler(c, user)
 
 		user.State = &entities.State{
 			Name: helpers.GetEventsState,
