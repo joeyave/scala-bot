@@ -673,7 +673,9 @@ func changeSongOrderHandler() (int, []HandlerFunc) {
 
 		markup := &telebot.ReplyMarkup{}
 
+		start := time.Now()
 		songsStr, _, err := h.eventService.GetSongsAsHTMLStringByID(eventID)
+		fmt.Printf("getting songs for event took %v", time.Since(start))
 
 		songs, driveFiles, err := h.songService.FindOrCreateManyByDriveFileIDs(user.State.CallbackData.Query()["driveFileIds"])
 		if err != nil {
