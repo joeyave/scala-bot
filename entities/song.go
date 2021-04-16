@@ -28,6 +28,8 @@ type PDF struct {
 	Key  string `bson:"key,omitempty"`
 	BPM  string `bson:"bpm,omitempty"`
 	Time string `bson:"time,omitempty"`
+
+	WebViewLink string `bson:"webViewLink,omitempty"`
 }
 
 func (s *Song) Caption() string {

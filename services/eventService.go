@@ -91,16 +91,12 @@ func (s *EventService) GetSongsAsHTMLStringByID(eventID primitive.ObjectID) (str
 
 	str := ""
 	if len(songs) > 0 {
-		str = fmt.Sprintf("%s\n\n<b>%s:</b>", str, helpers.Setlist)
+		str = fmt.Sprintf("%s\n\n<b>%s:</b>\n", str, helpers.Setlist)
 
-		songNames := make([]string, len(songs))
 		for i := range songs {
-
-			songName := fmt.Sprintf("%d. %s (%s)",
-				i+1, songs[i].PDF.Name, songs[i].Caption())
-			songNames[i] = songName
-
-			str += "\n" + strings.Join(songNames, "\n")
+			songName := fmt.Sprintf("%d. <a href=\"%s\">%s</a>  (%s)",
+				i+1, songs[i].PDF.WebViewLink, songs[i].PDF.Name, songs[i].Caption())
+			str += songName + "\n"
 		}
 	}
 

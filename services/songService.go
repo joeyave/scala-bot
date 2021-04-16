@@ -63,11 +63,12 @@ func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entitie
 	}
 
 	if songHasOutdatedPDF(song, driveFile) ||
-		song.PDF.Name == "" || song.PDF.Key == "" || song.PDF.BPM == "" || song.PDF.Time == "" {
+		song.PDF.Name == "" || song.PDF.Key == "" || song.PDF.BPM == "" || song.PDF.Time == "" || song.PDF.WebViewLink == "" {
 		song.PDF.Name = driveFile.Name
 		song.PDF.Key, song.PDF.BPM, song.PDF.Time = s.driveFileService.GetMetadata(driveFile.Id)
 		song.PDF.TgFileID = ""
 		song.PDF.ModifiedTime = driveFile.ModifiedTime
+		song.PDF.WebViewLink = driveFile.WebViewLink
 	}
 
 	song, err = s.songRepository.UpdateOne(*song)
