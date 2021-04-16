@@ -93,26 +93,15 @@ func (s *EventService) GetSongsAsHTMLStringByID(eventID primitive.ObjectID) (str
 	if len(songs) > 0 {
 		str = fmt.Sprintf("%s\n\n<b>%s:</b>", str, helpers.Setlist)
 
-		var waitGroup sync.WaitGroup
-		waitGroup.Add(len(songs))
 		songNames := make([]string, len(songs))
 		for i := range songs {
-			go func(i int) {
-				defer waitGroup.Done()
 
-				driveFile, err := s.driveFileService.FindOneByID(songs[i].DriveFileID)
-				if err != nil {
-					return
-				}
+			songName := fmt.Sprintf("%d. %s (%s)",
+				i+1, songs[i].PDF.Name, songs[i].Caption())
+			songNames[i] = songName
 
-				songName := fmt.Sprintf("%d. <a href=\"%s\">%s</a>  (%s)",
-					i+1, driveFile.WebViewLink, driveFile.Name, songs[i].Caption())
-				songNames[i] = songName
-			}(i)
+			str += "\n" + strings.Join(songNames, "\n")
 		}
-		waitGroup.Wait()
-
-		str += "\n" + strings.Join(songNames, "\n")
 	}
 
 	return str, songs, nil
