@@ -1007,6 +1007,8 @@ func addEventSongHandler() (int, []HandlerFunc) {
 			return h.enter(c, user)
 		}
 
+		c.Notify(telebot.Typing)
+
 		foundDriveFile, err := h.driveFileService.FindOneByNameAndFolderID(c.Text(), user.Band.DriveFolderID)
 		if err != nil {
 			user.State.Index--
