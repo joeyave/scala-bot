@@ -178,6 +178,36 @@ func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.Handl
 	}
 }
 
+func (h *Handler) NotifyUser() {
+	for range time.Tick(time.Hour * 2) {
+		events, err := h.eventService.FindAllFromToday()
+		if err != nil {
+			return
+		}
+
+		for _, event := range events {
+			if event.Time.Add(time.Hour*8).Sub(time.Now()).Hours() < 48 {
+				for _, membership := range event.Memberships {
+					if membership.Notified == true {
+						continue
+					}
+
+					eventString := h.eventService.ToHtmlStringByEvent(*event)
+					_, err := h.bot.Send(telebot.ChatID(membership.UserID),
+						fmt.Sprintf("Привет. Ты учавствуешь в собрании через несколько дней! "+
+							"Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
+					if err != nil {
+						continue
+					}
+
+					membership.Notified = true
+					h.membershipService.UpdateOne(*membership)
+				}
+			}
+		}
+	}
+}
+
 func (h *Handler) enter(c telebot.Context, user *entities.User) error {
 
 	if user.State.CallbackData == nil {

@@ -110,6 +110,10 @@ func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, *entitie
 		return "", nil, err
 	}
 
+	return s.ToHtmlStringByEvent(*event), event, nil
+}
+
+func (s *EventService) ToHtmlStringByEvent(event entities.Event) string {
 	eventString := fmt.Sprintf("<b>%s</b>", event.Alias())
 
 	var currRoleID primitive.ObjectID
@@ -151,5 +155,5 @@ func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, *entitie
 		eventString += "\n" + strings.Join(songNames, "\n")
 	}
 
-	return eventString, event, nil
+	return eventString
 }

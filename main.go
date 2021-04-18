@@ -108,35 +108,7 @@ func main() {
 	bot.Handle(telebot.OnVoice, handler.OnVoice)
 	bot.Handle(telebot.OnCallback, handler.OnCallback)
 
-	go func() {
-		for range time.Tick(time.Hour * 2) {
-			events, err := eventService.FindAllFromToday()
-			if err != nil {
-				return
-			}
-
-			for _, event := range events {
-				if event.Time.Add(time.Hour*8).Sub(time.Now()).Hours() < 48 {
-					for _, membership := range event.Memberships {
-						if membership.Notified == true {
-							continue
-						}
-
-						eventString, _, _ := eventService.ToHtmlStringByID(event.ID)
-						_, err := bot.Send(telebot.ChatID(membership.UserID),
-							fmt.Sprintf("Привет. Ты учавствуешь в собрании через несколько дней! "+
-								"Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
-						if err != nil {
-							continue
-						}
-
-						membership.Notified = true
-						membershipService.UpdateOne(*membership)
-					}
-				}
-			}
-		}
-	}()
+	go handler.NotifyUser()
 
 	bot.Start()
 }
