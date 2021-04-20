@@ -1372,7 +1372,7 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 			if len(song.Events) == 0 {
 				buttonText = song.Song.PDF.Name
 			} else {
-				buttonText = fmt.Sprintf("%s | %v | %d", song.Song.PDF.Name, lctime.Strftime("%d %b", song.Events[0].Time), len(song.Events))
+				buttonText = fmt.Sprintf("%v | %s | %d", lctime.Strftime("%d %b", song.Events[0].Time), song.Song.PDF.Name, len(song.Events))
 			}
 
 			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: buttonText}})
@@ -1410,7 +1410,7 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 		c.Notify(telebot.UploadingDocument)
 
 		var songName string
-		regex := regexp.MustCompile(`(.*?)\|`)
+		regex := regexp.MustCompile(`\|(.*?)\|`)
 		matches := regex.FindStringSubmatch(c.Text())
 		if len(matches) < 2 {
 			songName = c.Text()
