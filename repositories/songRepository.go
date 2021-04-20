@@ -325,6 +325,11 @@ func (r *SongRepository) findWithExtra(m bson.M, opts ...bson.M) ([]*entities.So
 							"as": "memberships",
 						},
 					},
+                                        bson.M{
+						"$sort": bson.M{
+							"time": -1,
+						},
+					},
 				},
 				"as": "events",
 			},
