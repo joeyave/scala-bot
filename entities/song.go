@@ -18,6 +18,12 @@ type Song struct {
 	Voices []*Voice `bson:"voices,omitempty"`
 }
 
+type SongExtra struct {
+	Song *Song `bson:",inline"`
+
+	Events []*Event `bson:"events,omitempty"`
+}
+
 type PDF struct {
 	ModifiedTime string `bson:"modifiedTime,omitempty"`
 

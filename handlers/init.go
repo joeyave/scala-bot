@@ -39,6 +39,7 @@ func init() {
 		deleteEventSongHandler,
 		addBandAdminHandler,
 		deleteSongHandler,
+		getSongsFromMongoHandler,
 	)
 }
 

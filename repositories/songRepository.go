@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/joeyave/scala-chords-bot/entities"
+	"github.com/joeyave/scala-chords-bot/helpers"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -35,6 +36,14 @@ func (r *SongRepository) FindOneByID(ID primitive.ObjectID) (*entities.Song, err
 
 func (r *SongRepository) FindOneByDriveFileID(driveFileID string) (*entities.Song, error) {
 	songs, err := r.find(bson.M{"driveFileId": driveFileID})
+	if err != nil {
+		return nil, err
+	}
+	return songs[0], nil
+}
+
+func (r *SongRepository) FindOneByName(name string) (*entities.Song, error) {
+	songs, err := r.find(bson.M{"pdf.name": name})
 	if err != nil {
 		return nil, err
 	}
@@ -161,4 +170,177 @@ func (r *SongRepository) generateUniqueID() primitive.ObjectID {
 	}
 
 	return ID
+}
+
+func (r *SongRepository) FindAllExtraByPageNumberSortedByEventsNumber(pageNumber int) ([]*entities.SongExtra, error) {
+
+	return r.findWithExtra(
+		bson.M{},
+		bson.M{
+			"$addFields": bson.M{
+				"eventsSize": bson.M{"$size": "$events"},
+			},
+		},
+		bson.M{
+			"$sort": bson.M{
+				"eventsSize": -1,
+				"_id":        1,
+			},
+		},
+		bson.M{
+			"$skip": pageNumber * helpers.PageSize,
+		},
+		bson.M{
+			"$limit": helpers.PageSize,
+		},
+	)
+}
+
+func (r *SongRepository) FindAllExtraByPageNumberSortedByLatestEventDate(pageNumber int) ([]*entities.SongExtra, error) {
+
+	return r.findWithExtra(
+		bson.M{},
+		bson.M{
+			"$sort": bson.M{
+				"events.0.time": -1,
+				"_id":           1,
+			},
+		},
+		bson.M{
+			"$skip": pageNumber * helpers.PageSize,
+		},
+		bson.M{
+			"$limit": helpers.PageSize,
+		},
+	)
+}
+
+func (r *SongRepository) FindManyExtraByDriveFileIDs(driveFileIDs []string) ([]*entities.SongExtra, error) {
+	return r.findWithExtra(
+		bson.M{
+			"driveFileId": bson.M{
+				"$in": driveFileIDs,
+			},
+		},
+	)
+}
+
+func (r *SongRepository) findWithExtra(m bson.M, opts ...bson.M) ([]*entities.SongExtra, error) {
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+
+	pipeline := bson.A{
+		bson.M{
+			"$match": m,
+		},
+		bson.M{
+			"$lookup": bson.M{
+				"from": "bands",
+				"let":  bson.M{"bandId": "$bandId"},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$_id", "$$bandId"}}},
+					},
+					bson.M{
+						"$lookup": bson.M{
+							"from": "roles",
+							"let":  bson.M{"bandId": "$_id"},
+							"pipeline": bson.A{
+								bson.M{
+									"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$bandId", "$$bandId"}}},
+								},
+								bson.M{
+									"$sort": bson.M{
+										"priority": 1,
+									},
+								},
+							},
+							"as": "roles",
+						},
+					},
+				},
+				"as": "band",
+			},
+		},
+		bson.M{
+			"$unwind": bson.M{
+				"path":                       "$band",
+				"preserveNullAndEmptyArrays": true,
+			},
+		},
+		bson.M{
+			"$lookup": bson.M{
+				"from": "events",
+				"let":  bson.M{"songId": "$_id"},
+				"pipeline": bson.A{
+					bson.M{
+						"$addFields": bson.M{
+							"songIds": bson.M{
+								"$cond": bson.M{
+									"if": bson.M{
+										"$ne": bson.A{bson.M{"$type": "$songIds"}, "array"},
+									},
+									"then": bson.A{},
+									"else": "$songIds",
+								},
+							},
+						},
+					},
+					bson.M{
+						"$match": bson.M{"$expr": bson.M{"$in": bson.A{"$$songId", "$songIds"}}},
+					},
+					bson.M{
+						"$lookup": bson.M{
+							"from": "memberships",
+							"let":  bson.M{"eventId": "$_id"},
+							"pipeline": bson.A{
+								bson.M{
+									"$match": bson.M{
+										"$expr": bson.M{"$eq": bson.A{"$eventId", "$$eventId"}},
+									},
+								},
+								bson.M{
+									"$lookup": bson.M{
+										"from": "roles",
+										"let":  bson.M{"roleId": "$roleId"},
+										"pipeline": bson.A{
+											bson.M{
+												"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$_id", "$$roleId"}}},
+											},
+										},
+										"as": "role",
+									},
+								},
+								bson.M{
+									"$unwind": bson.M{
+										"path":                       "$role",
+										"preserveNullAndEmptyArrays": true,
+									},
+								},
+								bson.M{
+									"$sort": bson.M{
+										"role.priority": 1,
+									},
+								},
+							},
+							"as": "memberships",
+						},
+					},
+				},
+				"as": "events",
+			},
+		},
+	}
+
+	for _, o := range opts {
+		pipeline = append(pipeline, o)
+	}
+
+	cur, err := collection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	var songs []*entities.SongExtra
+	err = cur.All(context.TODO(), &songs)
+	return songs, err
 }

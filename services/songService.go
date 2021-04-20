@@ -1,7 +1,6 @@
 package services
 
 import (
-	"errors"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/repositories"
 	"github.com/kjk/notionapi"
@@ -42,6 +41,10 @@ func (s *SongService) FindOneByID(ID primitive.ObjectID) (*entities.Song, error)
 
 func (s *SongService) FindOneByDriveFileID(driveFileID string) (*entities.Song, error) {
 	return s.songRepository.FindOneByDriveFileID(driveFileID)
+}
+
+func (s *SongService) FindOneByName(driveFileID string) (*entities.Song, error) {
+	return s.songRepository.FindOneByName(driveFileID)
 }
 
 func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entities.Song, *drive.File, error) {
@@ -117,23 +120,12 @@ func (s *SongService) DeleteOneByDriveFileID(driveFileID string) error {
 	return nil
 }
 
-func (s *SongService) FindNotionPageByID(pageID string) (*notionapi.Block, error) {
-	res, err := s.notionClient.LoadPageChunk(pageID, 0, nil)
-	if err != nil {
-		return nil, err
-	}
+func (s *SongService) FindAllExtraByPageNumberSortedByEventsNumber(pageNumber int) ([]*entities.SongExtra, error) {
+	return s.songRepository.FindAllExtraByPageNumberSortedByEventsNumber(pageNumber)
+}
 
-	record, ok := res.RecordMap.Blocks[pageID]
-	if !ok {
-		return nil, errors.New("TODO")
-	}
-
-	block := record.Block
-	if block == nil || !block.IsPage() || block.IsSubPage() || block.IsLinkToPage() {
-		return nil, errors.New("TODO")
-	}
-
-	return block, nil
+func (s *SongService) FindAllExtraByPageNumberSortedByLatestEventDate(pageNumber int) ([]*entities.SongExtra, error) {
+	return s.songRepository.FindAllExtraByPageNumberSortedByLatestEventDate(pageNumber)
 }
 
 func songHasOutdatedPDF(song *entities.Song, driveFile *drive.File) bool {

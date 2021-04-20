@@ -16,8 +16,6 @@ import (
 	"time"
 )
 
-const PageSize = 50
-
 type DriveFileService struct {
 	driveRepository *drive.Service
 	docsRepository  *docs.Service
@@ -37,7 +35,7 @@ func (s *DriveFileService) FindAllByFolderID(folderID string, nextPageToken stri
 	res, err := s.driveRepository.Files.List().
 		Q(q).
 		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink, parents)").
-		PageSize(PageSize).PageToken(nextPageToken).Do()
+		PageSize(helpers.PageSize).PageToken(nextPageToken).Do()
 
 	if err != nil {
 		return nil, "", err
@@ -62,7 +60,7 @@ func (s *DriveFileService) FindSomeByFullTextAndFolderID(name string, folderID s
 		//Q(fmt.Sprintf("fullText contains '\"%s\"'", name)).
 		Q(q).
 		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink, parents)").
-		PageSize(PageSize).PageToken(pageToken).Do()
+		PageSize(helpers.PageSize).PageToken(pageToken).Do()
 
 	if err != nil {
 		return nil, "", err
@@ -945,85 +943,6 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string) [
 			style.Strikethrough = false
 
 			requests = append(requests, changeStyleByRegex(regexp.MustCompile(`\p{L}+(\s\d*)?:`), *element, style, strings.ToUpper, segmentID)...)
-
-			//matches := makeBoldAndRedRegex.FindAllStringIndex(element.TextRun.Content, -1)
-			//if matches != nil {
-			//	for _, match := range matches {
-			//		style := *element.TextRun.TextStyle
-			//
-			//		style.Bold = true
-			//		style.ForegroundColor = &docs.OptionalColor{
-			//			Color: &docs.Color{
-			//				RgbColor: &docs.RgbColor{Blue: 0, Green: 0, Red: 0.8, ForceSendFields: []string{"blue", "green"}},
-			//			},
-			//		}
-			//
-			//		requests = append(requests, &docs.Request{
-			//			UpdateTextStyle: &docs.UpdateTextStyleRequest{
-			//				Fields: "*",
-			//				Range: &docs.Range{
-			//					StartIndex:      element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
-			//					EndIndex:        element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[1]]))),
-			//					SegmentId:       segmentID,
-			//					ForceSendFields: []string{"StartIndex"},
-			//				},
-			//				TextStyle: &style,
-			//			},
-			//		})
-			//	}
-			//}
-			//
-			//matches = sectionNamesRegex.FindAllStringIndex(element.TextRun.Content, -1)
-			//if matches != nil {
-			//	for _, match := range matches {
-			//		style := *element.TextRun.TextStyle
-			//
-			//		style.Bold = true
-			//		style.ForegroundColor = &docs.OptionalColor{
-			//			Color: &docs.Color{
-			//				RgbColor: &docs.RgbColor{Blue: 0, Green: 0, Red: 0, ForceSendFields: []string{"blue", "green"}},
-			//			},
-			//		}
-			//		style.Underline = false
-			//		style.Italic = false
-			//		style.Strikethrough = false
-			//
-			//		requests = append(requests,
-			//			&docs.Request{
-			//				UpdateTextStyle: &docs.UpdateTextStyleRequest{
-			//					Fields: "*",
-			//					Range: &docs.Range{
-			//						StartIndex:      element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
-			//						EndIndex:        element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[1]]))),
-			//						SegmentId:       segmentID,
-			//						ForceSendFields: []string{"StartIndex"},
-			//					},
-			//					TextStyle: &style,
-			//				},
-			//			},
-			//			&docs.Request{
-			//				DeleteContentRange: &docs.DeleteContentRangeRequest{
-			//					Range: &docs.Range{
-			//						StartIndex:      element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
-			//						EndIndex:        element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[1]]))),
-			//						SegmentId:       segmentID,
-			//						ForceSendFields: []string{"StartIndex"},
-			//					},
-			//				},
-			//			},
-			//			&docs.Request{
-			//				InsertText: &docs.InsertTextRequest{
-			//					Location: &docs.Location{
-			//						Index:           element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
-			//						SegmentId:       segmentID,
-			//						ForceSendFields: []string{"StartIndex"},
-			//					},
-			//					Text: strings.ToUpper(element.TextRun.Content[match[0]:match[1]]),
-			//				},
-			//			},
-			//		)
-			//	}
-			//}
 		}
 	}
 

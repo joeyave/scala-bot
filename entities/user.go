@@ -45,23 +45,12 @@ type Context struct {
 
 	Voice *Voice `bson:"currentVoice,omitempty"`
 
-	Key string `bson:"key,omitempty"`
+	Band  *Band   `bson:"currentBand,omitempty"`
+	Bands []*Band `bson:"bands,omitempty"`
 
-	BandID primitive.ObjectID `bson:"currentBandId,omitempty"`
-	Band   *Band              `bson:"currentBand,omitempty"`
-	Bands  []*Band            `bson:"bands,omitempty"`
-
-	Role   *Role              `bson:"role,omitempty"`
-	RoleID primitive.ObjectID `bson:"roleId,omitempty"`
+	Role *Role `bson:"role,omitempty"`
 
 	EventID primitive.ObjectID `bson:"eventId,omitempty"`
-	Events  []*Event           `bson:"events,omitempty"`
-
-	FoundSongIDs []primitive.ObjectID `bson:"foundSongIds,omitempty"`
-	SongIDs      []primitive.ObjectID `bson:"songIds,omitempty"`
-	Songs        []*Song              `bson:"songs,omitempty"`
-
-	NotionEvents []*NotionEvent `bson:"notionEvents,omitempty"`
 
 	CreateSongPayload struct {
 		Name   string `bson:"name,omitempty"`
@@ -74,7 +63,7 @@ type Context struct {
 	Map  map[string]string `bson:"map,omitempty"`
 	Time time.Time         `bson:"time,omitempty"`
 
-	Index int `bson:"index, omitempty"`
+	PageIndex int `bson:"index, omitempty"`
 
 	NextPageToken *NextPageToken `bson:"nextPageToken,omitempty"`
 }

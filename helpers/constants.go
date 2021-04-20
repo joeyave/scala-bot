@@ -1,5 +1,7 @@
 package helpers
 
+const PageSize = 50
+
 const (
 	SearchSongState = iota
 	SetlistState
@@ -25,6 +27,7 @@ const (
 	AddEventMemberState
 	DeleteEventMemberState
 	DeleteEventSongState
+	GetSongsFromMongoHandler
 )
 
 // Buttons constants.
