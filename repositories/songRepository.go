@@ -202,8 +202,8 @@ func (r *SongRepository) FindAllExtraByPageNumberSortedByLatestEventDate(pageNum
 		bson.M{},
 		bson.M{
 			"$sort": bson.M{
+				//"_id":           -1,
 				"events.0.time": -1,
-				"_id":           1,
 			},
 		},
 		bson.M{
