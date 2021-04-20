@@ -150,9 +150,9 @@ func (r *EventRepository) find(m bson.M, opts ...bson.M) ([]*entities.Event, err
 						},
 					},
 					bson.M{
-						"$sort": bson.M{
-							"role._id":      1,
-							"role.priority": 1,
+						"$sort": bson.D{
+							{"role._id", 1},
+							{"role.priority", 1},
 						},
 					},
 					bson.M{
