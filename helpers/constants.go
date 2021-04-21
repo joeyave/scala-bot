@@ -40,7 +40,7 @@ const (
 	Audios                      string = "Аудио"
 	Transpose                   string = "🎛 Транспонировать"
 	Style                       string = "🎨 Стилизовать"
-	Menu                        string = "Меню"
+	Menu                        string = "💻 Меню"
 	Back                        string = "◀️ Назад"
 	Forward                     string = "▶️ Вперед"
 	No                          string = "⛔️ Нет"
