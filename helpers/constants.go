@@ -39,7 +39,7 @@ const (
 	Voices                      string = "Партии"
 	Audios                      string = "Аудио"
 	Transpose                   string = "🎛 Транспонировать"
-	Style                       string = "Стилизовать"
+	Style                       string = "🎨 Стилизовать"
 	Menu                        string = "Меню"
 	Back                        string = "◀️ Назад"
 	Forward                     string = "▶️ Вперед"
