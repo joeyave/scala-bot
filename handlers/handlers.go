@@ -72,6 +72,11 @@ func mainMenuHandler() (int, []HandlerFunc) {
 				Name: helpers.GetSongsFromMongoHandler,
 			}
 
+		case helpers.SongsByNumberOfPerforming:
+			user.State = &entities.State{
+				Name: helpers.GetSongsFromMongoHandler,
+			}
+
 		case helpers.CreateDoc:
 			user.State = &entities.State{
 				Name: helpers.CreateSongState,
@@ -1361,7 +1366,13 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 		c.Notify(telebot.Typing)
 
-		songs, err := h.songService.FindAllExtraByPageNumberSortedByLatestEventDate(user.State.Context.PageIndex)
+		var songs []*entities.SongExtra
+		var err error
+		if c.Text() == helpers.SongsByLastDateOfPerforming {
+			songs, err = h.songService.FindAllExtraByPageNumberSortedByLatestEventDate(user.State.Context.PageIndex)
+		} else if c.Text() == helpers.SongsByNumberOfPerforming {
+			songs, err = h.songService.FindAllExtraByPageNumberSortedByEventsNumber(user.State.Context.PageIndex)
+		}
 
 		markup := &telebot.ReplyMarkup{
 			ResizeKeyboard: true,
