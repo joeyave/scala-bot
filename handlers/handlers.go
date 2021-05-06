@@ -1366,11 +1366,17 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 		c.Notify(telebot.Typing)
 
+		switch c.Text() {
+		case helpers.SongsByNumberOfPerforming, helpers.SongsByLastDateOfPerforming:
+			user.State.Context.QueryType = c.Text()
+		}
+
 		var songs []*entities.SongExtra
 		var err error
-		if c.Text() == helpers.SongsByLastDateOfPerforming {
+		switch user.State.Context.QueryType {
+		case helpers.SongsByLastDateOfPerforming:
 			songs, err = h.songService.FindAllExtraByPageNumberSortedByLatestEventDate(user.State.Context.PageIndex)
-		} else if c.Text() == helpers.SongsByNumberOfPerforming {
+		case helpers.SongsByNumberOfPerforming:
 			songs, err = h.songService.FindAllExtraByPageNumberSortedByEventsNumber(user.State.Context.PageIndex)
 		}
 
