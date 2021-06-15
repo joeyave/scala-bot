@@ -5,7 +5,9 @@ import (
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/telebot/v3"
+	"github.com/klauspost/lctime"
 	"sync"
+	"time"
 )
 
 func SendDriveFileToUser(h *Handler, c telebot.Context, user *entities.User, driveFileID string) error {
@@ -256,4 +258,46 @@ func sendDriveFilesAlbum(h *Handler, c telebot.Context, user *entities.User, dri
 	}
 
 	return nil
+}
+
+func GetCalendarMarkup(now, monthFirstDayDate, monthLastDayDate time.Time) *telebot.ReplyMarkup {
+	markup := &telebot.ReplyMarkup{}
+
+	currCol := 4
+	colNum := 4
+	for d := monthFirstDayDate; d.After(monthLastDayDate) == false; d = d.AddDate(0, 0, 1) {
+		timeStr := lctime.Strftime("%d %a", d)
+
+		if now.Day() == d.Day() && now.Month() == d.Month() && now.Year() == d.Year() {
+			timeStr = helpers.Today
+		}
+		if currCol == colNum {
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{})
+			currCol = 0
+		}
+
+		markup.InlineKeyboard[len(markup.InlineKeyboard)-1] =
+			append(markup.InlineKeyboard[len(markup.InlineKeyboard)-1], telebot.InlineButton{
+				Text: timeStr,
+				Data: helpers.AggregateCallbackData(helpers.CreateEventState, 2, d.Format(time.RFC3339)),
+			})
+		currCol++
+	}
+
+	prevMonthLastDate := monthFirstDayDate.AddDate(0, 0, -1)
+	prevMonthFirstDateStr := prevMonthLastDate.AddDate(0, 0, -prevMonthLastDate.Day()+1).Format(time.RFC3339)
+	nextMonthFirstDate := monthLastDayDate.AddDate(0, 0, 1)
+	nextMonthFirstDateStr := monthLastDayDate.AddDate(0, 0, 1).Format(time.RFC3339)
+	markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
+		{
+			Text: lctime.Strftime("%B", prevMonthLastDate),
+			Data: helpers.AggregateCallbackData(helpers.CreateEventState, 1, prevMonthFirstDateStr),
+		},
+		{
+			Text: lctime.Strftime("%B", nextMonthFirstDate),
+			Data: helpers.AggregateCallbackData(helpers.CreateEventState, 1, nextMonthFirstDateStr),
+		},
+	})
+
+	return markup
 }

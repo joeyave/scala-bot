@@ -42,6 +42,7 @@ func GetEventActionsKeyboard(user entities.User, event entities.Event) [][]teleb
 			},
 			{
 				{Text: ChangeSongsOrder, Data: AggregateCallbackData(ChangeSongOrderState, 0, "")},
+				{Text: ChangeEventDate, Data: AggregateCallbackData(ChangeEventDateState, 0, "")},
 			},
 		}
 	}

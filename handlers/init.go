@@ -34,12 +34,12 @@ func init() {
 		addEventSongHandler,
 		deleteEventHandler,
 		changeSongOrderHandler,
-		addEventMemberHandler,
 		deleteEventMemberHandler,
 		deleteEventSongHandler,
 		addBandAdminHandler,
 		deleteSongHandler,
 		getSongsFromMongoHandler,
+		changeEventDateHandler,
 	)
 }
 

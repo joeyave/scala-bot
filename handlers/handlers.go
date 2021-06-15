@@ -714,6 +714,106 @@ func changeSongOrderHandler() (int, []HandlerFunc) {
 	return helpers.ChangeSongOrderState, handlerFuncs
 }
 
+func changeEventDateHandler() (int, []HandlerFunc) {
+	handlerFuncs := make([]HandlerFunc, 0)
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+		markup := &telebot.ReplyMarkup{}
+
+		now := time.Now()
+		var monthFirstDayDate time.Time
+		var monthLastDayDate time.Time
+
+		_, _, monthFirstDateStr := helpers.ParseCallbackData(c.Callback().Data)
+		if monthFirstDateStr != "" {
+			monthFirstDayDate, _ = time.Parse(time.RFC3339, monthFirstDateStr)
+			monthLastDayDate = monthFirstDayDate.AddDate(0, 1, -1)
+		} else {
+			monthFirstDayDate = time.Now().AddDate(0, 0, -now.Day()+1)
+			monthLastDayDate = time.Now().AddDate(0, 1, -now.Day())
+		}
+
+		currCol := 4
+		colNum := 4
+		for d := monthFirstDayDate; d.After(monthLastDayDate) == false; d = d.AddDate(0, 0, 1) {
+			timeStr := lctime.Strftime("%d %a", d)
+
+			if now.Day() == d.Day() && now.Month() == d.Month() && now.Year() == d.Year() {
+				timeStr = helpers.Today
+			}
+			if currCol == colNum {
+				markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{})
+				currCol = 0
+			}
+
+			markup.InlineKeyboard[len(markup.InlineKeyboard)-1] =
+				append(markup.InlineKeyboard[len(markup.InlineKeyboard)-1], telebot.InlineButton{
+					Text: timeStr,
+					Data: helpers.AggregateCallbackData(helpers.ChangeEventDateState, 1, d.Format(time.RFC3339)),
+				})
+			currCol++
+		}
+
+		prevMonthLastDate := monthFirstDayDate.AddDate(0, 0, -1)
+		prevMonthFirstDateStr := prevMonthLastDate.AddDate(0, 0, -prevMonthLastDate.Day()+1).Format(time.RFC3339)
+		nextMonthFirstDate := monthLastDayDate.AddDate(0, 0, 1)
+		nextMonthFirstDateStr := monthLastDayDate.AddDate(0, 0, 1).Format(time.RFC3339)
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
+			{
+				Text: lctime.Strftime("%B", prevMonthLastDate),
+				Data: helpers.AggregateCallbackData(helpers.ChangeEventDateState, 0, prevMonthFirstDateStr),
+			},
+			{
+				Text: lctime.Strftime("%B", nextMonthFirstDate),
+				Data: helpers.AggregateCallbackData(helpers.ChangeEventDateState, 0, nextMonthFirstDateStr),
+			},
+		})
+
+		msg := fmt.Sprintf("Выбери дату:\n\n<b>%s</b>", lctime.Strftime("%B %Y", monthFirstDayDate))
+		c.Edit(helpers.AddCallbackData(msg, user.State.CallbackData.String()), markup, telebot.ModeHTML)
+		c.Respond()
+
+		return nil
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+		_, _, eventTime := helpers.ParseCallbackData(c.Callback().Data)
+
+		parsedTime, err := time.Parse(time.RFC3339, eventTime)
+		if err != nil {
+			user.State = &entities.State{Name: helpers.CreateEventState}
+			return h.enter(c, user)
+		}
+
+		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
+		if err != nil {
+			return err
+		}
+
+		event, err := h.eventService.FindOneByID(eventID)
+		if err != nil {
+			return err
+		}
+		event.Time = parsedTime
+
+		event, err = h.eventService.UpdateOne(*event)
+		if err != nil {
+			return err
+		}
+
+		eventString := h.eventService.ToHtmlStringByEvent(*event)
+
+		c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), &telebot.ReplyMarkup{
+			InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
+		}, telebot.ModeHTML, telebot.NoPreview)
+		c.Respond()
+
+		return nil
+	})
+
+	return helpers.ChangeEventDateState, handlerFuncs
+}
+
 func addEventMemberHandler() (int, []HandlerFunc) {
 	handlerFuncs := make([]HandlerFunc, 0)
 
