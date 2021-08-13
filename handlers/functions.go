@@ -6,6 +6,7 @@ import (
 	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/telebot/v3"
 	"github.com/klauspost/lctime"
+	"github.com/rs/zerolog/log"
 	"sync"
 	"time"
 )
@@ -239,22 +240,25 @@ func sendDriveFilesAlbum(h *Handler, c telebot.Context, user *entities.User, dri
 			}
 		}
 
-		for j := range responses {
-			foundDriveFileID := driveFileIDs[j+(i*len(album))]
-
-			song, err := h.songService.FindOneByDriveFileID(foundDriveFileID)
-			if err != nil {
-				continue
-			}
-
-			song.PDF.TgFileID = responses[j].Document.FileID
-			err = SendSongToChannel(h, c, user, song)
-			if err != nil {
-				continue
-			}
-
-			_, _ = h.songService.UpdateOne(*song)
+		for _, response := range responses {
+			log.Debug().Msgf("%s", response.Document.FileName)
 		}
+		//for j := range responses {
+		//	foundDriveFileID := driveFileIDs[j+(i*len(album))]
+		//
+		//	song, err := h.songService.FindOneByDriveFileID(foundDriveFileID)
+		//	if err != nil {
+		//		continue
+		//	}
+		//
+		//	song.PDF.TgFileID = responses[j].Document.FileID
+		//	err = SendSongToChannel(h, c, user, song)
+		//	if err != nil {
+		//		continue
+		//	}
+		//
+		//	_, _ = h.songService.UpdateOne(*song)
+		//}
 	}
 
 	return nil

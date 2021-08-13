@@ -7,8 +7,8 @@ import (
 	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/scala-chords-bot/services"
 	"github.com/joeyave/telebot/v3"
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"log"
 	"net/url"
 	"regexp"
 	"strings"
@@ -150,6 +150,19 @@ func (h *Handler) OnError(botErr error, c telebot.Context) {
 	_, err = h.userService.UpdateOne(*user)
 	if err != nil {
 		return
+	}
+}
+
+func (h *Handler) LogInputMiddleware(next telebot.HandlerFunc) telebot.HandlerFunc {
+	return func(c telebot.Context) error {
+		messageBytes, err := json.Marshal(c.Message())
+		if err != nil {
+			return next(c)
+		}
+
+		log.Info().RawJSON("msg", messageBytes).Msg("Input:")
+
+		return next(c)
 	}
 }
 

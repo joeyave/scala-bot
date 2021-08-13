@@ -14,6 +14,7 @@ require (
 	github.com/kjk/notionapi v0.0.0-20201230072046-b69038831038
 	github.com/klauspost/compress v1.11.7 // indirect
 	github.com/klauspost/lctime v0.1.0
+	github.com/rs/zerolog v1.23.0
 	go.mongodb.org/mongo-driver v1.4.6
 	go.opencensus.io v0.22.6 // indirect
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2 // indirect

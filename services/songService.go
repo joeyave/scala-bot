@@ -1,9 +1,11 @@
 package services
 
 import (
+	"errors"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/repositories"
 	"github.com/kjk/notionapi"
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
 	"sync"
@@ -48,7 +50,17 @@ func (s *SongService) FindOneByName(driveFileID string) (*entities.Song, error) 
 }
 
 func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entities.Song, *drive.File, error) {
-	driveFile, err := s.driveRepository.Files.Get(driveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+	var driveFile *drive.File
+	err := errors.New("fake error")
+	for err != nil {
+		driveFile, err = s.driveRepository.Files.Get(driveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+	}
+
+	driveFileName := ""
+	if driveFile != nil {
+		driveFileName = driveFile.Name
+	}
+	log.Debug().Msgf("Getting drive file: %s", driveFileName)
 
 	song, err := s.songRepository.FindOneByDriveFileID(driveFileID)
 	if err != nil {
