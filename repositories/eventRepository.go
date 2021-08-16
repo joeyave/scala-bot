@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"fmt"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -340,10 +339,6 @@ func (r *EventRepository) find(m bson.M, opts ...bson.M) ([]*entities.Event, err
 	err = cur.All(context.TODO(), &events)
 	if err != nil {
 		return nil, err
-	}
-
-	if len(events) == 0 {
-		return nil, fmt.Errorf("not found")
 	}
 
 	return events, nil

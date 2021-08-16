@@ -333,6 +333,10 @@ func getEventsHandler() (int, []HandlerFunc) {
 				return err
 			}
 
+			if len(events) == 0 {
+				c.Send("Ты нигде не участвуешь :(")
+			}
+
 			for _, event := range events {
 				eventString, _, err := h.eventService.ToHtmlStringByID(event.ID)
 				if err != nil {
