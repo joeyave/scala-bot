@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/api/drive/v3"
-        "github.com/rs/zerolog/log"
+        "log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -541,8 +541,6 @@ func createEventHandler() (int, []HandlerFunc) {
 			user.State = &entities.State{Name: helpers.CreateEventState}
 			return h.enter(c, user)
 		}
-
-log.Debug().Msg(parsedTime)
 
 		event, err := h.eventService.UpdateOne(entities.Event{
 			Time:   parsedTime,
