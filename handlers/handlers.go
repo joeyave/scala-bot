@@ -96,7 +96,7 @@ func mainMenuHandler() (int, []HandlerFunc) {
 			}
 
 			for _, user := range users {
-				if user.User == nil || user.User.Name == "" {
+				if user.User == nil || user.User.Name == "" || len(user.Events) == 0 {
 					continue
 				}
 
