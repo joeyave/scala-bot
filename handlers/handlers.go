@@ -460,17 +460,34 @@ func createEventHandler() (int, []HandlerFunc) {
 			monthLastDayDate = time.Now().AddDate(0, 1, -now.Day())
 		}
 
-		currCol := 4
-		colNum := 4
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{})
+		for d := time.Date(2000, 1, 3, 0, 0, 0, 0, time.Local); d != time.Date(2000, 1, 10, 0, 0, 0, 0, time.Local); d = d.AddDate(0, 0, 1) {
+			markup.InlineKeyboard[len(markup.InlineKeyboard)-1] =
+				append(markup.InlineKeyboard[len(markup.InlineKeyboard)-1], telebot.InlineButton{
+					Text: lctime.Strftime("%a", d), Data: "-",
+				})
+		}
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{})
+
 		for d := monthFirstDayDate; d.After(monthLastDayDate) == false; d = d.AddDate(0, 0, 1) {
-			timeStr := lctime.Strftime("%d %a", d)
+			timeStr := lctime.Strftime("%d", d)
 
 			if now.Day() == d.Day() && now.Month() == d.Month() && now.Year() == d.Year() {
 				timeStr = helpers.Today
 			}
-			if currCol == colNum {
+
+			if d.Weekday() == time.Monday {
 				markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{})
-				currCol = 0
+			}
+
+			wd := int(d.Weekday())
+			if wd == 0 {
+				wd = 7
+			}
+			wd = wd - len(markup.InlineKeyboard[len(markup.InlineKeyboard)-1])
+			for k := 1; k < wd; k++ {
+				markup.InlineKeyboard[len(markup.InlineKeyboard)-1] =
+					append(markup.InlineKeyboard[len(markup.InlineKeyboard)-1], telebot.InlineButton{Text: " ", Data: "-"})
 			}
 
 			markup.InlineKeyboard[len(markup.InlineKeyboard)-1] =
@@ -478,7 +495,11 @@ func createEventHandler() (int, []HandlerFunc) {
 					Text: timeStr,
 					Data: helpers.AggregateCallbackData(helpers.CreateEventState, 2, d.Format(time.RFC3339)),
 				})
-			currCol++
+		}
+
+		for len(markup.InlineKeyboard[len(markup.InlineKeyboard)-1]) != 7 {
+			markup.InlineKeyboard[len(markup.InlineKeyboard)-1] =
+				append(markup.InlineKeyboard[len(markup.InlineKeyboard)-1], telebot.InlineButton{Text: " ", Data: "-"})
 		}
 
 		prevMonthLastDate := monthFirstDayDate.AddDate(0, 0, -1)
@@ -732,26 +753,46 @@ func changeEventDateHandler() (int, []HandlerFunc) {
 			monthFirstDayDate = time.Now().AddDate(0, 0, -now.Day()+1)
 			monthLastDayDate = time.Now().AddDate(0, 1, -now.Day())
 		}
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{})
+		for d := time.Date(2000, 1, 3, 0, 0, 0, 0, time.Local); d != time.Date(2000, 1, 10, 0, 0, 0, 0, time.Local); d = d.AddDate(0, 0, 1) {
+			markup.InlineKeyboard[len(markup.InlineKeyboard)-1] =
+				append(markup.InlineKeyboard[len(markup.InlineKeyboard)-1], telebot.InlineButton{
+					Text: lctime.Strftime("%a", d), Data: "-",
+				})
+		}
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{})
 
-		currCol := 4
-		colNum := 4
 		for d := monthFirstDayDate; d.After(monthLastDayDate) == false; d = d.AddDate(0, 0, 1) {
-			timeStr := lctime.Strftime("%d %a", d)
+			timeStr := lctime.Strftime("%d", d)
 
 			if now.Day() == d.Day() && now.Month() == d.Month() && now.Year() == d.Year() {
 				timeStr = helpers.Today
 			}
-			if currCol == colNum {
+
+			if d.Weekday() == time.Monday {
 				markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{})
-				currCol = 0
+			}
+
+			wd := int(d.Weekday())
+			if wd == 0 {
+				wd = 7
+			}
+			wd = wd - len(markup.InlineKeyboard[len(markup.InlineKeyboard)-1])
+			for k := 1; k < wd; k++ {
+				markup.InlineKeyboard[len(markup.InlineKeyboard)-1] =
+					append(markup.InlineKeyboard[len(markup.InlineKeyboard)-1], telebot.InlineButton{Text: " ", Data: "-"})
 			}
 
 			markup.InlineKeyboard[len(markup.InlineKeyboard)-1] =
 				append(markup.InlineKeyboard[len(markup.InlineKeyboard)-1], telebot.InlineButton{
 					Text: timeStr,
-					Data: helpers.AggregateCallbackData(helpers.ChangeEventDateState, 1, d.Format(time.RFC3339)),
+					Data: helpers.AggregateCallbackData(helpers.CreateEventState, 2, d.Format(time.RFC3339)),
 				})
-			currCol++
+		}
+
+		for len(markup.InlineKeyboard[len(markup.InlineKeyboard)-1]) != 7 {
+			markup.InlineKeyboard[len(markup.InlineKeyboard)-1] =
+				append(markup.InlineKeyboard[len(markup.InlineKeyboard)-1], telebot.InlineButton{Text: " ", Data: "-"})
 		}
 
 		prevMonthLastDate := monthFirstDayDate.AddDate(0, 0, -1)
@@ -920,10 +961,10 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 		}
 
 		//go func() {
-		//	eventString, _ := h.eventService.ToHtmlStringByID(event.ID)
-		//	h.bot.Send(telebot.ChatID(foundUser.ID),
-		//		fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
-		//			"Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
+		// eventString, _ := h.eventService.ToHtmlStringByID(event.ID)
+		// h.bot.Send(telebot.ChatID(foundUser.ID),
+		//    fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
+		//       "Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
 		//}()
 
 		eventString, event, err := h.eventService.ToHtmlStringByID(eventID)
@@ -999,10 +1040,10 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 		}
 
 		//go func() {
-		//	eventString, _ := h.eventService.ToHtmlStringByID(event.ID)
-		//	h.bot.Send(telebot.ChatID(foundUser.ID),
-		//		fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
-		//			"Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
+		// eventString, _ := h.eventService.ToHtmlStringByID(event.ID)
+		// h.bot.Send(telebot.ChatID(foundUser.ID),
+		//    fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
+		//       "Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
 		//}()
 
 		eventString, event, err := h.eventService.ToHtmlStringByID(eventID)
@@ -1201,10 +1242,10 @@ func deleteEventSongHandler() (int, []HandlerFunc) {
 		}
 
 		//go func() {
-		//	eventString, _ := h.eventService.ToHtmlStringByID(event.ID)
-		//	h.bot.Send(telebot.ChatID(foundUser.ID),
-		//		fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
-		//			"Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
+		// eventString, _ := h.eventService.ToHtmlStringByID(event.ID)
+		// h.bot.Send(telebot.ChatID(foundUser.ID),
+		//    fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
+		//       "Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
 		//}()
 
 		eventString, event, err := h.eventService.ToHtmlStringByID(eventID)
@@ -2181,7 +2222,7 @@ func getVoicesHandler() (int, []HandlerFunc) {
 					{Text: helpers.Back, Data: helpers.AggregateCallbackData(state, index-1, "")},
 				},
 				//{
-				//	{Text: helpers.Delete},
+				// {Text: helpers.Delete},
 				//},
 			},
 		}
