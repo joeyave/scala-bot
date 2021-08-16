@@ -57,7 +57,7 @@ const (
 	AddAdmin                    string = "➕ Добавить администратора"
 	Settings                    string = "⚙ Настройки"
 	CreateRole                  string = "Создать роль"
-	Members                     string = "🧑‍🤝‍🧑 Статистка"
+	Members                     string = "🧑‍🤝‍🧑 Статистика"
 	Songs                       string = "🎵 Песни"
 	AddMember                   string = "➕ Участник"
 	DeleteMember                string = "➖ Участник"
