@@ -44,6 +44,36 @@ func (u *UserExtra) String() string {
 		}
 	}
 
+	keys := make([]Role, 0, len(mp))
+	for k := range mp {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i].Name < keys[j].Name
+	})
+	keys = append(keys[1:], keys[0])
+
+	for _, role := range keys {
+		mp2 := map[int][]*Event{}
+		for _, event := range mp[role] {
+			mp2[int(event.Time.Weekday())] = append(mp2[int(event.Time.Weekday())], event)
+		}
+		str = fmt.Sprintf("%s\n - %s: %d", str, role.Name, len(mp[role]))
+
+		keys := make([]int, 0, len(mp2))
+		for k := range mp2 {
+			keys = append(keys, k)
+		}
+		sort.Ints(keys)
+		keys = append(keys[1:], keys[0])
+
+		str = fmt.Sprintf("%s (", str)
+		for _, k := range keys {
+			str = fmt.Sprintf("%s%s %d, ", str, lctime.Strftime("%a", mp2[k][0].Time), len(mp2[k]))
+		}
+		str = fmt.Sprintf("%s)", str[:len(str)-2])
+	}
+
 	for role, events := range mp {
 		mp2 := map[int][]*Event{}
 		for _, event := range events {
