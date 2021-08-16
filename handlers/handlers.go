@@ -330,11 +330,11 @@ func getEventsHandler() (int, []HandlerFunc) {
 		case helpers.GetEventsWithMe:
 			events, err := h.eventService.FindManyFromTodayByBandIDAndUserID(user.BandID, user.ID)
 			if err != nil {
-				return err
-			}
-
-			if len(events) == 0 {
-				c.Send("Ты нигде не участвуешь :(")
+				if errors.Is(mongo.ErrNoDocuments, err) {
+					c.Send("Ты нигде не участвуешь :(")
+				} else {
+					return err
+				}
 			}
 
 			for _, event := range events {

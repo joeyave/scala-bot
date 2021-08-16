@@ -341,6 +341,10 @@ func (r *EventRepository) find(m bson.M, opts ...bson.M) ([]*entities.Event, err
 		return nil, err
 	}
 
+	if len(events) == 0 {
+		return nil, mongo.ErrNoDocuments
+	}
+
 	return events, nil
 }
 
