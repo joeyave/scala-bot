@@ -1,9 +1,12 @@
 package entities
 
 import (
+	"fmt"
+	"github.com/klauspost/lctime"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
 	"net/url"
+	"sort"
 	"time"
 )
 
@@ -21,6 +24,48 @@ type UserExtra struct {
 	User *User `bson:",inline"`
 
 	Events []*Event `bson:"events,omitempty"`
+}
+
+func (u *UserExtra) String() string {
+	str := fmt.Sprintf("<b><a href=\"tg://user?id=%d\">%s</a></b>\nВсего участий: %d", u.User.ID, u.User.Name, len(u.Events))
+
+	if len(u.Events) > 0 {
+		str = fmt.Sprintf("%s\nИз них:", str)
+	}
+
+	mp := map[Role][]*Event{}
+
+	for _, event := range u.Events {
+		for _, membership := range event.Memberships {
+			if membership.UserID == u.User.ID {
+				mp[*membership.Role] = append(mp[*membership.Role], event)
+				break
+			}
+		}
+	}
+
+	for role, events := range mp {
+		mp2 := map[int][]*Event{}
+		for _, event := range events {
+			mp2[int(event.Time.Weekday())] = append(mp2[int(event.Time.Weekday())], event)
+		}
+		str = fmt.Sprintf("%s\n - %s: %d", str, role.Name, len(events))
+
+		keys := make([]int, 0, len(mp2))
+		for k := range mp2 {
+			keys = append(keys, k)
+		}
+		sort.Ints(keys)
+		keys = append(keys[1:], keys[0])
+
+		str = fmt.Sprintf("%s (", str)
+		for _, k := range keys {
+			str = fmt.Sprintf("%s%s %d, ", str, lctime.Strftime("%a", mp2[k][0].Time), len(mp2[k]))
+		}
+		str = fmt.Sprintf("%s)", str[:len(str)-2])
+	}
+
+	return str
 }
 
 type State struct {

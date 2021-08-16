@@ -12,7 +12,6 @@ import (
 	"google.golang.org/api/drive/v3"
 	"log"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -100,40 +99,7 @@ func mainMenuHandler() (int, []HandlerFunc) {
 					continue
 				}
 
-				usersStr = fmt.Sprintf("%s\n\n<b><a href=\"tg://user?id=%d\">%s</a></b>\nВсего участий: %d", usersStr, user.User.ID, user.User.Name, len(user.Events))
-
-				if len(user.Events) > 0 {
-					usersStr = fmt.Sprintf("%s\nИз них:", usersStr)
-				}
-
-				mp := map[entities.Role][]*entities.Event{}
-
-				for _, event := range user.Events {
-					for _, membership := range event.Memberships {
-						if membership.UserID == user.User.ID {
-							mp[*membership.Role] = append(mp[*membership.Role], event)
-							break
-						}
-					}
-				}
-
-				for role, events := range mp {
-					mp2 := map[int][]*entities.Event{}
-					for _, event := range events {
-						mp2[int(event.Time.Weekday())] = append(mp2[int(event.Time.Weekday())], event)
-					}
-					usersStr = fmt.Sprintf("%s\n - %s: %d", usersStr, role.Name, len(events))
-
-					keys := make([]int, 0, len(mp2))
-					for k := range mp2 {
-						keys = append(keys, k)
-					}
-					sort.Ints(keys)
-
-					for _, k := range keys {
-						usersStr = fmt.Sprintf("%s\n \t - %s: %d", usersStr, lctime.Strftime("%A", mp2[k][0].Time), len(mp2[k]))
-					}
-				}
+				usersStr = fmt.Sprintf("%s\n\n%v", usersStr, user.String())
 			}
 
 			return c.Send(usersStr, telebot.ModeHTML)
