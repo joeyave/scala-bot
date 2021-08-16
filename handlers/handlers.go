@@ -542,6 +542,8 @@ func createEventHandler() (int, []HandlerFunc) {
 			return h.enter(c, user)
 		}
 
+log.Debug().Msg(parsedTime)
+
 		event, err := h.eventService.UpdateOne(entities.Event{
 			Time:   parsedTime,
 			Name:   user.State.Context.Map["eventName"],
