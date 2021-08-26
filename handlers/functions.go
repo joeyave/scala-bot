@@ -27,7 +27,7 @@ func SendDriveFileToUser(h *Handler, c telebot.Context, user *entities.User, dri
 	//markup.InlineKeyboard = helpers.GetSongActionsKeyboard(*user, *song, *driveFile)
 	markup.InlineKeyboard = [][]telebot.InlineButton{
 		{
-			{Text: "Кнопочки", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 1, "")},
+			{Text: "Подробнее", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 1, "")},
 		},
 	}
 
