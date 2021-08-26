@@ -771,7 +771,7 @@ func changeEventDateHandler() (int, []HandlerFunc) {
 			markup.InlineKeyboard[len(markup.InlineKeyboard)-1] =
 				append(markup.InlineKeyboard[len(markup.InlineKeyboard)-1], telebot.InlineButton{
 					Text: timeStr,
-					Data: helpers.AggregateCallbackData(helpers.CreateEventState, 2, d.Format(time.RFC3339)),
+					Data: helpers.AggregateCallbackData(helpers.ChangeEventDateState, 1, d.Format(time.RFC3339)),
 				})
 		}
 
