@@ -493,11 +493,11 @@ func createEventHandler() (int, []HandlerFunc) {
 		nextMonthFirstDateStr := monthLastDayDate.AddDate(0, 0, 1).Format(time.RFC3339)
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
 			{
-				Text: lctime.Strftime("%B", prevMonthLastDate),
+				Text: lctime.Strftime("◀️ %B", prevMonthLastDate),
 				Data: helpers.AggregateCallbackData(helpers.CreateEventState, 1, prevMonthFirstDateStr),
 			},
 			{
-				Text: lctime.Strftime("%B", nextMonthFirstDate),
+				Text: lctime.Strftime("%B ▶️", nextMonthFirstDate),
 				Data: helpers.AggregateCallbackData(helpers.CreateEventState, 1, nextMonthFirstDateStr),
 			},
 		})
@@ -786,11 +786,11 @@ func changeEventDateHandler() (int, []HandlerFunc) {
 		nextMonthFirstDateStr := monthLastDayDate.AddDate(0, 0, 1).Format(time.RFC3339)
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
 			{
-				Text: lctime.Strftime("%B", prevMonthLastDate),
+				Text: lctime.Strftime("◀️ %B", prevMonthLastDate),
 				Data: helpers.AggregateCallbackData(helpers.ChangeEventDateState, 0, prevMonthFirstDateStr),
 			},
 			{
-				Text: lctime.Strftime("%B", nextMonthFirstDate),
+				Text: lctime.Strftime("%B ▶️", nextMonthFirstDate),
 				Data: helpers.AggregateCallbackData(helpers.ChangeEventDateState, 0, nextMonthFirstDateStr),
 			},
 		})
