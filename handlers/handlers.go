@@ -345,7 +345,7 @@ func getEventsHandler() (int, []HandlerFunc) {
 			c.Notify(telebot.Typing)
 
 			events, err := h.eventService.FindManyByBandIDAndPageNumber(user.BandID, user.State.Context.PageIndex)
-			if err != nil {
+			if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 				return err
 			}
 
