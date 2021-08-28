@@ -23,7 +23,18 @@ func NewEventRepository(mongoClient *mongo.Client) *EventRepository {
 }
 
 func (r *EventRepository) FindAll() ([]*entities.Event, error) {
-	events, err := r.find(bson.M{"_id": bson.M{"$ne": ""}})
+	events, err := r.find(
+		bson.M{
+			"_id": bson.M{
+				"$ne": "",
+			},
+		},
+		bson.M{
+			"$sort": bson.M{
+				"time": 1,
+			},
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -34,11 +45,18 @@ func (r *EventRepository) FindAll() ([]*entities.Event, error) {
 func (r *EventRepository) FindAllFromToday() ([]*entities.Event, error) {
 	now := time.Now()
 
-	return r.find(bson.M{
-		"time": bson.M{
-			"$gte": time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+	return r.find(
+		bson.M{
+			"time": bson.M{
+				"$gte": time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+			},
 		},
-	})
+		bson.M{
+			"$sort": bson.M{
+				"time": 1,
+			},
+		},
+	)
 }
 
 func (r *EventRepository) FindOneOldestByBandID(bandID primitive.ObjectID) (*entities.Event, error) {
@@ -65,12 +83,19 @@ func (r *EventRepository) FindOneOldestByBandID(bandID primitive.ObjectID) (*ent
 func (r *EventRepository) FindManyFromTodayByBandID(bandID primitive.ObjectID) ([]*entities.Event, error) {
 	now := time.Now()
 
-	return r.find(bson.M{
-		"bandId": bandID,
-		"time": bson.M{
-			"$gte": time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+	return r.find(
+		bson.M{
+			"bandId": bandID,
+			"time": bson.M{
+				"$gte": time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+			},
 		},
-	})
+		bson.M{
+			"$sort": bson.M{
+				"time": 1,
+			},
+		},
+	)
 }
 
 func (r *EventRepository) FindManyBetweenDatesByBandID(from time.Time, to time.Time, bandID primitive.ObjectID) ([]*entities.Event, error) {
@@ -113,21 +138,35 @@ func (r *EventRepository) FindManyByBandIDAndPageNumber(bandID primitive.ObjectI
 func (r *EventRepository) FindManyFromTodayByBandIDAndUserID(bandID primitive.ObjectID, userID int64) ([]*entities.Event, error) {
 	now := time.Now()
 
-	return r.find(bson.M{
-		"bandId":             bandID,
-		"memberships.userId": userID,
-		"time": bson.M{
-			"$gte": time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+	return r.find(
+		bson.M{
+			"bandId":             bandID,
+			"memberships.userId": userID,
+			"time": bson.M{
+				"$gte": time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+			},
 		},
-	})
+		bson.M{
+			"$sort": bson.M{
+				"time": 1,
+			},
+		},
+	)
 }
 
 func (r *EventRepository) FindMultipleByIDs(IDs []primitive.ObjectID) ([]*entities.Event, error) {
-	return r.find(bson.M{
-		"_id": bson.M{
-			"$in": IDs,
+	return r.find(
+		bson.M{
+			"_id": bson.M{
+				"$in": IDs,
+			},
 		},
-	})
+		bson.M{
+			"$sort": bson.M{
+				"time": 1,
+			},
+		},
+	)
 }
 
 func (r *EventRepository) FindOneByID(ID primitive.ObjectID) (*entities.Event, error) {
@@ -147,7 +186,13 @@ func (r *EventRepository) FindOneByNameAndTime(name string, time time.Time) (*en
 				"$gte": time,
 				"$lt":  time.AddDate(0, 0, 1),
 			},
-		})
+		},
+		bson.M{
+			"$sort": bson.M{
+				"time": 1,
+			},
+		},
+	)
 
 	if err != nil {
 		return nil, err
