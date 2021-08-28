@@ -1,6 +1,7 @@
 package helpers
 
-const PageSize = 50
+const SongsPageSize = 50
+const EventsPageSize = 25
 
 const (
 	SearchSongState = iota

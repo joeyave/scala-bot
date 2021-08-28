@@ -188,10 +188,10 @@ func (r *SongRepository) FindAllExtraByPageNumberSortedByEventsNumber(pageNumber
 			},
 		},
 		bson.M{
-			"$skip": pageNumber * helpers.PageSize,
+			"$skip": pageNumber * helpers.SongsPageSize,
 		},
 		bson.M{
-			"$limit": helpers.PageSize,
+			"$limit": helpers.SongsPageSize,
 		},
 	)
 }
@@ -207,10 +207,10 @@ func (r *SongRepository) FindAllExtraByPageNumberSortedByLatestEventDate(pageNum
 			},
 		},
 		bson.M{
-			"$skip": pageNumber * helpers.PageSize,
+			"$skip": pageNumber * helpers.SongsPageSize,
 		},
 		bson.M{
-			"$limit": helpers.PageSize,
+			"$limit": helpers.SongsPageSize,
 		},
 	)
 }
@@ -325,7 +325,7 @@ func (r *SongRepository) findWithExtra(m bson.M, opts ...bson.M) ([]*entities.So
 							"as": "memberships",
 						},
 					},
-                                        bson.M{
+					bson.M{
 						"$sort": bson.M{
 							"time": -1,
 						},

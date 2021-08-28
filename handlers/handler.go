@@ -135,6 +135,7 @@ func (h *Handler) OnCallback(c telebot.Context) error {
 
 func (h *Handler) OnError(botErr error, c telebot.Context) {
 	c.Send("Произошла ошибка. Поправим.")
+	log.Error().Err(botErr).Msgf("Bot error:")
 
 	user, err := h.userService.FindOneByID(c.Chat().ID)
 	if err != nil {
@@ -156,11 +157,9 @@ func (h *Handler) OnError(botErr error, c telebot.Context) {
 func (h *Handler) LogInputMiddleware(next telebot.HandlerFunc) telebot.HandlerFunc {
 	return func(c telebot.Context) error {
 		messageBytes, err := json.Marshal(c.Message())
-		if err != nil {
-			return next(c)
+		if err == nil {
+			log.Info().RawJSON("msg", messageBytes).Msg("Input:")
 		}
-
-		log.Info().RawJSON("msg", messageBytes).Msg("Input:")
 
 		return next(c)
 	}

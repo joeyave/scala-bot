@@ -300,6 +300,7 @@ func getEventsHandler() (int, []HandlerFunc) {
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 		switch c.Text() {
+
 		case helpers.CreateEvent:
 			user.State = &entities.State{
 				Name: helpers.CreateEventState,
@@ -339,31 +340,52 @@ func getEventsHandler() (int, []HandlerFunc) {
 
 			return nil
 
-		case helpers.GetAllEvents:
-			events, err := h.eventService.FindManyFromTodayByBandID(user.BandID)
+		case helpers.GetAllEvents, helpers.PrevPage, helpers.NextPage:
+
+			c.Notify(telebot.Typing)
+
+			events, err := h.eventService.FindManyByBandIDAndPageNumber(user.BandID, user.State.Context.PageIndex)
 			if err != nil {
 				return err
 			}
 
-			for _, event := range events {
-				eventString, _, err := h.eventService.ToHtmlStringByID(event.ID)
-				if err != nil {
-					continue
-				}
-
-				q := user.State.CallbackData.Query()
-				q.Set("eventId", event.ID.Hex())
-				user.State.CallbackData.RawQuery = q.Encode()
-
-				err = c.Send(helpers.AddCallbackData(eventString, user.State.CallbackData.String()),
-					&telebot.ReplyMarkup{
-						InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
-					}, telebot.ModeHTML, telebot.NoPreview)
-				if err != nil {
-					return err
-				}
+			markup := &telebot.ReplyMarkup{
+				ResizeKeyboard: true,
 			}
 
+			for _, event := range events {
+				markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: event.Alias()}})
+			}
+			if user.State.Context.PageIndex != 0 {
+				markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.PrevPage}, {Text: helpers.Menu}, {Text: helpers.NextPage}})
+			} else {
+				markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Menu}, {Text: helpers.NextPage}})
+			}
+
+			err = c.Send("Выбери собрание:", markup)
+			if err != nil {
+				return err
+			}
+			// for _, event := range events {
+			// 	eventString, _, err := h.eventService.ToHtmlStringByID(event.ID)
+			// 	if err != nil {
+			// 		continue
+			// 	}
+			//
+			// 	q := user.State.CallbackData.Query()
+			// 	q.Set("eventId", event.ID.Hex())
+			// 	user.State.CallbackData.RawQuery = q.Encode()
+			//
+			// 	err = c.Send(helpers.AddCallbackData(eventString, user.State.CallbackData.String()),
+			// 		&telebot.ReplyMarkup{
+			// 			InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
+			// 		}, telebot.ModeHTML, telebot.NoPreview)
+			// 	if err != nil {
+			// 		return err
+			// 	}
+			// }
+
+			user.State.Index++
 			return nil
 
 		default:
@@ -402,6 +424,23 @@ func getEventsHandler() (int, []HandlerFunc) {
 			user.State.Prev.Index = 1
 			return h.enter(c, user)
 		}
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+		if c.Text() == helpers.NextPage {
+			user.State.Context.PageIndex++
+			user.State.Index--
+			return h.enter(c, user)
+		}
+
+		if c.Text() == helpers.PrevPage {
+			user.State.Context.PageIndex--
+			user.State.Index--
+			return h.enter(c, user)
+		}
+
+		user.State.Index--
+		return h.enter(c, user)
 	})
 
 	return helpers.GetEventsState, handlerFuncs
@@ -945,12 +984,12 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		//go func() {
+		// go func() {
 		// eventString, _ := h.eventService.ToHtmlStringByID(event.ID)
 		// h.bot.Send(telebot.ChatID(foundUser.ID),
 		//    fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
 		//       "Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
-		//}()
+		// }()
 
 		eventString, event, err := h.eventService.ToHtmlStringByID(eventID)
 		if err != nil {
@@ -1024,12 +1063,12 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		//go func() {
+		// go func() {
 		// eventString, _ := h.eventService.ToHtmlStringByID(event.ID)
 		// h.bot.Send(telebot.ChatID(foundUser.ID),
 		//    fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
 		//       "Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
-		//}()
+		// }()
 
 		eventString, event, err := h.eventService.ToHtmlStringByID(eventID)
 		if err != nil {
@@ -1226,12 +1265,12 @@ func deleteEventSongHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		//go func() {
+		// go func() {
 		// eventString, _ := h.eventService.ToHtmlStringByID(event.ID)
 		// h.bot.Send(telebot.ChatID(foundUser.ID),
 		//    fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
 		//       "Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
-		//}()
+		// }()
 
 		eventString, event, err := h.eventService.ToHtmlStringByID(eventID)
 		if err != nil {
@@ -1959,7 +1998,7 @@ func styleSongHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		//c.Respond()
+		// c.Respond()
 		c.Callback().Data = helpers.AggregateCallbackData(helpers.SongActionsState, 0, "")
 		return h.enterInlineHandler(c, user)
 	})
@@ -2206,9 +2245,9 @@ func getVoicesHandler() (int, []HandlerFunc) {
 				{
 					{Text: helpers.Back, Data: helpers.AggregateCallbackData(state, index-1, "")},
 				},
-				//{
+				// {
 				// {Text: helpers.Delete},
-				//},
+				// },
 			},
 		}
 

@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"github.com/joeyave/scala-chords-bot/entities"
+	"github.com/joeyave/scala-chords-bot/helpers"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -70,6 +71,43 @@ func (r *EventRepository) FindManyFromTodayByBandID(bandID primitive.ObjectID) (
 			"$gte": time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
 		},
 	})
+}
+
+func (r *EventRepository) FindManyBetweenDatesByBandID(from time.Time, to time.Time, bandID primitive.ObjectID) ([]*entities.Event, error) {
+	return r.find(
+		bson.M{
+			"bandId": bandID,
+			"time": bson.M{
+				"$gte": from,
+				"$lte": to,
+			},
+		},
+		bson.M{
+			"$sort": bson.M{
+				"time": -1,
+			},
+		},
+	)
+}
+
+func (r *EventRepository) FindManyByBandIDAndPageNumber(bandID primitive.ObjectID, pageNumber int) ([]*entities.Event, error) {
+
+	return r.find(
+		bson.M{
+			"bandId": bandID,
+		},
+		bson.M{
+			"$sort": bson.M{
+				"time": -1,
+			},
+		},
+		bson.M{
+			"$skip": pageNumber * helpers.EventsPageSize,
+		},
+		bson.M{
+			"$limit": helpers.EventsPageSize,
+		},
+	)
 }
 
 func (r *EventRepository) FindManyFromTodayByBandIDAndUserID(bandID primitive.ObjectID, userID int64) ([]*entities.Event, error) {
@@ -317,11 +355,6 @@ func (r *EventRepository) find(m bson.M, opts ...bson.M) ([]*entities.Event, err
 					},
 				},
 				"as": "songs",
-			},
-		},
-		bson.M{
-			"$sort": bson.M{
-				"time": 1,
 			},
 		},
 	}

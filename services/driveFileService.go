@@ -35,7 +35,7 @@ func (s *DriveFileService) FindAllByFolderID(folderID string, nextPageToken stri
 	res, err := s.driveRepository.Files.List().
 		Q(q).
 		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink, parents)").
-		PageSize(helpers.PageSize).PageToken(nextPageToken).Do()
+		PageSize(helpers.SongsPageSize).PageToken(nextPageToken).Do()
 
 	if err != nil {
 		return nil, "", err
@@ -60,7 +60,7 @@ func (s *DriveFileService) FindSomeByFullTextAndFolderID(name string, folderID s
 		//Q(fmt.Sprintf("fullText contains '\"%s\"'", name)).
 		Q(q).
 		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink, parents)").
-		PageSize(helpers.PageSize).PageToken(pageToken).Do()
+		PageSize(helpers.SongsPageSize).PageToken(pageToken).Do()
 
 	if err != nil {
 		return nil, "", err
