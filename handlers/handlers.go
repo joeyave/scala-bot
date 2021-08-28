@@ -286,8 +286,9 @@ func getEventsHandler() (int, []HandlerFunc) {
 		for _, event := range events {
 			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: event.Alias()}})
 		}
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.CreateEvent}})
 		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.GetEventsWithMe}, {Text: helpers.GetAllEvents}})
-		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Back}, {Text: helpers.CreateEvent}})
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Menu}})
 
 		err = c.Send("Выбери собрание:", markup)
 		if err != nil {
