@@ -344,6 +344,14 @@ func getEventsHandler() (int, []HandlerFunc) {
 
 			c.Notify(telebot.Typing)
 
+			if c.Text() == helpers.NextPage {
+				user.State.Context.PageIndex++
+			}
+
+			if c.Text() == helpers.PrevPage {
+				user.State.Context.PageIndex--
+			}
+
 			events, err := h.eventService.FindManyByBandIDAndPageNumber(user.BandID, user.State.Context.PageIndex)
 			if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 				return err
@@ -385,7 +393,6 @@ func getEventsHandler() (int, []HandlerFunc) {
 			// 	}
 			// }
 
-			user.State.Index++
 			return nil
 
 		default:
@@ -424,23 +431,6 @@ func getEventsHandler() (int, []HandlerFunc) {
 			user.State.Prev.Index = 1
 			return h.enter(c, user)
 		}
-	})
-
-	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
-		if c.Text() == helpers.NextPage {
-			user.State.Context.PageIndex++
-			user.State.Index--
-			return h.enter(c, user)
-		}
-
-		if c.Text() == helpers.PrevPage {
-			user.State.Context.PageIndex--
-			user.State.Index--
-			return h.enter(c, user)
-		}
-
-		user.State.Index--
-		return h.enter(c, user)
 	})
 
 	return helpers.GetEventsState, handlerFuncs
