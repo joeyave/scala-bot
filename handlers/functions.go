@@ -180,10 +180,12 @@ func sendDriveFilesAlbum(h *Handler, c telebot.Context, user *entities.User, dri
 					File:     telebot.FromReader(*reader),
 					MIME:     "application/pdf",
 					FileName: fmt.Sprintf("%s.pdf", song.PDF.Name),
+					Caption:  song.Caption(),
 				}
 			} else {
 				documents[i] = &telebot.Document{
-					File: telebot.File{FileID: song.PDF.TgFileID},
+					File:    telebot.File{FileID: song.PDF.TgFileID},
+					Caption: song.Caption(),
 				}
 			}
 		}(i)
@@ -220,7 +222,12 @@ func sendDriveFilesAlbum(h *Handler, c telebot.Context, user *entities.User, dri
 						return
 					}
 
-					driveFile, err := h.driveFileService.FindOneByID(foundDriveFileIDs[i])
+					// driveFile, err := h.driveFileService.FindOneByID(foundDriveFileIDs[i])
+					// if err != nil {
+					// 	return
+					// }
+
+					song, driveFile, err := h.songService.FindOrCreateOneByDriveFileID(driveFileIDs[i])
 					if err != nil {
 						return
 					}
@@ -229,6 +236,7 @@ func sendDriveFilesAlbum(h *Handler, c telebot.Context, user *entities.User, dri
 						File:     telebot.FromReader(*reader),
 						MIME:     "application/pdf",
 						FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
+						Caption:  song.Caption(),
 					}
 				}(i)
 			}
