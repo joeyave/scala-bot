@@ -69,12 +69,12 @@ func mainMenuHandler() (int, []HandlerFunc) {
 
 		case helpers.SongsByLastDateOfPerforming:
 			user.State = &entities.State{
-				Name: helpers.GetSongsFromMongoHandler,
+				Name: helpers.GetSongsFromMongoState,
 			}
 
 		case helpers.SongsByNumberOfPerforming:
 			user.State = &entities.State{
-				Name: helpers.GetSongsFromMongoHandler,
+				Name: helpers.GetSongsFromMongoState,
 			}
 
 		case helpers.CreateDoc:
@@ -584,14 +584,18 @@ func eventActionsHandler() (int, []HandlerFunc) {
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
 		var eventID primitive.ObjectID
+		var keyboard string
 		if c.Callback() != nil {
 			eventIDFromCallback, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
 			if err != nil {
 				return err
 			}
 			eventID = eventIDFromCallback
+
+			_, _, keyboard = helpers.ParseCallbackData(c.Callback().Data)
 		} else {
 			eventID = user.State.Context.EventID
+			keyboard = user.State.Context.Map["keyboard"]
 		}
 
 		eventString, event, err := h.eventService.ToHtmlStringByID(eventID)
@@ -600,11 +604,16 @@ func eventActionsHandler() (int, []HandlerFunc) {
 		}
 
 		options := &telebot.SendOptions{
-			ReplyMarkup: &telebot.ReplyMarkup{
-				InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
-			},
+			ReplyMarkup:           &telebot.ReplyMarkup{},
 			DisableWebPagePreview: true,
 			ParseMode:             telebot.ModeHTML,
+		}
+
+		switch keyboard {
+		case "EditEventKeyboard":
+			options.ReplyMarkup.InlineKeyboard = helpers.GetEditEventKeyboard(*user)
+		default:
+			options.ReplyMarkup.InlineKeyboard = helpers.GetEventActionsKeyboard(*user, *event)
 		}
 
 		q := user.State.CallbackData.Query()
@@ -875,7 +884,7 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		state, index, payload := helpers.ParseCallbackData(c.Callback().Data)
+		state, index, _ := helpers.ParseCallbackData(c.Callback().Data)
 
 		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
 		if err != nil {
@@ -892,7 +901,7 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 		for _, role := range event.Band.Roles {
 			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: role.Name, Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s", role.ID.Hex()))}})
 		}
-		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, payload)}})
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, "EditEventKeyboard")}})
 
 		c.Edit(markup)
 		c.Respond()
@@ -938,7 +947,7 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 		}
 
 		// TODO
-		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Cancel, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, roleIDHex)}})
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Cancel, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, "EditEventKeyboard")}})
 
 		c.Edit(markup)
 		c.Respond()
@@ -982,7 +991,7 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 		//       "Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
 		// }()
 
-		eventString, event, err := h.eventService.ToHtmlStringByID(eventID)
+		eventString, _, err := h.eventService.ToHtmlStringByID(eventID)
 		if err != nil {
 			return err
 		}
@@ -991,9 +1000,11 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 		q.Set("eventId", eventID.Hex())
 		user.State.CallbackData.RawQuery = q.Encode()
 
-		c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), &telebot.ReplyMarkup{
-			InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
-		}, telebot.ModeHTML, telebot.NoPreview)
+		markup := &telebot.ReplyMarkup{
+			InlineKeyboard: helpers.GetEditEventKeyboard(*user),
+		}
+
+		c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), markup, telebot.ModeHTML, telebot.NoPreview)
 		c.Respond()
 		return nil
 	})
@@ -1006,7 +1017,7 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		state, index, payload := helpers.ParseCallbackData(c.Callback().Data)
+		state, index, _ := helpers.ParseCallbackData(c.Callback().Data)
 
 		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
 		if err != nil {
@@ -1028,7 +1039,7 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 
 			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: user.Name + " | " + membership.Role.Name, Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s", membership.ID.Hex()))}})
 		}
-		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, payload)}})
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, "EditEventKeyboard")}})
 
 		c.Edit(markup)
 		c.Respond()
@@ -1061,7 +1072,7 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 		//       "Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
 		// }()
 
-		eventString, event, err := h.eventService.ToHtmlStringByID(eventID)
+		eventString, _, err := h.eventService.ToHtmlStringByID(eventID)
 		if err != nil {
 			return err
 		}
@@ -1070,9 +1081,11 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 		q.Set("eventId", eventID.Hex())
 		user.State.CallbackData.RawQuery = q.Encode()
 
-		c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), &telebot.ReplyMarkup{
-			InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
-		}, telebot.ModeHTML, telebot.NoPreview)
+		markup := &telebot.ReplyMarkup{
+			InlineKeyboard: helpers.GetEditEventKeyboard(*user),
+		}
+
+		c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), markup, telebot.ModeHTML, telebot.NoPreview)
 		c.Respond()
 		return nil
 	})
@@ -1118,6 +1131,11 @@ func addEventSongHandler() (int, []HandlerFunc) {
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
 		if c.Text() == helpers.End {
+			if user.State.Context.Map == nil {
+				user.State.Context.Map = map[string]string{}
+			}
+			user.State.Context.Map["keyboard"] = "EditEventKeyboard"
+
 			user.State = &entities.State{
 				Name:    helpers.EventActionsState,
 				Context: user.State.Context,
@@ -1208,7 +1226,7 @@ func deleteEventSongHandler() (int, []HandlerFunc) {
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		state, index, payload := helpers.ParseCallbackData(c.Callback().Data)
+		state, index, _ := helpers.ParseCallbackData(c.Callback().Data)
 
 		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
 		if err != nil {
@@ -1230,7 +1248,7 @@ func deleteEventSongHandler() (int, []HandlerFunc) {
 
 			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: driveFile.Name, Data: helpers.AggregateCallbackData(state, index+1, song.ID.Hex())}})
 		}
-		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, payload)}})
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, "EditEventKeyboard")}})
 
 		c.Edit(markup)
 		c.Respond()
@@ -1609,7 +1627,7 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 		return h.enter(c, user)
 	})
 
-	return helpers.GetSongsFromMongoHandler, handlerFuncs
+	return helpers.GetSongsFromMongoState, handlerFuncs
 }
 
 func searchSongHandler() (int, []HandlerFunc) {
@@ -2519,6 +2537,20 @@ func setlistHandler() (int, []HandlerFunc) {
 	})
 
 	return helpers.SetlistState, handlerFunc
+}
+
+func editInlineKeyboardHandler() (int, []HandlerFunc) {
+	handlerFunc := make([]HandlerFunc, 0)
+
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		markup := &telebot.ReplyMarkup{}
+		markup.InlineKeyboard = helpers.GetEditEventKeyboard(*user)
+		c.Edit(markup)
+		return nil
+	})
+
+	return helpers.EditInlineKeyboardState, handlerFunc
 }
 
 func chunkAlbumBy(items telebot.Album, chunkSize int) (chunks []telebot.Album) {

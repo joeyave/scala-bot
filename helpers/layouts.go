@@ -27,11 +27,34 @@ func GetSongActionsKeyboard(user entities.User, song entities.Song, driveFile dr
 }
 
 func GetEventActionsKeyboard(user entities.User, event entities.Event) [][]telebot.InlineButton {
-	if user.Role == Admin {
+	member := false
+	for _, membership := range event.Memberships {
+		if user.ID == membership.UserID {
+			member = true
+		}
+	}
+
+	if user.Role == Admin || member {
 		return [][]telebot.InlineButton{
 			{
 				{Text: FindChords, Data: AggregateCallbackData(EventActionsState, 1, "")},
 			},
+			{
+				{Text: Edit, Data: AggregateCallbackData(EditInlineKeyboardState, 0, "")},
+			},
+		}
+	}
+
+	return [][]telebot.InlineButton{
+		{
+			{Text: FindChords, Data: AggregateCallbackData(EventActionsState, 1, "")},
+		},
+	}
+}
+
+func GetEditEventKeyboard(user entities.User) [][]telebot.InlineButton {
+	if user.Role == Admin {
+		return [][]telebot.InlineButton{
 			{
 				{Text: DeleteMember, Data: AggregateCallbackData(DeleteEventMemberState, 0, "")},
 				{Text: AddMember, Data: AggregateCallbackData(AddEventMemberState, 0, "")},
@@ -42,33 +65,48 @@ func GetEventActionsKeyboard(user entities.User, event entities.Event) [][]teleb
 			},
 			{
 				{Text: ChangeSongsOrder, Data: AggregateCallbackData(ChangeSongOrderState, 0, "")},
+			},
+			{
 				{Text: ChangeEventDate, Data: AggregateCallbackData(ChangeEventDateState, 0, "")},
 			},
-		}
-	}
-
-	for _, membership := range event.Memberships {
-		if user.ID == membership.UserID {
-			return [][]telebot.InlineButton{
-				{
-					{Text: FindChords, Data: AggregateCallbackData(EventActionsState, 1, "")},
-				},
-				{
-					{Text: DeleteSong, Data: AggregateCallbackData(DeleteEventSongState, 0, "")},
-					{Text: AddSong, Data: AggregateCallbackData(AddEventSongState, 0, "")},
-				},
-				{
-					{Text: ChangeSongsOrder, Data: AggregateCallbackData(ChangeSongOrderState, 0, "")},
-				},
-			}
+			{
+				{Text: Back, Data: AggregateCallbackData(EventActionsState, 0, "")},
+			},
 		}
 	}
 
 	return [][]telebot.InlineButton{
 		{
-			{Text: FindChords, Data: AggregateCallbackData(EventActionsState, 1, "")},
+			{Text: DeleteSong, Data: AggregateCallbackData(DeleteEventSongState, 0, "")},
+			{Text: AddSong, Data: AggregateCallbackData(AddEventSongState, 0, "")},
+		},
+		{
+			{Text: ChangeSongsOrder, Data: AggregateCallbackData(ChangeSongOrderState, 0, "")},
+		},
+		{
+			{Text: Back, Data: AggregateCallbackData(EventActionsState, 0, "")},
 		},
 	}
+}
+
+var EditEventKeyboard = [][]telebot.InlineButton{
+	{
+		{Text: DeleteMember, Data: AggregateCallbackData(DeleteEventMemberState, 0, "")},
+		{Text: AddMember, Data: AggregateCallbackData(AddEventMemberState, 0, "")},
+	},
+	{
+		{Text: DeleteSong, Data: AggregateCallbackData(DeleteEventSongState, 0, "")},
+		{Text: AddSong, Data: AggregateCallbackData(AddEventSongState, 0, "")},
+	},
+	{
+		{Text: ChangeSongsOrder, Data: AggregateCallbackData(ChangeSongOrderState, 0, "")},
+	},
+	{
+		{Text: ChangeEventDate, Data: AggregateCallbackData(ChangeEventDateState, 0, "")},
+	},
+	{
+		{Text: Back, Data: AggregateCallbackData(EventActionsState, 0, "")},
+	},
 }
 
 var MainMenuKeyboard = [][]telebot.ReplyButton{

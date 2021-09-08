@@ -29,7 +29,8 @@ const (
 	ChangeEventDateState
 	DeleteEventMemberState
 	DeleteEventSongState
-	GetSongsFromMongoHandler
+	GetSongsFromMongoState
+	EditInlineKeyboardState
 )
 
 // Buttons constants.
@@ -66,6 +67,7 @@ const (
 	DeleteSong                  string = "➖ Песня"
 	ChangeSongsOrder            string = "🔄 Изменить порядок песен"
 	ChangeEventDate             string = "🗓️ Изменить дату"
+	Edit                        string = "︎✍️ Редактировать"
 	GetAllEvents                string = "📥 Архив"
 	GetEventsWithMe             string = "🙋‍♂️ Собрания, где я участвую"
 	End                         string = "🛑 Закончить"
