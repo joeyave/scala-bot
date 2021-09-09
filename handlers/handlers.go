@@ -1304,41 +1304,25 @@ func deleteEventHandler() (int, []HandlerFunc) {
 	handlerFuncs := make([]HandlerFunc, 0)
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
-		err := c.Send("Ты уверен?", &telebot.ReplyMarkup{
-			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.No}, {Text: helpers.Yes}}},
-			ResizeKeyboard: true,
-		})
+
+		markup := &telebot.ReplyMarkup{}
+		markup.InlineKeyboard = helpers.ConfirmDeletingEventKeyboard
+		msg := helpers.AddCallbackData("Ты уверен, что хочешь удалить это собрание?", user.State.CallbackData.String())
+		return c.Edit(msg, markup, telebot.ModeHTML)
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
+		if err != nil {
+			return err
+		}
+		err = h.eventService.DeleteOneByID(eventID)
 		if err != nil {
 			return err
 		}
 
-		user.State.Index++
-		return err
-	})
-
-	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
-		if c.Text() == helpers.Yes {
-			err := h.eventService.DeleteOneByID(user.State.Context.EventID)
-			if err != nil {
-				return err
-			}
-
-			err = c.Send("Удаление завершено.")
-			if err != nil {
-				return err
-			}
-			user.State = &entities.State{
-				Name: helpers.GetEventsState,
-			}
-			return h.enter(c, user)
-		} else {
-			err := c.Send("Удаление отменено.")
-			if err != nil {
-				return err
-			}
-			user.State = user.State.Prev
-			return h.enter(c, user)
-		}
+		return c.Edit("Удаление завершено.")
 	})
 
 	return helpers.DeleteEventState, handlerFuncs

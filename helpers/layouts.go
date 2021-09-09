@@ -70,6 +70,9 @@ func GetEditEventKeyboard(user entities.User) [][]telebot.InlineButton {
 				{Text: ChangeEventDate, Data: AggregateCallbackData(ChangeEventDateState, 0, "")},
 			},
 			{
+				{Text: Delete, Data: AggregateCallbackData(DeleteEventState, 0, "")},
+			},
+			{
 				{Text: Back, Data: AggregateCallbackData(EventActionsState, 0, "")},
 			},
 		}
@@ -87,26 +90,6 @@ func GetEditEventKeyboard(user entities.User) [][]telebot.InlineButton {
 			{Text: Back, Data: AggregateCallbackData(EventActionsState, 0, "")},
 		},
 	}
-}
-
-var EditEventKeyboard = [][]telebot.InlineButton{
-	{
-		{Text: DeleteMember, Data: AggregateCallbackData(DeleteEventMemberState, 0, "")},
-		{Text: AddMember, Data: AggregateCallbackData(AddEventMemberState, 0, "")},
-	},
-	{
-		{Text: DeleteSong, Data: AggregateCallbackData(DeleteEventSongState, 0, "")},
-		{Text: AddSong, Data: AggregateCallbackData(AddEventSongState, 0, "")},
-	},
-	{
-		{Text: ChangeSongsOrder, Data: AggregateCallbackData(ChangeSongOrderState, 0, "")},
-	},
-	{
-		{Text: ChangeEventDate, Data: AggregateCallbackData(ChangeEventDateState, 0, "")},
-	},
-	{
-		{Text: Back, Data: AggregateCallbackData(EventActionsState, 0, "")},
-	},
 }
 
 var MainMenuKeyboard = [][]telebot.ReplyButton{
@@ -140,4 +123,8 @@ var CancelOrSkipKeyboard = [][]telebot.ReplyButton{
 
 var SearchEverywhereKeyboard = [][]telebot.ReplyButton{
 	{{Text: Cancel}, {Text: SearchEverywhere}},
+}
+
+var ConfirmDeletingEventKeyboard = [][]telebot.InlineButton{
+	{{Text: Cancel, Data: AggregateCallbackData(EventActionsState, 0, "EditEventKeyboard")}, {Text: Yes, Data: AggregateCallbackData(DeleteEventState, 1, "")}},
 }
