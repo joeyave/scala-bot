@@ -747,7 +747,7 @@ func composeTransposeRequests(content []*docs.StructuralElement, index int64, ke
 									if string(transposedText[len(transposedText)-1]) != " " {
 										transposedText += " "
 									}
-									transposedText += fmt.Sprintf("(mod %d)", fromKey.SemitonesTo(toKey))
+									transposedText += fmt.Sprintf("(mod %d)", toKey.SemitonesTo(fromKey))
 								}
 							}
 						}

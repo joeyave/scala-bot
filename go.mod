@@ -12,7 +12,6 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/joeyave/chords-transposer v0.0.7
 	github.com/joeyave/telebot/v3 v3.0.1
-	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/klauspost/lctime v0.1.0
 	github.com/rs/zerolog v1.25.0

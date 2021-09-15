@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"github.com/rs/zerolog/log"
 )
 
 func AddCallbackData(message string, url string) string {
@@ -15,8 +14,7 @@ func AddCallbackData(message string, url string) string {
 }
 
 func ParseCallbackData(data string) (int, int, string) {
-	
-	log.Debug().Msg(data)
+
 	parsedData := strings.Split(data, ":")
 	stateStr := parsedData[0]
 	indexStr := parsedData[1]

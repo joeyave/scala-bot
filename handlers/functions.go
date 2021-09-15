@@ -6,7 +6,6 @@ import (
 	"github.com/joeyave/scala-chords-bot/helpers"
 	"github.com/joeyave/telebot/v3"
 	"github.com/klauspost/lctime"
-	"github.com/rs/zerolog/log"
 	"sync"
 	"time"
 )
@@ -196,7 +195,7 @@ func sendDriveFilesAlbum(h *Handler, c telebot.Context, user *entities.User, dri
 	chunks := chunkAlbumBy(documents, chunkSize)
 
 	for i, album := range chunks {
-		responses, err := h.bot.SendAlbum(c.Recipient(), album)
+		_, err := h.bot.SendAlbum(c.Recipient(), album)
 
 		// TODO: check for bugs.
 		if err != nil {
@@ -242,15 +241,12 @@ func sendDriveFilesAlbum(h *Handler, c telebot.Context, user *entities.User, dri
 			}
 			waitGroup.Wait()
 
-			responses, err = h.bot.SendAlbum(c.Recipient(), documents)
+			_, err = h.bot.SendAlbum(c.Recipient(), documents)
 			if err != nil {
 				continue
 			}
 		}
 
-		for _, response := range responses {
-			log.Debug().Msgf("%s", response.Document.FileName)
-		}
 		//for j := range responses {
 		//	foundDriveFileID := driveFileIDs[j+(i*len(album))]
 		//
