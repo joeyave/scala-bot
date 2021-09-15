@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/repositories"
-	"github.com/kjk/notionapi"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
@@ -17,18 +16,16 @@ type SongService struct {
 	voiceRepository  *repositories.VoiceRepository
 	bandRepository   *repositories.BandRepository
 	driveRepository  *drive.Service
-	notionClient     *notionapi.Client
 	driveFileService *DriveFileService
 }
 
 func NewSongService(songRepository *repositories.SongRepository, voiceRepository *repositories.VoiceRepository, bandRepository *repositories.BandRepository,
-	driveClient *drive.Service, notionClient *notionapi.Client, driveFileService *DriveFileService) *SongService {
+	driveClient *drive.Service, driveFileService *DriveFileService) *SongService {
 	return &SongService{
 		songRepository:   songRepository,
 		voiceRepository:  voiceRepository,
 		bandRepository:   bandRepository,
 		driveRepository:  driveClient,
-		notionClient:     notionClient,
 		driveFileService: driveFileService,
 	}
 }

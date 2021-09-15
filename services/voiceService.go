@@ -3,13 +3,11 @@ package services
 import (
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/repositories"
-	"github.com/kjk/notionapi"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type VoiceService struct {
 	voiceRepository *repositories.VoiceRepository
-	notionClient    *notionapi.Client
 }
 
 func NewVoiceService(voiceRepository *repositories.VoiceRepository) *VoiceService {

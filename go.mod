@@ -13,7 +13,6 @@ require (
 	github.com/joeyave/chords-transposer v0.0.7
 	github.com/joeyave/telebot/v3 v3.0.1
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kjk/notionapi v0.0.0-20210902233546-6e6cd02e3310
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/klauspost/lctime v0.1.0
 	github.com/rs/zerolog v1.25.0

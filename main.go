@@ -7,7 +7,6 @@ import (
 	"github.com/joeyave/scala-chords-bot/repositories"
 	"github.com/joeyave/scala-chords-bot/services"
 	"github.com/joeyave/telebot/v3"
-	"github.com/kjk/notionapi"
 	"github.com/klauspost/lctime"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -61,18 +60,16 @@ func main() {
 		log.Fatal().Msgf("Unable to retrieve Docs client: %v", err)
 	}
 
-	notionClient := &notionapi.Client{}
-
 	voiceRepository := repositories.NewVoiceRepository(mongoClient)
 	voiceService := services.NewVoiceService(voiceRepository)
 
 	bandRepository := repositories.NewBandRepository(mongoClient)
-	bandService := services.NewBandService(bandRepository, notionClient)
+	bandService := services.NewBandService(bandRepository)
 
 	driveFileService := services.NewDriveFileService(driveRepository, docsRepository)
 
 	songRepository := repositories.NewSongRepository(mongoClient)
-	songService := services.NewSongService(songRepository, voiceRepository, bandRepository, driveRepository, notionClient, driveFileService)
+	songService := services.NewSongService(songRepository, voiceRepository, bandRepository, driveRepository, driveFileService)
 
 	userRepository := repositories.NewUserRepository(mongoClient)
 	userService := services.NewUserService(userRepository)
