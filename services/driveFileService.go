@@ -57,7 +57,7 @@ func (s *DriveFileService) FindSomeByFullTextAndFolderID(name string, folderID s
 
 	res, err := s.driveRepository.Files.List().
 		// Use this for precise search.
-		//Q(fmt.Sprintf("fullText contains '\"%s\"'", name)).
+		// Q(fmt.Sprintf("fullText contains '\"%s\"'", name)).
 		Q(q).
 		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink, parents)").
 		PageSize(helpers.SongsPageSize).PageToken(pageToken).Do()
@@ -662,12 +662,17 @@ func (s *DriveFileService) transposeHeader(doc *docs.Document, sections []docs.S
 					},
 				},
 			})
-
 		}
 	}
 
+	addMod := true
+	if sectionIndex == 0 {
+		addMod = false
+	}
+
 	transposeRequests, key := composeTransposeRequests(doc.Headers[doc.DocumentStyle.DefaultHeaderId].Content,
-		0, "", toKey, doc.Headers[sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId].HeaderId)
+		0, "", toKey, doc.Headers[sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId].HeaderId,
+		addMod)
 	requests = append(requests, transposeRequests...)
 
 	return requests, key
@@ -712,13 +717,13 @@ func (s *DriveFileService) transposeBody(doc *docs.Document, sections []docs.Str
 		})
 	}
 
-	transposeRequests, _ := composeTransposeRequests(content, sectionToInsertStartIndex, key, toKey, "")
+	transposeRequests, _ := composeTransposeRequests(content, sectionToInsertStartIndex, key, toKey, "", false)
 	requests = append(requests, transposeRequests...)
 
 	return requests
 }
 
-func composeTransposeRequests(content []*docs.StructuralElement, index int64, key string, toKey string, segmentId string) ([]*docs.Request, string) {
+func composeTransposeRequests(content []*docs.StructuralElement, index int64, key string, toKey string, segmentId string, addMod bool) ([]*docs.Request, string) {
 	requests := make([]*docs.Request, 0)
 
 	for i, item := range content {
@@ -734,6 +739,19 @@ func composeTransposeRequests(content []*docs.StructuralElement, index int64, ke
 
 					transposedText, err := transposer.TransposeToKey(element.TextRun.Content, key, toKey)
 					if err == nil {
+						if addMod {
+							fromKey, err := transposer.ParseKey(key)
+							if err == nil {
+								toKey, err := transposer.ParseKey(toKey)
+								if err == nil {
+									if string(transposedText[len(transposedText)-1]) != " " {
+										transposedText += " "
+									}
+									transposedText += fmt.Sprintf("(mod %d)", fromKey.SemitonesTo(toKey))
+								}
+							}
+						}
+
 						element.TextRun.Content = transposedText
 					}
 
@@ -817,8 +835,8 @@ func composeTransposeRequests(content []*docs.StructuralElement, index int64, ke
 
 func composeStyleRequests(content []*docs.StructuralElement, segmentID string) []*docs.Request {
 	requests := make([]*docs.Request, 0)
-	//makeBoldAndRedRegex := regexp.MustCompile(`(x|х)\d+`)
-	//sectionNamesRegex := regexp.MustCompile(`\p{L}+(\s\d*)?:|\|`)
+	// makeBoldAndRedRegex := regexp.MustCompile(`(x|х)\d+`)
+	// sectionNamesRegex := regexp.MustCompile(`\p{L}+(\s\d*)?:|\|`)
 
 	for _, paragraph := range content {
 		if paragraph.Paragraph == nil {
