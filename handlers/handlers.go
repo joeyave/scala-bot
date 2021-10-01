@@ -2013,7 +2013,16 @@ func changeSongBPMHandler() (int, []HandlerFunc) {
 			},
 		}
 
-		return c.Send("Введи новый темп:", &telebot.ReplyMarkup{ReplyKeyboard: [][]telebot.ReplyButton{{{Text: helpers.Cancel}}}})
+		markup := telebot.ReplyMarkup{
+			ResizeKeyboard: true,
+			ReplyKeyboard: [][]telebot.ReplyButton{
+				{{Text: "60"}, {Text: "65"}, {Text: "70"}, {Text: "75"}, {Text: "80"}, {Text: "85"}},
+				{{Text: "90"}, {Text: "95"}, {Text: "100"}, {Text: "105"}, {Text: "110"}, {Text: "115"}},
+				{{Text: "120"}, {Text: "125"}, {Text: "130"}, {Text: "135"}, {Text: "140"}, {Text: "145"}},
+				{{Text: helpers.Cancel}},
+			},
+		}
+		return c.Send("Введи новый темп:", &markup)
 	})
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
