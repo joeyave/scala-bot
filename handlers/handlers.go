@@ -2022,7 +2022,8 @@ func changeSongBPMHandler() (int, []HandlerFunc) {
 				{{Text: helpers.Cancel}},
 			},
 		}
-		return c.Send("Введи новый темп:", &markup)
+		c.Send("Введи новый темп:", &markup)
+		return c.Respond()
 	})
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
