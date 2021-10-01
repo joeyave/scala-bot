@@ -12,6 +12,7 @@ const (
 	MainMenuState
 	TransposeSongState
 	StyleSongState
+	ChangeSongBPMHandler
 	ChooseBandState
 	CreateBandState
 	CopySongState
@@ -43,6 +44,7 @@ const (
 	Audios                      string = "Аудио"
 	Transpose                   string = "🎛 Транспонировать"
 	Style                       string = "🎨 Стилизовать"
+	ChangeSongBPM               string = "🥁 Изменить BPM"
 	Menu                        string = "💻 Меню"
 	Back                        string = "↩︎ Назад"
 	Forward                     string = "▶️ Вперед"

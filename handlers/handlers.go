@@ -1998,6 +1998,57 @@ func styleSongHandler() (int, []HandlerFunc) {
 	return helpers.StyleSongState, handlerFunc
 }
 
+func changeSongBPMHandler() (int, []HandlerFunc) {
+	handlerFunc := make([]HandlerFunc, 0)
+
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		driveFileID := user.State.CallbackData.Query().Get("driveFileId")
+
+		user.State = &entities.State{
+			Index: 1,
+			Name:  helpers.ChangeSongBPMHandler,
+			Context: entities.Context{
+				DriveFileID: driveFileID,
+			},
+		}
+
+		return c.Send("Введи новый темп:", &telebot.ReplyMarkup{ReplyKeyboard: [][]telebot.ReplyButton{{{Text: helpers.Cancel}}}})
+	})
+
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		c.Notify(telebot.Typing)
+
+		_, err := h.driveFileService.ReplaceAllTextByRegex(user.State.Context.DriveFileID, regexp.MustCompile(`(?i)bpm:(.*?);`), fmt.Sprintf("BPM: %s;", c.Text()))
+		if err != nil {
+			return err
+		}
+
+		song, err := h.songService.FindOneByDriveFileID(user.State.Context.DriveFileID)
+		if err != nil {
+			return err
+		}
+
+		song.PDF.BPM = c.Text()
+
+		song, err = h.songService.UpdateOne(*song)
+		if err != nil {
+			return err
+		}
+
+		user.State = &entities.State{
+			Index:   0,
+			Name:    helpers.SongActionsState,
+			Context: user.State.Context,
+			Next:    &entities.State{Name: helpers.MainMenuState, Index: 0},
+		}
+		return h.enter(c, user)
+	})
+
+	return helpers.ChangeSongBPMHandler, handlerFunc
+}
+
 func copySongHandler() (int, []HandlerFunc) {
 	handlerFunc := make([]HandlerFunc, 0)
 

@@ -346,6 +346,40 @@ func (s *DriveFileService) TransposeOne(ID string, toKey string, sectionIndex in
 	return s.FindOneByID(ID)
 }
 
+func (s *DriveFileService) ReplaceAllTextByRegex(ID string, regex *regexp.Regexp, replaceText string) (int64, error) {
+	res, err := s.driveRepository.Files.Export(ID, "text/plain").Download()
+	if err != nil {
+		return 0, err
+	}
+
+	var driveFileText string
+	b, err := ioutil.ReadAll(res.Body)
+	if err == nil {
+		driveFileText = string(b)
+	}
+
+	textToReplace := regex.FindString(driveFileText)
+
+	request := &docs.BatchUpdateDocumentRequest{Requests: []*docs.Request{
+		{
+			ReplaceAllText: &docs.ReplaceAllTextRequest{
+				ContainsText: &docs.SubstringMatchCriteria{
+					MatchCase: true,
+					Text:      textToReplace,
+				},
+				ReplaceText: replaceText,
+			},
+		},
+	}}
+
+	replaceAllTextResp, err := s.docsRepository.Documents.BatchUpdate(ID, request).Do()
+	if err != nil {
+		return 0, err
+	}
+
+	return replaceAllTextResp.Replies[0].ReplaceAllText.OccurrencesChanged, err
+}
+
 func (s *DriveFileService) StyleOne(ID string) (*drive.File, error) {
 	requests := make([]*docs.Request, 0)
 

@@ -20,6 +20,7 @@ func init() {
 		createBandHandler,
 		chooseBandHandler,
 		styleSongHandler,
+		changeSongBPMHandler,
 		searchSongHandler,
 		setlistHandler,
 		songActionsHandler,

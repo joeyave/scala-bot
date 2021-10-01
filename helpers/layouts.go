@@ -15,6 +15,9 @@ func GetSongActionsKeyboard(user entities.User, song entities.Song, driveFile dr
 				{Text: Transpose, Data: AggregateCallbackData(TransposeSongState, 0, "")},
 				{Text: Style, Data: AggregateCallbackData(StyleSongState, 0, "")},
 			},
+			{
+				{Text: ChangeSongBPM, Data: AggregateCallbackData(ChangeSongBPMHandler, 0, "")},
+			},
 		}
 	} else {
 		return [][]telebot.InlineButton{
