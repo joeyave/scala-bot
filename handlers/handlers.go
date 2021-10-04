@@ -910,7 +910,14 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		state, index, roleIDHex := helpers.ParseCallbackData(c.Callback().Data)
+		state, index, payload := helpers.ParseCallbackData(c.Callback().Data)
+
+		parsedPayload := strings.Split(payload, ":")
+		roleIDHex := parsedPayload[0]
+		loadMore := false
+		if len(parsedPayload) > 1 && parsedPayload[1] == "LoadMore" {
+			loadMore = true
+		}
 
 		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
 		if err != nil {
@@ -934,6 +941,12 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 
 		markup := &telebot.ReplyMarkup{}
 
+		if loadMore == false {
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
+				{Text: helpers.LoadMore, Data: helpers.AggregateCallbackData(state, index, fmt.Sprintf("%s:%s", roleIDHex, "LoadMore"))},
+			})
+		}
+
 		for _, userExtra := range usersExtra {
 			var buttonText string
 			if len(userExtra.Events) == 0 {
@@ -941,9 +954,11 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 			} else {
 				buttonText = fmt.Sprintf("%s | %v | %d", userExtra.User.Name, lctime.Strftime("%d %b", userExtra.Events[0].Time), len(userExtra.Events))
 			}
-			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
-				{Text: buttonText, Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s:%d", roleIDHex, userExtra.User.ID))},
-			})
+			if len(userExtra.Events) > 0 || loadMore == true {
+				markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
+					{Text: buttonText, Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s:%d", roleIDHex, userExtra.User.ID))},
+				})
+			}
 		}
 
 		// TODO

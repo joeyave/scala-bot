@@ -36,6 +36,7 @@ const (
 
 // Buttons constants.
 const (
+	LoadMore                    string = "👨‍👩‍👧‍👦 Загрузить еще"
 	Cancel                      string = "🚫 Отмена"
 	Skip                        string = "⏩ Пропустить"
 	Help                        string = "Как пользоваться?"
