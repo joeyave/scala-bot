@@ -174,9 +174,9 @@ func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.Handl
 		}
 		log.Printf("getting user took %v", time.Since(start))
 
-		if user.Name == "" {
-			user.Name = strings.TrimSpace(fmt.Sprintf("%s %s", c.Chat().FirstName, c.Chat().LastName))
-		}
+		// if user.Name == "" {
+		// }
+		user.Name = strings.TrimSpace(fmt.Sprintf("%s %s", c.Chat().FirstName, c.Chat().LastName))
 
 		if user.BandID == primitive.NilObjectID && user.State.Name != helpers.ChooseBandState && user.State.Name != helpers.CreateBandState {
 			user.State = &entities.State{
