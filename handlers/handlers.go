@@ -954,7 +954,7 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 			} else {
 				buttonText = fmt.Sprintf("%s | %v | %d", userExtra.User.Name, lctime.Strftime("%d %b", userExtra.Events[0].Time), len(userExtra.Events))
 			}
-			if len(userExtra.Events) > 0 || loadMore == true {
+			if (len(userExtra.Events) > 0 && time.Now().Sub(userExtra.Events[0].Time) < 24*364/3*time.Hour) || loadMore == true {
 				markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
 					{Text: buttonText, Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s:%d", roleIDHex, userExtra.User.ID))},
 				})
