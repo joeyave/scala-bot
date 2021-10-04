@@ -642,6 +642,7 @@ func eventActionsHandler() (int, []HandlerFunc) {
 	})
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+		c.Notify(telebot.UploadingDocument)
 
 		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
 		if err != nil {
@@ -1164,6 +1165,22 @@ func addEventSongHandler() (int, []HandlerFunc) {
 		c.Notify(telebot.Typing)
 
 		query := helpers.CleanUpQuery(c.Text())
+		songNames := helpers.SplitQueryByNewlines(query)
+
+		if len(songNames) > 1 {
+			user.State = &entities.State{
+				Index:   0,
+				Name:    helpers.SetlistState,
+				Context: user.State.Context,
+				Next: &entities.State{
+					Name:    helpers.AddEventSongState,
+					Index:   3,
+					Context: user.State.Context,
+				},
+			}
+			user.State.Context.SongNames = songNames
+			return h.enter(c, user)
+		}
 
 		driveFiles, _, err := h.driveFileService.FindSomeByFullTextAndFolderID(query, user.Band.DriveFolderID, "")
 		if err != nil {
@@ -1199,6 +1216,11 @@ func addEventSongHandler() (int, []HandlerFunc) {
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
 		if c.Text() == helpers.End {
+			if user.State.Context.Map == nil {
+				user.State.Context.Map = map[string]string{}
+			}
+			user.State.Context.Map["keyboard"] = "EditEventKeyboard"
+
 			user.State = &entities.State{
 				Name:    helpers.EventActionsState,
 				Context: user.State.Context,
@@ -1227,6 +1249,28 @@ func addEventSongHandler() (int, []HandlerFunc) {
 			c.Send("Вероятнее всего, эта песня уже есть в списке.")
 		} else if err != nil {
 			return err
+		}
+
+		user.State.Index = 0
+		return h.enter(c, user)
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		c.Notify(telebot.Typing)
+
+		for _, id := range user.State.Context.FoundDriveFileIDs {
+			song, _, err := h.songService.FindOrCreateOneByDriveFileID(id)
+			if err != nil {
+				return err
+			}
+
+			err = h.eventService.PushSongID(user.State.Context.EventID, song.ID)
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				c.Send("Вероятнее всего, эта песня уже есть в списке.")
+			} else if err != nil {
+				return err
+			}
 		}
 
 		user.State.Index = 0
@@ -1656,9 +1700,9 @@ func searchSongHandler() (int, []HandlerFunc) {
 				user.State = &entities.State{
 					Index: 0,
 					Name:  helpers.SetlistState,
-					Prev: &entities.State{
-						Index: 0,
-						Name:  helpers.MainMenuState,
+					Next: &entities.State{
+						Index: 2,
+						Name:  helpers.SearchSongState,
 					},
 					Context: user.State.Context,
 				}
@@ -1799,6 +1843,26 @@ func searchSongHandler() (int, []HandlerFunc) {
 				return h.enter(c, user)
 			}
 		}
+	})
+
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		for _, messageID := range user.State.Context.MessagesToDelete {
+			h.bot.Delete(&telebot.Message{
+				ID:   messageID,
+				Chat: c.Chat(),
+			})
+		}
+
+		err := sendDriveFilesAlbum(h, c, user, user.State.Context.FoundDriveFileIDs)
+		if err != nil {
+			return err
+		}
+
+		user.State = &entities.State{
+			Name: helpers.MainMenuState,
+		}
+		return h.enter(c, user)
 	})
 
 	return helpers.SearchSongState, handlerFunc
@@ -2571,26 +2635,23 @@ func setlistHandler() (int, []HandlerFunc) {
 	})
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
-		c.Notify(telebot.UploadingDocument)
 
 		driveFileIDs := user.State.Context.FoundDriveFileIDs
-
-		err := sendDriveFilesAlbum(h, c, user, driveFileIDs)
-		if err != nil {
-			return err
+		messagesToDelete := user.State.Context.MessagesToDelete
+		if user.State.Next != nil {
+			user.State = user.State.Next
+			user.State.Context.FoundDriveFileIDs = driveFileIDs
+			user.State.Context.MessagesToDelete = messagesToDelete
+			return h.enter(c, user)
+		} else {
+			user.State = user.State.Prev
+			return nil
 		}
 
-		for _, messageID := range user.State.Context.MessagesToDelete {
-			h.bot.Delete(&telebot.Message{
-				ID:   messageID,
-				Chat: c.Chat(),
-			})
-		}
-
-		user.State = user.State.Prev
-		user.State.Index = 0
-
-		return h.enter(c, user)
+		// user.State = user.State.Prev
+		// user.State.Index = 0
+		//
+		// return h.enter(c, user)
 	})
 
 	return helpers.SetlistState, handlerFunc
