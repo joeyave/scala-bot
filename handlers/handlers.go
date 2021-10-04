@@ -1669,7 +1669,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 				query = songNames[0]
 				user.State.Context.Query = query
 			} else {
-				err := c.Send("Из запроса удаляются все числа, дифизы и скобки вместе с тем, что в них.")
+				err := c.Send("Из запроса удаляются все числа, дефисы и скобки вместе с тем, что в них.")
 				if err != nil {
 					return err
 				}
@@ -1696,20 +1696,17 @@ func searchSongHandler() (int, []HandlerFunc) {
 				user.State.Context.NextPageToken = &entities.NextPageToken{}
 			}
 
-			switch user.State.Context.QueryType {
-			case helpers.SearchEverywhere:
+			if user.State.Context.QueryType == helpers.SearchEverywhere {
 				_driveFiles, _nextPageToken, _err := h.driveFileService.FindSomeByFullTextAndFolderID(query, "", user.State.Context.NextPageToken.Token)
 				driveFiles = _driveFiles
 				nextPageToken = _nextPageToken
 				err = _err
-
-			case helpers.AllSongs:
+			} else if user.State.Context.QueryType == helpers.AllSongs && user.State.Context.Query == "" {
 				_driveFiles, _nextPageToken, _err := h.driveFileService.FindAllByFolderID(user.Band.DriveFolderID, user.State.Context.NextPageToken.Token)
 				driveFiles = _driveFiles
 				nextPageToken = _nextPageToken
 				err = _err
-
-			default:
+			} else {
 				_driveFiles, _nextPageToken, _err := h.driveFileService.FindSomeByFullTextAndFolderID(query, user.Band.DriveFolderID, user.State.Context.NextPageToken.Token)
 				driveFiles = _driveFiles
 				nextPageToken = _nextPageToken
