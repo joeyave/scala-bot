@@ -2118,7 +2118,10 @@ func changeSongBPMHandler() (int, []HandlerFunc) {
 
 		song.PDF.BPM = c.Text()
 
-		song, err = h.songService.UpdateOne(*song)
+                fakeTime, _ := time.Parse("2006", "2006")
+		song.PDF.ModifiedTime = fakeTime.Format(time.RFC3339)
+
+          	song, err = h.songService.UpdateOne(*song)
 		if err != nil {
 			return err
 		}
