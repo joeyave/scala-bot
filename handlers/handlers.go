@@ -1847,7 +1847,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 			driveFiles := user.State.Context.DriveFiles
 			var foundDriveFile *drive.File
 			for _, driveFile := range driveFiles {
-				if driveFile.Name == c.Text() {
+				if driveFile.Name == strings.ReplaceAll(c.Text(), " ❤️‍🔥", "") {
 					foundDriveFile = driveFile
 					break
 				}
