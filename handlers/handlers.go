@@ -1608,17 +1608,15 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 
 		for _, song := range songs {
 			var buttonText string
-			if len(song.Events) == 0 {
+			if len(song.Events) == 0 || user.State.Context.QueryType == helpers.LikedSongs {
 				buttonText = song.Song.PDF.Name
 			} else {
 				buttonText = fmt.Sprintf("%v | %s | %d", lctime.Strftime("%d %b", song.Events[0].Time), song.Song.PDF.Name, len(song.Events))
 
-				if user.State.Context.QueryType != helpers.LikedSongs {
-					for _, userID := range song.Song.Likes {
-						if user.ID == userID {
-							buttonText += " ❤️‍🔥"
-							break
-						}
+				for _, userID := range song.Song.Likes {
+					if user.ID == userID {
+						buttonText += " ❤️‍🔥"
+						break
 					}
 				}
 			}
@@ -2186,10 +2184,10 @@ func changeSongBPMHandler() (int, []HandlerFunc) {
 
 		song.PDF.BPM = c.Text()
 
-                fakeTime, _ := time.Parse("2006", "2006")
+		fakeTime, _ := time.Parse("2006", "2006")
 		song.PDF.ModifiedTime = fakeTime.Format(time.RFC3339)
 
-          	song, err = h.songService.UpdateOne(*song)
+		song, err = h.songService.UpdateOne(*song)
 		if err != nil {
 			return err
 		}
