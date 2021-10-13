@@ -1789,8 +1789,20 @@ func searchSongHandler() (int, []HandlerFunc) {
 				ResizeKeyboard: true,
 			}
 
-			for _, song := range driveFiles {
-				markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: song.Name}})
+			likedSongs, likedSongErr := h.songService.FindManyLiked(user.ID)
+
+			for _, driveFile := range driveFiles {
+				driveFileName := driveFile.Name
+
+				if likedSongErr == nil {
+					for _, likedSong := range likedSongs {
+						if likedSong.DriveFileID == driveFile.Id {
+							driveFileName += " ❤️‍🔥"
+						}
+					}
+				}
+
+				markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: driveFileName}})
 			}
 
 			if c.Text() != helpers.SearchEverywhere || c.Text() != helpers.AllSongs {
