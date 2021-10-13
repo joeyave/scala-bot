@@ -16,6 +16,8 @@ type Song struct {
 	PDF PDF `bson:"pdf,omitempty"`
 
 	Voices []*Voice `bson:"voices,omitempty"`
+
+	Likes []int64 `bson:"likes,omitempty"`
 }
 
 type SongExtra struct {

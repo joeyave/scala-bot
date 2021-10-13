@@ -33,6 +33,14 @@ func (s *SongService) FindAll() ([]*entities.Song, error) {
 	return s.songRepository.FindAll()
 }
 
+func (s *SongService) FindManyLiked(userID int64) ([]*entities.Song, error) {
+	return s.songRepository.FindManyLiked(userID)
+}
+
+func (s *SongService) FindManyExtraLiked(userID int64, pageNumber int) ([]*entities.SongExtra, error) {
+	return s.songRepository.FindManyExtraByPageNumberLiked(userID, pageNumber)
+}
+
 func (s *SongService) FindOneByID(ID primitive.ObjectID) (*entities.Song, error) {
 	return s.songRepository.FindOneByID(ID)
 }
@@ -120,6 +128,14 @@ func (s *SongService) DeleteOneByDriveFileID(driveFileID string) error {
 	}
 
 	return nil
+}
+
+func (s *SongService) Like(songID primitive.ObjectID, userID int64) error {
+	return s.songRepository.Like(songID, userID)
+}
+
+func (s *SongService) Dislike(songID primitive.ObjectID, userID int64) error {
+	return s.songRepository.Dislike(songID, userID)
 }
 
 func (s *SongService) FindAllExtraByPageNumberSortedByEventsNumber(pageNumber int) ([]*entities.SongExtra, error) {

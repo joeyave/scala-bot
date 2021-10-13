@@ -44,6 +44,9 @@ func mainMenuHandler() (int, []HandlerFunc) {
 			return c.Send(helpers.Songs+":", &telebot.ReplyMarkup{
 				ReplyKeyboard: [][]telebot.ReplyButton{
 					{
+						{Text: helpers.LikedSongs},
+					},
+					{
 						{Text: helpers.AllSongs},
 					},
 					{
@@ -67,15 +70,15 @@ func mainMenuHandler() (int, []HandlerFunc) {
 				Name: helpers.SearchSongState,
 			}
 
-		case helpers.SongsByLastDateOfPerforming:
+		case helpers.SongsByLastDateOfPerforming, helpers.SongsByNumberOfPerforming, helpers.LikedSongs:
 			user.State = &entities.State{
 				Name: helpers.GetSongsFromMongoState,
 			}
 
-		case helpers.SongsByNumberOfPerforming:
-			user.State = &entities.State{
-				Name: helpers.GetSongsFromMongoState,
-			}
+		// case helpers.SongsByNumberOfPerforming:
+		// 	user.State = &entities.State{
+		// 		Name: helpers.GetSongsFromMongoState,
+		// 	}
 
 		case helpers.CreateDoc:
 			user.State = &entities.State{
@@ -1584,7 +1587,7 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 		c.Notify(telebot.Typing)
 
 		switch c.Text() {
-		case helpers.SongsByNumberOfPerforming, helpers.SongsByLastDateOfPerforming:
+		case helpers.SongsByNumberOfPerforming, helpers.SongsByLastDateOfPerforming, helpers.LikedSongs:
 			user.State.Context.QueryType = c.Text()
 		}
 
@@ -1595,6 +1598,8 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 			songs, err = h.songService.FindAllExtraByPageNumberSortedByLatestEventDate(user.State.Context.PageIndex)
 		case helpers.SongsByNumberOfPerforming:
 			songs, err = h.songService.FindAllExtraByPageNumberSortedByEventsNumber(user.State.Context.PageIndex)
+		case helpers.LikedSongs:
+			songs, err = h.songService.FindManyExtraLiked(user.ID, user.State.Context.PageIndex)
 		}
 
 		markup := &telebot.ReplyMarkup{
@@ -1607,6 +1612,15 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 				buttonText = song.Song.PDF.Name
 			} else {
 				buttonText = fmt.Sprintf("%v | %s | %d", lctime.Strftime("%d %b", song.Events[0].Time), song.Song.PDF.Name, len(song.Events))
+
+				if user.State.Context.QueryType != helpers.LikedSongs {
+					for _, userID := range song.Song.Likes {
+						if user.ID == userID {
+							buttonText += " ❤️‍🔥"
+							break
+						}
+					}
+				}
 			}
 
 			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: buttonText}})
@@ -1914,6 +1928,60 @@ func songActionsHandler() (int, []HandlerFunc) {
 
 		h.bot.EditReplyMarkup(c.Callback().Message, markup)
 		c.Respond()
+		return nil
+	})
+
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		song, _, err :=
+			h.songService.FindOrCreateOneByDriveFileID(user.State.CallbackData.Query().Get("driveFileId"))
+		if err != nil {
+			return err
+		}
+
+		_, _, action := helpers.ParseCallbackData(c.Callback().Data)
+
+		if action == "like" {
+			err := h.songService.Like(song.ID, user.ID)
+			if err != nil {
+				return err
+			}
+
+			markup := &telebot.ReplyMarkup{}
+
+			markup.InlineKeyboard = [][]telebot.InlineButton{
+				{
+					{Text: "Подробнее", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 1, "")},
+				},
+				{
+					{Text: "❤️‍🔥", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 2, "dislike")},
+				},
+			}
+
+			h.bot.EditReplyMarkup(c.Callback().Message, markup)
+			c.Respond()
+
+		} else if action == "dislike" {
+			err := h.songService.Dislike(song.ID, user.ID)
+			if err != nil {
+				return err
+			}
+
+			markup := &telebot.ReplyMarkup{}
+
+			markup.InlineKeyboard = [][]telebot.InlineButton{
+				{
+					{Text: "Подробнее", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 1, "")},
+				},
+				{
+					{Text: "💔", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 2, "like")},
+				},
+			}
+
+			h.bot.EditReplyMarkup(c.Callback().Message, markup)
+			c.Respond()
+		}
+
 		return nil
 	})
 

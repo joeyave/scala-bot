@@ -26,6 +26,12 @@ func (r *SongRepository) FindAll() ([]*entities.Song, error) {
 	return r.find(bson.M{})
 }
 
+func (r *SongRepository) FindManyLiked(userID int64) ([]*entities.Song, error) {
+	return r.find(bson.M{
+		"likes": bson.M{"$in": bson.A{userID}},
+	})
+}
+
 func (r *SongRepository) FindOneByID(ID primitive.ObjectID) (*entities.Song, error) {
 	songs, err := r.find(bson.M{"_id": ID})
 	if err != nil {
@@ -139,14 +145,14 @@ func (r *SongRepository) UpdateOne(song entities.Song) (*entities.Song, error) {
 		return nil, err
 	}
 
-	//channel, err := r.driveClient.Files.Watch(song.DriveFileID, &drive.Channel{
+	// channel, err := r.driveClient.Files.Watch(song.DriveFileID, &drive.Channel{
 	//	Address: fmt.Sprintf("%s/driveFileChangeCallback", os.Getenv("HOST")),
 	//	Id:      uuid.New().String(),
 	//	Kind:    "api#channel",
 	//	Type:    "web_hook",
-	//}).Do()
+	// }).Do()
 	//
-	//fmt.Println(channel, err)
+	// fmt.Println(channel, err)
 
 	return r.FindOneByID(newSong.ID)
 }
@@ -155,6 +161,39 @@ func (r *SongRepository) DeleteOneByDriveFileID(driveFileID string) error {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
 
 	_, err := collection.DeleteOne(context.TODO(), bson.M{"driveFileId": driveFileID})
+	return err
+}
+
+func (r *SongRepository) Like(songID primitive.ObjectID, userID int64) error {
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+
+	filter := bson.M{
+		"_id":   songID,
+		"likes": bson.M{"$nin": bson.A{userID}},
+	}
+
+	update := bson.M{
+		"$push": bson.M{
+			"likes": userID,
+		},
+	}
+
+	_, err := collection.UpdateOne(context.TODO(), filter, update)
+	return err
+}
+
+func (r *SongRepository) Dislike(songID primitive.ObjectID, userID int64) error {
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+
+	filter := bson.M{"_id": songID}
+
+	update := bson.M{
+		"$pull": bson.M{
+			"likes": userID,
+		},
+	}
+
+	_, err := collection.UpdateOne(context.TODO(), filter, update)
 	return err
 }
 
@@ -221,6 +260,20 @@ func (r *SongRepository) FindManyExtraByDriveFileIDs(driveFileIDs []string) ([]*
 			"driveFileId": bson.M{
 				"$in": driveFileIDs,
 			},
+		},
+	)
+}
+
+func (r *SongRepository) FindManyExtraByPageNumberLiked(userID int64, pageNumber int) ([]*entities.SongExtra, error) {
+	return r.findWithExtra(
+		bson.M{
+			"likes": bson.M{"$in": bson.A{userID}},
+		},
+		bson.M{
+			"$skip": pageNumber * helpers.SongsPageSize,
+		},
+		bson.M{
+			"$limit": helpers.SongsPageSize,
 		},
 	)
 }

@@ -23,11 +23,28 @@ func SendDriveFileToUser(h *Handler, c telebot.Context, user *entities.User, dri
 
 	markup := &telebot.ReplyMarkup{}
 
-	//markup.InlineKeyboard = helpers.GetSongActionsKeyboard(*user, *song, *driveFile)
 	markup.InlineKeyboard = [][]telebot.InlineButton{
 		{
 			{Text: "Подробнее", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 1, "")},
 		},
+	}
+
+	liked := false
+	for _, userID := range song.Likes {
+		if user.ID == userID {
+			liked = true
+			break
+		}
+	}
+
+	if liked {
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
+			{Text: "❤️‍🔥", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 2, "dislike")},
+		})
+	} else {
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
+			{Text: "💔", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 2, "like")},
+		})
 	}
 
 	sendDocumentByReader := func() (*telebot.Message, error) {
@@ -247,7 +264,7 @@ func sendDriveFilesAlbum(h *Handler, c telebot.Context, user *entities.User, dri
 			}
 		}
 
-		//for j := range responses {
+		// for j := range responses {
 		//	foundDriveFileID := driveFileIDs[j+(i*len(album))]
 		//
 		//	song, err := h.songService.FindOneByDriveFileID(foundDriveFileID)
@@ -262,7 +279,7 @@ func sendDriveFilesAlbum(h *Handler, c telebot.Context, user *entities.User, dri
 		//	}
 		//
 		//	_, _ = h.songService.UpdateOne(*song)
-		//}
+		// }
 	}
 
 	return nil
