@@ -43,7 +43,7 @@ func SendDriveFileToUser(h *Handler, c telebot.Context, user *entities.User, dri
 		})
 	} else {
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
-			{Text: "💔", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 2, "like")},
+			{Text: "♡", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 2, "like")},
 		})
 	}
 

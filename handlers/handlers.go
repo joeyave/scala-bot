@@ -1984,7 +1984,7 @@ func songActionsHandler() (int, []HandlerFunc) {
 					{Text: "Подробнее", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 1, "")},
 				},
 				{
-					{Text: "💔", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 2, "like")},
+					{Text: "♡", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 2, "like")},
 				},
 			}
 
