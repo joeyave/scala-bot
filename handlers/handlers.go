@@ -41,29 +41,34 @@ func mainMenuHandler() (int, []HandlerFunc) {
 			}
 
 		case helpers.Songs:
-			return c.Send(helpers.Songs+":", &telebot.ReplyMarkup{
-				ReplyKeyboard: [][]telebot.ReplyButton{
-					{
-						{Text: helpers.LikedSongs},
-					},
-					{
-						{Text: helpers.AllSongs},
-					},
-					{
-						{Text: helpers.SongsByLastDateOfPerforming},
-					},
-					{
-						{Text: helpers.SongsByNumberOfPerforming},
-					},
-					{
-						{Text: helpers.CreateDoc},
-					},
-					{
-						{Text: helpers.Back},
-					},
-				},
-				ResizeKeyboard: true,
-			})
+
+			user.State = &entities.State{
+				Name: helpers.SearchSongState,
+			}
+
+			// return c.Send(helpers.Songs+":", &telebot.ReplyMarkup{
+			// 	ReplyKeyboard: [][]telebot.ReplyButton{
+			// 		{
+			// 			{Text: helpers.LikedSongs},
+			// 		},
+			// 		{
+			// 			{Text: helpers.AllSongs},
+			// 		},
+			// 		{
+			// 			{Text: helpers.SongsByLastDateOfPerforming},
+			// 		},
+			// 		{
+			// 			{Text: helpers.SongsByNumberOfPerforming},
+			// 		},
+			// 		{
+			// 			{Text: helpers.CreateDoc},
+			// 		},
+			// 		{
+			// 			{Text: helpers.Back},
+			// 		},
+			// 	},
+			// 	ResizeKeyboard: true,
+			// })
 
 		case helpers.AllSongs:
 			user.State = &entities.State{
@@ -1605,6 +1610,18 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 		markup := &telebot.ReplyMarkup{
 			ResizeKeyboard: true,
 		}
+		markup.ReplyKeyboard = [][]telebot.ReplyButton{
+			{
+				{Text: helpers.LikedSongs}, {Text: helpers.SongsByLastDateOfPerforming}, {Text: helpers.SongsByNumberOfPerforming},
+			},
+		}
+
+		for i := range markup.ReplyKeyboard[0] {
+			if markup.ReplyKeyboard[0][i].Text == user.State.Context.QueryType {
+				markup.ReplyKeyboard[0][i].Text = fmt.Sprintf("〔%s〕", markup.ReplyKeyboard[0][i].Text)
+				break
+			}
+		}
 
 		for _, songExtra := range songs {
 			buttonText := songExtra.Song.PDF.Name
@@ -1641,13 +1658,17 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		if c.Text() == helpers.NextPage {
+		switch c.Text() {
+		case helpers.SongsByLastDateOfPerforming, helpers.SongsByNumberOfPerforming, helpers.LikedSongs:
+			user.State = &entities.State{
+				Name: helpers.GetSongsFromMongoState,
+			}
+			return h.enter(c, user)
+		case helpers.NextPage:
 			user.State.Context.PageIndex++
 			user.State.Index--
 			return h.enter(c, user)
-		}
-
-		if c.Text() == helpers.PrevPage {
+		case helpers.PrevPage:
 			user.State.Context.PageIndex--
 			user.State.Index--
 			return h.enter(c, user)
@@ -1656,7 +1677,7 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 		c.Notify(telebot.UploadingDocument)
 
 		var songName string
-		regex := regexp.MustCompile(`\s*\(.*\)\s*` + helpers.Like + `\s*`)
+		regex := regexp.MustCompile(`\s*\(.*\)\s*(` + helpers.Like + `)?\s*`)
 		songName = regex.ReplaceAllString(c.Text(), "")
 
 		song, err := h.songService.FindOneByName(strings.TrimSpace(songName))
@@ -1690,7 +1711,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 
 			var query string
 			switch c.Text() {
-			case helpers.SearchEverywhere, helpers.AllSongs, helpers.SongsByLastDateOfPerforming:
+			case helpers.SearchEverywhere, helpers.Songs, helpers.SongsByLastDateOfPerforming:
 				user.State.Context.QueryType = c.Text()
 				query = user.State.Context.Query
 			case helpers.PrevPage, helpers.NextPage:
@@ -1752,7 +1773,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 				driveFiles = _driveFiles
 				nextPageToken = _nextPageToken
 				err = _err
-			} else if user.State.Context.QueryType == helpers.AllSongs && user.State.Context.Query == "" {
+			} else if user.State.Context.QueryType == helpers.Songs && user.State.Context.Query == "" {
 				_driveFiles, _nextPageToken, _err := h.driveFileService.FindAllByFolderID(user.Band.DriveFolderID, user.State.Context.NextPageToken.Token)
 				driveFiles = _driveFiles
 				nextPageToken = _nextPageToken
@@ -1784,6 +1805,12 @@ func searchSongHandler() (int, []HandlerFunc) {
 				ResizeKeyboard: true,
 			}
 
+			markup.ReplyKeyboard = [][]telebot.ReplyButton{
+				{
+					{Text: helpers.LikedSongs}, {Text: helpers.SongsByLastDateOfPerforming}, {Text: helpers.SongsByNumberOfPerforming},
+				},
+			}
+
 			likedSongs, likedSongErr := h.songService.FindManyLiked(user.ID)
 
 			for _, driveFile := range driveFiles {
@@ -1800,7 +1827,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 				markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: driveFileName}})
 			}
 
-			if c.Text() != helpers.SearchEverywhere || c.Text() != helpers.AllSongs {
+			if c.Text() != helpers.SearchEverywhere || c.Text() != helpers.Songs {
 				markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.SearchEverywhere}})
 			}
 
@@ -1834,6 +1861,12 @@ func searchSongHandler() (int, []HandlerFunc) {
 
 		case helpers.SearchEverywhere, helpers.NextPage:
 			user.State.Index--
+			return h.enter(c, user)
+
+		case helpers.SongsByLastDateOfPerforming, helpers.SongsByNumberOfPerforming, helpers.LikedSongs:
+			user.State = &entities.State{
+				Name: helpers.GetSongsFromMongoState,
+			}
 			return h.enter(c, user)
 
 		default:
