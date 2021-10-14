@@ -6,6 +6,34 @@ import (
 	"google.golang.org/api/drive/v3"
 )
 
+func GetSongInitKeyboard(user *entities.User, song *entities.Song) [][]telebot.InlineButton {
+	keyboard := [][]telebot.InlineButton{
+		{
+			{Text: "Подробнее", Data: AggregateCallbackData(SongActionsState, 1, "")},
+		},
+	}
+
+	liked := false
+	for _, userID := range song.Likes {
+		if user.ID == userID {
+			liked = true
+			break
+		}
+	}
+
+	if liked {
+		keyboard = append(keyboard, []telebot.InlineButton{
+			{Text: Like, Data: AggregateCallbackData(SongActionsState, 2, "dislike")},
+		})
+	} else {
+		keyboard = append(keyboard, []telebot.InlineButton{
+			{Text: "♡", Data: AggregateCallbackData(SongActionsState, 2, "like")},
+		})
+	}
+
+	return keyboard
+}
+
 func GetSongActionsKeyboard(user entities.User, song entities.Song, driveFile drive.File) [][]telebot.InlineButton {
 	if song.BandID == user.BandID {
 		return [][]telebot.InlineButton{

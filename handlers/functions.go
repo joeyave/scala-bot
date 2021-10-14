@@ -23,29 +23,7 @@ func SendDriveFileToUser(h *Handler, c telebot.Context, user *entities.User, dri
 
 	markup := &telebot.ReplyMarkup{}
 
-	markup.InlineKeyboard = [][]telebot.InlineButton{
-		{
-			{Text: "Подробнее", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 1, "")},
-		},
-	}
-
-	liked := false
-	for _, userID := range song.Likes {
-		if user.ID == userID {
-			liked = true
-			break
-		}
-	}
-
-	if liked {
-		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
-			{Text: "❤️‍🔥", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 2, "dislike")},
-		})
-	} else {
-		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
-			{Text: "♡", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 2, "like")},
-		})
-	}
+	markup.InlineKeyboard = helpers.GetSongInitKeyboard(user, song)
 
 	sendDocumentByReader := func() (*telebot.Message, error) {
 		reader, err := h.driveFileService.DownloadOneByID(driveFile.Id)

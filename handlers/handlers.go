@@ -1615,7 +1615,7 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 			if user.State.Context.QueryType != helpers.LikedSongs {
 				for _, userID := range songExtra.Song.Likes {
 					if user.ID == userID {
-						buttonText += " ❤️‍🔥"
+						buttonText += " " + helpers.Like
 						break
 					}
 				}
@@ -1656,7 +1656,7 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 		c.Notify(telebot.UploadingDocument)
 
 		var songName string
-		regex := regexp.MustCompile(`\s*\(.*\)\s*❤️‍🔥\s*`)
+		regex := regexp.MustCompile(`\s*\(.*\)\s*` + helpers.Like + `\s*`)
 		songName = regex.ReplaceAllString(c.Text(), "")
 
 		song, err := h.songService.FindOneByName(strings.TrimSpace(songName))
@@ -1792,7 +1792,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 				if likedSongErr == nil {
 					for _, likedSong := range likedSongs {
 						if likedSong.DriveFileID == driveFile.Id {
-							driveFileName += " ❤️‍🔥"
+							driveFileName += " " + helpers.Like
 						}
 					}
 				}
@@ -1842,7 +1842,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 			driveFiles := user.State.Context.DriveFiles
 			var foundDriveFile *drive.File
 			for _, driveFile := range driveFiles {
-				if driveFile.Name == strings.ReplaceAll(c.Text(), " ❤️‍🔥", "") {
+				if driveFile.Name == strings.ReplaceAll(c.Text(), " "+helpers.Like, "") {
 					foundDriveFile = driveFile
 					break
 				}
@@ -1952,19 +1952,7 @@ func songActionsHandler() (int, []HandlerFunc) {
 				return err
 			}
 
-			markup := &telebot.ReplyMarkup{}
-
-			markup.InlineKeyboard = [][]telebot.InlineButton{
-				{
-					{Text: "Подробнее", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 1, "")},
-				},
-				{
-					{Text: "❤️‍🔥", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 2, "dislike")},
-				},
-			}
-
-			h.bot.EditReplyMarkup(c.Callback().Message, markup)
-			c.Respond()
+			song.Likes = append(song.Likes, user.ID)
 
 		} else if action == "dislike" {
 			err := h.songService.Dislike(song.ID, user.ID)
@@ -1972,20 +1960,14 @@ func songActionsHandler() (int, []HandlerFunc) {
 				return err
 			}
 
-			markup := &telebot.ReplyMarkup{}
-
-			markup.InlineKeyboard = [][]telebot.InlineButton{
-				{
-					{Text: "Подробнее", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 1, "")},
-				},
-				{
-					{Text: "♡", Data: helpers.AggregateCallbackData(helpers.SongActionsState, 2, "like")},
-				},
-			}
-
-			h.bot.EditReplyMarkup(c.Callback().Message, markup)
-			c.Respond()
+			song.Likes = song.Likes[:0]
 		}
+
+		markup := &telebot.ReplyMarkup{}
+		markup.InlineKeyboard = helpers.GetSongInitKeyboard(user, song)
+
+		h.bot.EditReplyMarkup(c.Callback().Message, markup)
+		c.Respond()
 
 		return nil
 	})

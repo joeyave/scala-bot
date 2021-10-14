@@ -86,6 +86,7 @@ const (
 	Today                       string = "⏰"
 	LinkToTheDoc                string = "📎 Ссылка на документ"
 	Setlist                     string = "📝 Список"
+	Like                        string = "❤️‍🔥"
 )
 
 // Roles.
