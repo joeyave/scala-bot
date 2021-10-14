@@ -1770,6 +1770,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 
 			filters := true
 			if user.State.Context.QueryType == helpers.SearchEverywhere {
+				filters = false
 				_driveFiles, _nextPageToken, _err := h.driveFileService.FindSomeByFullTextAndFolderID(query, "", user.State.Context.NextPageToken.Token)
 				driveFiles = _driveFiles
 				nextPageToken = _nextPageToken
