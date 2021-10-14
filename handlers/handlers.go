@@ -1807,7 +1807,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 				ResizeKeyboard: true,
 			}
 
-			if !filters {
+			if filters {
 				markup.ReplyKeyboard = [][]telebot.ReplyButton{
 					{
 						{Text: helpers.LikedSongs}, {Text: helpers.SongsByLastDateOfPerforming}, {Text: helpers.SongsByNumberOfPerforming},
