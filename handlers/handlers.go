@@ -1600,9 +1600,9 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 		var err error
 		switch user.State.Context.QueryType {
 		case helpers.SongsByLastDateOfPerforming:
-			songs, err = h.songService.FindAllExtraByPageNumberSortedByLatestEventDate(user.State.Context.PageIndex)
+			songs, err = h.songService.FindAllExtraByPageNumberSortedByLatestEventDate(user.BandID, user.State.Context.PageIndex)
 		case helpers.SongsByNumberOfPerforming:
-			songs, err = h.songService.FindAllExtraByPageNumberSortedByEventsNumber(user.State.Context.PageIndex)
+			songs, err = h.songService.FindAllExtraByPageNumberSortedByEventsNumber(user.BandID, user.State.Context.PageIndex)
 		case helpers.LikedSongs:
 			songs, err = h.songService.FindManyExtraLiked(user.ID, user.State.Context.PageIndex)
 		}
@@ -2254,6 +2254,10 @@ func copySongHandler() (int, []HandlerFunc) {
 		if err != nil {
 			return err
 		}
+
+		q := user.State.CallbackData.Query()
+		q.Set("driveFileId", copiedSong.Id)
+		user.State.CallbackData.RawQuery = q.Encode()
 
 		c.EditCaption(helpers.AddCallbackData("Скопировано", user.State.CallbackData.String()), &telebot.ReplyMarkup{
 			InlineKeyboard: helpers.GetSongInitKeyboard(user, song),

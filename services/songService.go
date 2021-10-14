@@ -138,12 +138,12 @@ func (s *SongService) Dislike(songID primitive.ObjectID, userID int64) error {
 	return s.songRepository.Dislike(songID, userID)
 }
 
-func (s *SongService) FindAllExtraByPageNumberSortedByEventsNumber(pageNumber int) ([]*entities.SongExtra, error) {
-	return s.songRepository.FindAllExtraByPageNumberSortedByEventsNumber(pageNumber)
+func (s *SongService) FindAllExtraByPageNumberSortedByEventsNumber(bandID primitive.ObjectID, pageNumber int) ([]*entities.SongExtra, error) {
+	return s.songRepository.FindAllExtraByPageNumberSortedByEventsNumber(bandID, pageNumber)
 }
 
-func (s *SongService) FindAllExtraByPageNumberSortedByLatestEventDate(pageNumber int) ([]*entities.SongExtra, error) {
-	return s.songRepository.FindAllExtraByPageNumberSortedByLatestEventDate(pageNumber)
+func (s *SongService) FindAllExtraByPageNumberSortedByLatestEventDate(bandID primitive.ObjectID, pageNumber int) ([]*entities.SongExtra, error) {
+	return s.songRepository.FindAllExtraByPageNumberSortedByLatestEventDate(bandID, pageNumber)
 }
 
 func songHasOutdatedPDF(song *entities.Song, driveFile *drive.File) bool {

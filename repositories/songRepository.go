@@ -211,10 +211,12 @@ func (r *SongRepository) generateUniqueID() primitive.ObjectID {
 	return ID
 }
 
-func (r *SongRepository) FindAllExtraByPageNumberSortedByEventsNumber(pageNumber int) ([]*entities.SongExtra, error) {
+func (r *SongRepository) FindAllExtraByPageNumberSortedByEventsNumber(bandID primitive.ObjectID, pageNumber int) ([]*entities.SongExtra, error) {
 
 	return r.findWithExtra(
-		bson.M{},
+		bson.M{
+			"bandId": bandID,
+		},
 		bson.M{
 			"$addFields": bson.M{
 				"eventsSize": bson.M{"$size": "$events"},
@@ -235,10 +237,12 @@ func (r *SongRepository) FindAllExtraByPageNumberSortedByEventsNumber(pageNumber
 	)
 }
 
-func (r *SongRepository) FindAllExtraByPageNumberSortedByLatestEventDate(pageNumber int) ([]*entities.SongExtra, error) {
+func (r *SongRepository) FindAllExtraByPageNumberSortedByLatestEventDate(bandID primitive.ObjectID, pageNumber int) ([]*entities.SongExtra, error) {
 
 	return r.findWithExtra(
-		bson.M{},
+		bson.M{
+			"bandId": bandID,
+		},
 		bson.M{
 			"$sort": bson.D{
 				{"events.0.time", -1},
