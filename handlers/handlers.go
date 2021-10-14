@@ -1768,6 +1768,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 				user.State.Context.NextPageToken = &entities.NextPageToken{}
 			}
 
+			filters := true
 			if user.State.Context.QueryType == helpers.SearchEverywhere {
 				_driveFiles, _nextPageToken, _err := h.driveFileService.FindSomeByFullTextAndFolderID(query, "", user.State.Context.NextPageToken.Token)
 				driveFiles = _driveFiles
@@ -1779,6 +1780,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 				nextPageToken = _nextPageToken
 				err = _err
 			} else {
+				filters = false
 				_driveFiles, _nextPageToken, _err := h.driveFileService.FindSomeByFullTextAndFolderID(query, user.Band.DriveFolderID, user.State.Context.NextPageToken.Token)
 				driveFiles = _driveFiles
 				nextPageToken = _nextPageToken
@@ -1805,10 +1807,12 @@ func searchSongHandler() (int, []HandlerFunc) {
 				ResizeKeyboard: true,
 			}
 
-			markup.ReplyKeyboard = [][]telebot.ReplyButton{
-				{
-					{Text: helpers.LikedSongs}, {Text: helpers.SongsByLastDateOfPerforming}, {Text: helpers.SongsByNumberOfPerforming},
-				},
+			if !filters {
+				markup.ReplyKeyboard = [][]telebot.ReplyButton{
+					{
+						{Text: helpers.LikedSongs}, {Text: helpers.SongsByLastDateOfPerforming}, {Text: helpers.SongsByNumberOfPerforming},
+					},
+				}
 			}
 
 			likedSongs, likedSongErr := h.songService.FindManyLiked(user.ID)
