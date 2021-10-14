@@ -2,6 +2,7 @@ package entities
 
 import (
 	"fmt"
+	"github.com/klauspost/lctime"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -24,6 +25,13 @@ type SongExtra struct {
 	Song *Song `bson:",inline"`
 
 	Events []*Event `bson:"events,omitempty"`
+}
+
+func (s *SongExtra) Caption() string {
+	if len(s.Events) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%v, %d", lctime.Strftime("%d %b", s.Events[0].Time), len(s.Events))
 }
 
 type PDF struct {

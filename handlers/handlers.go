@@ -1606,14 +1606,14 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 			ResizeKeyboard: true,
 		}
 
-		for _, song := range songs {
-			var buttonText string
-			if len(song.Events) == 0 || user.State.Context.QueryType == helpers.LikedSongs {
-				buttonText = song.Song.PDF.Name
-			} else {
-				buttonText = fmt.Sprintf("%v | %s | %d", lctime.Strftime("%d %b", song.Events[0].Time), song.Song.PDF.Name, len(song.Events))
+		for _, songExtra := range songs {
+			buttonText := songExtra.Song.PDF.Name
+			if songExtra.Caption() != "" {
+				buttonText += fmt.Sprintf(" (%s)", songExtra.Caption())
+			}
 
-				for _, userID := range song.Song.Likes {
+			if user.State.Context.QueryType != helpers.LikedSongs {
+				for _, userID := range songExtra.Song.Likes {
 					if user.ID == userID {
 						buttonText += " ❤️‍🔥"
 						break
@@ -1656,13 +1656,8 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 		c.Notify(telebot.UploadingDocument)
 
 		var songName string
-		regex := regexp.MustCompile(`\|(.*?)\|`)
-		matches := regex.FindStringSubmatch(c.Text())
-		if len(matches) < 2 {
-			songName = c.Text()
-		} else {
-			songName = matches[1]
-		}
+		regex := regexp.MustCompile(`\s*\(.*\)\s*❤️‍🔥\s*`)
+		songName = regex.ReplaceAllString(c.Text(), "")
 
 		song, err := h.songService.FindOneByName(strings.TrimSpace(songName))
 		if err != nil {
