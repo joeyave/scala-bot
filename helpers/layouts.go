@@ -51,7 +51,7 @@ func GetSongActionsKeyboard(user entities.User, song entities.Song, driveFile dr
 		return [][]telebot.InlineButton{
 			{{Text: driveFile.Name, URL: driveFile.WebViewLink}},
 			{{Text: CopyToMyBand, Data: AggregateCallbackData(CopySongState, 0, "")}},
-			{{Text: Voices}},
+			{{Text: Voices, Data: AggregateCallbackData(GetVoicesState, 0, "")}},
 		}
 	}
 
