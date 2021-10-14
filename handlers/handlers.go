@@ -2230,9 +2230,12 @@ func copySongHandler() (int, []HandlerFunc) {
 	handlerFunc := make([]HandlerFunc, 0)
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		driveFileID := user.State.CallbackData.Query().Get("driveFileId")
+
 		c.Notify(telebot.Typing)
 
-		file, err := h.driveFileService.FindOneByID(user.State.Context.DriveFileID)
+		file, err := h.driveFileService.FindOneByID(driveFileID)
 		if err != nil {
 			return err
 		}
@@ -2242,15 +2245,21 @@ func copySongHandler() (int, []HandlerFunc) {
 			Parents: []string{user.Band.DriveFolderID},
 		}
 
-		copiedSong, err := h.driveFileService.CloneOne(user.State.Context.DriveFileID, file)
+		copiedSong, err := h.driveFileService.CloneOne(driveFileID, file)
 		if err != nil {
 			return err
 		}
 
-		user.State = user.State.Prev
-		user.State.Context.DriveFileID = copiedSong.Id
+		song, _, err := h.songService.FindOrCreateOneByDriveFileID(copiedSong.Id)
+		if err != nil {
+			return err
+		}
 
-		return h.enter(c, user)
+		c.EditCaption(helpers.AddCallbackData("Скопировано", user.State.CallbackData.String()), &telebot.ReplyMarkup{
+			InlineKeyboard: helpers.GetSongInitKeyboard(user, song),
+		}, telebot.ModeHTML)
+		c.Respond()
+		return nil
 	})
 
 	return helpers.CopySongState, handlerFunc
