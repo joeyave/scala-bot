@@ -1818,7 +1818,25 @@ func searchSongHandler() (int, []HandlerFunc) {
 
 			likedSongs, likedSongErr := h.songService.FindManyLiked(user.ID)
 
-			for _, driveFile := range driveFiles {
+			set := make(map[string]*entities.Band)
+			for i, driveFile := range driveFiles {
+
+				if user.State.Context.QueryType == helpers.SearchEverywhere {
+
+					for _, parentFolderID := range driveFile.Parents {
+						_, exists := set[parentFolderID]
+						if !exists {
+							band, err := h.bandService.FindOneByDriveFolderID(parentFolderID)
+							if err == nil {
+								set[parentFolderID] = band
+								driveFiles[i].Name += fmt.Sprintf(" (%s)", band.Name)
+								break
+							}
+						} else {
+							driveFiles[i].Name += fmt.Sprintf(" (%s)", set[parentFolderID].Name)
+						}
+					}
+				}
 				driveFileName := driveFile.Name
 
 				if likedSongErr == nil {

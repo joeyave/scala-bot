@@ -54,7 +54,6 @@ func GetSongActionsKeyboard(user entities.User, song entities.Song, driveFile dr
 			{{Text: Voices, Data: AggregateCallbackData(GetVoicesState, 0, "")}},
 		}
 	}
-
 }
 
 func GetEventActionsKeyboard(user entities.User, event entities.Event) [][]telebot.InlineButton {
