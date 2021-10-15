@@ -46,30 +46,6 @@ func mainMenuHandler() (int, []HandlerFunc) {
 				Name: helpers.SearchSongState,
 			}
 
-			// return c.Send(helpers.Songs+":", &telebot.ReplyMarkup{
-			// 	ReplyKeyboard: [][]telebot.ReplyButton{
-			// 		{
-			// 			{Text: helpers.LikedSongs},
-			// 		},
-			// 		{
-			// 			{Text: helpers.AllSongs},
-			// 		},
-			// 		{
-			// 			{Text: helpers.SongsByLastDateOfPerforming},
-			// 		},
-			// 		{
-			// 			{Text: helpers.SongsByNumberOfPerforming},
-			// 		},
-			// 		{
-			// 			{Text: helpers.CreateDoc},
-			// 		},
-			// 		{
-			// 			{Text: helpers.Back},
-			// 		},
-			// 	},
-			// 	ResizeKeyboard: true,
-			// })
-
 		case helpers.AllSongs:
 			user.State = &entities.State{
 				Name: helpers.SearchSongState,
@@ -79,11 +55,6 @@ func mainMenuHandler() (int, []HandlerFunc) {
 			user.State = &entities.State{
 				Name: helpers.GetSongsFromMongoState,
 			}
-
-		// case helpers.SongsByNumberOfPerforming:
-		// 	user.State = &entities.State{
-		// 		Name: helpers.GetSongsFromMongoState,
-		// 	}
 
 		case helpers.CreateDoc:
 			user.State = &entities.State{
@@ -1710,13 +1681,20 @@ func searchSongHandler() (int, []HandlerFunc) {
 			c.Notify(telebot.Typing)
 
 			var query string
-			switch c.Text() {
-			case helpers.SearchEverywhere, helpers.Songs, helpers.SongsByLastDateOfPerforming:
+			if c.Text() == helpers.CreateDoc {
+				user.State = &entities.State{
+					Name: helpers.CreateSongState,
+				}
+				return h.enter(c, user)
+			} else if c.Text() == helpers.SearchEverywhere || c.Text() == helpers.Songs || c.Text() == helpers.SongsByLastDateOfPerforming {
 				user.State.Context.QueryType = c.Text()
 				query = user.State.Context.Query
-			case helpers.PrevPage, helpers.NextPage:
+			} else if strings.Contains(c.Text(), "〔") && strings.Contains(c.Text(), "〕") {
+				user.State.Context.QueryType = helpers.Songs
 				query = user.State.Context.Query
-			default:
+			} else if c.Text() == helpers.PrevPage || c.Text() == helpers.NextPage {
+				query = user.State.Context.Query
+			} else {
 				user.State.Context.NextPageToken = nil
 				query = c.Text()
 			}
@@ -1814,6 +1792,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 						{Text: helpers.LikedSongs}, {Text: helpers.SongsByLastDateOfPerforming}, {Text: helpers.SongsByNumberOfPerforming},
 					},
 				}
+				markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.CreateDoc}})
 			}
 
 			likedSongs, likedSongErr := h.songService.FindManyLiked(user.ID)
@@ -1881,6 +1860,11 @@ func searchSongHandler() (int, []HandlerFunc) {
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		switch c.Text() {
+		case helpers.CreateDoc:
+			user.State = &entities.State{
+				Name: helpers.CreateSongState,
+			}
+			return h.enter(c, user)
 
 		case helpers.SearchEverywhere, helpers.NextPage:
 			user.State.Index--
