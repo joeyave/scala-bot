@@ -78,7 +78,7 @@ const (
 	BandSettings                string = "Настройки группы"
 	ProfileSettings             string = "Настройки профиля"
 	AllSongs                    string = "Все песни"
-	SongsByNumberOfPerforming   string = "🧮"
+	SongsByNumberOfPerforming   string = "🔢"
 	SongsByLastDateOfPerforming string = "📆"
 	LikedSongs                  string = "❤️‍🔥"
 	NextPage                    string = "→"
