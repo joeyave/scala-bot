@@ -45,9 +45,12 @@ func (s *EventService) FindManyBetweenDatesByBandID(from time.Time, to time.Time
 func (s *EventService) FindManyByBandIDAndPageNumber(bandID primitive.ObjectID, pageNumber int) ([]*entities.Event, error) {
 	return s.eventRepository.FindManyByBandIDAndPageNumber(bandID, pageNumber)
 }
+func (s *EventService) FindManyUntilTodayByBandIDAndPageNumber(bandID primitive.ObjectID, pageNumber int) ([]*entities.Event, error) {
+	return s.eventRepository.FindManyUntilTodayByBandIDAndPageNumber(bandID, pageNumber)
+}
 
-func (s *EventService) FindManyFromTodayByBandIDAndUserID(bandID primitive.ObjectID, userID int64) ([]*entities.Event, error) {
-	return s.eventRepository.FindManyFromTodayByBandIDAndUserID(bandID, userID)
+func (s *EventService) FindManyFromTodayByBandIDAndUserID(bandID primitive.ObjectID, userID int64, pageNumber int) ([]*entities.Event, error) {
+	return s.eventRepository.FindManyFromTodayByBandIDAndUserID(bandID, userID, pageNumber)
 }
 
 func (s *EventService) FindOneOldestByBandID(bandID primitive.ObjectID) (*entities.Event, error) {

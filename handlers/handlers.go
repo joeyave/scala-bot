@@ -262,11 +262,13 @@ func getEventsHandler() (int, []HandlerFunc) {
 			ResizeKeyboard: true,
 		}
 
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.GetEventsWithMe}, {Text: helpers.GetAllEvents}})
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.CreateEvent}})
+
 		for _, event := range events {
 			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: event.Alias()}})
 		}
-		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.CreateEvent}})
-		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.GetEventsWithMe}, {Text: helpers.GetAllEvents}})
+
 		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Menu}})
 
 		err = c.Send("Выбери собрание:", markup)
@@ -279,8 +281,20 @@ func getEventsHandler() (int, []HandlerFunc) {
 	})
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
-		switch c.Text() {
 
+		if strings.Contains(c.Text(), "〔") && strings.Contains(c.Text(), "〕") {
+			user.State.Index--
+			return h.enter(c, user)
+		}
+
+		markup := &telebot.ReplyMarkup{
+			ResizeKeyboard: true,
+		}
+
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.GetEventsWithMe}, {Text: helpers.GetAllEvents}})
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.CreateEvent}})
+
+		switch c.Text() {
 		case helpers.CreateEvent:
 			user.State = &entities.State{
 				Name: helpers.CreateEventState,
@@ -289,60 +303,52 @@ func getEventsHandler() (int, []HandlerFunc) {
 			user.State.Prev.Index = 0
 			return h.enter(c, user)
 
-		case helpers.GetEventsWithMe:
-			events, err := h.eventService.FindManyFromTodayByBandIDAndUserID(user.BandID, user.ID)
-			if err != nil {
-				if errors.Is(mongo.ErrNoDocuments, err) {
-					c.Send("Ты нигде не участвуешь :(")
-				} else {
-					return err
-				}
-			}
-
-			for _, event := range events {
-				eventString, _, err := h.eventService.ToHtmlStringByID(event.ID)
-				if err != nil {
-					continue
-				}
-
-				q := user.State.CallbackData.Query()
-				q.Set("eventId", event.ID.Hex())
-				user.State.CallbackData.RawQuery = q.Encode()
-
-				err = c.Send(helpers.AddCallbackData(eventString, user.State.CallbackData.String()),
-					&telebot.ReplyMarkup{
-						InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
-					}, telebot.ModeHTML, telebot.NoPreview)
-				if err != nil {
-					return err
-				}
-			}
-
-			return nil
-
-		case helpers.GetAllEvents, helpers.PrevPage, helpers.NextPage:
+		case helpers.GetEventsWithMe, helpers.GetAllEvents, helpers.PrevPage, helpers.NextPage:
 
 			c.Notify(telebot.Typing)
 
 			if c.Text() == helpers.NextPage {
 				user.State.Context.PageIndex++
-			}
-
-			if c.Text() == helpers.PrevPage {
+			} else if c.Text() == helpers.PrevPage {
 				user.State.Context.PageIndex--
+			} else {
+				user.State.Context.QueryType = c.Text()
 			}
 
-			events, err := h.eventService.FindManyByBandIDAndPageNumber(user.BandID, user.State.Context.PageIndex)
+			for i := range markup.ReplyKeyboard[0] {
+				if markup.ReplyKeyboard[0][i].Text == user.State.Context.QueryType {
+					markup.ReplyKeyboard[0][i].Text = fmt.Sprintf("〔%s〕", markup.ReplyKeyboard[0][i].Text)
+					break
+				}
+			}
+
+			var events []*entities.Event
+			var err error
+			switch user.State.Context.QueryType {
+			case helpers.GetAllEvents:
+				events, err = h.eventService.FindManyUntilTodayByBandIDAndPageNumber(user.BandID, user.State.Context.PageIndex)
+			case helpers.GetEventsWithMe:
+				events, err = h.eventService.FindManyFromTodayByBandIDAndUserID(user.BandID, user.ID, user.State.Context.PageIndex)
+			}
 			if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 				return err
 			}
 
-			markup := &telebot.ReplyMarkup{
-				ResizeKeyboard: true,
-			}
-
 			for _, event := range events {
-				markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: event.Alias()}})
+				buttonText := event.Alias()
+
+				if user.State.Context.QueryType == helpers.GetEventsWithMe {
+					memberships := " ("
+					for _, membership := range event.Memberships {
+						if membership.UserID == user.ID {
+							memberships += membership.Role.Name + ", "
+						}
+					}
+					memberships = memberships[:len(memberships)-2] + ")"
+					buttonText += memberships
+				}
+
+				markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: buttonText}})
 			}
 			if user.State.Context.PageIndex != 0 {
 				markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.PrevPage}, {Text: helpers.Menu}, {Text: helpers.NextPage}})
@@ -378,8 +384,11 @@ func getEventsHandler() (int, []HandlerFunc) {
 		default:
 			c.Notify(telebot.Typing)
 
-			regex := regexp.MustCompile(`.* \| (\d{2}\.\d{2}\.\d{4}) \| (.*)`)
-			matches := regex.FindStringSubmatch(c.Text())
+			regex := regexp.MustCompile(`\(.*\)`)
+			query := regex.ReplaceAllString(c.Text(), "")
+
+			regex = regexp.MustCompile(`.* \| (\d{2}\.\d{2}\.\d{4}) \| (.*)`)
+			matches := regex.FindStringSubmatch(query)
 			if len(matches) < 3 {
 				user.State = &entities.State{
 					Name: helpers.SearchSongState,

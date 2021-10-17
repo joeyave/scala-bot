@@ -135,7 +135,30 @@ func (r *EventRepository) FindManyByBandIDAndPageNumber(bandID primitive.ObjectI
 	)
 }
 
-func (r *EventRepository) FindManyFromTodayByBandIDAndUserID(bandID primitive.ObjectID, userID int64) ([]*entities.Event, error) {
+func (r *EventRepository) FindManyUntilTodayByBandIDAndPageNumber(bandID primitive.ObjectID, pageNumber int) ([]*entities.Event, error) {
+
+	return r.find(
+		bson.M{
+			"bandId": bandID,
+			"time": bson.M{
+				"$lt": time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Now().Location()),
+			},
+		},
+		bson.M{
+			"$sort": bson.M{
+				"time": -1,
+			},
+		},
+		bson.M{
+			"$skip": pageNumber * helpers.EventsPageSize,
+		},
+		bson.M{
+			"$limit": helpers.EventsPageSize,
+		},
+	)
+}
+
+func (r *EventRepository) FindManyFromTodayByBandIDAndUserID(bandID primitive.ObjectID, userID int64, pageNumber int) ([]*entities.Event, error) {
 	now := time.Now()
 
 	return r.find(
@@ -150,6 +173,12 @@ func (r *EventRepository) FindManyFromTodayByBandIDAndUserID(bandID primitive.Ob
 			"$sort": bson.M{
 				"time": 1,
 			},
+		},
+		bson.M{
+			"$skip": pageNumber * helpers.EventsPageSize,
+		},
+		bson.M{
+			"$limit": helpers.EventsPageSize,
 		},
 	)
 }
