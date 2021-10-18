@@ -386,10 +386,12 @@ func getEventsHandler() (int, []HandlerFunc) {
 		default:
 			c.Notify(telebot.Typing)
 
-			regex := regexp.MustCompile(`\(.*\)`)
-			query := regex.ReplaceAllString(c.Text(), "")
-
-			regex = regexp.MustCompile(`.* \| (\d{2}\.\d{2}\.\d{4}) \| (.*)`)
+			query := c.Text()
+			if user.State.Context.QueryType == helpers.GetEventsWithMe {
+				regex := regexp.MustCompile(`\(.*\)`)
+				query = regex.ReplaceAllString(c.Text(), "")
+			}
+			regex := regexp.MustCompile(`.* \| (\d{2}\.\d{2}\.\d{4}) \| (.*)`)
 			matches := regex.FindStringSubmatch(query)
 			if len(matches) < 3 {
 				user.State = &entities.State{
