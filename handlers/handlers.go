@@ -1733,7 +1733,8 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 		switch c.Text() {
 		case helpers.SongsByLastDateOfPerforming, helpers.SongsByNumberOfPerforming, helpers.LikedSongs:
 			user.State = &entities.State{
-				Name: helpers.GetSongsFromMongoState,
+				Name:    helpers.GetSongsFromMongoState,
+				Context: user.State.Context,
 			}
 			return h.enter(c, user)
 		case helpers.NextPage:
