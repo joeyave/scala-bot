@@ -1691,8 +1691,7 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 		user.State = &entities.State{
 			Name: helpers.SongActionsState,
 			Context: entities.Context{
-				DriveFileID:      song.DriveFileID,
-				MessagesToDelete: []int{c.Message().ID},
+				DriveFileID: song.DriveFileID,
 			},
 			Prev: user.State,
 		}
@@ -1935,8 +1934,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 				user.State = &entities.State{
 					Name: helpers.SongActionsState,
 					Context: entities.Context{
-						DriveFileID:      foundDriveFile.Id,
-						MessagesToDelete: []int{c.Message().ID},
+						DriveFileID: foundDriveFile.Id,
 					},
 					Prev: user.State,
 				}
@@ -2004,7 +2002,7 @@ func songActionsHandler() (int, []HandlerFunc) {
 				user.State = user.State.Next
 				return h.enter(c, user)
 			} else {
-				// user.State.Prev.Context.MessagesToDelete = user.State.Prev.Context.MessagesToDelete[:0]
+				user.State.Prev.Context.MessagesToDelete = user.State.Prev.Context.MessagesToDelete[:0]
 				user.State = user.State.Prev
 				return nil
 			}
