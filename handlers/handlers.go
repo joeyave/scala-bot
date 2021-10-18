@@ -1275,6 +1275,77 @@ func addEventSongHandler() (int, []HandlerFunc) {
 	return helpers.AddEventSongState, handlerFuncs
 }
 
+func changeEventNotesHandler() (int, []HandlerFunc) {
+	handlerFuncs := make([]HandlerFunc, 0)
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
+		if err != nil {
+			return err
+		}
+		c.Respond()
+
+		_, err = h.bot.Send(c.Recipient(), "Заметки:", &telebot.ReplyMarkup{
+			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Cancel}}},
+			ResizeKeyboard: true,
+		})
+		if err != nil {
+			return err
+		}
+
+		// user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, msg.ID)
+
+		user.State = &entities.State{
+			Index: 1,
+			Name:  helpers.ChangeEventNotesState,
+			Context: entities.Context{
+				EventID:          eventID,
+				MessagesToDelete: user.State.Context.MessagesToDelete,
+			},
+			Prev: user.State,
+		}
+
+		return nil
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		// user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, c.Message().ID)
+
+		c.Notify(telebot.Typing)
+
+		event, err := h.eventService.FindOneByID(user.State.Context.EventID)
+		if err != nil {
+			return err
+		}
+
+		event.Notes = c.Text()
+
+		fmt.Println(c.Message().Entities)
+
+		event, err = h.eventService.UpdateOne(*event)
+		if err != nil {
+			return err
+		}
+
+		user.State = &entities.State{
+			Index: 0,
+			Name:  helpers.EventActionsState,
+			Context: entities.Context{
+				EventID: user.State.Context.EventID,
+			},
+			Next: &entities.State{
+				Name: helpers.GetEventsState,
+			},
+		}
+
+		return h.enter(c, user)
+	})
+
+	return helpers.ChangeEventNotesState, handlerFuncs
+}
+
 func deleteEventSongHandler() (int, []HandlerFunc) {
 	handlerFuncs := make([]HandlerFunc, 0)
 

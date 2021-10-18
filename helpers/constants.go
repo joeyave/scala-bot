@@ -28,6 +28,7 @@ const (
 	ChangeSongOrderState
 	AddEventMemberState
 	ChangeEventDateState
+	ChangeEventNotesState
 	DeleteEventMemberState
 	DeleteEventSongState
 	GetSongsFromMongoState
@@ -68,8 +69,9 @@ const (
 	DeleteMember                string = "➖ Участник"
 	AddSong                     string = "➕ Песня"
 	DeleteSong                  string = "➖ Песня"
-	ChangeSongsOrder            string = "🔄 Изменить порядок песен"
-	ChangeEventDate             string = "🗓️ Изменить дату"
+	SongsOrder                  string = "🔄 Порядок песен"
+	Date                        string = "🗓️ Дата"
+	Notes                       string = "✏️ Заметки"
 	Edit                        string = "︎✍️ Редактировать"
 	GetAllEvents                string = "📥"
 	GetEventsWithMe             string = "🙋‍♂️"

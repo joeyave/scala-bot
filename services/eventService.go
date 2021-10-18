@@ -166,5 +166,9 @@ func (s *EventService) ToHtmlStringByEvent(event entities.Event) string {
 		eventString += "\n" + strings.Join(songNames, "\n")
 	}
 
+	if event.Notes != "" {
+		eventString += "\n\n<b>" + helpers.Notes + ":</b>\n" + event.Notes
+	}
+
 	return eventString
 }

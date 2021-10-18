@@ -62,6 +62,14 @@ func (h *Handler) OnText(c telebot.Context) error {
 	// Handle buttons.
 	switch c.Text() {
 	case helpers.Cancel, helpers.Back:
+
+		// user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, c.Message().ID)
+		// for _, messageID := range user.State.Context.MessagesToDelete {
+		// 	h.bot.Delete(&telebot.Message{
+		// 		ID:   messageID,
+		// 		Chat: c.Chat(),
+		// 	})
+		// }
 		if user.State.Prev != nil {
 			user.State = user.State.Prev
 			user.State.Index = 0

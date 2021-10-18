@@ -94,10 +94,11 @@ func GetEditEventKeyboard(user entities.User) [][]telebot.InlineButton {
 				{Text: AddSong, Data: AggregateCallbackData(AddEventSongState, 0, "")},
 			},
 			{
-				{Text: ChangeSongsOrder, Data: AggregateCallbackData(ChangeSongOrderState, 0, "")},
+				{Text: SongsOrder, Data: AggregateCallbackData(ChangeSongOrderState, 0, "")},
 			},
 			{
-				{Text: ChangeEventDate, Data: AggregateCallbackData(ChangeEventDateState, 0, "")},
+				{Text: Date, Data: AggregateCallbackData(ChangeEventDateState, 0, "")},
+				{Text: Notes, Data: AggregateCallbackData(ChangeEventNotesState, 0, "")},
 			},
 			{
 				{Text: Delete, Data: AggregateCallbackData(DeleteEventState, 0, "")},
@@ -114,7 +115,7 @@ func GetEditEventKeyboard(user entities.User) [][]telebot.InlineButton {
 			{Text: AddSong, Data: AggregateCallbackData(AddEventSongState, 0, "")},
 		},
 		{
-			{Text: ChangeSongsOrder, Data: AggregateCallbackData(ChangeSongOrderState, 0, "")},
+			{Text: SongsOrder, Data: AggregateCallbackData(ChangeSongOrderState, 0, "")},
 		},
 		{
 			{Text: Back, Data: AggregateCallbackData(EventActionsState, 0, "")},
