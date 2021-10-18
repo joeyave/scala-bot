@@ -1574,7 +1574,10 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 	handlerFuncs := make([]HandlerFunc, 0)
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
 		c.Notify(telebot.Typing)
+
+		user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, c.Message().ID)
 
 		switch c.Text() {
 		case helpers.SongsByNumberOfPerforming, helpers.SongsByLastDateOfPerforming, helpers.LikedSongs:
@@ -1632,16 +1635,27 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Menu}, {Text: helpers.NextPage}})
 		}
 
-		_, err = h.bot.Send(c.Recipient(), "Выбери песню:", markup)
+		msg, err := h.bot.Send(c.Recipient(), "Выбери песню:", markup)
 		if err != nil {
 			return err
 		}
+
+		for _, messageID := range user.State.Context.MessagesToDelete {
+			h.bot.Delete(&telebot.Message{
+				ID:   messageID,
+				Chat: c.Chat(),
+			})
+		}
+
+		user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, msg.ID)
 
 		user.State.Index++
 		return nil
 	})
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, c.Message().ID)
 
 		switch c.Text() {
 		case helpers.SongsByLastDateOfPerforming, helpers.SongsByNumberOfPerforming, helpers.LikedSongs:
@@ -1668,7 +1682,8 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 		song, err := h.songService.FindOneByName(strings.TrimSpace(songName))
 		if err != nil {
 			user.State = &entities.State{
-				Name: helpers.SearchSongState,
+				Name:    helpers.SearchSongState,
+				Context: user.State.Context,
 			}
 			return h.enter(c, user)
 		}
@@ -1676,7 +1691,8 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 		user.State = &entities.State{
 			Name: helpers.SongActionsState,
 			Context: entities.Context{
-				DriveFileID: song.DriveFileID,
+				DriveFileID:      song.DriveFileID,
+				MessagesToDelete: []int{c.Message().ID},
 			},
 			Prev: user.State,
 		}
@@ -1693,6 +1709,8 @@ func searchSongHandler() (int, []HandlerFunc) {
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 		{
 			c.Notify(telebot.Typing)
+
+			// user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, c.Message().ID)
 
 			var query string
 			if c.Text() == helpers.CreateDoc {
@@ -1861,10 +1879,19 @@ func searchSongHandler() (int, []HandlerFunc) {
 				}
 			}
 
-			_, err = h.bot.Send(c.Recipient(), "Выбери песню:", markup)
+			msg, err := h.bot.Send(c.Recipient(), "Выбери песню:", markup)
 			if err != nil {
 				return err
 			}
+
+			for _, messageID := range user.State.Context.MessagesToDelete {
+				h.bot.Delete(&telebot.Message{
+					ID:   messageID,
+					Chat: c.Chat(),
+				})
+			}
+
+			user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, msg.ID)
 
 			user.State.Context.DriveFiles = driveFiles
 			user.State.Index++
@@ -1887,7 +1914,8 @@ func searchSongHandler() (int, []HandlerFunc) {
 
 		case helpers.SongsByLastDateOfPerforming, helpers.SongsByNumberOfPerforming, helpers.LikedSongs:
 			user.State = &entities.State{
-				Name: helpers.GetSongsFromMongoState,
+				Name:    helpers.GetSongsFromMongoState,
+				Context: user.State.Context,
 			}
 			return h.enter(c, user)
 
@@ -1907,7 +1935,8 @@ func searchSongHandler() (int, []HandlerFunc) {
 				user.State = &entities.State{
 					Name: helpers.SongActionsState,
 					Context: entities.Context{
-						DriveFileID: foundDriveFile.Id,
+						DriveFileID:      foundDriveFile.Id,
+						MessagesToDelete: []int{c.Message().ID},
 					},
 					Prev: user.State,
 				}
@@ -1961,6 +1990,13 @@ func songActionsHandler() (int, []HandlerFunc) {
 			return err
 		}
 
+		for _, messageID := range user.State.Context.MessagesToDelete {
+			h.bot.Delete(&telebot.Message{
+				ID:   messageID,
+				Chat: c.Chat(),
+			})
+		}
+
 		if c.Callback() != nil {
 			c.Respond()
 		} else {
@@ -1968,6 +2004,7 @@ func songActionsHandler() (int, []HandlerFunc) {
 				user.State = user.State.Next
 				return h.enter(c, user)
 			} else {
+				// user.State.Prev.Context.MessagesToDelete = user.State.Prev.Context.MessagesToDelete[:0]
 				user.State = user.State.Prev
 				return nil
 			}
