@@ -271,16 +271,27 @@ func getEventsHandler() (int, []HandlerFunc) {
 
 		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Menu}})
 
-		err = c.Send("Выбери собрание:", markup)
+		msg, err := h.bot.Send(c.Recipient(), "Выбери собрание:", markup)
 		if err != nil {
 			return err
 		}
+
+		for _, messageID := range user.State.Context.MessagesToDelete {
+			h.bot.Delete(&telebot.Message{
+				ID:   messageID,
+				Chat: c.Chat(),
+			})
+		}
+
+		user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, msg.ID)
 
 		user.State.Index++
 		return nil
 	})
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, c.Message().ID)
 
 		if strings.Contains(c.Text(), "〔") && strings.Contains(c.Text(), "〕") {
 			user.State.Index--
@@ -356,28 +367,19 @@ func getEventsHandler() (int, []HandlerFunc) {
 				markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Menu}, {Text: helpers.NextPage}})
 			}
 
-			err = c.Send("Выбери собрание:", markup)
+			msg, err := h.bot.Send(c.Recipient(), "Выбери собрание:", markup)
 			if err != nil {
 				return err
 			}
-			// for _, event := range events {
-			// 	eventString, _, err := h.eventService.ToHtmlStringByID(event.ID)
-			// 	if err != nil {
-			// 		continue
-			// 	}
-			//
-			// 	q := user.State.CallbackData.Query()
-			// 	q.Set("eventId", event.ID.Hex())
-			// 	user.State.CallbackData.RawQuery = q.Encode()
-			//
-			// 	err = c.Send(helpers.AddCallbackData(eventString, user.State.CallbackData.String()),
-			// 		&telebot.ReplyMarkup{
-			// 			InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
-			// 		}, telebot.ModeHTML, telebot.NoPreview)
-			// 	if err != nil {
-			// 		return err
-			// 	}
-			// }
+
+			for _, messageID := range user.State.Context.MessagesToDelete {
+				h.bot.Delete(&telebot.Message{
+					ID:   messageID,
+					Chat: c.Chat(),
+				})
+			}
+
+			user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, msg.ID)
 
 			return nil
 
@@ -409,6 +411,8 @@ func getEventsHandler() (int, []HandlerFunc) {
 				user.State.Index--
 				return h.enter(c, user)
 			}
+
+			user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, c.Message().ID)
 
 			user.State = &entities.State{
 				Name: helpers.EventActionsState,
@@ -619,6 +623,7 @@ func eventActionsHandler() (int, []HandlerFunc) {
 			if err != nil {
 				return err
 			}
+
 			if user.State.Next != nil {
 				user.State = user.State.Next
 				return h.enter(c, user)
@@ -1627,7 +1632,7 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Menu}, {Text: helpers.NextPage}})
 		}
 
-		err = c.Send("Выбери песню:", markup)
+		_, err = h.bot.Send(c.Recipient(), "Выбери песню:", markup)
 		if err != nil {
 			return err
 		}
@@ -1856,7 +1861,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 				}
 			}
 
-			err = c.Send("Выбери песню:", markup)
+			_, err = h.bot.Send(c.Recipient(), "Выбери песню:", markup)
 			if err != nil {
 				return err
 			}
@@ -1868,6 +1873,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 	})
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+
 		switch c.Text() {
 		case helpers.CreateDoc:
 			user.State = &entities.State{
