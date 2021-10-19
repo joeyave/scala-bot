@@ -266,7 +266,8 @@ func getEventsHandler() (int, []HandlerFunc) {
 		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.CreateEvent}})
 
 		for _, event := range events {
-			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: event.Alias()}})
+			buttonText := helpers.EventButton(event, user, false)
+			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: buttonText}})
 		}
 
 		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Menu}})
@@ -346,17 +347,12 @@ func getEventsHandler() (int, []HandlerFunc) {
 			}
 
 			for _, event := range events {
-				buttonText := event.Alias()
 
+				buttonText := ""
 				if user.State.Context.QueryType == helpers.GetEventsWithMe {
-					memberships := " ("
-					for _, membership := range event.Memberships {
-						if membership.UserID == user.ID {
-							memberships += membership.Role.Name + ", "
-						}
-					}
-					memberships = memberships[:len(memberships)-2] + ")"
-					buttonText += memberships
+					buttonText = helpers.EventButton(event, user, true)
+				} else {
+					buttonText = helpers.EventButton(event, user, false)
 				}
 
 				markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: buttonText}})
@@ -386,21 +382,7 @@ func getEventsHandler() (int, []HandlerFunc) {
 		default:
 			c.Notify(telebot.Typing)
 
-			query := c.Text()
-			if user.State.Context.QueryType == helpers.GetEventsWithMe {
-				regex := regexp.MustCompile(`\(.*\)`)
-				query = regex.ReplaceAllString(c.Text(), "")
-			}
-			regex := regexp.MustCompile(`.* \| (\d{2}\.\d{2}\.\d{4}) \| (.*)`)
-			matches := regex.FindStringSubmatch(query)
-			if len(matches) < 3 {
-				user.State = &entities.State{
-					Name: helpers.SearchSongState,
-				}
-				return h.enter(c, user)
-			}
-
-			eventTime, err := time.Parse("02.01.2006", strings.TrimSpace(matches[1]))
+			eventName, eventTime, err := helpers.ParseEventButton(c.Text())
 			if err != nil {
 				user.State = &entities.State{
 					Name: helpers.SearchSongState,
@@ -408,7 +390,7 @@ func getEventsHandler() (int, []HandlerFunc) {
 				return h.enter(c, user)
 			}
 
-			foundEvent, err := h.eventService.FindOneByNameAndTime(strings.TrimSpace(matches[2]), eventTime)
+			foundEvent, err := h.eventService.FindOneByNameAndTime(eventName, eventTime)
 			if err != nil {
 				user.State.Index--
 				return h.enter(c, user)
@@ -948,7 +930,7 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 			if len(userExtra.Events) == 0 {
 				buttonText = userExtra.User.Name
 			} else {
-				buttonText = fmt.Sprintf("%s | %v | %d", userExtra.User.Name, lctime.Strftime("%d %b", userExtra.Events[0].Time), len(userExtra.Events))
+				buttonText = fmt.Sprintf("%s (%v, %d)", userExtra.User.Name, lctime.Strftime("%d %b", userExtra.Events[0].Time), len(userExtra.Events))
 			}
 			if (len(userExtra.Events) > 0 && time.Now().Sub(userExtra.Events[0].Time) < 24*364/3*time.Hour) || loadMore == true {
 				markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
@@ -1048,7 +1030,7 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 				continue
 			}
 
-			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: user.Name + " | " + membership.Role.Name, Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s", membership.ID.Hex()))}})
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: fmt.Sprintf("%s (%s)", user.Name, membership.Role.Name), Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s", membership.ID.Hex()))}})
 		}
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, "EditEventKeyboard")}})
 
@@ -2900,6 +2882,7 @@ func editInlineKeyboardHandler() (int, []HandlerFunc) {
 		markup := &telebot.ReplyMarkup{}
 		markup.InlineKeyboard = helpers.GetEditEventKeyboard(*user)
 		c.Edit(markup)
+		c.Respond()
 		return nil
 	})
 

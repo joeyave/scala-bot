@@ -3,9 +3,12 @@ package helpers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/joeyave/scala-chords-bot/entities"
+	"github.com/klauspost/lctime"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func AddCallbackData(message string, url string) string {
@@ -59,4 +62,46 @@ func SplitQueryByNewlines(query string) []string {
 	}
 
 	return songNames
+}
+
+func EventButton(event *entities.Event, user *entities.User, showMemberships bool) string {
+	str := fmt.Sprintf("%s (%s)", event.Name, lctime.Strftime("%A, %d.%m.%Y", event.Time))
+
+	if user != nil {
+		var memberships []string
+		for _, membership := range event.Memberships {
+			if membership.UserID == user.ID {
+				memberships = append(memberships, membership.Role.Name)
+			}
+		}
+
+		if len(memberships) > 0 {
+			if showMemberships {
+				str = fmt.Sprintf("%s [%s]", str, strings.Join(memberships, ", "))
+			} else {
+				str = fmt.Sprintf(" %s 🙋‍♂️", str)
+			}
+		}
+	}
+
+	return str
+}
+
+func ParseEventButton(str string) (string, time.Time, error) {
+
+	regex := regexp.MustCompile(`(.*)\s\(.*,\s*([\d.]+)`)
+
+	matches := regex.FindStringSubmatch(str)
+	if len(matches) < 3 {
+		return "", time.Time{}, fmt.Errorf("not all subgroup matches: %v", matches)
+	}
+
+	eventName := matches[1]
+
+	eventTime, err := time.Parse("02.01.2006", strings.TrimSpace(matches[2]))
+	if err != nil {
+		return "", time.Time{}, err
+	}
+
+	return eventName, eventTime, nil
 }
