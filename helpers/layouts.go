@@ -134,6 +134,16 @@ var SettingsKeyboard = [][]telebot.ReplyButton{
 	{{Text: Back}},
 }
 
+var ProfileSettingsKeyboard = [][]telebot.ReplyButton{
+	{{Text: ChangeBand}},
+	{{Text: Back}},
+}
+
+var BandSettingsKeyboard = [][]telebot.ReplyButton{
+	{{Text: CreateRole}, {Text: AddAdmin}},
+	{{Text: Back}},
+}
+
 var KeysKeyboard = [][]telebot.ReplyButton{
 	{{Text: "C"}, {Text: "C#"}, {Text: "Db"}},
 	{{Text: "D"}, {Text: "D#"}, {Text: "Eb"}},

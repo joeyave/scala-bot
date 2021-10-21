@@ -33,6 +33,7 @@ const (
 	DeleteEventSongState
 	GetSongsFromMongoState
 	EditInlineKeyboardState
+	SettingsState
 )
 
 // Buttons constants.
@@ -79,7 +80,6 @@ const (
 	Delete                      string = "❌ Удалить"
 	BandSettings                string = "Настройки группы"
 	ProfileSettings             string = "Настройки профиля"
-	AllSongs                    string = "Все песни"
 	SongsByNumberOfPerforming   string = "🔢"
 	SongsByLastDateOfPerforming string = "📆"
 	LikedSongs                  string = "❤️‍🔥"

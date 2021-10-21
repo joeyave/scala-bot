@@ -30,6 +30,7 @@ func init() {
 		getEventsHandler,
 		createEventHandler,
 		eventActionsHandler,
+		settingsHandler,
 		createRoleHandler,
 		addEventMemberHandler,
 		addEventSongHandler,
