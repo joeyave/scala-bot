@@ -173,3 +173,7 @@ func (s *EventService) ToHtmlStringByEvent(event entities.Event) string {
 
 	return eventString
 }
+
+func (s *EventService) GetMostFrequentEventNames() ([]*entities.EventNameFrequencies, error) {
+	return s.eventRepository.GetMostFrequentEventNames()
+}

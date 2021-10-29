@@ -634,6 +634,34 @@ func (r *EventRepository) PullSongID(eventID primitive.ObjectID, songID primitiv
 	return err
 }
 
+func (r *EventRepository) GetMostFrequentEventNames() ([]*entities.EventNameFrequencies, error) {
+
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
+
+	pipeline := bson.A{
+		bson.M{
+			"$match": bson.M{
+				"_id": bson.M{
+					"$gte": primitive.NewObjectIDFromTimestamp(time.Now().AddDate(0, -3, 0)),
+				},
+			},
+		},
+		bson.M{"$sortByCount": "$name"},
+	}
+	cur, err := collection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, nil
+	}
+
+	var frequencies []*entities.EventNameFrequencies
+	err = cur.All(context.TODO(), &frequencies)
+	if err != nil {
+		return nil, err
+	}
+
+	return frequencies, nil
+}
+
 func (r *EventRepository) generateUniqueID() primitive.ObjectID {
 	ID := primitive.NilObjectID
 

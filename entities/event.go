@@ -27,3 +27,8 @@ func (e *Event) Alias() string {
 	timeStr := lctime.Strftime("%A, %d.%m.%Y", e.Time)
 	return fmt.Sprintf("%s (%s)", e.Name, timeStr)
 }
+
+type EventNameFrequencies struct {
+	Name  string `bson:"_id"`
+	Count int    `bson:"count"`
+}

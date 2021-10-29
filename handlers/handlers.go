@@ -408,10 +408,24 @@ func createEventHandler() (int, []HandlerFunc) {
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		err := c.Send("Введи название этого собрания:", &telebot.ReplyMarkup{
-			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Cancel}}},
+		markup := &telebot.ReplyMarkup{
 			ResizeKeyboard: true,
-		})
+		}
+
+		names, err := h.eventService.GetMostFrequentEventNames()
+		if err != nil {
+			return err
+		}
+
+		for i := range names {
+			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: names[i].Name}})
+			if i == 4 {
+				break
+			}
+		}
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Cancel}})
+
+		err = c.Send("Введи название этого собрания или выбери:", markup)
 		if err != nil {
 			return err
 		}
