@@ -10,7 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/api/drive/v3"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -597,6 +596,7 @@ func eventActionsHandler() (int, []HandlerFunc) {
 
 		q := user.State.CallbackData.Query()
 		q.Set("eventId", eventID.Hex())
+		q.Set("eventAlias", event.Alias())
 		q.Del("index")
 		q.Del("driveFileIds")
 		user.State.CallbackData.RawQuery = q.Encode()
@@ -666,7 +666,7 @@ func changeSongOrderHandler() (int, []HandlerFunc) {
 
 		if user.State.CallbackData.Query().Get("index") == "" {
 
-			event, err := h.eventService.FindOneByID(eventID)
+			event, err := h.eventService.GetEventWithSongs(eventID)
 			if err != nil {
 				return err
 			}
@@ -676,6 +676,7 @@ func changeSongOrderHandler() (int, []HandlerFunc) {
 				q.Add("driveFileIds", song.DriveFileID)
 			}
 
+			q.Set("eventAlias", event.Alias())
 			q.Set("index", "-1")
 			user.State.CallbackData.RawQuery = q.Encode()
 		}
@@ -707,31 +708,43 @@ func changeSongOrderHandler() (int, []HandlerFunc) {
 		}
 
 		if len(user.State.CallbackData.Query()["driveFileIds"]) == 0 {
-			c.Callback().Data = helpers.AggregateCallbackData(helpers.EventActionsState, 0, "")
+			c.Callback().Data = helpers.AggregateCallbackData(helpers.EventActionsState, 0, "EditEventKeyboard")
 			return h.enter(c, user)
 		}
 
-		markup := &telebot.ReplyMarkup{}
-
-		start := time.Now()
-		songsStr, _, err := h.eventService.GetSongsAsHTMLStringByID(eventID)
-		log.Printf("getting songs for event took %v", time.Since(start))
-
-		songs, driveFiles, err := h.songService.FindOrCreateManyByDriveFileIDs(user.State.CallbackData.Query()["driveFileIds"])
+		event, err := h.eventService.GetEventWithSongs(eventID)
 		if err != nil {
 			return err
 		}
 
-		for i, driveFile := range driveFiles {
-			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: fmt.Sprintf("%s (%s)", driveFile.Name, songs[i].Caption()), Data: helpers.AggregateCallbackData(state, index, driveFile.Id)}})
+		songsStr := fmt.Sprintf("<b>%s:</b>\n", helpers.Setlist)
+		for i, song := range event.Songs {
+			if i == songIndex+1 {
+				break
+			}
+
+			songName := fmt.Sprintf("%d. <a href=\"%s\">%s</a>  (%s)",
+				i+1, song.PDF.WebViewLink, song.PDF.Name, song.Caption())
+			songsStr += songName + "\n"
 		}
-		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.End, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, "")}})
+
+		markup := &telebot.ReplyMarkup{}
+
+		songs, err := h.songService.FindManyByDriveFileIDs(user.State.CallbackData.Query()["driveFileIds"])
+		if err != nil {
+			return err
+		}
+
+		for _, song := range songs {
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: fmt.Sprintf("%s (%s)", song.PDF.Name, song.Caption()), Data: helpers.AggregateCallbackData(state, index, song.DriveFileID)}})
+		}
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.End, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, "EditEventKeyboard")}})
 
 		q := user.State.CallbackData.Query()
 		q.Set("index", strconv.Itoa(songIndex+1))
 		user.State.CallbackData.RawQuery = q.Encode()
 
-		c.Edit(helpers.AddCallbackData(fmt.Sprintf("%s\nВыбери песню номер %d:", songsStr, songIndex+2),
+		c.Edit(helpers.AddCallbackData(fmt.Sprintf("<b>%s</b>\n\n%s\nВыбери песню номер %d:", user.State.CallbackData.Query().Get("eventAlias"), songsStr, songIndex+2),
 			user.State.CallbackData.String()), markup, telebot.ModeHTML, telebot.NoPreview)
 		c.Respond()
 		return nil
@@ -815,7 +828,9 @@ func changeEventDateHandler() (int, []HandlerFunc) {
 			},
 		})
 
-		msg := fmt.Sprintf("Выбери дату:\n\n<b>%s</b>", lctime.Strftime("%B %Y", monthFirstDayDate))
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Cancel, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, "EditEventKeyboard")}})
+
+		msg := fmt.Sprintf("<b>%s</b>\n\nВыбери новую дату:\n\n<b>%s</b>", user.State.CallbackData.Query().Get("eventAlias"), lctime.Strftime("%B %Y", monthFirstDayDate))
 		c.Edit(helpers.AddCallbackData(msg, user.State.CallbackData.String()), markup, telebot.ModeHTML)
 		c.Respond()
 
@@ -1343,7 +1358,7 @@ func deleteEventSongHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		event, err := h.eventService.FindOneByID(eventID)
+		event, err := h.eventService.GetEventWithSongs(eventID)
 		if err != nil {
 			return err
 		}
@@ -1351,16 +1366,17 @@ func deleteEventSongHandler() (int, []HandlerFunc) {
 		markup := &telebot.ReplyMarkup{}
 
 		for _, song := range event.Songs {
-			driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
-			if err != nil {
-				continue
-			}
+			// driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
+			// if err != nil {
+			// 	continue
+			// }
 
-			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: driveFile.Name, Data: helpers.AggregateCallbackData(state, index+1, song.ID.Hex())}})
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: song.PDF.Name, Data: helpers.AggregateCallbackData(state, index+1, song.ID.Hex())}})
 		}
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, "EditEventKeyboard")}})
 
-		c.Edit(markup)
+		str := fmt.Sprintf("<b>%s</b>\n\nВыбери песню, которую хочешь удалить:", event.Alias())
+		c.Edit(helpers.AddCallbackData(str, user.State.CallbackData.String()), markup, telebot.ModeHTML, telebot.NoPreview)
 		c.Respond()
 		return nil
 	})
@@ -1391,20 +1407,8 @@ func deleteEventSongHandler() (int, []HandlerFunc) {
 		//       "Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
 		// }()
 
-		eventString, event, err := h.eventService.ToHtmlStringByID(eventID)
-		if err != nil {
-			return err
-		}
-
-		q := user.State.CallbackData.Query()
-		q.Set("eventId", eventID.Hex())
-		user.State.CallbackData.RawQuery = q.Encode()
-
-		c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), &telebot.ReplyMarkup{
-			InlineKeyboard: helpers.GetEventActionsKeyboard(*user, *event),
-		}, telebot.ModeHTML, telebot.NoPreview)
-		c.Respond()
-		return nil
+		c.Callback().Data = helpers.AggregateCallbackData(helpers.EventActionsState, 0, "EditEventKeyboard")
+		return h.enter(c, user)
 	})
 
 	return helpers.DeleteEventSongState, handlerFuncs
@@ -1417,7 +1421,8 @@ func deleteEventHandler() (int, []HandlerFunc) {
 
 		markup := &telebot.ReplyMarkup{}
 		markup.InlineKeyboard = helpers.ConfirmDeletingEventKeyboard
-		msg := helpers.AddCallbackData("Ты уверен, что хочешь удалить это собрание?", user.State.CallbackData.String())
+		msg := helpers.AddCallbackData(fmt.Sprintf("<b>%s</b>\n\nТы уверен, что хочешь удалить это собрание?", user.State.CallbackData.Query().Get("eventAlias")),
+			user.State.CallbackData.String())
 		return c.Edit(msg, markup, telebot.ModeHTML)
 	})
 

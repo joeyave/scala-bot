@@ -37,6 +37,10 @@ func (s *SongService) FindManyLiked(userID int64) ([]*entities.Song, error) {
 	return s.songRepository.FindManyLiked(userID)
 }
 
+func (s *SongService) FindManyByDriveFileIDs(IDs []string) ([]*entities.Song, error) {
+	return s.songRepository.FindManyByDriveFileIDs(IDs)
+}
+
 func (s *SongService) FindManyExtraLiked(userID int64, pageNumber int) ([]*entities.SongExtra, error) {
 	return s.songRepository.FindManyExtraByPageNumberLiked(userID, pageNumber)
 }

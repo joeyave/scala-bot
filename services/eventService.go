@@ -95,26 +95,6 @@ func (s *EventService) DeleteOneByID(ID primitive.ObjectID) error {
 	return nil
 }
 
-func (s *EventService) GetSongsAsHTMLStringByID(eventID primitive.ObjectID) (string, []*entities.Song, error) {
-	songs, err := s.eventRepository.GetSongs(eventID)
-	if err != nil {
-		return "", nil, err
-	}
-
-	str := ""
-	if len(songs) > 0 {
-		str = fmt.Sprintf("%s\n\n<b>%s:</b>\n", str, helpers.Setlist)
-
-		for i := range songs {
-			songName := fmt.Sprintf("%d. <a href=\"%s\">%s</a>  (%s)",
-				i+1, songs[i].PDF.WebViewLink, songs[i].PDF.Name, songs[i].Caption())
-			str += songName + "\n"
-		}
-	}
-
-	return str, songs, nil
-}
-
 func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID) (string, *entities.Event, error) {
 
 	event, err := s.eventRepository.FindOneByID(ID)
@@ -176,4 +156,8 @@ func (s *EventService) ToHtmlStringByEvent(event entities.Event) string {
 
 func (s *EventService) GetMostFrequentEventNames() ([]*entities.EventNameFrequencies, error) {
 	return s.eventRepository.GetMostFrequentEventNames()
+}
+
+func (s *EventService) GetEventWithSongs(eventID primitive.ObjectID) (*entities.Event, error) {
+	return s.eventRepository.GetEventWithSongs(eventID)
 }

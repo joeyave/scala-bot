@@ -499,7 +499,7 @@ func (r *EventRepository) DeleteOneByID(ID primitive.ObjectID) error {
 	return err
 }
 
-func (r *EventRepository) GetSongs(eventID primitive.ObjectID) ([]*entities.Song, error) {
+func (r *EventRepository) GetEventWithSongs(eventID primitive.ObjectID) (*entities.Event, error) {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
 
 	pipeline := bson.A{
@@ -562,10 +562,10 @@ func (r *EventRepository) GetSongs(eventID primitive.ObjectID) ([]*entities.Song
 	}
 
 	if len(events) == 0 {
-		return []*entities.Song{}, nil
+		return nil, mongo.ErrNoDocuments
 	}
 
-	return events[0].Songs, nil
+	return events[0], nil
 }
 
 func (r *EventRepository) PushSongID(eventID primitive.ObjectID, songID primitive.ObjectID) error {

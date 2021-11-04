@@ -32,6 +32,75 @@ func (r *SongRepository) FindManyLiked(userID int64) ([]*entities.Song, error) {
 	})
 }
 
+func (r *SongRepository) FindManyByDriveFileIDs(IDs []string) ([]*entities.Song, error) {
+
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+
+	pipeline := bson.A{
+		bson.M{
+			"$match": bson.M{
+				"driveFileId": bson.M{
+					"$in": IDs,
+				},
+			},
+		},
+		bson.M{
+			"$addFields": bson.M{
+				"__order": bson.M{
+					"$indexOfArray": bson.A{IDs, "$driveFileId"},
+				},
+			},
+		},
+		bson.M{
+			"$sort": bson.M{"__order": 1},
+		},
+		bson.M{
+			"$lookup": bson.M{
+				"from":         "voices",
+				"localField":   "_id",
+				"foreignField": "songId",
+				"as":           "voices",
+			},
+		},
+		bson.M{
+			"$lookup": bson.M{
+				"from":         "bands",
+				"localField":   "bandId",
+				"foreignField": "_id",
+				"as":           "band",
+			},
+		},
+		bson.M{
+			"$unwind": bson.M{
+				"path":                       "$band",
+				"preserveNullAndEmptyArrays": true,
+			},
+		},
+	}
+
+	cur, err := collection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	var songs []*entities.Song
+	for cur.Next(context.TODO()) {
+		var song *entities.Song
+		err := cur.Decode(&song)
+		if err != nil {
+			continue
+		}
+
+		songs = append(songs, song)
+	}
+
+	if len(songs) == 0 {
+		return nil, fmt.Errorf("not found")
+	}
+
+	return songs, nil
+}
+
 func (r *SongRepository) FindOneByID(ID primitive.ObjectID) (*entities.Song, error) {
 	songs, err := r.find(bson.M{"_id": ID})
 	if err != nil {
