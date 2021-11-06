@@ -10,17 +10,20 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/joeyave/chords-transposer v0.0.8
-	github.com/joeyave/telebot/v3 v3.0.1
+	github.com/joeyave/telebot/v3 v3.0.2
 	github.com/klauspost/lctime v0.1.0
-	github.com/rs/zerolog v1.25.0
+	github.com/rs/zerolog v1.26.0
+	github.com/sirupsen/logrus v1.7.0 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
-	go.mongodb.org/mongo-driver v1.7.3
+	go.mongodb.org/mongo-driver v1.7.4
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
-	golang.org/x/net v0.0.0-20211029160332-540bb53d3b2e // indirect
-	golang.org/x/oauth2 v0.0.0-20211028175245-ba495a64dcb5 // indirect
-	golang.org/x/sys v0.0.0-20211029165221-6e7872819dc8 // indirect
+	golang.org/x/net v0.0.0-20211105192438-b53810dc28af // indirect
+	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
+	golang.org/x/sys v0.0.0-20211106132015-ebca88c72f68 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/api v0.60.0
-	google.golang.org/genproto v0.0.0-20211029142109-e255c875f7c7 // indirect
-	google.golang.org/grpc v1.41.0 // indirect
+	google.golang.org/genproto v0.0.0-20211104193956-4c6863e31247 // indirect
+	google.golang.org/grpc v1.42.0 // indirect
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
+	gopkg.in/go-playground/validator.v9 v9.30.0 // indirect
 )
