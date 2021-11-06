@@ -23,6 +23,7 @@ func mainMenuHandler() (int, []HandlerFunc) {
 		err := c.Send("Основное меню:", &telebot.ReplyMarkup{
 			ReplyKeyboard:  helpers.MainMenuKeyboard,
 			ResizeKeyboard: true,
+			Placeholder:    helpers.Placeholder,
 		})
 		if err != nil {
 			return err
@@ -248,6 +249,7 @@ func getEventsHandler() (int, []HandlerFunc) {
 
 		markup := &telebot.ReplyMarkup{
 			ResizeKeyboard: true,
+			Placeholder:    helpers.Placeholder,
 		}
 
 		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.GetEventsWithMe}, {Text: helpers.GetAllEvents}})
@@ -289,6 +291,7 @@ func getEventsHandler() (int, []HandlerFunc) {
 
 		markup := &telebot.ReplyMarkup{
 			ResizeKeyboard: true,
+			Placeholder:    helpers.Placeholder,
 		}
 
 		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.GetEventsWithMe}, {Text: helpers.GetAllEvents}})
@@ -1667,6 +1670,7 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 
 		markup := &telebot.ReplyMarkup{
 			ResizeKeyboard: true,
+			Placeholder:    helpers.Placeholder,
 		}
 		markup.ReplyKeyboard = [][]telebot.ReplyButton{
 			{
@@ -1886,6 +1890,10 @@ func searchSongHandler() (int, []HandlerFunc) {
 
 			markup := &telebot.ReplyMarkup{
 				ResizeKeyboard: true,
+				Placeholder:    query,
+			}
+			if markup.Placeholder == "" {
+				markup.Placeholder = helpers.Placeholder
 			}
 
 			if filters {

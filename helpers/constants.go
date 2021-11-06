@@ -89,6 +89,7 @@ const (
 	LinkToTheDoc                string = "📎 Ссылка на документ"
 	Setlist                     string = "📝 Список"
 	Like                        string = "❤️‍🔥"
+	Placeholder                 string = "Фраза из песни"
 )
 
 // Roles.
