@@ -211,6 +211,8 @@ github.com/joeyave/telebot/v3 v3.0.1 h1:0fLsDYcRi+kYu3YZN0P4Uwe60wWP2r8FCzoHSIc7
 github.com/joeyave/telebot/v3 v3.0.1/go.mod h1:Fq2NCcsdQf+6QgdwEI+0Cs8cUpzRCOppDPK3u3qyM9k=
 github.com/joeyave/telebot/v3 v3.0.2 h1:fDSG4OpALmSwK09DkzlYUcJKo1Vd8DxUP/qLOINyi2M=
 github.com/joeyave/telebot/v3 v3.0.2/go.mod h1:cs8QmfNo1khlHwLFWkdZXdyHrHxp1zvcE70LQjiYaDI=
+github.com/joeyave/telebot/v3 v3.0.3 h1:EkFoqDNBCHOD3WuKpZW401aLgcqwUUscsNNnZZB7RDs=
+github.com/joeyave/telebot/v3 v3.0.3/go.mod h1:mwLecqHlZu/LXBYpoYHxFmGwxEdVI4YBF40KGORZ39Y=
 github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
@@ -717,6 +719,7 @@ gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8
 gopkg.in/errgo.v2 v2.1.0/go.mod h1:hNsd1EY+bozCKY1Ytp96fpM3vjJbqLJn88ws8XvfDNI=
 gopkg.in/go-playground/assert.v1 v1.2.1/go.mod h1:9RXL0bg/zibRAgZUYszZSwO/z8Y/a8bDuhia5mkpMnE=
 gopkg.in/go-playground/validator.v9 v9.30.0/go.mod h1:+c9/zcJMFNgbLvly1L1V+PpxWdVbfP1avr/N00E2vyQ=
+gopkg.in/tucnak/telebot.v3 v3.0.0-20211106150027-8d1854e2a77a/go.mod h1:1XHg/CpPZtstsm3WY57h1T4X/EQquwOgllQl/TjjgqI=
 gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.2.3/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.2.8/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=

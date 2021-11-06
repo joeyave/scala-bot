@@ -10,7 +10,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/joeyave/chords-transposer v0.0.8
-	github.com/joeyave/telebot/v3 v3.0.2
+	github.com/joeyave/telebot/v3 v3.0.3 // indirect
 	github.com/klauspost/lctime v0.1.0
 	github.com/rs/zerolog v1.26.0
 	github.com/sirupsen/logrus v1.7.0 // indirect
