@@ -902,7 +902,8 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 		}
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, "EditEventKeyboard")}})
 
-		c.Edit(markup)
+		c.Edit(helpers.AddCallbackData(fmt.Sprintf("<b>%s</b>\n\n%s\n\nВыбери роль для нового участника:", event.Alias(), event.Roles()), user.State.CallbackData.String()),
+			markup, telebot.ModeHTML)
 		c.Respond()
 		return nil
 	})
@@ -1005,22 +1006,8 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 		//       "Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
 		// }()
 
-		eventString, _, err := h.eventService.ToHtmlStringByID(eventID)
-		if err != nil {
-			return err
-		}
-
-		q := user.State.CallbackData.Query()
-		q.Set("eventId", eventID.Hex())
-		user.State.CallbackData.RawQuery = q.Encode()
-
-		markup := &telebot.ReplyMarkup{
-			InlineKeyboard: helpers.GetEditEventKeyboard(*user),
-		}
-
-		c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), markup, telebot.ModeHTML, telebot.NoPreview)
-		c.Respond()
-		return nil
+		c.Callback().Data = helpers.AggregateCallbackData(helpers.AddEventMemberState, 0, "")
+		return h.enter(c, user)
 	})
 
 	return helpers.AddEventMemberState, handlerFuncs
@@ -1055,7 +1042,8 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 		}
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, "EditEventKeyboard")}})
 
-		c.Edit(markup)
+		c.Edit(helpers.AddCallbackData(fmt.Sprintf("<b>%s</b>\n\n%s\n\nВыбери участника, которого хочешь удалить:", event.Alias(), event.Roles()), user.State.CallbackData.String()),
+			markup, telebot.ModeHTML)
 		c.Respond()
 		return nil
 	})
@@ -1063,11 +1051,6 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
 		_, _, membershipHex := helpers.ParseCallbackData(c.Callback().Data)
-
-		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
-		if err != nil {
-			return err
-		}
 
 		membershipID, err := primitive.ObjectIDFromHex(membershipHex)
 		if err != nil {
@@ -1086,22 +1069,8 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 		//       "Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
 		// }()
 
-		eventString, _, err := h.eventService.ToHtmlStringByID(eventID)
-		if err != nil {
-			return err
-		}
-
-		q := user.State.CallbackData.Query()
-		q.Set("eventId", eventID.Hex())
-		user.State.CallbackData.RawQuery = q.Encode()
-
-		markup := &telebot.ReplyMarkup{
-			InlineKeyboard: helpers.GetEditEventKeyboard(*user),
-		}
-
-		c.Edit(helpers.AddCallbackData(eventString, user.State.CallbackData.String()), markup, telebot.ModeHTML, telebot.NoPreview)
-		c.Respond()
-		return nil
+		c.Callback().Data = helpers.AggregateCallbackData(helpers.DeleteEventMemberState, 0, "")
+		return h.enter(c, user)
 	})
 
 	return helpers.DeleteEventMemberState, handlerFuncs
