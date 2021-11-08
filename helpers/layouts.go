@@ -86,6 +86,9 @@ func GetEditEventKeyboard(user entities.User) [][]telebot.InlineButton {
 	if user.Role == Admin {
 		return [][]telebot.InlineButton{
 			{
+				{Text: Notes, Data: AggregateCallbackData(ChangeEventNotesState, 0, "")},
+			},
+			{
 				{Text: DeleteMember, Data: AggregateCallbackData(DeleteEventMemberState, 0, "")},
 				{Text: AddMember, Data: AggregateCallbackData(AddEventMemberState, 0, "")},
 			},
@@ -98,9 +101,6 @@ func GetEditEventKeyboard(user entities.User) [][]telebot.InlineButton {
 			},
 			{
 				{Text: Date, Data: AggregateCallbackData(ChangeEventDateState, 0, "")},
-				{Text: Notes, Data: AggregateCallbackData(ChangeEventNotesState, 0, "")},
-			},
-			{
 				{Text: Delete, Data: AggregateCallbackData(DeleteEventState, 0, "")},
 			},
 			{

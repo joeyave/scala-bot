@@ -747,7 +747,7 @@ func changeSongOrderHandler() (int, []HandlerFunc) {
 		q.Set("index", strconv.Itoa(songIndex+1))
 		user.State.CallbackData.RawQuery = q.Encode()
 
-		c.Edit(helpers.AddCallbackData(fmt.Sprintf("<b>%s</b>\n\n%s\nВыбери песню номер %d:", user.State.CallbackData.Query().Get("eventAlias"), songsStr, songIndex+2),
+		c.Edit(helpers.AddCallbackData(fmt.Sprintf("<b>%s</b>\n\n%s\nВыбери %d песню:", user.State.CallbackData.Query().Get("eventAlias"), songsStr, songIndex+2),
 			user.State.CallbackData.String()), markup, telebot.ModeHTML, telebot.NoPreview)
 		c.Respond()
 		return nil

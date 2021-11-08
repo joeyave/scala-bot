@@ -71,7 +71,7 @@ const (
 	AddSong                     string = "➕ Песня"
 	DeleteSong                  string = "➖ Песня"
 	SongsOrder                  string = "🔄 Порядок песен"
-	Date                        string = "🗓️ Дата"
+	Date                        string = "🗓️ Изменить дату"
 	Notes                       string = "✏️ Заметки"
 	Edit                        string = "︎✍️ Редактировать"
 	GetAllEvents                string = "📥"
