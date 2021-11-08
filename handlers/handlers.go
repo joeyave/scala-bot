@@ -2836,6 +2836,7 @@ func setlistHandler() (int, []HandlerFunc) {
 
 		markup := &telebot.ReplyMarkup{
 			ResizeKeyboard: true,
+			Placeholder:    currentSongName,
 		}
 
 		// TODO: some sort of pagination.
