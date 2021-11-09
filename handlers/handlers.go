@@ -2125,35 +2125,35 @@ func transposeSongHandler() (int, []HandlerFunc) {
 			&telebot.ReplyMarkup{
 				InlineKeyboard: [][]telebot.InlineButton{
 					{
-						{Text: "C | Am", Data: helpers.AggregateCallbackData(state, index+1, "C")},
-						{Text: "C# | A#m", Data: helpers.AggregateCallbackData(state, index+1, "C#")},
-						{Text: "Db | Bbm", Data: helpers.AggregateCallbackData(state, index+1, "Db")},
+						{Text: "C (Am)", Data: helpers.AggregateCallbackData(state, index+1, "C")},
+						{Text: "C# (A#m)", Data: helpers.AggregateCallbackData(state, index+1, "C#")},
+						{Text: "Db (Bbm)", Data: helpers.AggregateCallbackData(state, index+1, "Db")},
 					},
 					{
-						{Text: "D | Bm", Data: helpers.AggregateCallbackData(state, index+1, "D")},
-						{Text: "D# | Cm", Data: helpers.AggregateCallbackData(state, index+1, "D#")},
-						{Text: "Eb | Cm", Data: helpers.AggregateCallbackData(state, index+1, "Eb")},
+						{Text: "D (Bm)", Data: helpers.AggregateCallbackData(state, index+1, "D")},
+						{Text: "D# (Cm)", Data: helpers.AggregateCallbackData(state, index+1, "D#")},
+						{Text: "Eb (Cm)", Data: helpers.AggregateCallbackData(state, index+1, "Eb")},
 					},
 					{
-						{Text: "E | C#m", Data: helpers.AggregateCallbackData(state, index+1, "E")},
+						{Text: "E (C#m)", Data: helpers.AggregateCallbackData(state, index+1, "E")},
 					},
 					{
-						{Text: "F | Dm", Data: helpers.AggregateCallbackData(state, index+1, "F")},
-						{Text: "F# | D#m", Data: helpers.AggregateCallbackData(state, index+1, "F#")},
-						{Text: "Gb | Ebm", Data: helpers.AggregateCallbackData(state, index+1, "Gb")},
+						{Text: "F (Dm)", Data: helpers.AggregateCallbackData(state, index+1, "F")},
+						{Text: "F# (D#m)", Data: helpers.AggregateCallbackData(state, index+1, "F#")},
+						{Text: "Gb (Ebm)", Data: helpers.AggregateCallbackData(state, index+1, "Gb")},
 					},
 					{
-						{Text: "G | Em", Data: helpers.AggregateCallbackData(state, index+1, "G")},
-						{Text: "G# | Fm", Data: helpers.AggregateCallbackData(state, index+1, "G#")},
-						{Text: "Ab | Fm", Data: helpers.AggregateCallbackData(state, index+1, "Ab")},
+						{Text: "G (Em)", Data: helpers.AggregateCallbackData(state, index+1, "G")},
+						{Text: "G# (Fm)", Data: helpers.AggregateCallbackData(state, index+1, "G#")},
+						{Text: "Ab (Fm)", Data: helpers.AggregateCallbackData(state, index+1, "Ab")},
 					},
 					{
-						{Text: "A | F#m", Data: helpers.AggregateCallbackData(state, index+1, "A")},
-						{Text: "A# | Gm", Data: helpers.AggregateCallbackData(state, index+1, "A#")},
-						{Text: "Bb | Gm", Data: helpers.AggregateCallbackData(state, index+1, "Bb")},
+						{Text: "A (F#m)", Data: helpers.AggregateCallbackData(state, index+1, "A")},
+						{Text: "A# (Gm)", Data: helpers.AggregateCallbackData(state, index+1, "A#")},
+						{Text: "Bb (Gm)", Data: helpers.AggregateCallbackData(state, index+1, "Bb")},
 					},
 					{
-						{Text: "B | G#m", Data: helpers.AggregateCallbackData(state, index+1, "B")},
+						{Text: "B (G#m)", Data: helpers.AggregateCallbackData(state, index+1, "B")},
 					},
 					{
 						{Text: helpers.Cancel, Data: helpers.AggregateCallbackData(helpers.SongActionsState, 0, "")},
