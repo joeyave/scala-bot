@@ -996,7 +996,8 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string) [
 			style.Italic = false
 			style.Strikethrough = false
 
-			requests = append(requests, changeStyleByRegex(regexp.MustCompile(`\p{L}+(\s\d*)?:`), *element, style, strings.ToUpper, segmentID)...)
+			// requests = append(requests, changeStyleByRegex(regexp.MustCompile(`\p{L}+(\s\d*)?:`), *element, style, strings.ToUpper, segmentID)...)
+			requests = append(requests, changeStyleByRegex(regexp.MustCompile(`^[\d\s]*\p{L}+(\s\d*)?:`), *element, style, strings.ToUpper, segmentID)...)
 		}
 	}
 
