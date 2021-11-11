@@ -111,7 +111,7 @@ func main() {
 
 	bot.Handle(telebot.OnText, handler.OnText)
 	bot.Handle(telebot.OnVoice, handler.OnVoice)
-	bot.Handle(telebot.OnAudio, handler.OnAudio)
+	bot.Handle(telebot.OnAudio, handler.OnVoice)
 	bot.Handle(telebot.OnCallback, handler.OnCallback)
 
 	go handler.NotifyUser()

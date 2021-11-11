@@ -2553,8 +2553,10 @@ func getVoicesHandler() (int, []HandlerFunc) {
 					{Text: voice.Name, Data: helpers.AggregateCallbackData(state, index+1, voice.ID.Hex())},
 				})
 			}
+
 			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
 				{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.SongActionsState, 0, "")},
+				{Text: "➕ Добавить партию", Data: helpers.AggregateCallbackData(helpers.UploadVoiceState, 4, "")},
 			})
 
 			c.EditCaption(helpers.AddCallbackData("Выбери партию:", user.State.CallbackData.String()),
@@ -2762,8 +2764,75 @@ func uploadVoiceHandler() (int, []HandlerFunc) {
 			},
 		}
 		return h.enter(c, user)
-
 	})
+
+	// Upload voice from song menu.
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		user.State = &entities.State{
+			Name:    helpers.UploadVoiceState,
+			Index:   4,
+			Context: entities.Context{DriveFileID: user.State.CallbackData.Query().Get("driveFileId")},
+		}
+
+		err := c.Send("Отправь мне аудио или голосовое сообщение:", &telebot.ReplyMarkup{
+			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Cancel}}},
+			ResizeKeyboard: true,
+		})
+		if err != nil {
+			return err
+		}
+
+		user.State.Index++
+		return nil
+	})
+
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		c.Notify(telebot.Typing)
+
+		user.State.Context.Voice = &entities.Voice{FileID: c.Media().MediaFile().FileID}
+
+		err := c.Send("Отправь мне название этой партии:", &telebot.ReplyMarkup{
+			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Cancel}}},
+			ResizeKeyboard: true,
+		})
+		if err != nil {
+			return err
+		}
+
+		user.State.Index++
+		return nil
+	})
+
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		user.State.Context.Voice.Name = c.Text()
+
+		song, err := h.songService.FindOneByDriveFileID(user.State.Context.DriveFileID)
+		if err != nil {
+			return err
+		}
+
+		user.State.Context.Voice.SongID = song.ID
+
+		_, err = h.voiceService.UpdateOne(*user.State.Context.Voice)
+		if err != nil {
+			return err
+		}
+
+		c.Send("Добавление завершено.")
+
+		user.State = &entities.State{
+			Name: helpers.SongActionsState,
+			Context: entities.Context{
+				DriveFileID: user.State.Context.DriveFileID,
+			},
+			Next: &entities.State{Name: helpers.MainMenuState},
+		}
+		return h.enter(c, user)
+	})
+
 	return helpers.UploadVoiceState, handlerFunc
 }
 

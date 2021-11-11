@@ -104,43 +104,17 @@ func (h *Handler) OnVoice(c telebot.Context) error {
 		return err
 	}
 
-	user.State = &entities.State{
-		Index: 0,
-		Name:  helpers.UploadVoiceState,
-		Context: entities.Context{
-			Voice: &entities.Voice{
-				FileID: c.Message().Voice.FileID,
+	if user.State.Name != helpers.UploadVoiceState {
+		user.State = &entities.State{
+			Index: 0,
+			Name:  helpers.UploadVoiceState,
+			Context: entities.Context{
+				Voice: &entities.Voice{
+					FileID: c.Media().MediaFile().FileID,
+				},
 			},
-		},
-		Prev: user.State,
-	}
-
-	err = h.enter(c, user)
-	if err != nil {
-		return err
-	}
-
-	_, err = h.userService.UpdateOne(*user)
-
-	return err
-}
-
-func (h *Handler) OnAudio(c telebot.Context) error {
-
-	user, err := h.userService.FindOneByID(c.Chat().ID)
-	if err != nil {
-		return err
-	}
-
-	user.State = &entities.State{
-		Index: 0,
-		Name:  helpers.UploadVoiceState,
-		Context: entities.Context{
-			Voice: &entities.Voice{
-				FileID: c.Message().Audio.FileID,
-			},
-		},
-		Prev: user.State,
+			Prev: user.State,
+		}
 	}
 
 	err = h.enter(c, user)
