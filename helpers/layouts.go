@@ -2,8 +2,8 @@ package helpers
 
 import (
 	"github.com/joeyave/scala-chords-bot/entities"
-	"github.com/joeyave/telebot/v3"
 	"google.golang.org/api/drive/v3"
+	"gopkg.in/tucnak/telebot.v3"
 )
 
 func GetSongInitKeyboard(user *entities.User, song *entities.Song) [][]telebot.InlineButton {

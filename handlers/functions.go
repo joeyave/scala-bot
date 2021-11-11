@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
-	"github.com/joeyave/telebot/v3"
 	"github.com/klauspost/lctime"
+	"gopkg.in/tucnak/telebot.v3"
 	"sync"
 	"time"
 )
@@ -153,7 +153,7 @@ func sendDriveFilesAlbum(h *Handler, c telebot.Context, user *entities.User, dri
 
 	var waitGroup sync.WaitGroup
 	waitGroup.Add(len(driveFileIDs))
-	documents := make([]telebot.InputMedia, len(driveFileIDs))
+	bigAlbum := make(telebot.Album, len(driveFileIDs))
 
 	for i := range driveFileIDs {
 		go func(i int) {
@@ -170,14 +170,14 @@ func sendDriveFilesAlbum(h *Handler, c telebot.Context, user *entities.User, dri
 					return
 				}
 
-				documents[i] = &telebot.Document{
+				bigAlbum[i] = &telebot.Document{
 					File:     telebot.FromReader(*reader),
 					MIME:     "application/pdf",
 					FileName: fmt.Sprintf("%s.pdf", song.PDF.Name),
 					Caption:  song.Caption(),
 				}
 			} else {
-				documents[i] = &telebot.Document{
+				bigAlbum[i] = &telebot.Document{
 					File:    telebot.File{FileID: song.PDF.TgFileID},
 					Caption: song.Caption(),
 				}
@@ -187,7 +187,7 @@ func sendDriveFilesAlbum(h *Handler, c telebot.Context, user *entities.User, dri
 	waitGroup.Wait()
 
 	const chunkSize = 10
-	chunks := chunkAlbumBy(documents, chunkSize)
+	chunks := chunkAlbumBy(bigAlbum, chunkSize)
 
 	for i, album := range chunks {
 		_, err := h.bot.SendAlbum(c.Recipient(), album)
@@ -206,7 +206,7 @@ func sendDriveFilesAlbum(h *Handler, c telebot.Context, user *entities.User, dri
 
 			var waitGroup sync.WaitGroup
 			waitGroup.Add(len(foundDriveFileIDs))
-			documents := make([]telebot.InputMedia, len(foundDriveFileIDs))
+			bigAlbum := make(telebot.Album, len(foundDriveFileIDs))
 
 			for i := range foundDriveFileIDs {
 				go func(i int) {
@@ -226,7 +226,7 @@ func sendDriveFilesAlbum(h *Handler, c telebot.Context, user *entities.User, dri
 						return
 					}
 
-					documents[i] = &telebot.Document{
+					bigAlbum[i] = &telebot.Document{
 						File:     telebot.FromReader(*reader),
 						MIME:     "application/pdf",
 						FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
@@ -236,7 +236,7 @@ func sendDriveFilesAlbum(h *Handler, c telebot.Context, user *entities.User, dri
 			}
 			waitGroup.Wait()
 
-			_, err = h.bot.SendAlbum(c.Recipient(), documents)
+			_, err = h.bot.SendAlbum(c.Recipient(), bigAlbum)
 			if err != nil {
 				continue
 			}

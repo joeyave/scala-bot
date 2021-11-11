@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"github.com/joeyave/scala-chords-bot/entities"
 	"github.com/joeyave/scala-chords-bot/helpers"
-	"github.com/joeyave/telebot/v3"
 	"github.com/klauspost/lctime"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/api/drive/v3"
+	"gopkg.in/tucnak/telebot.v3"
 	"regexp"
 	"strconv"
 	"strings"
@@ -648,7 +648,6 @@ func eventActionsHandler() (int, []HandlerFunc) {
 		}
 
 		c.Respond()
-
 		return nil
 	})
 

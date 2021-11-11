@@ -10,10 +10,8 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/joeyave/chords-transposer v0.0.8
-	github.com/joeyave/telebot/v3 v3.0.3 // indirect
 	github.com/klauspost/lctime v0.1.0
 	github.com/rs/zerolog v1.26.0
-	github.com/sirupsen/logrus v1.7.0 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
 	go.mongodb.org/mongo-driver v1.7.4
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
@@ -24,6 +22,5 @@ require (
 	google.golang.org/api v0.60.0
 	google.golang.org/genproto v0.0.0-20211104193956-4c6863e31247 // indirect
 	google.golang.org/grpc v1.42.0 // indirect
-	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
-	gopkg.in/go-playground/validator.v9 v9.30.0 // indirect
+	gopkg.in/tucnak/telebot.v3 v3.0.0-20211108093419-844466d6faf3 // indirect
 )

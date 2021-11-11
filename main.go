@@ -6,7 +6,6 @@ import (
 	"github.com/joeyave/scala-chords-bot/handlers"
 	"github.com/joeyave/scala-chords-bot/repositories"
 	"github.com/joeyave/scala-chords-bot/services"
-	"github.com/joeyave/telebot/v3"
 	"github.com/klauspost/lctime"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -16,6 +15,7 @@ import (
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
+	"gopkg.in/tucnak/telebot.v3"
 	"os"
 	"time"
 )
