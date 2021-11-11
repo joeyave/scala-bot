@@ -137,7 +137,7 @@ func (h *Handler) OnAudio(c telebot.Context) error {
 		Name:  helpers.UploadVoiceState,
 		Context: entities.Context{
 			Voice: &entities.Voice{
-				AudioFileID: c.Message().Audio.FileID,
+				FileID: c.Message().Audio.FileID,
 			},
 		},
 		Prev: user.State,
