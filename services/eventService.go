@@ -62,8 +62,8 @@ func (s *EventService) FindOneByID(ID primitive.ObjectID) (*entities.Event, erro
 	return s.eventRepository.FindOneByID(ID)
 }
 
-func (s *EventService) FindOneByNameAndTime(name string, time time.Time) (*entities.Event, error) {
-	return s.eventRepository.FindOneByNameAndTime(name, time)
+func (s *EventService) FindOneByNameAndTimeAndBandID(name string, time time.Time, bandID primitive.ObjectID) (*entities.Event, error) {
+	return s.eventRepository.FindOneByNameAndTimeAndBandID(name, time, bandID)
 }
 
 func (s *EventService) UpdateOne(event entities.Event) (*entities.Event, error) {

@@ -381,7 +381,7 @@ func getEventsHandler() (int, []HandlerFunc) {
 				return h.enter(c, user)
 			}
 
-			foundEvent, err := h.eventService.FindOneByNameAndTime(eventName, eventTime)
+			foundEvent, err := h.eventService.FindOneByNameAndTimeAndBandID(eventName, eventTime, user.BandID)
 			if err != nil {
 				user.State.Index--
 				return h.enter(c, user)
@@ -534,13 +534,17 @@ func createEventHandler() (int, []HandlerFunc) {
 			return h.enter(c, user)
 		}
 
-		event, err := h.eventService.UpdateOne(entities.Event{
-			Time:   parsedTime,
-			Name:   user.State.Context.Map["eventName"],
-			BandID: user.BandID,
-		})
-		if err != nil {
-			return err
+		event, err := h.eventService.FindOneByNameAndTimeAndBandID(user.State.Context.Map["eventName"], parsedTime, user.BandID)
+		if err != nil || event == nil {
+			err = nil
+			event, err = h.eventService.UpdateOne(entities.Event{
+				Name:   user.State.Context.Map["eventName"],
+				Time:   parsedTime,
+				BandID: user.BandID,
+			})
+			if err != nil {
+				return err
+			}
 		}
 
 		c.Callback().Data = helpers.AggregateCallbackData(helpers.EventActionsState, 0, "")

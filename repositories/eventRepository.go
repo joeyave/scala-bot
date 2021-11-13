@@ -207,14 +207,19 @@ func (r *EventRepository) FindOneByID(ID primitive.ObjectID) (*entities.Event, e
 	return events[0], nil
 }
 
-func (r *EventRepository) FindOneByNameAndTime(name string, time time.Time) (*entities.Event, error) {
+func (r *EventRepository) FindOneByNameAndTimeAndBandID(name string, t time.Time, bandID primitive.ObjectID) (*entities.Event, error) {
 	events, err := r.find(
 		bson.M{
 			"name": name,
 			"time": bson.M{
-				"$gte": time,
-				"$lt":  time.AddDate(0, 0, 1),
+				"$gte": time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()),
+				"$lt":  t.AddDate(0, 0, 1),
 			},
+			// "time": bson.M{
+			// 	"$gte": t,
+			// 	"$lt":  t.AddDate(0, 0, 1),
+			// },
+			"bandId": bandID,
 		},
 		bson.M{
 			"$sort": bson.M{
@@ -634,6 +639,7 @@ func (r *EventRepository) PullSongID(eventID primitive.ObjectID, songID primitiv
 	return err
 }
 
+// TODO: add band id
 func (r *EventRepository) GetMostFrequentEventNames() ([]*entities.EventNameFrequencies, error) {
 
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
