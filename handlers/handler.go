@@ -3,9 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/joeyave/scala-chords-bot/entities"
-	"github.com/joeyave/scala-chords-bot/helpers"
-	"github.com/joeyave/scala-chords-bot/services"
+	"github.com/joeyave/scala-bot/entities"
+	"github.com/joeyave/scala-bot/helpers"
+	"github.com/joeyave/scala-bot/services"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"gopkg.in/tucnak/telebot.v3"

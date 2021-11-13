@@ -3,8 +3,8 @@ package repositories
 import (
 	"context"
 	"fmt"
-	"github.com/joeyave/scala-chords-bot/entities"
-	"github.com/joeyave/scala-chords-bot/helpers"
+	"github.com/joeyave/scala-bot/entities"
+	"github.com/joeyave/scala-bot/helpers"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"

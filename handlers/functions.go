@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/joeyave/scala-chords-bot/entities"
-	"github.com/joeyave/scala-chords-bot/helpers"
+	"github.com/joeyave/scala-bot/entities"
+	"github.com/joeyave/scala-bot/helpers"
 	"github.com/klauspost/lctime"
 	"gopkg.in/tucnak/telebot.v3"
 	"sync"

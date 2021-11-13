@@ -3,8 +3,8 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"github.com/joeyave/scala-chords-bot/entities"
-	"github.com/joeyave/scala-chords-bot/helpers"
+	"github.com/joeyave/scala-bot/entities"
+	"github.com/joeyave/scala-bot/helpers"
 	"github.com/klauspost/lctime"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"

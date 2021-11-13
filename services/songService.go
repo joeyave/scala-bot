@@ -2,8 +2,8 @@ package services
 
 import (
 	"errors"
-	"github.com/joeyave/scala-chords-bot/entities"
-	"github.com/joeyave/scala-chords-bot/repositories"
+	"github.com/joeyave/scala-bot/entities"
+	"github.com/joeyave/scala-bot/repositories"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
 	"sync"

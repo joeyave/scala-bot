@@ -3,7 +3,7 @@ package helpers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/joeyave/scala-chords-bot/entities"
+	"github.com/joeyave/scala-bot/entities"
 	"github.com/klauspost/lctime"
 	"regexp"
 	"strconv"

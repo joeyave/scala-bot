@@ -2,9 +2,9 @@ package services
 
 import (
 	"fmt"
-	"github.com/joeyave/scala-chords-bot/entities"
-	"github.com/joeyave/scala-chords-bot/helpers"
-	"github.com/joeyave/scala-chords-bot/repositories"
+	"github.com/joeyave/scala-bot/entities"
+	"github.com/joeyave/scala-bot/helpers"
+	"github.com/joeyave/scala-bot/repositories"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
 	"html"

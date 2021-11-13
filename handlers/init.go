@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"github.com/joeyave/scala-chords-bot/entities"
+	"github.com/joeyave/scala-bot/entities"
 	"gopkg.in/tucnak/telebot.v3"
 )
 

@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/joeyave/scala-chords-bot/handlers"
-	"github.com/joeyave/scala-chords-bot/repositories"
-	"github.com/joeyave/scala-chords-bot/services"
+	"github.com/joeyave/scala-bot/handlers"
+	"github.com/joeyave/scala-bot/repositories"
+	"github.com/joeyave/scala-bot/services"
 	"github.com/klauspost/lctime"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
