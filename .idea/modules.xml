@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/scala-chords-bot.iml" filepath="$PROJECT_DIR$/.idea/scala-chords-bot.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/scala-bot.iml" filepath="$PROJECT_DIR$/.idea/scala-bot.iml" />
     </modules>
   </component>
 </project>

@@ -346,6 +346,34 @@ func (s *DriveFileService) TransposeOne(ID string, toKey string, sectionIndex in
 	return s.FindOneByID(ID)
 }
 
+func (s *DriveFileService) AddLyricsPage(ID string) (*drive.File, error) {
+	doc, err := s.docsRepository.Documents.Get(ID).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	sections := s.getSections(doc)
+
+	if len(sections) == 1 {
+		sections, err = s.appendSectionByID(ID)
+		if err != nil {
+			return nil, err
+		}
+
+		doc, err = s.docsRepository.Documents.Get(ID).Do()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	requests := s.removeChords(doc, sections, 1)
+
+	_, err = s.docsRepository.Documents.BatchUpdate(doc.DocumentId,
+		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
+
+	return s.FindOneByID(ID)
+}
+
 func (s *DriveFileService) ReplaceAllTextByRegex(ID string, regex *regexp.Regexp, replaceText string) (int64, error) {
 	res, err := s.driveRepository.Files.Export(ID, "text/plain").Download()
 	if err != nil {
@@ -593,6 +621,7 @@ func (s *DriveFileService) GetMetadata(ID string) (string, string, string) {
 //
 // Helper functions. -----------------------------------
 //
+
 func (s *DriveFileService) getSections(doc *docs.Document) []docs.StructuralElement {
 	sections := make([]docs.StructuralElement, 0)
 
@@ -757,6 +786,86 @@ func (s *DriveFileService) transposeBody(doc *docs.Document, sections []docs.Str
 	return requests
 }
 
+func (s *DriveFileService) removeChords(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int) []*docs.Request {
+	requests := make([]*docs.Request, 0)
+
+	sectionToInsertStartIndex := sections[sectionIndex].StartIndex + 1
+	var sectionToInsertEndIndex int64
+
+	if len(sections) > sectionIndex+1 {
+		sectionToInsertEndIndex = sections[sectionIndex+1].StartIndex - 1
+	} else {
+		sectionToInsertEndIndex = doc.Body.Content[len(doc.Body.Content)-1].EndIndex - 1
+	}
+
+	var content []*docs.StructuralElement
+	if len(sections) > 1 {
+		index := len(doc.Body.Content)
+		for i := range doc.Body.Content {
+			if doc.Body.Content[i].StartIndex == sections[1].StartIndex {
+				index = i
+				break
+			}
+		}
+		content = doc.Body.Content[:index]
+	} else {
+		content = doc.Body.Content
+	}
+
+	if sectionToInsertEndIndex-sectionToInsertStartIndex > 0 {
+		requests = append(requests, &docs.Request{
+			DeleteContentRange: &docs.DeleteContentRangeRequest{
+				Range: &docs.Range{
+					StartIndex:      sectionToInsertStartIndex,
+					EndIndex:        sectionToInsertEndIndex,
+					SegmentId:       "",
+					ForceSendFields: []string{"StartIndex"},
+				},
+			},
+		})
+	}
+
+	bodyCloneRequests := composeCloneWithoutChordsRequests(content, sectionToInsertStartIndex, "")
+	requests = append(requests, bodyCloneRequests...)
+
+	if doc.DocumentStyle.DefaultHeaderId == "" {
+		return requests
+	}
+
+	// Create header if section doesn't have it.
+	if sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId == "" {
+		requests = append(requests, &docs.Request{
+			CreateHeader: &docs.CreateHeaderRequest{
+				SectionBreakLocation: &docs.Location{
+					SegmentId: "",
+					Index:     sections[sectionIndex].StartIndex,
+				},
+				Type: "DEFAULT",
+			},
+		})
+	} else {
+		header := doc.Headers[sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId]
+		if header.Content[len(header.Content)-1].EndIndex-1 > 0 {
+			requests = append(requests, &docs.Request{
+				DeleteContentRange: &docs.DeleteContentRangeRequest{
+					Range: &docs.Range{
+						StartIndex:      0,
+						EndIndex:        header.Content[len(header.Content)-1].EndIndex - 1,
+						SegmentId:       header.HeaderId,
+						ForceSendFields: []string{"StartIndex"},
+					},
+				},
+			})
+		}
+	}
+
+	headerCloneRequests := composeCloneWithoutChordsRequests(doc.Headers[doc.DocumentStyle.DefaultHeaderId].Content, 0, doc.Headers[sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId].HeaderId)
+
+	requests = append(requests, headerCloneRequests...)
+
+	return requests
+}
+
 func composeTransposeRequests(content []*docs.StructuralElement, index int64, key string, toKey string, segmentId string, addMod bool) ([]*docs.Request, string) {
 	requests := make([]*docs.Request, 0)
 
@@ -867,6 +976,95 @@ func composeTransposeRequests(content []*docs.StructuralElement, index int64, ke
 	}
 
 	return requests, key
+}
+
+func composeCloneWithoutChordsRequests(content []*docs.StructuralElement, index int64, segmentID string) []*docs.Request {
+	requests := make([]*docs.Request, 0)
+
+	for _, item := range content {
+		if item.Paragraph != nil && item.Paragraph.Elements != nil {
+			for _, element := range item.Paragraph.Elements {
+
+				var sb strings.Builder
+				for _, element := range item.Paragraph.Elements {
+					if element.TextRun != nil && element.TextRun.Content != "" {
+						sb.WriteString(element.TextRun.Content)
+					}
+				}
+				_, err := transposer.GuessKeyFromText(sb.String())
+				if err == nil {
+					continue
+				}
+
+				if element.TextRun != nil && element.TextRun.Content != "" {
+
+					if element.TextRun.TextStyle.ForegroundColor == nil {
+						element.TextRun.TextStyle.ForegroundColor = &docs.OptionalColor{
+							Color: &docs.Color{
+								RgbColor: &docs.RgbColor{
+									Blue:  0,
+									Green: 0,
+									Red:   0,
+								},
+							},
+						}
+					}
+
+					requests = append(requests,
+						&docs.Request{
+							InsertText: &docs.InsertTextRequest{
+								Location: &docs.Location{
+									Index:     index,
+									SegmentId: segmentID,
+								},
+								Text: element.TextRun.Content,
+							},
+						},
+						&docs.Request{
+							UpdateTextStyle: &docs.UpdateTextStyleRequest{
+								Fields: "*",
+								Range: &docs.Range{
+									StartIndex: index,
+									EndIndex:   index + int64(len([]rune(element.TextRun.Content))),
+									SegmentId:  segmentID,
+									ForceSendFields: func() []string {
+										if index == 0 {
+											return []string{"StartIndex"}
+										} else {
+											return nil
+										}
+									}(),
+								},
+								TextStyle: element.TextRun.TextStyle,
+							},
+						},
+						&docs.Request{
+							UpdateParagraphStyle: &docs.UpdateParagraphStyleRequest{
+								Fields:         "alignment, lineSpacing, direction, spaceAbove, spaceBelow",
+								ParagraphStyle: item.Paragraph.ParagraphStyle,
+								Range: &docs.Range{
+									StartIndex: index,
+									EndIndex:   index + int64(len([]rune(element.TextRun.Content))),
+									SegmentId:  segmentID,
+									ForceSendFields: func() []string {
+										if index == 0 {
+											return []string{"StartIndex"}
+										} else {
+											return nil
+										}
+									}(),
+								},
+							},
+						},
+					)
+
+					index += int64(len([]rune(element.TextRun.Content)))
+				}
+			}
+		}
+	}
+
+	return requests
 }
 
 func composeStyleRequests(content []*docs.StructuralElement, segmentID string) []*docs.Request {

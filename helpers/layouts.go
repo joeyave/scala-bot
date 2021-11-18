@@ -44,7 +44,8 @@ func GetSongActionsKeyboard(user entities.User, song entities.Song, driveFile dr
 				{Text: Style, Data: AggregateCallbackData(StyleSongState, 0, "")},
 			},
 			{
-				{Text: ChangeSongBPM, Data: AggregateCallbackData(ChangeSongBPMHandler, 0, "")},
+				{Text: ChangeSongBPM, Data: AggregateCallbackData(ChangeSongBPMState, 0, "")},
+				{Text: AddLyricsPage, Data: AggregateCallbackData(AddLyricsPageState, 0, "")},
 			},
 		}
 	} else {

@@ -2270,6 +2270,39 @@ func styleSongHandler() (int, []HandlerFunc) {
 	return helpers.StyleSongState, handlerFunc
 }
 
+func addLyricsPageHandler() (int, []HandlerFunc) {
+	handlerFunc := make([]HandlerFunc, 0)
+
+	// Print list of found songs.
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		driveFileID := user.State.CallbackData.Query().Get("driveFileId")
+
+		driveFile, err := h.driveFileService.AddLyricsPage(driveFileID)
+		if err != nil {
+			return err
+		}
+
+		song, err := h.songService.FindOneByDriveFileID(driveFile.Id)
+		if err != nil {
+			return err
+		}
+
+		fakeTime, _ := time.Parse("2006", "2006")
+		song.PDF.ModifiedTime = fakeTime.Format(time.RFC3339)
+
+		_, err = h.songService.UpdateOne(*song)
+		if err != nil {
+			return err
+		}
+
+		// c.Respond()
+		c.Callback().Data = helpers.AggregateCallbackData(helpers.SongActionsState, 0, "")
+		return h.enterInlineHandler(c, user)
+	})
+	return helpers.AddLyricsPageState, handlerFunc
+}
+
 func changeSongBPMHandler() (int, []HandlerFunc) {
 	handlerFunc := make([]HandlerFunc, 0)
 
@@ -2279,7 +2312,7 @@ func changeSongBPMHandler() (int, []HandlerFunc) {
 
 		user.State = &entities.State{
 			Index: 1,
-			Name:  helpers.ChangeSongBPMHandler,
+			Name:  helpers.ChangeSongBPMState,
 			Context: entities.Context{
 				DriveFileID: driveFileID,
 			},
@@ -2331,7 +2364,7 @@ func changeSongBPMHandler() (int, []HandlerFunc) {
 		return h.enter(c, user)
 	})
 
-	return helpers.ChangeSongBPMHandler, handlerFunc
+	return helpers.ChangeSongBPMState, handlerFunc
 }
 
 func copySongHandler() (int, []HandlerFunc) {

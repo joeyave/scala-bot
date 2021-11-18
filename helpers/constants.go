@@ -12,7 +12,8 @@ const (
 	MainMenuState
 	TransposeSongState
 	StyleSongState
-	ChangeSongBPMHandler
+	AddLyricsPageState
+	ChangeSongBPMState
 	ChooseBandState
 	CreateBandState
 	CopySongState
@@ -48,6 +49,7 @@ const (
 	Transpose                   string = "🎛 Транспонировать"
 	Style                       string = "🎨 Стилизовать"
 	ChangeSongBPM               string = "🥁 Изменить BPM"
+	AddLyricsPage               string = "🔤 Слова"
 	Menu                        string = "💻 Меню"
 	Back                        string = "↩︎ Назад"
 	Forward                     string = "▶️ Вперед"
