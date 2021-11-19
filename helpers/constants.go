@@ -77,6 +77,7 @@ const (
 	Notes                       string = "✏️ Заметки"
 	Edit                        string = "︎✍️ Редактировать"
 	GetAllEvents                string = "📥"
+	ByWeekday                   string = "День недели"
 	GetEventsWithMe             string = "🙋‍♂️"
 	End                         string = "⛔️ Закончить"
 	Delete                      string = "❌ Удалить"

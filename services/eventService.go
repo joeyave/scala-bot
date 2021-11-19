@@ -39,6 +39,21 @@ func (s *EventService) FindManyFromTodayByBandID(bandID primitive.ObjectID) ([]*
 	return s.eventRepository.FindManyFromTodayByBandID(bandID)
 }
 
+func (s *EventService) FindManyFromTodayByBandIDAndWeekday(bandID primitive.ObjectID, weekday time.Weekday) ([]*entities.Event, error) {
+	events, err := s.eventRepository.FindManyFromTodayByBandID(bandID)
+	if err != nil {
+		return nil, err
+	}
+
+	var events2 []*entities.Event
+	for _, event := range events {
+		if event.Time.Weekday() == weekday {
+			events2 = append(events2, event)
+		}
+	}
+	return events2, nil
+}
+
 func (s *EventService) FindManyBetweenDatesByBandID(from time.Time, to time.Time, bandID primitive.ObjectID) ([]*entities.Event, error) {
 	return s.eventRepository.FindManyBetweenDatesByBandID(from, to, bandID)
 }

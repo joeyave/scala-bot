@@ -4,14 +4,14 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="renames project to scala-bot">
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/scala-chords-bot.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/scala-bot.iml" afterDir="false" />
+    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="adds 'add lyrics page' logic">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/entities/user.go" beforeDir="false" afterPath="$PROJECT_DIR$/entities/user.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/handlers/functions.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/functions.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/handlers/handlers.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/handlers.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/init.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/init.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/helpers/constants.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/constants.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/helpers/layouts.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/layouts.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/driveFileService.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/driveFileService.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/helpers/functions.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/functions.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/eventService.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/eventService.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -94,9 +94,21 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="renames project to scala-bot" />
-    <option name="LAST_COMMIT_MESSAGE" value="renames project to scala-bot" />
+    <MESSAGE value="adds 'add lyrics page' logic" />
+    <option name="LAST_COMMIT_MESSAGE" value="adds 'add lyrics page' logic" />
   </component>
   <component name="VgoProject">
     <integration-enabled>true</integration-enabled>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
+          <line>297</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

@@ -5,6 +5,7 @@ import (
 	"github.com/klauspost/lctime"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
+	"gopkg.in/tucnak/telebot.v3"
 	"net/url"
 	"sort"
 	"time"
@@ -119,7 +120,8 @@ type Context struct {
 
 	PageIndex int `bson:"index, omitempty"`
 
-	NextPageToken *NextPageToken `bson:"nextPageToken,omitempty"`
+	NextPageToken  *NextPageToken        `bson:"nextPageToken,omitempty"`
+	WeekdayButtons []telebot.ReplyButton `bson:"weekday_buttons,omitempty"`
 }
 
 type NextPageToken struct {

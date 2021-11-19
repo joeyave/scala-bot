@@ -252,7 +252,8 @@ func getEventsHandler() (int, []HandlerFunc) {
 			Placeholder:    helpers.Placeholder,
 		}
 
-		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.GetEventsWithMe}, {Text: helpers.GetAllEvents}})
+		user.State.Context.WeekdayButtons = helpers.GetWeekdayButtons(events)
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, user.State.Context.WeekdayButtons)
 		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.CreateEvent}})
 
 		for _, event := range events {
@@ -294,19 +295,14 @@ func getEventsHandler() (int, []HandlerFunc) {
 			Placeholder:    helpers.Placeholder,
 		}
 
-		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.GetEventsWithMe}, {Text: helpers.GetAllEvents}})
-		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.CreateEvent}})
-
-		switch c.Text() {
-		case helpers.CreateEvent:
+		if c.Text() == helpers.CreateEvent {
 			user.State = &entities.State{
 				Name: helpers.CreateEventState,
 				Prev: user.State,
 			}
 			user.State.Prev.Index = 0
 			return h.enter(c, user)
-
-		case helpers.GetEventsWithMe, helpers.GetAllEvents, helpers.PrevPage, helpers.NextPage:
+		} else if c.Text() == helpers.GetEventsWithMe || c.Text() == helpers.GetAllEvents || c.Text() == helpers.PrevPage || c.Text() == helpers.NextPage || c.Text() == helpers.ByWeekday || helpers.IsWeekdayString(c.Text()) {
 
 			c.Notify(telebot.Typing)
 
@@ -316,7 +312,18 @@ func getEventsHandler() (int, []HandlerFunc) {
 				user.State.Context.PageIndex--
 			} else {
 				user.State.Context.QueryType = c.Text()
+				if user.State.Context.QueryType == helpers.ByWeekday {
+					user.State.Context.QueryType = helpers.GetWeekdayString(time.Now())
+				}
 			}
+
+			var buttons []telebot.ReplyButton
+			for _, button := range user.State.Context.WeekdayButtons {
+				buttons = append(buttons, button)
+			}
+
+			markup.ReplyKeyboard = append(markup.ReplyKeyboard, buttons)
+			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.CreateEvent}})
 
 			for i := range markup.ReplyKeyboard[0] {
 				if markup.ReplyKeyboard[0][i].Text == user.State.Context.QueryType {
@@ -332,6 +339,10 @@ func getEventsHandler() (int, []HandlerFunc) {
 				events, err = h.eventService.FindManyUntilTodayByBandIDAndPageNumber(user.BandID, user.State.Context.PageIndex)
 			case helpers.GetEventsWithMe:
 				events, err = h.eventService.FindManyFromTodayByBandIDAndUserID(user.BandID, user.ID, user.State.Context.PageIndex)
+			default:
+				if helpers.IsWeekdayString(user.State.Context.QueryType) {
+					events, err = h.eventService.FindManyFromTodayByBandIDAndWeekday(user.BandID, helpers.GetWeekdayFromString(user.State.Context.QueryType))
+				}
 			}
 			if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 				return err
@@ -369,8 +380,8 @@ func getEventsHandler() (int, []HandlerFunc) {
 			user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, msg.ID)
 
 			return nil
+		} else {
 
-		default:
 			c.Notify(telebot.Typing)
 
 			eventName, eventTime, err := helpers.ParseEventButton(c.Text())
