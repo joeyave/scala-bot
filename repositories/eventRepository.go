@@ -158,6 +158,30 @@ func (r *EventRepository) FindManyUntilTodayByBandIDAndPageNumber(bandID primiti
 	)
 }
 
+func (r *EventRepository) FindManyUntilTodayByBandIDAndWeekdayAndPageNumber(bandID primitive.ObjectID, weekday time.Weekday, pageNumber int) ([]*entities.Event, error) {
+
+	return r.find(
+		bson.M{
+			"bandId": bandID,
+			"time": bson.M{
+				"$lt": time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Now().Location()),
+			},
+			"dayOfWeek": int(weekday) + 1,
+		},
+		bson.M{
+			"$sort": bson.M{
+				"time": -1,
+			},
+		},
+		bson.M{
+			"$skip": pageNumber * helpers.EventsPageSize,
+		},
+		bson.M{
+			"$limit": helpers.EventsPageSize,
+		},
+	)
+}
+
 func (r *EventRepository) FindManyFromTodayByBandIDAndUserID(bandID primitive.ObjectID, userID int64, pageNumber int) ([]*entities.Event, error) {
 	now := time.Now()
 
@@ -326,6 +350,15 @@ func (r *EventRepository) find(m bson.M, opts ...bson.M) ([]*entities.Event, err
 					},
 				},
 				"as": "memberships",
+			},
+		},
+		bson.M{
+			"$addFields": bson.M{
+				"dayOfWeek": bson.M{
+					"$dayOfWeek": bson.M{
+						"date": "$time",
+					},
+				},
 			},
 		},
 		bson.M{

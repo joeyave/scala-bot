@@ -277,17 +277,24 @@ func getEventsHandler() (int, []HandlerFunc) {
 
 		user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, msg.ID)
 
+		user.State.Context.QueryType = "-"
 		user.State.Index++
 		return nil
 	})
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
+		text := c.Text()
+
 		user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, c.Message().ID)
 
-		if strings.Contains(c.Text(), "〔") && strings.Contains(c.Text(), "〕") {
-			user.State.Index--
-			return h.enter(c, user)
+		if strings.Contains(text, "〔") && strings.Contains(text, "〕") {
+			if helpers.IsWeekdayString(strings.ReplaceAll(strings.ReplaceAll(text, "〔", ""), "〕", "")) && user.State.Context.QueryType == helpers.Archive {
+				text = helpers.Archive
+			} else {
+				user.State.Index--
+				return h.enter(c, user)
+			}
 		}
 
 		markup := &telebot.ReplyMarkup{
@@ -295,25 +302,29 @@ func getEventsHandler() (int, []HandlerFunc) {
 			Placeholder:    helpers.Placeholder,
 		}
 
-		if c.Text() == helpers.CreateEvent {
+		if text == helpers.CreateEvent {
 			user.State = &entities.State{
 				Name: helpers.CreateEventState,
 				Prev: user.State,
 			}
 			user.State.Prev.Index = 0
 			return h.enter(c, user)
-		} else if c.Text() == helpers.GetEventsWithMe || c.Text() == helpers.GetAllEvents || c.Text() == helpers.PrevPage || c.Text() == helpers.NextPage || c.Text() == helpers.ByWeekday || helpers.IsWeekdayString(c.Text()) {
+		} else if text == helpers.GetEventsWithMe || text == helpers.Archive || text == helpers.PrevPage || text == helpers.NextPage || helpers.IsWeekdayString(text) {
 
 			c.Notify(telebot.Typing)
 
-			if c.Text() == helpers.NextPage {
+			if text == helpers.NextPage {
 				user.State.Context.PageIndex++
-			} else if c.Text() == helpers.PrevPage {
+			} else if text == helpers.PrevPage {
 				user.State.Context.PageIndex--
 			} else {
-				user.State.Context.QueryType = c.Text()
-				if user.State.Context.QueryType == helpers.ByWeekday {
-					user.State.Context.QueryType = helpers.GetWeekdayString(time.Now())
+				if user.State.Context.QueryType == helpers.Archive && helpers.IsWeekdayString(text) {
+					// todo
+				} else {
+					user.State.Context.QueryType = text
+					if user.State.Context.QueryType == helpers.ByWeekday {
+						user.State.Context.QueryType = helpers.GetWeekdayString(time.Now())
+					}
 				}
 			}
 
@@ -326,17 +337,24 @@ func getEventsHandler() (int, []HandlerFunc) {
 			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.CreateEvent}})
 
 			for i := range markup.ReplyKeyboard[0] {
-				if markup.ReplyKeyboard[0][i].Text == user.State.Context.QueryType {
+				if markup.ReplyKeyboard[0][i].Text == user.State.Context.QueryType || (markup.ReplyKeyboard[0][i].Text == text && user.State.Context.QueryType == helpers.Archive) ||
+					(markup.ReplyKeyboard[0][i].Text == user.State.Context.PrevText && user.State.Context.QueryType == helpers.Archive && (c.Text() == helpers.NextPage || c.Text() == helpers.PrevPage)) {
 					markup.ReplyKeyboard[0][i].Text = fmt.Sprintf("〔%s〕", markup.ReplyKeyboard[0][i].Text)
-					break
 				}
 			}
 
 			var events []*entities.Event
 			var err error
 			switch user.State.Context.QueryType {
-			case helpers.GetAllEvents:
-				events, err = h.eventService.FindManyUntilTodayByBandIDAndPageNumber(user.BandID, user.State.Context.PageIndex)
+			case helpers.Archive:
+				if helpers.IsWeekdayString(text) {
+					events, err = h.eventService.FindManyUntilTodayByBandIDAndWeekdayAndPageNumber(user.BandID, helpers.GetWeekdayFromString(text), user.State.Context.PageIndex)
+					user.State.Context.PrevText = text
+				} else if helpers.IsWeekdayString(user.State.Context.PrevText) && (c.Text() == helpers.NextPage || c.Text() == helpers.PrevPage) {
+					events, err = h.eventService.FindManyUntilTodayByBandIDAndWeekdayAndPageNumber(user.BandID, helpers.GetWeekdayFromString(user.State.Context.PrevText), user.State.Context.PageIndex)
+				} else {
+					events, err = h.eventService.FindManyUntilTodayByBandIDAndPageNumber(user.BandID, user.State.Context.PageIndex)
+				}
 			case helpers.GetEventsWithMe:
 				events, err = h.eventService.FindManyFromTodayByBandIDAndUserID(user.BandID, user.ID, user.State.Context.PageIndex)
 			default:
@@ -384,7 +402,7 @@ func getEventsHandler() (int, []HandlerFunc) {
 
 			c.Notify(telebot.Typing)
 
-			eventName, eventTime, err := helpers.ParseEventButton(c.Text())
+			eventName, eventTime, err := helpers.ParseEventButton(text)
 			if err != nil {
 				user.State = &entities.State{
 					Name: helpers.SearchSongState,

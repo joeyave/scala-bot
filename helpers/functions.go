@@ -205,7 +205,7 @@ func GetWeekdayButtons(events []*entities.Event) []telebot.ReplyButton {
 	for _, weekday := range weekdays {
 		weekdaysButtons = append(weekdaysButtons, telebot.ReplyButton{Text: GetWeekdayAsString(weekday)})
 	}
-	weekdaysButtons = append(weekdaysButtons, telebot.ReplyButton{Text: GetAllEvents})
+	weekdaysButtons = append(weekdaysButtons, telebot.ReplyButton{Text: Archive})
 
 	return weekdaysButtons
 }

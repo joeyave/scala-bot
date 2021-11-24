@@ -61,8 +61,13 @@ func (s *EventService) FindManyBetweenDatesByBandID(from time.Time, to time.Time
 func (s *EventService) FindManyByBandIDAndPageNumber(bandID primitive.ObjectID, pageNumber int) ([]*entities.Event, error) {
 	return s.eventRepository.FindManyByBandIDAndPageNumber(bandID, pageNumber)
 }
+
 func (s *EventService) FindManyUntilTodayByBandIDAndPageNumber(bandID primitive.ObjectID, pageNumber int) ([]*entities.Event, error) {
 	return s.eventRepository.FindManyUntilTodayByBandIDAndPageNumber(bandID, pageNumber)
+}
+
+func (s *EventService) FindManyUntilTodayByBandIDAndWeekdayAndPageNumber(bandID primitive.ObjectID, weekday time.Weekday, pageNumber int) ([]*entities.Event, error) {
+	return s.eventRepository.FindManyUntilTodayByBandIDAndWeekdayAndPageNumber(bandID, weekday, pageNumber)
 }
 
 func (s *EventService) FindManyFromTodayByBandIDAndUserID(bandID primitive.ObjectID, userID int64, pageNumber int) ([]*entities.Event, error) {

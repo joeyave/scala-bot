@@ -122,6 +122,7 @@ type Context struct {
 
 	NextPageToken  *NextPageToken        `bson:"nextPageToken,omitempty"`
 	WeekdayButtons []telebot.ReplyButton `bson:"weekday_buttons,omitempty"`
+	PrevText       string                `json:"prev_text,omitempty"`
 }
 
 type NextPageToken struct {
