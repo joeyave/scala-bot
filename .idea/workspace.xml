@@ -4,15 +4,7 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="adds weekdays filter to schedule">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/entities/user.go" beforeDir="false" afterPath="$PROJECT_DIR$/entities/user.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/handlers.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/handlers.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/helpers/constants.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/constants.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/helpers/functions.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/functions.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/repositories/eventRepository.go" beforeDir="false" afterPath="$PROJECT_DIR$/repositories/eventRepository.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/eventService.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/eventService.go" afterDir="false" />
-    </list>
+    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="adds weekdays filter to archive" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -117,7 +109,8 @@
     <MESSAGE value="renames project to scala-bot" />
     <MESSAGE value="adds 'add lyrics page' logic" />
     <MESSAGE value="adds weekdays filter to schedule" />
-    <option name="LAST_COMMIT_MESSAGE" value="adds weekdays filter to schedule" />
+    <MESSAGE value="adds weekdays filter to archive" />
+    <option name="LAST_COMMIT_MESSAGE" value="adds weekdays filter to archive" />
   </component>
   <component name="VgoProject">
     <integration-enabled>true</integration-enabled>
