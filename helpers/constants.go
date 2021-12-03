@@ -9,6 +9,7 @@ const (
 	SongActionsState
 	GetVoicesState
 	UploadVoiceState
+	DeleteVoiceState
 	MainMenuState
 	TransposeSongState
 	StyleSongState

@@ -27,6 +27,7 @@ func init() {
 		songActionsHandler,
 		getVoicesHandler,
 		uploadVoiceHandler,
+		deleteVoiceHandler,
 		transposeSongHandler,
 		getEventsHandler,
 		createEventHandler,

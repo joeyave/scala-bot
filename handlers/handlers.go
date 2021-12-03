@@ -2625,8 +2625,14 @@ func getVoicesHandler() (int, []HandlerFunc) {
 				{Text: "➕ Добавить партию", Data: helpers.AggregateCallbackData(helpers.UploadVoiceState, 4, "")},
 			})
 
-			c.EditCaption(helpers.AddCallbackData("Выбери партию:", user.State.CallbackData.String()),
-				markup, telebot.ModeHTML)
+			h.bot.EditMedia(
+				c.Message(),
+				&telebot.Document{
+					File:     telebot.File{FileID: song.PDF.TgFileID},
+					MIME:     "application/pdf",
+					FileName: fmt.Sprintf("%s.pdf", song.PDF.Name),
+					Caption:  helpers.AddCallbackData("Выбери партию:", user.State.CallbackData.String()),
+				}, markup, telebot.ModeHTML)
 
 			return nil
 		}
@@ -2650,10 +2656,8 @@ func getVoicesHandler() (int, []HandlerFunc) {
 			InlineKeyboard: [][]telebot.InlineButton{
 				{
 					{Text: helpers.Back, Data: helpers.AggregateCallbackData(state, index-1, "")},
+					{Text: helpers.Delete, Data: helpers.AggregateCallbackData(helpers.DeleteVoiceState, index-1, voiceIDHex)},
 				},
-				// {
-				// {Text: helpers.Delete},
-				// },
 			},
 		}
 
@@ -2900,6 +2904,46 @@ func uploadVoiceHandler() (int, []HandlerFunc) {
 	})
 
 	return helpers.UploadVoiceState, handlerFunc
+}
+
+func deleteVoiceHandler() (int, []HandlerFunc) {
+	handlerFuncs := make([]HandlerFunc, 0)
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		_, index, voiceIDHex := helpers.ParseCallbackData(c.Callback().Data)
+
+		markup := &telebot.ReplyMarkup{}
+		markup.InlineKeyboard = [][]telebot.InlineButton{
+			{
+				{Text: helpers.Cancel, Data: helpers.AggregateCallbackData(helpers.GetVoicesState, 0, "")},
+				{Text: helpers.Yes, Data: helpers.AggregateCallbackData(helpers.DeleteVoiceState, index+1, voiceIDHex)},
+			},
+		}
+
+		return c.EditCaption(helpers.AddCallbackData("Ты уверен, что хочешь удалить эту партию?", user.State.CallbackData.String()),
+			markup, telebot.ModeHTML)
+	})
+
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		_, _, voiceIDHex := helpers.ParseCallbackData(c.Callback().Data)
+
+		voiceID, err := primitive.ObjectIDFromHex(voiceIDHex)
+		if err != nil {
+			return err
+		}
+
+		err = h.voiceService.DeleteOne(voiceID)
+		if err != nil {
+			return err
+		}
+
+		c.Callback().Data = helpers.AggregateCallbackData(helpers.GetVoicesState, 0, "")
+		return h.enterInlineHandler(c, user)
+	})
+
+	return helpers.DeleteVoiceState, handlerFuncs
 }
 
 func setlistHandler() (int, []HandlerFunc) {
