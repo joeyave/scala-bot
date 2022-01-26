@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/klauspost/lctime"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"strings"
 )
 
 type Song struct {
@@ -51,12 +50,7 @@ type PDF struct {
 }
 
 func (s *Song) Caption() string {
-	caption := fmt.Sprintf("%s, %s, %s", s.PDF.Key, s.PDF.BPM, s.PDF.Time)
-	if len(s.Tags) > 0 {
-		caption += "\n" + strings.Join(s.Tags, ", ")
-	}
-
-	return caption
+	return fmt.Sprintf("%s, %s, %s", s.PDF.Key, s.PDF.BPM, s.PDF.Time)
 }
 
 type SongTagFrequencies struct {

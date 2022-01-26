@@ -4,15 +4,11 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="changes statistics logo">
+    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="adds tags (work in progress)">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/entities/song.go" beforeDir="false" afterPath="$PROJECT_DIR$/entities/song.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/handlers/functions.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/functions.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/handlers/handlers.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/handlers.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/init.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/init.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/helpers/constants.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/constants.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/helpers/layouts.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/layouts.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/repositories/songRepository.go" beforeDir="false" afterPath="$PROJECT_DIR$/repositories/songRepository.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/songService.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/songService.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -103,7 +99,8 @@
     <MESSAGE value="adds weekdays filter to schedule" />
     <MESSAGE value="adds weekdays filter to archive" />
     <MESSAGE value="changes statistics logo" />
-    <option name="LAST_COMMIT_MESSAGE" value="changes statistics logo" />
+    <MESSAGE value="adds tags (work in progress)" />
+    <option name="LAST_COMMIT_MESSAGE" value="adds tags (work in progress)" />
   </component>
   <component name="VgoProject">
     <integration-enabled>true</integration-enabled>

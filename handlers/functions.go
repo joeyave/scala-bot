@@ -6,6 +6,7 @@ import (
 	"github.com/joeyave/scala-bot/helpers"
 	"github.com/klauspost/lctime"
 	"gopkg.in/tucnak/telebot.v3"
+	"strings"
 	"sync"
 	"time"
 )
@@ -40,7 +41,7 @@ func SendDriveFileToUser(h *Handler, c telebot.Context, user *entities.User, dri
 					File:     telebot.FromReader(*reader),
 					MIME:     "application/pdf",
 					FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
-					Caption:  helpers.AddCallbackData(song.Caption(), user.State.CallbackData.String()),
+					Caption:  helpers.AddCallbackData(song.Caption()+"\n"+strings.Join(song.Tags, ", "), user.State.CallbackData.String()),
 				}, markup, telebot.ModeHTML)
 		} else {
 			return h.bot.Send(
@@ -49,7 +50,7 @@ func SendDriveFileToUser(h *Handler, c telebot.Context, user *entities.User, dri
 					File:     telebot.FromReader(*reader),
 					MIME:     "application/pdf",
 					FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
-					Caption:  helpers.AddCallbackData(song.Caption(), user.State.CallbackData.String()),
+					Caption:  helpers.AddCallbackData(song.Caption()+"\n"+strings.Join(song.Tags, ", "), user.State.CallbackData.String()),
 				}, markup, telebot.ModeHTML)
 		}
 	}
@@ -65,7 +66,7 @@ func SendDriveFileToUser(h *Handler, c telebot.Context, user *entities.User, dri
 					File:     telebot.File{FileID: song.PDF.TgFileID},
 					MIME:     "application/pdf",
 					FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
-					Caption:  helpers.AddCallbackData(song.Caption(), user.State.CallbackData.String()),
+					Caption:  helpers.AddCallbackData(song.Caption()+"\n"+strings.Join(song.Tags, ", "), user.State.CallbackData.String()),
 				}, markup, telebot.ModeHTML)
 		} else {
 			return h.bot.Send(
@@ -74,7 +75,7 @@ func SendDriveFileToUser(h *Handler, c telebot.Context, user *entities.User, dri
 					File:     telebot.File{FileID: song.PDF.TgFileID},
 					MIME:     "application/pdf",
 					FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
-					Caption:  helpers.AddCallbackData(song.Caption(), user.State.CallbackData.String()),
+					Caption:  helpers.AddCallbackData(song.Caption()+"\n"+strings.Join(song.Tags, ", "), user.State.CallbackData.String()),
 				}, markup, telebot.ModeHTML)
 		}
 	}

@@ -2228,7 +2228,7 @@ func addSongTagHandler() (int, []HandlerFunc) {
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Cancel, Data: helpers.AggregateCallbackData(helpers.SongActionsState, 0, "")}})
 
 		if c.Callback() != nil {
-			err = c.EditCaption(helpers.AddCallbackData(song.Caption(), user.State.CallbackData.String()),
+			err = c.EditCaption(helpers.AddCallbackData(song.Caption()+"\n"+strings.Join(song.Tags, ", "), user.State.CallbackData.String()),
 				markup, telebot.ModeHTML)
 			c.Respond()
 		} else {
@@ -2773,7 +2773,7 @@ func getVoicesHandler() (int, []HandlerFunc) {
 		}
 		getCaption := func() string {
 			if song != nil {
-				return song.Caption()
+				return song.Caption() + "\n" + strings.Join(song.Tags, ", ")
 			} else {
 				return "-"
 			}
