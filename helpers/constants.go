@@ -8,6 +8,7 @@ const (
 	SetlistState
 	SongActionsState
 	GetVoicesState
+	AddSongTagState
 	UploadVoiceState
 	DeleteVoiceState
 	MainMenuState
@@ -46,6 +47,8 @@ const (
 	Help                        string = "Как пользоваться?"
 	CreateDoc                   string = "➕ Создать документ"
 	Voices                      string = "Партии"
+	Tags                        string = "Теги"
+	CreateTag                   string = "➕ Создать тег"
 	Audios                      string = "Аудио"
 	Transpose                   string = "🎛 Транспонировать"
 	Style                       string = "🎨 Стилизовать"

@@ -171,3 +171,11 @@ func songHasOutdatedPDF(song *entities.Song, driveFile *drive.File) bool {
 
 	return false
 }
+
+func (s *SongService) GetTags() ([]string, error) {
+	return s.songRepository.GetTags()
+}
+
+func (s *SongService) Tag(tag string, songID primitive.ObjectID) (*entities.Song, error) {
+	return s.songRepository.Tag(tag, songID)
+}

@@ -475,3 +475,66 @@ func (r *SongRepository) findWithExtra(m bson.M, opts ...bson.M) ([]*entities.So
 	err = cur.All(context.TODO(), &songs)
 	return songs, err
 }
+
+func (r *SongRepository) GetTags() ([]string, error) {
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+
+	pipeline := bson.A{
+		bson.M{"$unwind": "$tags"},
+		bson.M{"$sortByCount": "$tags"},
+	}
+	cur, err := collection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, nil
+	}
+
+	var frequencies []*entities.SongTagFrequencies
+	err = cur.All(context.TODO(), &frequencies)
+	if err != nil {
+		return nil, err
+	}
+
+	// tagsRaw, err := collection.Distinct(context.TODO(), "tags", bson.D{}, nil)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	tags := make([]string, len(frequencies))
+	for i, v := range frequencies {
+		tags[i] = v.Tag
+	}
+
+	return tags, nil
+}
+
+func (r *SongRepository) Tag(tag string, songID primitive.ObjectID) (*entities.Song, error) {
+	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+
+	filter := bson.M{
+		"_id": songID,
+	}
+
+	update := bson.M{
+		"$addToSet": bson.M{
+			"tags": tag,
+		},
+	}
+
+	after := options.After
+	opts := options.FindOneAndUpdateOptions{
+		ReturnDocument: &after,
+	}
+
+	result := collection.FindOneAndUpdate(context.TODO(), filter, update, &opts)
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	var song *entities.Song
+	err := result.Decode(&song)
+	if err != nil {
+		return nil, err
+	}
+
+	return song, err
+}

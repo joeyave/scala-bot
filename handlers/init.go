@@ -28,6 +28,7 @@ func init() {
 		getVoicesHandler,
 		uploadVoiceHandler,
 		deleteVoiceHandler,
+		addSongTagHandler,
 		transposeSongHandler,
 		getEventsHandler,
 		createEventHandler,

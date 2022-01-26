@@ -38,7 +38,10 @@ func GetSongActionsKeyboard(user entities.User, song entities.Song, driveFile dr
 	if song.BandID == user.BandID {
 		return [][]telebot.InlineButton{
 			{{Text: LinkToTheDoc, URL: driveFile.WebViewLink}},
-			{{Text: Voices, Data: AggregateCallbackData(GetVoicesState, 0, "")}},
+			{
+				{Text: Voices, Data: AggregateCallbackData(GetVoicesState, 0, "")},
+				{Text: Tags, Data: AggregateCallbackData(AddSongTagState, 0, "")},
+			},
 			{
 				{Text: Transpose, Data: AggregateCallbackData(TransposeSongState, 0, "")},
 				{Text: Style, Data: AggregateCallbackData(StyleSongState, 0, "")},

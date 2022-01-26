@@ -2145,6 +2145,108 @@ func songActionsHandler() (int, []HandlerFunc) {
 	return helpers.SongActionsState, handlerFunc
 }
 
+func addSongTagHandler() (int, []HandlerFunc) {
+	handlerFunc := make([]HandlerFunc, 0)
+
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		state, index, _ := helpers.ParseCallbackData(c.Callback().Data)
+
+		tags, err := h.songService.GetTags()
+		if err != nil {
+			return err
+		}
+
+		markup := &telebot.ReplyMarkup{}
+
+		for _, tag := range tags {
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: tag, Data: helpers.AggregateCallbackData(state, index+2, tag)}})
+		}
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.CreateTag, Data: helpers.AggregateCallbackData(state, index+1, "")}})
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Cancel, Data: helpers.AggregateCallbackData(helpers.SongActionsState, 0, "")}})
+
+		h.bot.EditReplyMarkup(c.Callback().Message, markup)
+		c.Respond()
+		return nil
+	})
+
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		fmt.Println(c.Text())
+		state, index, _ := helpers.ParseCallbackData(c.Callback().Data)
+
+		err := c.Send("Введи название тега:", &telebot.ReplyMarkup{
+			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Cancel}}},
+			ResizeKeyboard: true,
+		})
+		if err != nil {
+			return err
+		}
+
+		user.State = &entities.State{
+			Index: index + 1,
+			Name:  state,
+			Context: entities.Context{
+				DriveFileID: user.State.CallbackData.Query().Get("driveFileId"),
+			},
+		}
+		return nil
+	})
+
+	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		driveFileID := user.State.Context.DriveFileID
+		tag := c.Text()
+
+		if c.Callback() != nil {
+			driveFileID = user.State.CallbackData.Query().Get("driveFileId")
+			_, _, tag = helpers.ParseCallbackData(c.Callback().Data)
+		}
+
+		song, _, err :=
+			h.songService.FindOrCreateOneByDriveFileID(driveFileID)
+		if err != nil {
+			return err
+		}
+
+		song, err = h.songService.Tag(tag, song.ID)
+		if err != nil {
+			return err
+		}
+
+		tags, err := h.songService.GetTags()
+		if err != nil {
+			return err
+		}
+
+		markup := &telebot.ReplyMarkup{}
+
+		for _, tag := range tags {
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: tag, Data: helpers.AggregateCallbackData(helpers.AddSongTagState, 2, tag)}})
+		}
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.CreateTag, Data: helpers.AggregateCallbackData(helpers.AddSongTagState, 1, "")}})
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Cancel, Data: helpers.AggregateCallbackData(helpers.SongActionsState, 0, "")}})
+
+		if c.Callback() != nil {
+			err = c.EditCaption(helpers.AddCallbackData(song.Caption(), user.State.CallbackData.String()),
+				markup, telebot.ModeHTML)
+			c.Respond()
+		} else {
+			user.State = &entities.State{
+				Name:    helpers.SongActionsState,
+				Context: user.State.Context,
+				Next: &entities.State{
+					Name: helpers.MainMenuState,
+				},
+			}
+			return h.enter(c, user)
+		}
+		return nil
+	})
+
+	return helpers.AddSongTagState, handlerFunc
+}
+
 func transposeSongHandler() (int, []HandlerFunc) {
 
 	handlerFunc := make([]HandlerFunc, 0)
