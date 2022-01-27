@@ -507,18 +507,37 @@ func (r *SongRepository) GetTags() ([]string, error) {
 	return tags, nil
 }
 
-func (r *SongRepository) Tag(tag string, songID primitive.ObjectID) (*entities.Song, error) {
+func (r *SongRepository) TagOrUntag(tag string, songID primitive.ObjectID) (*entities.Song, error) {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
 
 	filter := bson.M{
 		"_id": songID,
 	}
 
-	update := bson.M{
-		"$addToSet": bson.M{
-			"tags": tag,
+	update := bson.A{
+		bson.M{
+			"$set": bson.M{
+				"tags": bson.M{
+					"$cond": bson.A{
+						bson.M{
+							"$in": bson.A{tag, "$tags"},
+						},
+						bson.M{
+							"$setDifference": bson.A{"$tags", bson.A{tag}},
+						},
+						bson.M{
+							"$concatArrays": bson.A{"$tags", bson.A{tag}},
+						},
+					},
+				},
+			},
 		},
 	}
+	// update := bson.M{
+	// 	"$addToSet": bson.M{
+	// 		"tags": tag,
+	// 	},
+	// }
 
 	after := options.After
 	opts := options.FindOneAndUpdateOptions{

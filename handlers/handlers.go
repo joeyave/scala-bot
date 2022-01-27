@@ -2152,6 +2152,12 @@ func addSongTagHandler() (int, []HandlerFunc) {
 
 		state, index, _ := helpers.ParseCallbackData(c.Callback().Data)
 
+		song, _, err :=
+			h.songService.FindOrCreateOneByDriveFileID(user.State.CallbackData.Query().Get("driveFileId"))
+		if err != nil {
+			return err
+		}
+
 		tags, err := h.songService.GetTags()
 		if err != nil {
 			return err
@@ -2160,7 +2166,16 @@ func addSongTagHandler() (int, []HandlerFunc) {
 		markup := &telebot.ReplyMarkup{}
 
 		for _, tag := range tags {
-			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: tag, Data: helpers.AggregateCallbackData(state, index+2, tag)}})
+			text := tag
+
+			for _, songTag := range song.Tags {
+				if songTag == tag {
+					text += " ✅"
+					break
+				}
+			}
+
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: text, Data: helpers.AggregateCallbackData(state, index+2, tag)}})
 		}
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.CreateTag, Data: helpers.AggregateCallbackData(state, index+1, "")}})
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Cancel, Data: helpers.AggregateCallbackData(helpers.SongActionsState, 0, "")}})
@@ -2209,7 +2224,7 @@ func addSongTagHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		song, err = h.songService.Tag(tag, song.ID)
+		song, err = h.songService.TagOrUntag(tag, song.ID)
 		if err != nil {
 			return err
 		}
@@ -2222,7 +2237,16 @@ func addSongTagHandler() (int, []HandlerFunc) {
 		markup := &telebot.ReplyMarkup{}
 
 		for _, tag := range tags {
-			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: tag, Data: helpers.AggregateCallbackData(helpers.AddSongTagState, 2, tag)}})
+			text := tag
+
+			for _, songTag := range song.Tags {
+				if songTag == tag {
+					text += " ✅"
+					break
+				}
+			}
+
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: text, Data: helpers.AggregateCallbackData(helpers.AddSongTagState, 2, tag)}})
 		}
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.CreateTag, Data: helpers.AggregateCallbackData(helpers.AddSongTagState, 1, "")}})
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Cancel, Data: helpers.AggregateCallbackData(helpers.SongActionsState, 0, "")}})

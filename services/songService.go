@@ -176,6 +176,6 @@ func (s *SongService) GetTags() ([]string, error) {
 	return s.songRepository.GetTags()
 }
 
-func (s *SongService) Tag(tag string, songID primitive.ObjectID) (*entities.Song, error) {
-	return s.songRepository.Tag(tag, songID)
+func (s *SongService) TagOrUntag(tag string, songID primitive.ObjectID) (*entities.Song, error) {
+	return s.songRepository.TagOrUntag(tag, songID)
 }
