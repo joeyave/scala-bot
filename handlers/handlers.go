@@ -2363,6 +2363,8 @@ func transposeSongHandler() (int, []HandlerFunc) {
 
 	handlerFunc = append(handlerFunc, func(h *Handler, c telebot.Context, user *entities.User) error {
 
+		c.Notify(telebot.UploadingDocument)
+
 		_, _, sectionIndexStr := helpers.ParseCallbackData(c.Callback().Data)
 
 		sectionIndex, _ := strconv.Atoi(sectionIndexStr)
