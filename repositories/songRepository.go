@@ -516,6 +516,19 @@ func (r *SongRepository) TagOrUntag(tag string, songID primitive.ObjectID) (*ent
 
 	update := bson.A{
 		bson.M{
+			"$addFields": bson.M{
+				"tags": bson.M{
+					"$cond": bson.M{
+						"if": bson.M{
+							"$ne": bson.A{bson.M{"$type": "$tags"}, "array"},
+						},
+						"then": bson.A{},
+						"else": "$tags",
+					},
+				},
+			},
+		},
+		bson.M{
 			"$set": bson.M{
 				"tags": bson.M{
 					"$cond": bson.A{
