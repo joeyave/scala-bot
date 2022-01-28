@@ -1656,6 +1656,10 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 		switch c.Text() {
 		case helpers.SongsByNumberOfPerforming, helpers.SongsByLastDateOfPerforming, helpers.LikedSongs:
 			user.State.Context.QueryType = c.Text()
+		case helpers.TagsEmoji:
+			user.State.Context.QueryType = c.Text()
+			user.State.Index = 2
+			return h.enter(c, user)
 		}
 
 		var songs []*entities.SongExtra
@@ -1667,6 +1671,8 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 			songs, err = h.songService.FindAllExtraByPageNumberSortedByEventsNumber(user.BandID, user.State.Context.PageIndex)
 		case helpers.LikedSongs:
 			songs, err = h.songService.FindManyExtraLiked(user.ID, user.State.Context.PageIndex)
+		case helpers.TagsEmoji:
+			songs, err = h.songService.FindManyExtraByTag(c.Text(), user.BandID, user.State.Context.PageIndex)
 		}
 
 		markup := &telebot.ReplyMarkup{
@@ -1675,7 +1681,7 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 		}
 		markup.ReplyKeyboard = [][]telebot.ReplyButton{
 			{
-				{Text: helpers.LikedSongs}, {Text: helpers.SongsByLastDateOfPerforming}, {Text: helpers.SongsByNumberOfPerforming},
+				{Text: helpers.LikedSongs}, {Text: helpers.SongsByLastDateOfPerforming}, {Text: helpers.SongsByNumberOfPerforming}, {Text: helpers.TagsEmoji},
 			},
 		}
 
@@ -1733,7 +1739,7 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 		user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, c.Message().ID)
 
 		switch c.Text() {
-		case helpers.SongsByLastDateOfPerforming, helpers.SongsByNumberOfPerforming, helpers.LikedSongs:
+		case helpers.SongsByLastDateOfPerforming, helpers.SongsByNumberOfPerforming, helpers.LikedSongs, helpers.TagsEmoji:
 			user.State = &entities.State{
 				Name:    helpers.GetSongsFromMongoState,
 				Context: user.State.Context,
@@ -1774,6 +1780,48 @@ func getSongsFromMongoHandler() (int, []HandlerFunc) {
 		return h.enter(c, user)
 	})
 
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+
+		c.Notify(telebot.Typing)
+
+		user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, c.Message().ID)
+
+		tags, err := h.songService.GetTags()
+		if err != nil {
+			return err
+		}
+
+		markup := &telebot.ReplyMarkup{
+			ResizeKeyboard: true,
+			Placeholder:    helpers.Placeholder,
+		}
+		markup.ReplyKeyboard = [][]telebot.ReplyButton{
+			{
+				{Text: helpers.LikedSongs}, {Text: helpers.SongsByLastDateOfPerforming}, {Text: helpers.SongsByNumberOfPerforming}, {Text: helpers.TagsEmoji},
+			},
+		}
+
+		for i := range markup.ReplyKeyboard[0] {
+			if markup.ReplyKeyboard[0][i].Text == user.State.Context.QueryType {
+				markup.ReplyKeyboard[0][i].Text = fmt.Sprintf("〔%s〕", markup.ReplyKeyboard[0][i].Text)
+				break
+			}
+		}
+
+		for _, tag := range tags {
+			markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: tag}})
+		}
+		markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.Back}})
+
+		msg, err := h.bot.Send(c.Recipient(), "Выбери тег:", markup)
+		if err != nil {
+			return err
+		}
+		user.State.Context.MessagesToDelete = append(user.State.Context.MessagesToDelete, msg.ID)
+
+		user.State.Index = 0
+		return nil
+	})
 	return helpers.GetSongsFromMongoState, handlerFuncs
 }
 
@@ -1899,9 +1947,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 
 			if filters {
 				markup.ReplyKeyboard = [][]telebot.ReplyButton{
-					{
-						{Text: helpers.LikedSongs}, {Text: helpers.SongsByLastDateOfPerforming}, {Text: helpers.SongsByNumberOfPerforming},
-					},
+					{{Text: helpers.LikedSongs}, {Text: helpers.SongsByLastDateOfPerforming}, {Text: helpers.SongsByNumberOfPerforming}, {Text: helpers.TagsEmoji}},
 				}
 				markup.ReplyKeyboard = append(markup.ReplyKeyboard, []telebot.ReplyButton{{Text: helpers.CreateDoc}})
 			}
@@ -1991,7 +2037,7 @@ func searchSongHandler() (int, []HandlerFunc) {
 			user.State.Index--
 			return h.enter(c, user)
 
-		case helpers.SongsByLastDateOfPerforming, helpers.SongsByNumberOfPerforming, helpers.LikedSongs:
+		case helpers.SongsByLastDateOfPerforming, helpers.SongsByNumberOfPerforming, helpers.LikedSongs, helpers.TagsEmoji:
 			user.State = &entities.State{
 				Name:    helpers.GetSongsFromMongoState,
 				Context: user.State.Context,

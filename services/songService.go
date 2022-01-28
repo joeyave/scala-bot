@@ -150,6 +150,10 @@ func (s *SongService) FindAllExtraByPageNumberSortedByLatestEventDate(bandID pri
 	return s.songRepository.FindAllExtraByPageNumberSortedByLatestEventDate(bandID, pageNumber)
 }
 
+func (s *SongService) FindManyExtraByTag(tag string, bandID primitive.ObjectID, pageNumber int) ([]*entities.SongExtra, error) {
+	return s.songRepository.FindManyExtraByTag(tag, bandID, pageNumber)
+}
+
 func songHasOutdatedPDF(song *entities.Song, driveFile *drive.File) bool {
 	if song.PDF.ModifiedTime == "" || driveFile == nil {
 		return true

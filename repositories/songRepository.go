@@ -327,6 +327,22 @@ func (r *SongRepository) FindAllExtraByPageNumberSortedByLatestEventDate(bandID 
 	)
 }
 
+func (r *SongRepository) FindManyExtraByTag(tag string, bandID primitive.ObjectID, pageNumber int) ([]*entities.SongExtra, error) {
+
+	return r.findWithExtra(
+		bson.M{
+			"bandId": bandID,
+			"tags":   tag,
+		},
+		bson.M{
+			"$skip": pageNumber * helpers.SongsPageSize,
+		},
+		bson.M{
+			"$limit": helpers.SongsPageSize,
+		},
+	)
+}
+
 func (r *SongRepository) FindManyExtraByDriveFileIDs(driveFileIDs []string) ([]*entities.SongExtra, error) {
 	return r.findWithExtra(
 		bson.M{

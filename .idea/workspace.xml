@@ -7,6 +7,9 @@
     <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="adds tags (work in progress)">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/handlers/handlers.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/handlers.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/helpers/constants.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/constants.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/repositories/songRepository.go" beforeDir="false" afterPath="$PROJECT_DIR$/repositories/songRepository.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/songService.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/songService.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,6 +33,9 @@
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$USER_HOME$/sdk/go1.16.7/src/time/time.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/tucnak/telebot.v3@v3.0.0-20211108093419-844466d6faf3/telebot.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/tucnak/telebot.v3@v3.0.0-20211108093419-844466d6faf3/bot.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/tucnak/telebot.v3@v3.0.0-20211108093419-844466d6faf3/context.go" root0="SKIP_INSPECTION" />
   </component>
   <component name="ProjectId" id="20sSZff8af6qNMYzbcoWE3kCbvz" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
@@ -114,13 +120,23 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
-          <line>2190</line>
+          <line>2224</line>
           <option name="timeStamp" value="4" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
-          <line>2226</line>
+          <line>2260</line>
           <option name="timeStamp" value="5" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/handlers/handler.go</url>
+          <line>89</line>
+          <option name="timeStamp" value="9" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/handlers/handler.go</url>
+          <line>72</line>
+          <option name="timeStamp" value="13" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
