@@ -1031,12 +1031,21 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		// go func() {
-		// eventString, _ := h.eventService.ToHtmlStringByID(event.ID)
-		// h.bot.Send(telebot.ChatID(foundUser.ID),
-		//    fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
-		//       "Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
-		// }()
+		go func() {
+			role, err := h.roleService.FindOneByID(roleID)
+			if err != nil {
+				return
+			}
+
+			event, err := h.eventService.FindOneByID(eventID)
+			if err != nil {
+				return
+			}
+
+			h.bot.Send(telebot.ChatID(userID),
+				fmt.Sprintf("Привет. %s только что добавил тебя как %s в собрание %s!\n\nБолее подробную информацию можешь посмотреть в меню Расписание 📆.",
+					user.Name, role.Name, event.Alias()), telebot.ModeHTML, telebot.NoPreview)
+		}()
 
 		c.Callback().Data = helpers.AggregateCallbackData(helpers.AddEventMemberState, 0, "")
 		return h.enter(c, user)
@@ -1094,12 +1103,23 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		// go func() {
-		// eventString, _ := h.eventService.ToHtmlStringByID(event.ID)
-		// h.bot.Send(telebot.ChatID(foundUser.ID),
-		//    fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
-		//       "Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
-		// }()
+		go func() {
+			membership, err := h.membershipService.FindOneByID(membershipID)
+
+			role, err := h.roleService.FindOneByID(membership.RoleID)
+			if err != nil {
+				return
+			}
+
+			event, err := h.eventService.FindOneByID(membership.EventID)
+			if err != nil {
+				return
+			}
+
+			h.bot.Send(telebot.ChatID(membership.UserID),
+				fmt.Sprintf("Привет. %s только что удалил тебя как %s из собрания %s ☹️",
+					user.Name, role.Name, event.Alias()), telebot.ModeHTML, telebot.NoPreview)
+		}()
 
 		c.Callback().Data = helpers.AggregateCallbackData(helpers.DeleteEventMemberState, 0, "")
 		return h.enter(c, user)

@@ -20,6 +20,10 @@ func (s *MembershipService) FindAll() ([]*entities.Membership, error) {
 	return s.membershipRepository.FindAll()
 }
 
+func (s *MembershipService) FindOneByID(ID primitive.ObjectID) (*entities.Membership, error) {
+	return s.membershipRepository.FindOneByID(ID)
+}
+
 func (s *MembershipService) UpdateOne(membership entities.Membership) (*entities.Membership, error) {
 	memberships, err := s.membershipRepository.FindMultipleByUserIDAndEventID(membership.UserID, membership.EventID)
 	if err == nil {
