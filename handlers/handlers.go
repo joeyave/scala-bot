@@ -1098,13 +1098,14 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 			return err
 		}
 
+		membership, err := h.membershipService.FindOneByID(membershipID)
+
 		err = h.membershipService.DeleteOneByID(membershipID)
 		if err != nil {
 			return err
 		}
 
 		go func() {
-			membership, err := h.membershipService.FindOneByID(membershipID)
 
 			role, err := h.roleService.FindOneByID(membership.RoleID)
 			if err != nil {

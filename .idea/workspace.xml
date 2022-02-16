@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="adds tags (work in progress)">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/handlers.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/handlers.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/membershipService.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/membershipService.go" afterDir="false" />
-    </list>
+    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="test notifications" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -105,7 +101,8 @@
     <MESSAGE value="adds weekdays filter to archive" />
     <MESSAGE value="changes statistics logo" />
     <MESSAGE value="adds tags (work in progress)" />
-    <option name="LAST_COMMIT_MESSAGE" value="adds tags (work in progress)" />
+    <MESSAGE value="test notifications" />
+    <option name="LAST_COMMIT_MESSAGE" value="test notifications" />
   </component>
   <component name="VgoProject">
     <integration-enabled>true</integration-enabled>
