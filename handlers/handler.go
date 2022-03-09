@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/joeyave/scala-bot/entities"
 	"github.com/joeyave/scala-bot/helpers"
 	"github.com/joeyave/scala-bot/services"
@@ -145,31 +146,35 @@ func (h *Handler) OnCallback(c telebot.Context) error {
 
 func (h *Handler) OnError(botErr error, c telebot.Context) {
 	c.Send("Произошла ошибка. Поправим.")
-	log.Error().Err(botErr).Msgf("Bot error:")
+
+	requestID := c.Get("requestId").(string)
 
 	user, err := h.userService.FindOneByID(c.Chat().ID)
 	if err != nil {
-		h.bot.Send(telebot.ChatID(helpers.LogsChannelID), fmt.Sprintf("<code>%v</code>", botErr), telebot.ModeHTML)
+		log.Error().Err(botErr).Str("requestId", requestID).Msg("Error!")
 		return
 	}
 
-	bytes, _ := json.MarshalIndent(user, "", "\t")
-
-	h.bot.Send(telebot.ChatID(helpers.LogsChannelID), fmt.Sprintf("<code>%v</code>\n\n<code>%v</code>", botErr, string(bytes)), telebot.ModeHTML)
+	log.Error().Err(botErr).Str("requestId", requestID).Msg("Error!")
 
 	user.State = &entities.State{Name: helpers.MainMenuState}
 	_, err = h.userService.UpdateOne(*user)
 	if err != nil {
+		log.Error().Err(botErr).Str("requestId", requestID).Msg("Error!")
 		return
 	}
 }
 
 func (h *Handler) LogInputMiddleware(next telebot.HandlerFunc) telebot.HandlerFunc {
 	return func(c telebot.Context) error {
-		messageBytes, err := json.Marshal(c.Message())
-		if err == nil {
-			log.Info().RawJSON("msg", messageBytes).Msg("Input:")
-		}
+
+		//requestID := uuid.New().String()
+		//c.Set("requestId", requestID)
+		//
+		//messageBytes, err := json.Marshal(c.Update())
+		//if err == nil {
+		//	log.Info().RawJSON("update", messageBytes).Str("requestId", requestID).Msg("Input:")
+		//}
 
 		return next(c)
 	}
@@ -177,12 +182,36 @@ func (h *Handler) LogInputMiddleware(next telebot.HandlerFunc) telebot.HandlerFu
 
 func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.HandlerFunc {
 	return func(c telebot.Context) error {
+
+		requestID := uuid.New().String()
+		c.Set("requestId", requestID)
+
 		start := time.Now()
 		user, err := h.userService.FindOneOrCreateByID(c.Chat().ID)
 		if err != nil {
 			return err
 		}
-		log.Printf("getting user took %v", time.Since(start))
+
+		userBytes, _ := json.Marshal(user)
+
+		event := log.Info().
+			Fields(map[string]interface{}{
+				"requestId":            c.Get("requestId"),
+				"getting_user_latency": time.Since(start).String(),
+				"text":                 c.Text(),
+				"data":                 c.Data(),
+			}).
+			RawJSON("user", userBytes)
+
+		if c.Message() != nil && c.Message().Voice != nil {
+			voiceBytes, _ := json.Marshal(c.Message().Voice)
+			event.RawJSON("voice", voiceBytes)
+		} else if c.Message() != nil && c.Message().Audio != nil {
+			audioBytes, _ := json.Marshal(c.Message().Audio)
+			event.RawJSON("audio", audioBytes)
+		}
+
+		event.Msg("Input:")
 
 		// if user.Name == "" {
 		// }

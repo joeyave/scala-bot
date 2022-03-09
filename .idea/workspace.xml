@@ -4,17 +4,15 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="test notifications">
+    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="updates deps and fixes some bugs with setlist">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/entities/band.go" beforeDir="false" afterPath="$PROJECT_DIR$/entities/band.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/entities/role.go" beforeDir="false" afterPath="$PROJECT_DIR$/entities/role.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/entities/user.go" beforeDir="false" afterPath="$PROJECT_DIR$/entities/user.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/functions.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/functions.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/handlers/handler.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/handler.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/handlers.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/handlers.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/init.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/init.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/helpers/functions.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/functions.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/helpers/layouts.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/layouts.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/helpers/httpLogger.go" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -133,7 +131,8 @@
     <MESSAGE value="changes statistics logo" />
     <MESSAGE value="adds tags (work in progress)" />
     <MESSAGE value="test notifications" />
-    <option name="LAST_COMMIT_MESSAGE" value="test notifications" />
+    <MESSAGE value="updates deps and fixes some bugs with setlist" />
+    <option name="LAST_COMMIT_MESSAGE" value="updates deps and fixes some bugs with setlist" />
   </component>
   <component name="VgoProject">
     <integration-enabled>true</integration-enabled>
@@ -165,6 +164,16 @@
           <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
           <line>3221</line>
           <option name="timeStamp" value="20" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/handlers/handler.go</url>
+          <line>198</line>
+          <option name="timeStamp" value="22" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/main.go</url>
+          <line>31</line>
+          <option name="timeStamp" value="24" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

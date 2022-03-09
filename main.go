@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/joeyave/scala-bot/handlers"
+	"github.com/joeyave/scala-bot/helpers"
 	"github.com/joeyave/scala-bot/repositories"
 	"github.com/joeyave/scala-bot/services"
 	"github.com/klauspost/lctime"
@@ -20,12 +21,18 @@ import (
 	"time"
 )
 
+type LogsWriter struct {
+	Bot       *telebot.Bot
+	ChannelID int64
+}
+
+func (w LogsWriter) Write(p []byte) (n int, err error) {
+	_, err = w.Bot.Send(telebot.ChatID(w.ChannelID), string(p))
+
+	return len(p), nil
+}
+
 func main() {
-	out := zerolog.ConsoleWriter{
-		Out:        os.Stdout,
-		TimeFormat: time.RFC3339,
-	}
-	log.Logger = zerolog.New(out).Level(zerolog.GlobalLevel()).With().Timestamp().Logger()
 
 	err := lctime.SetLocale("ru_RU")
 	if err != nil {
@@ -91,6 +98,17 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err)
 	}
+
+	w := LogsWriter{
+		Bot:       bot,
+		ChannelID: helpers.LogsChannelID,
+	}
+	out := zerolog.ConsoleWriter{
+		Out:        w,
+		TimeFormat: time.RFC3339,
+		NoColor:    true,
+	}
+	log.Logger = zerolog.New(out).Level(zerolog.GlobalLevel()).With().Timestamp().Logger()
 
 	handler := handlers.NewHandler(
 		bot,

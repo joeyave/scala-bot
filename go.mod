@@ -9,6 +9,7 @@ require (
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/joeyave/chords-transposer v0.0.8
 	github.com/klauspost/lctime v0.1.0
 	github.com/rs/zerolog v1.26.0
