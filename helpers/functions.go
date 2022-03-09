@@ -1,11 +1,12 @@
 package helpers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/joeyave/scala-bot/entities"
 	"github.com/klauspost/lctime"
-	"gopkg.in/tucnak/telebot.v3"
+	"gopkg.in/telebot.v3"
 	"regexp"
 	"sort"
 	"strconv"
@@ -43,12 +44,20 @@ func AggregateCallbackData(state int, index int, payload string) string {
 }
 
 func JsonEscape(i string) string {
-	b, err := json.Marshal(i)
+
+	buffer := &bytes.Buffer{}
+	encoder := json.NewEncoder(buffer)
+	encoder.SetEscapeHTML(false)
+	err := encoder.Encode(i)
 	if err != nil {
 		panic(err)
 	}
-	// Trim the beginning and trailing " character
-	return string(b[1 : len(b)-1])
+
+	buffer.Bytes()
+
+	b := bytes.Trim(bytes.TrimSpace(buffer.Bytes()), `"`)
+
+	return string(b)
 }
 
 func CleanUpQuery(query string) string {

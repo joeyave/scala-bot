@@ -3,7 +3,7 @@ package helpers
 import (
 	"github.com/joeyave/scala-bot/entities"
 	"google.golang.org/api/drive/v3"
-	"gopkg.in/tucnak/telebot.v3"
+	"gopkg.in/telebot.v3"
 )
 
 func GetSongInitKeyboard(user *entities.User, song *entities.Song) [][]telebot.InlineButton {

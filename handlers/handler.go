@@ -8,7 +8,7 @@ import (
 	"github.com/joeyave/scala-bot/services"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"gopkg.in/tucnak/telebot.v3"
+	"gopkg.in/telebot.v3"
 	"net/url"
 	"regexp"
 	"strings"
@@ -110,7 +110,7 @@ func (h *Handler) OnVoice(c telebot.Context) error {
 			Name:  helpers.UploadVoiceState,
 			Context: entities.Context{
 				Voice: &entities.Voice{
-					FileID: c.Media().MediaFile().FileID,
+					FileID: c.Message().Media().MediaFile().FileID,
 				},
 			},
 			Prev: user.State,

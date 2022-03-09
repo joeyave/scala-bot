@@ -4,7 +4,19 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="test notifications" />
+    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="test notifications">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/entities/user.go" beforeDir="false" afterPath="$PROJECT_DIR$/entities/user.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/handlers/functions.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/functions.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/handlers/handler.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/handler.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/handlers/handlers.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/handlers.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/handlers/init.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/init.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/helpers/functions.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/functions.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/helpers/layouts.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/layouts.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -26,12 +38,12 @@
     <option name="indexEntireGoPath" value="false" />
   </component>
   <component name="HighlightingSettingsPerFile">
-    <setting file="file://$USER_HOME$/sdk/go1.16.7/src/time/time.go" root0="SKIP_INSPECTION" />
-    <setting file="file://$USER_HOME$/go/pkg/mod/go.mongodb.org/mongo-driver@v1.7.4/mongo/collection.go" root0="SKIP_INSPECTION" />
-    <setting file="file://$USER_HOME$/go/pkg/mod/go.mongodb.org/mongo-driver@v1.7.4/mongo/options/findoptions.go" root0="SKIP_INSPECTION" />
     <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/tucnak/telebot.v3@v3.0.0-20211108093419-844466d6faf3/telebot.go" root0="SKIP_INSPECTION" />
     <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/tucnak/telebot.v3@v3.0.0-20211108093419-844466d6faf3/context.go" root0="SKIP_INSPECTION" />
     <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/tucnak/telebot.v3@v3.0.0-20211108093419-844466d6faf3/bot.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/sdk/go1.16.7/src/time/time.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/go/pkg/mod/go.mongodb.org/mongo-driver@v1.7.4/mongo/collection.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/go/pkg/mod/go.mongodb.org/mongo-driver@v1.7.4/mongo/options/findoptions.go" root0="SKIP_INSPECTION" />
   </component>
   <component name="ProjectId" id="20sSZff8af6qNMYzbcoWE3kCbvz" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
@@ -52,6 +64,15 @@
     <property name="settings.editor.selected.configurable" value="application.passwordSafe" />
   </component>
   <component name="RunManager">
+    <configuration default="true" type="GoApplicationRunConfiguration" factoryName="Go Application">
+      <module name="scala-bot" />
+      <working_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="github.com/joeyave/scala-bot" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <method v="2" />
+    </configuration>
     <configuration name="go build github.com/joeyave/scala-bot" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
       <module name="scala-bot" />
       <working_directory value="$PROJECT_DIR$" />
@@ -70,6 +91,16 @@
       <package value="github.com/joeyave/scala-bot" />
       <directory value="$PROJECT_DIR$" />
       <filePath value="$PROJECT_DIR$/main.go" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="GoTestRunConfiguration" factoryName="Go Test">
+      <module name="scala-bot" />
+      <working_directory value="$PROJECT_DIR$" />
+      <kind value="DIRECTORY" />
+      <package value="github.com/joeyave/scala-bot" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
       <method v="2" />
     </configuration>
     <recent_temporary>
@@ -126,19 +157,14 @@
           <option name="timeStamp" value="5" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/handlers/handler.go</url>
-          <line>72</line>
-          <option name="timeStamp" value="13" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
           <line>1671</line>
           <option name="timeStamp" value="14" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/handlers/handler.go</url>
-          <line>89</line>
-          <option name="timeStamp" value="15" />
+          <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
+          <line>3221</line>
+          <option name="timeStamp" value="20" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

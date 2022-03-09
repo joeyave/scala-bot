@@ -5,7 +5,7 @@ import (
 	"github.com/klauspost/lctime"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
-	"gopkg.in/tucnak/telebot.v3"
+	"gopkg.in/telebot.v3"
 	"net/url"
 	"sort"
 	"time"

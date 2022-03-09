@@ -15,7 +15,7 @@ import (
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
-	"gopkg.in/tucnak/telebot.v3"
+	"gopkg.in/telebot.v3"
 	"os"
 	"time"
 )

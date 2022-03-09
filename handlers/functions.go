@@ -5,7 +5,7 @@ import (
 	"github.com/joeyave/scala-bot/entities"
 	"github.com/joeyave/scala-bot/helpers"
 	"github.com/klauspost/lctime"
-	"gopkg.in/tucnak/telebot.v3"
+	"gopkg.in/telebot.v3"
 	"strings"
 	"sync"
 	"time"

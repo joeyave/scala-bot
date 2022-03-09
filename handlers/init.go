@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"github.com/joeyave/scala-bot/entities"
-	"gopkg.in/tucnak/telebot.v3"
+	"gopkg.in/telebot.v3"
 )
 
 type HandlerFunc = func(h *Handler, c telebot.Context, user *entities.User) error

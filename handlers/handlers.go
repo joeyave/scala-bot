@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/api/drive/v3"
-	"gopkg.in/tucnak/telebot.v3"
+	"gopkg.in/telebot.v3"
 	"regexp"
 	"strconv"
 	"strings"
@@ -3056,7 +3056,7 @@ func uploadVoiceHandler() (int, []HandlerFunc) {
 
 		c.Notify(telebot.Typing)
 
-		user.State.Context.Voice = &entities.Voice{FileID: c.Media().MediaFile().FileID}
+		user.State.Context.Voice = &entities.Voice{FileID: c.Message().Media().MediaFile().FileID}
 
 		err := c.Send("Отправь мне название этой партии:", &telebot.ReplyMarkup{
 			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.Cancel}}},
