@@ -27,7 +27,9 @@ type LogsWriter struct {
 }
 
 func (w LogsWriter) Write(p []byte) (n int, err error) {
-	_, err = w.Bot.Send(telebot.ChatID(w.ChannelID), string(p))
+
+	str := fmt.Sprintf("<code>%s</code>", string(p))
+	_, err = w.Bot.Send(telebot.ChatID(w.ChannelID), str, telebot.ModeHTML, telebot.NoPreview)
 
 	return len(p), nil
 }

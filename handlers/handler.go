@@ -188,37 +188,24 @@ func (h *Handler) LogInputMiddleware(next telebot.HandlerFunc) telebot.HandlerFu
 func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.HandlerFunc {
 	return func(c telebot.Context) error {
 
+		start := time.Now()
+
 		requestID := uuid.New().String()
 		c.Set("requestId", requestID)
 
-		start := time.Now()
 		user, err := h.userService.FindOneOrCreateByID(c.Chat().ID)
 		if err != nil {
 			return err
 		}
 
-		go func() {
-			userBytes, _ := json.Marshal(user)
+		updateBytes, _ := json.Marshal(c.Update())
+		userBytes, _ := json.Marshal(user)
 
-			event := log.Info().
-				Fields(map[string]interface{}{
-					"requestId":            c.Get("requestId"),
-					"getting_user_latency": time.Since(start).String(),
-					"text":                 c.Text(),
-					"data":                 c.Data(),
-				}).
-				RawJSON("user", userBytes)
-
-			if c.Message() != nil && c.Message().Voice != nil {
-				voiceBytes, _ := json.Marshal(c.Message().Voice)
-				event.RawJSON("voice", voiceBytes)
-			} else if c.Message() != nil && c.Message().Audio != nil {
-				audioBytes, _ := json.Marshal(c.Message().Audio)
-				event.RawJSON("audio", audioBytes)
-			}
-
-			event.Msg("Input:")
-		}()
+		log.Info().
+			Str("requestId", c.Get("requestId").(string)).
+			RawJSON("update", updateBytes).
+			RawJSON("user", userBytes).
+			Msg("Input:")
 
 		// if user.Name == "" {
 		// }
@@ -234,7 +221,26 @@ func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.Handl
 		c.Set("user", user)
 
 		//_, err = h.userService.UpdateOne(*user)
-		return next(c)
+
+		err = next(c)
+		if err != nil {
+			return err
+		}
+
+		user, err = h.userService.FindOneByID(user.ID)
+		if err != nil {
+			log.Error().Err(err).Msg("error getting user for output log")
+		}
+
+		userBytes, _ = json.Marshal(user)
+
+		log.Info().
+			Str("requestId", c.Get("requestId").(string)).
+			RawJSON("user", userBytes).
+			Str("latency", time.Since(start).String()).
+			Msg("Output:")
+
+		return nil
 	}
 }
 
