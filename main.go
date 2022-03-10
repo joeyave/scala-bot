@@ -34,7 +34,27 @@ func (w LogsWriter) Write(p []byte) (n int, err error) {
 
 func main() {
 
-	err := lctime.SetLocale("ru_RU")
+	bot, err := telebot.NewBot(telebot.Settings{
+		Token:       os.Getenv("BOT_TOKEN"),
+		Poller:      &telebot.LongPoller{Timeout: 10 * time.Second},
+		Synchronous: false,
+	})
+	if err != nil {
+		log.Fatal().Err(err)
+	}
+
+	w := LogsWriter{
+		Bot:       bot,
+		ChannelID: helpers.LogsChannelID,
+	}
+	out := zerolog.ConsoleWriter{
+		Out:        w,
+		TimeFormat: time.RFC3339,
+		NoColor:    true,
+	}
+	log.Logger = zerolog.New(out).Level(zerolog.GlobalLevel()).With().Timestamp().Logger()
+
+	err = lctime.SetLocale("ru_RU")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -89,26 +109,6 @@ func main() {
 
 	roleRepository := repositories.NewRoleRepository(mongoClient)
 	roleService := services.NewRoleService(roleRepository)
-
-	bot, err := telebot.NewBot(telebot.Settings{
-		Token:       os.Getenv("BOT_TOKEN"),
-		Poller:      &telebot.LongPoller{Timeout: 10 * time.Second},
-		Synchronous: false,
-	})
-	if err != nil {
-		log.Fatal().Err(err)
-	}
-
-	w := LogsWriter{
-		Bot:       bot,
-		ChannelID: helpers.LogsChannelID,
-	}
-	out := zerolog.ConsoleWriter{
-		Out:        w,
-		TimeFormat: time.RFC3339,
-		NoColor:    true,
-	}
-	log.Logger = zerolog.New(out).Level(zerolog.GlobalLevel()).With().Timestamp().Logger()
 
 	handler := handlers.NewHandler(
 		bot,

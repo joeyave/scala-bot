@@ -1042,9 +1042,12 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 				return
 			}
 
-			h.bot.Send(telebot.ChatID(userID),
-				fmt.Sprintf("Привет. %s только что добавил тебя как %s в собрание %s!\n\nБолее подробную информацию можешь посмотреть в меню Расписание 📆.",
-					user.Name, role.Name, event.Alias()), telebot.ModeHTML, telebot.NoPreview)
+			now := time.Now().Local()
+			if event.Time.After(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())) {
+				h.bot.Send(telebot.ChatID(userID),
+					fmt.Sprintf("Привет. %s только что добавил тебя как %s в собрание %s!\n\nБолее подробную информацию можешь посмотреть в меню Расписание 📆.",
+						user.Name, role.Name, event.Alias()), telebot.ModeHTML, telebot.NoPreview)
+			}
 		}()
 
 		c.Callback().Data = helpers.AggregateCallbackData(helpers.AddEventMemberState, 0, "")
@@ -1117,9 +1120,12 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 				return
 			}
 
-			h.bot.Send(telebot.ChatID(membership.UserID),
-				fmt.Sprintf("Привет. %s только что удалил тебя как %s из собрания %s ☹️",
-					user.Name, role.Name, event.Alias()), telebot.ModeHTML, telebot.NoPreview)
+			now := time.Now().Local()
+			if event.Time.After(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())) {
+				h.bot.Send(telebot.ChatID(membership.UserID),
+					fmt.Sprintf("Привет. %s только что удалил тебя как %s из собрания %s ☹️",
+						user.Name, role.Name, event.Alias()), telebot.ModeHTML, telebot.NoPreview)
+			}
 		}()
 
 		c.Callback().Data = helpers.AggregateCallbackData(helpers.DeleteEventMemberState, 0, "")

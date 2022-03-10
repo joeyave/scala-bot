@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/joeyave/scala-bot/entities"
@@ -55,9 +56,14 @@ func NewHandler(
 
 func (h *Handler) OnText(c telebot.Context) error {
 
-	user, err := h.userService.FindOneByID(c.Chat().ID)
-	if err != nil {
-		return err
+	//user, err := h.userService.FindOneByID(c.Chat().ID)
+	//if err != nil {
+	//	return err
+	//}
+
+	user, ok := c.Get("user").(*entities.User)
+	if !ok {
+		return errors.New("error getting user from context")
 	}
 
 	// Handle buttons.
@@ -88,7 +94,7 @@ func (h *Handler) OnText(c telebot.Context) error {
 		}
 	}
 
-	err = h.enter(c, user)
+	err := h.enter(c, user)
 	if err != nil {
 		return err
 	}
@@ -100,9 +106,9 @@ func (h *Handler) OnText(c telebot.Context) error {
 
 func (h *Handler) OnVoice(c telebot.Context) error {
 
-	user, err := h.userService.FindOneByID(c.Chat().ID)
-	if err != nil {
-		return err
+	user, ok := c.Get("user").(*entities.User)
+	if !ok {
+		return errors.New("error getting user from context")
 	}
 
 	if user.State.Name != helpers.UploadVoiceState {
@@ -118,7 +124,7 @@ func (h *Handler) OnVoice(c telebot.Context) error {
 		}
 	}
 
-	err = h.enter(c, user)
+	err := h.enter(c, user)
 	if err != nil {
 		return err
 	}
@@ -129,12 +135,11 @@ func (h *Handler) OnVoice(c telebot.Context) error {
 }
 
 func (h *Handler) OnCallback(c telebot.Context) error {
-	user, err := h.userService.FindOneByID(c.Chat().ID)
-	if err != nil {
-		return err
+	user, ok := c.Get("user").(*entities.User)
+	if !ok {
+		return errors.New("error getting user from context")
 	}
-
-	err = h.enter(c, user)
+	err := h.enter(c, user)
 	if err != nil {
 		return err
 	}
@@ -192,26 +197,28 @@ func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.Handl
 			return err
 		}
 
-		userBytes, _ := json.Marshal(user)
+		go func() {
+			userBytes, _ := json.Marshal(user)
 
-		event := log.Info().
-			Fields(map[string]interface{}{
-				"requestId":            c.Get("requestId"),
-				"getting_user_latency": time.Since(start).String(),
-				"text":                 c.Text(),
-				"data":                 c.Data(),
-			}).
-			RawJSON("user", userBytes)
+			event := log.Info().
+				Fields(map[string]interface{}{
+					"requestId":            c.Get("requestId"),
+					"getting_user_latency": time.Since(start).String(),
+					"text":                 c.Text(),
+					"data":                 c.Data(),
+				}).
+				RawJSON("user", userBytes)
 
-		if c.Message() != nil && c.Message().Voice != nil {
-			voiceBytes, _ := json.Marshal(c.Message().Voice)
-			event.RawJSON("voice", voiceBytes)
-		} else if c.Message() != nil && c.Message().Audio != nil {
-			audioBytes, _ := json.Marshal(c.Message().Audio)
-			event.RawJSON("audio", audioBytes)
-		}
+			if c.Message() != nil && c.Message().Voice != nil {
+				voiceBytes, _ := json.Marshal(c.Message().Voice)
+				event.RawJSON("voice", voiceBytes)
+			} else if c.Message() != nil && c.Message().Audio != nil {
+				audioBytes, _ := json.Marshal(c.Message().Audio)
+				event.RawJSON("audio", audioBytes)
+			}
 
-		event.Msg("Input:")
+			event.Msg("Input:")
+		}()
 
 		// if user.Name == "" {
 		// }
@@ -224,7 +231,9 @@ func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.Handl
 			}
 		}
 
-		_, err = h.userService.UpdateOne(*user)
+		c.Set("user", user)
+
+		//_, err = h.userService.UpdateOne(*user)
 		return next(c)
 	}
 }
