@@ -170,21 +170,6 @@ func (h *Handler) OnError(botErr error, c telebot.Context) {
 	}
 }
 
-func (h *Handler) LogInputMiddleware(next telebot.HandlerFunc) telebot.HandlerFunc {
-	return func(c telebot.Context) error {
-
-		//requestID := uuid.New().String()
-		//c.Set("requestId", requestID)
-		//
-		//messageBytes, err := json.Marshal(c.Update())
-		//if err == nil {
-		//	log.Info().RawJSON("update", messageBytes).Str("requestId", requestID).Msg("Input:")
-		//}
-
-		return next(c)
-	}
-}
-
 func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.HandlerFunc {
 	return func(c telebot.Context) error {
 
@@ -198,7 +183,15 @@ func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.Handl
 			return err
 		}
 
-		updateBytes, _ := json.Marshal(c.Update())
+		update := c.Update()
+
+		updateForLogs := helpers.Update{
+			Update:   &update,
+			Message:  helpers.MapMessage(update.Message),
+			Callback: helpers.MapCallback(update.Callback),
+		}
+
+		updateBytes, _ := json.Marshal(updateForLogs)
 		userBytes, _ := json.Marshal(user)
 
 		log.Info().

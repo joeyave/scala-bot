@@ -21,19 +21,6 @@ import (
 	"time"
 )
 
-type LogsWriter struct {
-	Bot       *telebot.Bot
-	ChannelID int64
-}
-
-func (w LogsWriter) Write(p []byte) (n int, err error) {
-
-	str := fmt.Sprintf("<code>%s</code>", string(p))
-	_, err = w.Bot.Send(telebot.ChatID(w.ChannelID), str, telebot.ModeHTML, telebot.NoPreview)
-
-	return len(p), nil
-}
-
 func main() {
 
 	bot, err := telebot.NewBot(telebot.Settings{
@@ -45,7 +32,7 @@ func main() {
 		log.Fatal().Err(err)
 	}
 
-	w := LogsWriter{
+	w := helpers.LogsWriter{
 		Bot:       bot,
 		ChannelID: helpers.LogsChannelID,
 	}
@@ -126,7 +113,6 @@ func main() {
 
 	bot.OnError = handler.OnError
 
-	bot.Use(handler.LogInputMiddleware)
 	bot.Use(handler.RegisterUserMiddleware)
 
 	bot.Handle(telebot.OnText, handler.OnText)
