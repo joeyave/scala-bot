@@ -3,6 +3,7 @@ package helpers
 import (
 	"fmt"
 	"gopkg.in/telebot.v3"
+	"strings"
 )
 
 type LogsWriter struct {
@@ -13,7 +14,13 @@ type LogsWriter struct {
 func (w LogsWriter) Write(p []byte) (n int, err error) {
 
 	str := fmt.Sprintf("<code>%s</code>", string(p))
-	_, err = w.Bot.Send(telebot.ChatID(w.ChannelID), str, telebot.ModeHTML, telebot.NoPreview, telebot.Silent)
+
+	if strings.Contains(str, "ERR") {
+		str = "❗️❗️❗️" + str
+		_, err = w.Bot.Send(telebot.ChatID(w.ChannelID), str, telebot.ModeHTML, telebot.NoPreview)
+	} else {
+		_, err = w.Bot.Send(telebot.ChatID(w.ChannelID), str, telebot.ModeHTML, telebot.NoPreview, telebot.Silent)
+	}
 
 	return len(p), nil
 }

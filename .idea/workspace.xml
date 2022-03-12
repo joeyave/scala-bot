@@ -4,11 +4,10 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="updates logs">
-      <change afterPath="$PROJECT_DIR$/helpers/logs.go" afterDir="false" />
+    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="improves logs">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/handlers/handler.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/handler.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/helpers/logs.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/logs.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -136,7 +135,8 @@
     <MESSAGE value="updates deps and fixes some bugs with setlist" />
     <MESSAGE value="adds logging to channel" />
     <MESSAGE value="sets user to the context&#10;don't send notification to user if old event was changed" />
-    <option name="LAST_COMMIT_MESSAGE" value="sets user to the context&#10;don't send notification to user if old event was changed" />
+    <MESSAGE value="improves logs" />
+    <option name="LAST_COMMIT_MESSAGE" value="improves logs" />
   </component>
   <component name="VgoProject">
     <integration-enabled>true</integration-enabled>
@@ -173,6 +173,11 @@
           <url>file://$PROJECT_DIR$/handlers/handler.go</url>
           <line>156</line>
           <option name="timeStamp" value="26" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/handlers/handler.go</url>
+          <line>218</line>
+          <option name="timeStamp" value="27" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

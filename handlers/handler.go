@@ -216,6 +216,7 @@ func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.Handl
 		//_, err = h.userService.UpdateOne(*user)
 
 		err = next(c)
+		err = errors.New("test err")
 		if err != nil {
 			return err
 		}
