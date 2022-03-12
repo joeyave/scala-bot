@@ -13,7 +13,7 @@ type LogsWriter struct {
 func (w LogsWriter) Write(p []byte) (n int, err error) {
 
 	str := fmt.Sprintf("<code>%s</code>", string(p))
-	_, err = w.Bot.Send(telebot.ChatID(w.ChannelID), str, telebot.ModeHTML, telebot.NoPreview)
+	_, err = w.Bot.Send(telebot.ChatID(w.ChannelID), str, telebot.ModeHTML, telebot.NoPreview, telebot.Silent)
 
 	return len(p), nil
 }
@@ -100,7 +100,7 @@ func MapMessage(telebotMessage *telebot.Message) *Message {
 		LastEdit:           telebotMessage.LastEdit,
 		AlbumID:            telebotMessage.AlbumID,
 		Signature:          telebotMessage.Signature,
-		Text:               telebotMessage.Text[:100],
+		Text:               telebotMessage.Text,
 		Audio:              telebotMessage.Audio,
 		Document:           telebotMessage.Document,
 		Photo:              telebotMessage.Photo,
