@@ -72,6 +72,7 @@ func GetEventActionsKeyboard(user entities.User, event entities.Event) [][]teleb
 		return [][]telebot.InlineButton{
 			{
 				{Text: FindChords, Data: AggregateCallbackData(EventActionsState, 1, "")},
+				{Text: Metronome, Data: AggregateCallbackData(EventActionsState, 2, "")},
 			},
 			{
 				{Text: Edit, Data: AggregateCallbackData(EditInlineKeyboardState, 0, "")},
@@ -82,6 +83,7 @@ func GetEventActionsKeyboard(user entities.User, event entities.Event) [][]teleb
 	return [][]telebot.InlineButton{
 		{
 			{Text: FindChords, Data: AggregateCallbackData(EventActionsState, 1, "")},
+			{Text: Metronome, Data: AggregateCallbackData(EventActionsState, 2, "")},
 		},
 	}
 }

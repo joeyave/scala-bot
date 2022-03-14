@@ -66,6 +66,7 @@ const (
 	CopyToMyBand                string = "🖨 Копировать песню в свою группу"
 	Schedule                    string = "🗓️ Расписание"
 	FindChords                  string = "🎶 Аккорды"
+	Metronome                   string = "🥁 Метроном"
 	ChangeBand                  string = "Изменить группу"
 	AddAdmin                    string = "➕ Добавить администратора"
 	Settings                    string = "⚙ Настройки"

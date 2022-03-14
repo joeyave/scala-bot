@@ -684,6 +684,46 @@ func eventActionsHandler() (int, []HandlerFunc) {
 		return nil
 	})
 
+	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
+		c.Notify(telebot.UploadingAudio)
+
+		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
+		if err != nil {
+			return err
+		}
+
+		event, err := h.eventService.FindOneByID(eventID)
+		if err != nil {
+			return err
+		}
+
+		var bigAlbum telebot.Album
+
+		for _, song := range event.Songs {
+
+			audio := &telebot.Audio{
+				File: telebot.File{
+					FileID: helpers.GetMetronomeTrackFileID(song.PDF.BPM, song.PDF.Time),
+				},
+			}
+
+			bigAlbum = append(bigAlbum, audio)
+		}
+
+		const chunkSize = 10
+		chunks := chunkAlbumBy(bigAlbum, chunkSize)
+
+		for _, album := range chunks {
+			_, err := h.bot.SendAlbum(c.Recipient(), album)
+			if err != nil {
+				return err
+			}
+		}
+
+		c.Respond()
+		return nil
+	})
+
 	return helpers.EventActionsState, handlerFuncs
 }
 
