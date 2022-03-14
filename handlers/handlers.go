@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/joeyave/scala-bot/entities"
@@ -1422,7 +1423,7 @@ func deleteEventSongHandler() (int, []HandlerFunc) {
 
 	handlerFuncs = append(handlerFuncs, func(h *Handler, c telebot.Context, user *entities.User) error {
 
-		state, index, _ := helpers.ParseCallbackData(c.Callback().Data)
+		state, index, payload := helpers.ParseCallbackData(c.Callback().Data)
 
 		eventID, err := primitive.ObjectIDFromHex(user.State.CallbackData.Query().Get("eventId"))
 		if err != nil {
@@ -1434,15 +1435,46 @@ func deleteEventSongHandler() (int, []HandlerFunc) {
 			return err
 		}
 
+		var songs []*entities.Song
+		if payload != "deleted" {
+
+			songsJson, err := json.Marshal(event.Songs)
+			if err != nil {
+				return err
+			}
+
+			q := user.State.CallbackData.Query()
+			q.Set("songs", string(songsJson))
+			user.State.CallbackData.RawQuery = q.Encode()
+
+			songs = event.Songs
+		} else {
+			songsJson := user.State.CallbackData.Query().Get("songs")
+
+			err := json.Unmarshal([]byte(songsJson), &songs)
+			if err != nil {
+				return err
+			}
+		}
+
 		markup := &telebot.ReplyMarkup{}
 
-		for _, song := range event.Songs {
+		for _, song := range songs {
 			// driveFile, err := h.driveFileService.FindOneByID(song.DriveFileID)
 			// if err != nil {
 			// 	continue
 			// }
 
-			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: song.PDF.Name, Data: helpers.AggregateCallbackData(state, index+1, song.ID.Hex())}})
+			text := song.PDF.Name
+
+			for _, eventSong := range event.Songs {
+				if eventSong.ID == song.ID {
+					text += " ✅"
+					break
+				}
+			}
+
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: text, Data: helpers.AggregateCallbackData(state, index+1, song.ID.Hex())}})
 		}
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, "EditEventKeyboard")}})
 
@@ -1466,19 +1498,51 @@ func deleteEventSongHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		err = h.eventService.PullSongID(eventID, songID)
+		event, err := h.eventService.GetEventWithSongs(eventID)
 		if err != nil {
 			return err
 		}
 
-		// go func() {
-		// eventString, _ := h.eventService.ToHtmlStringByID(event.ID)
-		// h.bot.Send(telebot.ChatID(foundUser.ID),
-		//    fmt.Sprintf("Привет. Ты учавствуешь в собрании! "+
-		//       "Вот план:\n\n%s", eventString), telebot.ModeHTML, telebot.NoPreview)
-		// }()
+		found := false
+		for _, eventSong := range event.Songs {
+			if songID == eventSong.ID {
+				found = true
+				break
+			}
+		}
 
-		c.Callback().Data = helpers.AggregateCallbackData(helpers.EventActionsState, 0, "EditEventKeyboard")
+		if found {
+			err = h.eventService.PullSongID(eventID, songID)
+			if err != nil {
+				return err
+			}
+		} else {
+			songsJson := user.State.CallbackData.Query().Get("songs")
+
+			var songs []*entities.Song
+			err := json.Unmarshal([]byte(songsJson), &songs)
+			if err != nil {
+				return err
+			}
+
+			index := 0
+			for i, song := range songs {
+				if song.ID == songID {
+					index = i
+				}
+			}
+
+			err = h.eventService.PushSongID(eventID, songID)
+			if err != nil {
+				return err
+			}
+			err = h.eventService.ChangeSongIDPosition(eventID, songID, index)
+			if err != nil {
+				return err
+			}
+		}
+
+		c.Callback().Data = helpers.AggregateCallbackData(helpers.DeleteEventSongState, 0, "deleted")
 		return h.enter(c, user)
 	})
 

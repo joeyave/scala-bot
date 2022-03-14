@@ -7,19 +7,19 @@ import (
 )
 
 type Song struct {
-	ID primitive.ObjectID `bson:"_id,omitempty"`
+	ID primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
 
-	DriveFileID string `bson:"driveFileId,omitempty"`
+	DriveFileID string `bson:"driveFileId,omitempty" json:"-"`
 
-	BandID primitive.ObjectID `bson:"bandId,omitempty"`
-	Band   *Band              `bson:"band,omitempty"`
+	BandID primitive.ObjectID `bson:"bandId,omitempty" json:"-"`
+	Band   *Band              `bson:"band,omitempty" json:"-"`
 
-	PDF PDF `bson:"pdf,omitempty"`
+	PDF PDF `bson:"pdf,omitempty" json:"pdf"`
 
-	Voices []*Voice `bson:"voices,omitempty"`
+	Voices []*Voice `bson:"voices,omitempty" json:"-"`
 
-	Likes []int64  `bson:"likes,omitempty"`
-	Tags  []string `bson:"tags,omitempty"`
+	Likes []int64  `bson:"likes,omitempty" json:"-"`
+	Tags  []string `bson:"tags,omitempty" json:"-"`
 }
 
 type SongExtra struct {
