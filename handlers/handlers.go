@@ -1526,9 +1526,17 @@ func deleteEventSongHandler() (int, []HandlerFunc) {
 			}
 
 			index := 0
-			for i, song := range songs {
+			for _, song := range songs {
+
+				for _, eventSong := range event.Songs {
+					if song.ID == eventSong.ID {
+						index++
+						break
+					}
+				}
+
 				if song.ID == songID {
-					index = i
+					break
 				}
 			}
 
