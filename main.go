@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/joeyave/scala-bot/handlers"
+	"github.com/joeyave/scala-bot/helpers"
 	"github.com/joeyave/scala-bot/repositories"
 	"github.com/joeyave/scala-bot/services"
 	"github.com/klauspost/lctime"
@@ -31,12 +32,12 @@ func main() {
 		log.Fatal().Err(err)
 	}
 
-	//w := helpers.LogsWriter{
-	//	Bot:       bot,
-	//	ChannelID: helpers.LogsChannelID,
-	//}
+	w := helpers.LogsWriter{
+		Bot:       bot,
+		ChannelID: helpers.LogsChannelID,
+	}
 	out := zerolog.ConsoleWriter{
-		Out:        os.Stdout,
+		Out:        w,
 		TimeFormat: time.RFC3339,
 		NoColor:    true,
 	}

@@ -4,17 +4,11 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="improves delete event song handler (fix)">
+    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="improves setlist and memberships tabs in event actions&#10;improves speed a little">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/entities/membership.go" beforeDir="false" afterPath="$PROJECT_DIR$/entities/membership.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/handler.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/handler.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/handlers.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/handlers.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/helpers/constants.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/constants.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/helpers/layouts.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/layouts.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/repositories/membershipRepository.go" beforeDir="false" afterPath="$PROJECT_DIR$/repositories/membershipRepository.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -164,7 +158,8 @@
     <MESSAGE value="improves logs" />
     <MESSAGE value="improves delete event song handler" />
     <MESSAGE value="improves delete event song handler (fix)" />
-    <option name="LAST_COMMIT_MESSAGE" value="improves delete event song handler (fix)" />
+    <MESSAGE value="improves setlist and memberships tabs in event actions&#10;improves speed a little" />
+    <option name="LAST_COMMIT_MESSAGE" value="improves setlist and memberships tabs in event actions&#10;improves speed a little" />
   </component>
   <component name="VgoProject">
     <integration-enabled>true</integration-enabled>
