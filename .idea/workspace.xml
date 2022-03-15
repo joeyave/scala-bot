@@ -4,9 +4,17 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="improves delete event song handler">
+    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="improves delete event song handler (fix)">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/entities/membership.go" beforeDir="false" afterPath="$PROJECT_DIR$/entities/membership.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/handlers/handler.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/handler.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/handlers/handlers.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/handlers.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/helpers/constants.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/constants.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/helpers/layouts.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/layouts.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/repositories/membershipRepository.go" beforeDir="false" afterPath="$PROJECT_DIR$/repositories/membershipRepository.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -20,7 +28,7 @@
       </list>
     </option>
   </component>
-  <component name="GOROOT" url="file://$USER_HOME$/sdk/go1.16.7" />
+  <component name="GOROOT" url="file://$USER_HOME$/sdk/go1.17.7" />
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
@@ -65,13 +73,15 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="configurable..is.expanded" value="false" />
+    <property name="configurable.GoLibrariesConfigurable.is.expanded" value="true" />
     <property name="go.formatter.settings.were.checked" value="true" />
     <property name="go.import.settings.migrated" value="true" />
     <property name="go.modules.go.list.on.any.changes.was.set" value="true" />
     <property name="go.sdk.automatically.set" value="true" />
     <property name="last_opened_file_path" value="$USER_HOME$" />
     <property name="restartRequiresConfirmation" value="false" />
-    <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
+    <property name="settings.editor.selected.configurable" value="go.sdk" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
@@ -153,7 +163,8 @@
     <MESSAGE value="sets user to the context&#10;don't send notification to user if old event was changed" />
     <MESSAGE value="improves logs" />
     <MESSAGE value="improves delete event song handler" />
-    <option name="LAST_COMMIT_MESSAGE" value="improves delete event song handler" />
+    <MESSAGE value="improves delete event song handler (fix)" />
+    <option name="LAST_COMMIT_MESSAGE" value="improves delete event song handler (fix)" />
   </component>
   <component name="VgoProject">
     <integration-enabled>true</integration-enabled>
@@ -168,28 +179,58 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
-          <line>2375</line>
+          <line>2450</line>
           <option name="timeStamp" value="4" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
-          <line>2411</line>
+          <line>2486</line>
           <option name="timeStamp" value="5" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
-          <line>1790</line>
+          <line>1865</line>
           <option name="timeStamp" value="14" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
-          <line>3340</line>
+          <line>3415</line>
           <option name="timeStamp" value="20" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/handlers/handler.go</url>
           <line>156</line>
           <option name="timeStamp" value="26" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
+          <line>1603</line>
+          <option name="timeStamp" value="31" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
+          <line>1344</line>
+          <option name="timeStamp" value="32" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
+          <line>1280</line>
+          <option name="timeStamp" value="33" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
+          <line>600</line>
+          <option name="timeStamp" value="34" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
+          <line>1175</line>
+          <option name="timeStamp" value="36" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
+          <line>1105</line>
+          <option name="timeStamp" value="37" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"fmt"
 	"github.com/joeyave/scala-bot/entities"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -122,7 +121,7 @@ func (r *MembershipRepository) find(m bson.M) ([]*entities.Membership, error) {
 	}
 
 	if len(memberships) == 0 {
-		return nil, fmt.Errorf("not found")
+		return nil, mongo.ErrNoDocuments
 	}
 
 	return memberships, nil

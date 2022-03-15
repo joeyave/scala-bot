@@ -99,7 +99,7 @@ func (h *Handler) OnText(c telebot.Context) error {
 		return err
 	}
 
-	_, err = h.userService.UpdateOne(*user)
+	c.Set("user", user)
 
 	return err
 }
@@ -129,7 +129,7 @@ func (h *Handler) OnVoice(c telebot.Context) error {
 		return err
 	}
 
-	_, err = h.userService.UpdateOne(*user)
+	c.Set("user", user)
 
 	return err
 }
@@ -144,7 +144,7 @@ func (h *Handler) OnCallback(c telebot.Context) error {
 		return err
 	}
 
-	_, err = h.userService.UpdateOne(*user)
+	c.Set("user", user)
 
 	return nil
 }
@@ -213,16 +213,15 @@ func (h *Handler) RegisterUserMiddleware(next telebot.HandlerFunc) telebot.Handl
 
 		c.Set("user", user)
 
-		//_, err = h.userService.UpdateOne(*user)
-
 		err = next(c)
 		if err != nil {
 			return err
 		}
 
-		user, err = h.userService.FindOneByID(user.ID)
+		user = c.Get("user").(*entities.User)
+		_, err = h.userService.UpdateOne(*user)
 		if err != nil {
-			log.Error().Err(err).Msg("error getting user for output log")
+			log.Error().Err(err).Msg("error updating user")
 		}
 
 		userBytes, _ = json.Marshal(user)

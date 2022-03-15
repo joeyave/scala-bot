@@ -95,15 +95,8 @@ func GetEditEventKeyboard(user entities.User) [][]telebot.InlineButton {
 				{Text: Notes, Data: AggregateCallbackData(ChangeEventNotesState, 0, "")},
 			},
 			{
-				{Text: DeleteMember, Data: AggregateCallbackData(DeleteEventMemberState, 0, "")},
-				{Text: AddMember, Data: AggregateCallbackData(AddEventMemberState, 0, "")},
-			},
-			{
-				{Text: DeleteSong, Data: AggregateCallbackData(DeleteEventSongState, 0, "")},
-				{Text: AddSong, Data: AggregateCallbackData(AddEventSongState, 0, "")},
-			},
-			{
-				{Text: SongsOrder, Data: AggregateCallbackData(ChangeSongOrderState, 0, "")},
+				{Text: Setlist, Data: AggregateCallbackData(DeleteEventSongState, 0, "")},
+				{Text: Members, Data: AggregateCallbackData(DeleteEventMemberState, 0, "")},
 			},
 			{
 				{Text: Date, Data: AggregateCallbackData(ChangeEventDateState, 0, "")},
@@ -117,12 +110,12 @@ func GetEditEventKeyboard(user entities.User) [][]telebot.InlineButton {
 
 	return [][]telebot.InlineButton{
 		{
-			{Text: DeleteSong, Data: AggregateCallbackData(DeleteEventSongState, 0, "")},
-			{Text: AddSong, Data: AggregateCallbackData(AddEventSongState, 0, "")},
+			{Text: Setlist, Data: AggregateCallbackData(DeleteEventSongState, 0, "")},
+			//{Text: AddSong, Data: AggregateCallbackData(AddEventSongState, 0, "")},
 		},
-		{
-			{Text: SongsOrder, Data: AggregateCallbackData(ChangeSongOrderState, 0, "")},
-		},
+		//{
+		//	{Text: SongsOrder, Data: AggregateCallbackData(ChangeSongOrderState, 0, "")},
+		//},
 		{
 			{Text: Back, Data: AggregateCallbackData(EventActionsState, 0, "")},
 		},
@@ -131,7 +124,7 @@ func GetEditEventKeyboard(user entities.User) [][]telebot.InlineButton {
 
 var MainMenuKeyboard = [][]telebot.ReplyButton{
 	{{Text: Schedule}},
-	{{Text: Songs}, {Text: Members}},
+	{{Text: Songs}, {Text: Stats}},
 	{{Text: Settings}},
 }
 
