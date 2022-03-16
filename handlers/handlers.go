@@ -1298,9 +1298,10 @@ func addEventSongHandler() (int, []HandlerFunc) {
 			eventID = user.State.Context.EventID
 		}
 
-		err := c.Send("Введи название песни:", &telebot.ReplyMarkup{
+		err := c.Send("Введи название песни или список (название каждой песни с новой строки):", &telebot.ReplyMarkup{
 			ReplyKeyboard:  [][]telebot.ReplyButton{{{Text: helpers.End}}},
 			ResizeKeyboard: true,
+			Placeholder:    "Название песни или список",
 		})
 		if err != nil {
 			return err
