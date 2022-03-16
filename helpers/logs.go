@@ -34,6 +34,7 @@ type Update struct {
 type Message struct {
 	*telebot.Message
 
+	Entities           *struct{}          `json:"entities,omitempty"` // https://github.com/golang/go/issues/35501
 	ID                 int                `json:"message_id,omitempty"`
 	Sender             *User              `json:"from,omitempty"`
 	Unixtime           int64              `json:"date,omitempty"`
@@ -140,27 +141,12 @@ func MapMessage(telebotMessage *telebot.Message) *Message {
 }
 
 type Callback struct {
-	ID string `json:"id,omitempty"`
-
-	// For message sent to channels, Sender may be empty
-	Sender *User `json:"from,omitempty"`
-
-	// Message will be set if the button that originated the query
-	// was attached to a message sent by a bot.
-	Message *Message `json:"message,omitempty"`
-
-	// MessageID will be set if the button was attached to a message
-	// sent via the bot in inline mode.
-	MessageID string `json:"inline_message_id,omitempty"`
-
-	// Data associated with the callback button. Be aware that
-	// a bad client can send arbitrary data in this field.
-	Data string `json:"data,omitempty"`
-
-	// Unique displays an unique of the button from which the
-	// callback was fired. Sets immediately before the handling,
-	// while the Data field stores only with payload.
-	Unique string `json:"-"`
+	ID        string   `json:"id,omitempty"`
+	Sender    *User    `json:"from,omitempty"`
+	Message   *Message `json:"message,omitempty"`
+	MessageID string   `json:"inline_message_id,omitempty"`
+	Data      string   `json:"data,omitempty"`
+	Unique    string   `json:"-"`
 }
 
 func MapCallback(telebotCallback *telebot.Callback) *Callback {

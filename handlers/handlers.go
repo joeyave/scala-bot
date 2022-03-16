@@ -707,6 +707,7 @@ func eventActionsHandler() (int, []HandlerFunc) {
 				File: telebot.File{
 					FileID: helpers.GetMetronomeTrackFileID(song.PDF.BPM, song.PDF.Time),
 				},
+				Caption: "↑ " + song.PDF.Name,
 			}
 
 			bigAlbum = append(bigAlbum, audio)
