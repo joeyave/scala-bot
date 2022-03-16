@@ -1066,7 +1066,7 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 		}
 
 		eventMemberships, err := h.membershipService.FindMultipleByEventID(eventID)
-		if err != nil {
+		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 			return err
 		}
 
@@ -1147,7 +1147,7 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 		}
 
 		eventMemberships, err := h.membershipService.FindMultipleByEventID(eventID)
-		if err != nil {
+		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 			return err
 		}
 
