@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"github.com/joeyave/scala-bot/entities"
 	"github.com/joeyave/scala-bot/helpers"
@@ -84,6 +85,10 @@ func (s *EventService) FindOneByID(ID primitive.ObjectID) (*entities.Event, erro
 
 func (s *EventService) FindOneByNameAndTimeAndBandID(name string, time time.Time, bandID primitive.ObjectID) (*entities.Event, error) {
 	return s.eventRepository.FindOneByNameAndTimeAndBandID(name, time, bandID)
+}
+
+func (s *EventService) GetAlias(ctx context.Context, eventID primitive.ObjectID) (string, error) {
+	return s.eventRepository.GetAlias(ctx, eventID)
 }
 
 func (s *EventService) UpdateOne(event entities.Event) (*entities.Event, error) {

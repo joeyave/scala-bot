@@ -218,3 +218,8 @@ func GetWeekdayButtons(events []*entities.Event) []telebot.ReplyButton {
 
 	return weekdaysButtons
 }
+
+func AppendTickSymbol(text string) string {
+	text += " ✅"
+	return text
+}

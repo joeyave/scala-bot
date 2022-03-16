@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -975,8 +976,13 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 		}
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.DeleteEventMemberState, 0, "")}})
 
-		c.Edit(helpers.AddCallbackData(fmt.Sprintf("<b>%s</b>\n\n%s\n\nВыбери роль для нового участника:", event.Alias(), event.Roles()), user.State.CallbackData.String()),
-			markup, telebot.ModeHTML)
+		text := fmt.Sprintf("<b>%s</b>\n\n", event.Alias())
+		if event.Roles() != "" {
+			text += fmt.Sprintf("%s\n\n", event.Roles())
+		}
+		text += "Выбери роль для нового участника:"
+
+		c.Edit(helpers.AddCallbackData(text, user.State.CallbackData.String()), markup, telebot.ModeHTML)
 		c.Respond()
 		return nil
 	})
@@ -1027,15 +1033,21 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 			} else {
 				buttonText = fmt.Sprintf("%s (%v, %d)", userExtra.User.Name, lctime.Strftime("%d %b", userExtra.Events[0].Time), len(userExtra.Events))
 			}
+
+			for _, eventMembership := range event.Memberships {
+				if eventMembership.RoleID == roleID && eventMembership.UserID == userExtra.User.ID {
+					buttonText = helpers.AppendTickSymbol(buttonText)
+					break
+				}
+			}
+
 			if (len(userExtra.Events) > 0 && time.Now().Sub(userExtra.Events[0].Time) < 24*364/3*time.Hour) || loadMore == true {
 				markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{
 					{Text: buttonText, Data: helpers.AggregateCallbackData(state, index+1, fmt.Sprintf("%s:%d", roleIDHex, userExtra.User.ID))},
 				})
 			}
 		}
-
-		// TODO
-		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Cancel, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, "EditEventKeyboard")}})
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.AddEventMemberState, 0, "")}})
 
 		c.Edit(markup)
 		c.Respond()
@@ -1053,7 +1065,17 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 			return err
 		}
 
+		eventMemberships, err := h.membershipService.FindMultipleByEventID(eventID)
+		if err != nil {
+			return err
+		}
+
 		userID, err := strconv.ParseInt(parsedPayload[1], 10, 0)
+		if err != nil {
+			return err
+		}
+
+		user2, err := h.userService.FindOneByID(userID)
 		if err != nil {
 			return err
 		}
@@ -1063,35 +1085,49 @@ func addEventMemberHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		_, err = h.membershipService.UpdateOne(entities.Membership{
-			EventID: eventID,
-			UserID:  userID,
-			RoleID:  roleID,
-		})
-		if err != nil {
-			return err
+		var foundEventMembership *entities.Membership
+		for _, eventMembership := range eventMemberships {
+			if eventMembership.RoleID == roleID && eventMembership.UserID == user2.ID {
+				foundEventMembership = eventMembership
+				break
+			}
 		}
 
-		go func() {
-			role, err := h.roleService.FindOneByID(roleID)
+		if foundEventMembership == nil {
+			_, err = h.membershipService.UpdateOne(entities.Membership{
+				EventID: eventID,
+				UserID:  userID,
+				RoleID:  roleID,
+			})
 			if err != nil {
-				return
+				return err
 			}
+			go func() {
+				role, err := h.roleService.FindOneByID(roleID)
+				if err != nil {
+					return
+				}
 
-			event, err := h.eventService.FindOneByID(eventID)
+				event, err := h.eventService.FindOneByID(eventID)
+				if err != nil {
+					return
+				}
+
+				now := time.Now().Local()
+				if event.Time.After(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())) {
+					h.bot.Send(telebot.ChatID(userID),
+						fmt.Sprintf("Привет. %s только что добавил тебя как %s в собрание %s!\n\nБолее подробную информацию можешь посмотреть в меню Расписание 📆.",
+							user.Name, role.Name, event.Alias()), telebot.ModeHTML, telebot.NoPreview)
+				}
+			}()
+		} else {
+			err := h.membershipService.DeleteOneByID(foundEventMembership.ID)
 			if err != nil {
-				return
+				return err
 			}
+		}
 
-			now := time.Now().Local()
-			if event.Time.After(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())) {
-				h.bot.Send(telebot.ChatID(userID),
-					fmt.Sprintf("Привет. %s только что добавил тебя как %s в собрание %s!\n\nБолее подробную информацию можешь посмотреть в меню Расписание 📆.",
-						user.Name, role.Name, event.Alias()), telebot.ModeHTML, telebot.NoPreview)
-			}
-		}()
-
-		c.Callback().Data = helpers.AggregateCallbackData(helpers.AddEventMemberState, 0, "")
+		c.Callback().Data = helpers.AggregateCallbackData(helpers.AddEventMemberState, 1, payload)
 		return h.enter(c, user)
 	})
 
@@ -1110,7 +1146,12 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		event, err := h.eventService.FindOneByID(eventID)
+		eventMemberships, err := h.membershipService.FindMultipleByEventID(eventID)
+		if err != nil {
+			return err
+		}
+
+		eventAlias, err := h.eventService.GetAlias(context.Background(), eventID)
 		if err != nil {
 			return err
 		}
@@ -1118,20 +1159,20 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 		var memberships []*entities.Membership
 		if payload != "deleted" {
 
-			membershipsJson, err := json.Marshal(event.Memberships)
+			membershipsJson, err := json.Marshal(eventMemberships)
 			if err != nil {
 				return err
 			}
 
 			q := user.State.CallbackData.Query()
 			q.Set("eventId", eventID.Hex())
-			q.Set("eventAlias", event.Alias())
+			q.Set("eventAlias", eventAlias)
 			q.Set("memberships", string(membershipsJson))
 			q.Del("index")
 			q.Del("driveFileIds")
 			user.State.CallbackData.RawQuery = q.Encode()
 
-			memberships = event.Memberships
+			memberships = eventMemberships
 		} else {
 			membershipsJson := user.State.CallbackData.Query().Get("memberships")
 
@@ -1151,7 +1192,7 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 
 			text := fmt.Sprintf("%s (%s)", user.Name, membership.Role.Name)
 
-			for _, m := range event.Memberships {
+			for _, m := range eventMemberships {
 				if m.ID == membership.ID {
 					text += " ✅"
 					break
@@ -1163,7 +1204,7 @@ func deleteEventMemberHandler() (int, []HandlerFunc) {
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.AddMember, Data: helpers.AggregateCallbackData(helpers.AddEventMemberState, 0, "")}})
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []telebot.InlineButton{{Text: helpers.Back, Data: helpers.AggregateCallbackData(helpers.EventActionsState, 0, "EditEventKeyboard")}})
 
-		c.Edit(helpers.AddCallbackData(fmt.Sprintf("<b>%s</b>\n\n%s:", event.Alias(), helpers.Members), user.State.CallbackData.String()),
+		c.Edit(helpers.AddCallbackData(fmt.Sprintf("<b>%s</b>\n\n%s:", eventAlias, helpers.Members), user.State.CallbackData.String()),
 			markup, telebot.ModeHTML)
 		c.Respond()
 		return nil

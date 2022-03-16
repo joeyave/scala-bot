@@ -23,6 +23,9 @@ func (s *MembershipService) FindAll() ([]*entities.Membership, error) {
 func (s *MembershipService) FindOneByID(ID primitive.ObjectID) (*entities.Membership, error) {
 	return s.membershipRepository.FindOneByID(ID)
 }
+func (s *MembershipService) FindMultipleByEventID(ID primitive.ObjectID) ([]*entities.Membership, error) {
+	return s.membershipRepository.FindMultipleByEventID(ID)
+}
 
 func (s *MembershipService) UpdateOne(membership entities.Membership) (*entities.Membership, error) {
 	memberships, err := s.membershipRepository.FindMultipleByUserIDAndEventID(membership.UserID, membership.EventID)
@@ -30,6 +33,7 @@ func (s *MembershipService) UpdateOne(membership entities.Membership) (*entities
 		for _, mb := range memberships {
 			if mb.RoleID == membership.RoleID {
 				membership.ID = mb.ID
+				break
 			}
 		}
 	}

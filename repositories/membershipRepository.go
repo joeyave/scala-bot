@@ -47,6 +47,15 @@ func (r *MembershipRepository) FindMultipleByUserIDAndEventID(userID int64, even
 	return memberships, nil
 }
 
+func (r *MembershipRepository) FindMultipleByEventID(eventID primitive.ObjectID) ([]*entities.Membership, error) {
+	memberships, err := r.find(bson.M{"eventId": eventID})
+	if err != nil {
+		return nil, err
+	}
+
+	return memberships, nil
+}
+
 func (r *MembershipRepository) find(m bson.M) ([]*entities.Membership, error) {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("memberships")
 
@@ -105,6 +114,30 @@ func (r *MembershipRepository) find(m bson.M) ([]*entities.Membership, error) {
 			"$unwind": bson.M{
 				"path":                       "$user",
 				"preserveNullAndEmptyArrays": true,
+			},
+		},
+		bson.M{
+			"$lookup": bson.M{
+				"from": "roles",
+				"let":  bson.M{"roleId": "$roleId"},
+				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$_id", "$$roleId"}}},
+					},
+				},
+				"as": "role",
+			},
+		},
+		bson.M{
+			"$unwind": bson.M{
+				"path":                       "$role",
+				"preserveNullAndEmptyArrays": true,
+			},
+		},
+		bson.M{
+			"$sort": bson.D{
+				{"role._id", 1},
+				{"role.priority", 1},
 			},
 		},
 	}
