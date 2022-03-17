@@ -8,7 +8,6 @@ import (
 	"github.com/joeyave/scala-bot/repositories"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
-	"html"
 	"strings"
 	"sync"
 	"time"
@@ -173,7 +172,7 @@ func (s *EventService) ToHtmlStringByEvent(event entities.Event) string {
 	}
 
 	if event.Notes != "" {
-		eventString += "\n\n<b>" + helpers.Notes + ":</b>\n" + html.EscapeString(event.Notes)
+		eventString += "\n\n<b>" + helpers.Notes + ":</b>\n" + event.Notes
 	}
 
 	return eventString

@@ -12,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/api/drive/v3"
 	"gopkg.in/telebot.v3"
+	"html"
 	"regexp"
 	"strconv"
 	"strings"
@@ -1489,7 +1490,31 @@ func changeEventNotesHandler() (int, []HandlerFunc) {
 			return err
 		}
 
-		event.Notes = c.Text()
+		text := html.EscapeString(c.Message().Text)
+
+		for _, entity := range c.Message().Entities {
+			textWithoutHTML := c.Message().EntityText(entity)
+
+			var textWithHTML string
+			switch entity.Type {
+			case telebot.EntityBold:
+				textWithHTML = fmt.Sprintf("<b>%s</b>", textWithoutHTML)
+			case telebot.EntityItalic:
+				textWithHTML = fmt.Sprintf("<i>%s</i>", textWithoutHTML)
+			case telebot.EntityUnderline:
+				textWithHTML = fmt.Sprintf("<u>%s</u>", textWithoutHTML)
+			case telebot.EntityStrikethrough:
+				textWithHTML = fmt.Sprintf("<s>%s</s>", textWithoutHTML)
+			case telebot.EntitySpoiler:
+				textWithHTML = fmt.Sprintf("<tg-spoiler>%s</tg-spoiler>", textWithoutHTML)
+			case telebot.EntityCode:
+				textWithHTML = fmt.Sprintf("<code>%s</code>", textWithoutHTML)
+			}
+
+			text = strings.ReplaceAll(text, textWithoutHTML, textWithHTML)
+		}
+
+		event.Notes = text
 
 		fmt.Println(c.Message().Entities)
 

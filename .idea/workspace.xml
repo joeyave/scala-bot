@@ -7,8 +7,7 @@
     <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="changes message">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/handlers/handlers.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/handlers.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/helpers/logs.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/logs.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/helpers/metronome.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/metronome.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/eventService.go" beforeDir="false" afterPath="$PROJECT_DIR$/services/eventService.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -176,27 +175,22 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
-          <line>290</line>
-          <option name="timeStamp" value="3" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
-          <line>2493</line>
+          <line>2518</line>
           <option name="timeStamp" value="4" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
-          <line>2529</line>
+          <line>2554</line>
           <option name="timeStamp" value="5" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
-          <line>1908</line>
+          <line>1933</line>
           <option name="timeStamp" value="14" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
-          <line>3458</line>
+          <line>3483</line>
           <option name="timeStamp" value="20" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
@@ -206,38 +200,43 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
-          <line>1646</line>
+          <line>1671</line>
           <option name="timeStamp" value="31" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
-          <line>1387</line>
+          <line>1388</line>
           <option name="timeStamp" value="32" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
-          <line>1323</line>
+          <line>1324</line>
           <option name="timeStamp" value="33" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
-          <line>601</line>
+          <line>602</line>
           <option name="timeStamp" value="34" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
-          <line>1217</line>
+          <line>1218</line>
           <option name="timeStamp" value="36" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
-          <line>1193</line>
+          <line>1194</line>
           <option name="timeStamp" value="40" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
-          <line>1142</line>
+          <line>1143</line>
           <option name="timeStamp" value="41" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/handlers/handlers.go</url>
+          <line>1492</line>
+          <option name="timeStamp" value="44" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
