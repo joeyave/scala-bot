@@ -1006,7 +1006,7 @@ func (c *BotController) notifyAdded(bot *gotgbot.Bot, user *entity.User, members
 		text := fmt.Sprintf("Привет. %s только что добавил тебя как %s в собрание %s!",
 			user.Name, membership.Role.Name, event.Alias("ru"))
 
-		bot.SendMessage(user.ID, text, &gotgbot.SendMessageOpts{
+		bot.SendMessage(membership.UserID, text, &gotgbot.SendMessageOpts{
 			ParseMode:   "HTML",
 			ReplyMarkup: markup,
 		})
@@ -1042,7 +1042,7 @@ func (c *BotController) notifyDeleted(bot *gotgbot.Bot, user *entity.User, membe
 		text := fmt.Sprintf("Привет. %s только что удалил тебя как %s из собрания %s ☹️",
 			user.Name, membership.Role.Name, event.Alias("ru"))
 
-		bot.SendMessage(user.ID, text, &gotgbot.SendMessageOpts{
+		bot.SendMessage(membership.UserID, text, &gotgbot.SendMessageOpts{
 			ParseMode:   "HTML",
 			ReplyMarkup: markup,
 		})

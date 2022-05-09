@@ -4,10 +4,11 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="sends errors to channels">
+    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="splits tags to columns">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/controller/bot_controller_settings.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/bot_controller_settings.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/controller/bot_controller_songs.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/bot_controller_songs.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/util/helper.go" beforeDir="false" afterPath="$PROJECT_DIR$/util/helper.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -22,7 +23,7 @@
       </list>
     </option>
   </component>
-  <component name="GOROOT" url="file://$USER_HOME$/sdk/go1.17.7" />
+  <component name="GOROOT" url="file:///usr/local/opt/go/libexec" />
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
@@ -43,23 +44,26 @@
     <option name="indexEntireGoPath" value="false" />
   </component>
   <component name="HighlightingSettingsPerFile">
-    <setting file="file://$USER_HOME$/go/pkg/mod/github.com/!paul!son!of!lars/gotgbot/v2@v2.0.0-rc.7/bot.go" root0="SKIP_INSPECTION" />
-    <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/tucnak/telebot.v3@v3.0.0-20211108093419-844466d6faf3/telebot.go" root0="SKIP_INSPECTION" />
-    <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/tucnak/telebot.v3@v3.0.0-20211108093419-844466d6faf3/bot.go" root0="SKIP_INSPECTION" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/javascript/extLibs/http_telegram.org_js_telegram-web-app.js" root0="SKIP_INSPECTION" />
-    <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/telebot.v3@v3.0.0/message.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/go/pkg/mod/github.com/!paul!son!of!lars/gotgbot/v2@v2.0.0-rc.7/bot.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/go/pkg/mod/github.com/!paul!son!of!lars/gotgbot/v2@v2.0.0-rc.7/gen_methods.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/go/pkg/mod/github.com/!paul!son!of!lars/gotgbot/v2@v2.0.0-rc.7/gen_types.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/go/pkg/mod/github.com/rs/zerolog@v1.26.1/event.go" root0="SKIP_INSPECTION" />
     <setting file="file://$USER_HOME$/go/pkg/mod/github.com/rs/zerolog@v1.26.1/hook.go" root0="SKIP_INSPECTION" />
     <setting file="file://$USER_HOME$/go/pkg/mod/go.mongodb.org/mongo-driver@v1.7.4/mongo/collection.go" root0="SKIP_INSPECTION" />
     <setting file="file://$USER_HOME$/go/pkg/mod/go.mongodb.org/mongo-driver@v1.7.4/mongo/options/findoptions.go" root0="SKIP_INSPECTION" />
-    <setting file="file://$USER_HOME$/go/pkg/mod/github.com/!paul!son!of!lars/gotgbot/v2@v2.0.0-rc.7/gen_methods.go" root0="SKIP_INSPECTION" />
-    <setting file="file://$USER_HOME$/go/pkg/mod/github.com/rs/zerolog@v1.26.1/event.go" root0="SKIP_INSPECTION" />
-    <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/tucnak/telebot.v3@v3.0.0-20211108093419-844466d6faf3/context.go" root0="SKIP_INSPECTION" />
-    <setting file="file://$USER_HOME$/go/pkg/mod/github.com/!paul!son!of!lars/gotgbot/v2@v2.0.0-rc.7/gen_types.go" root0="SKIP_INSPECTION" />
-    <setting file="file://$USER_HOME$/sdk/go1.16.7/src/time/time.go" root0="SKIP_INSPECTION" />
-    <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/telebot.v3@v3.0.0/chat.go" root0="SKIP_INSPECTION" />
     <setting file="file://$USER_HOME$/go/pkg/mod/go.mongodb.org/mongo-driver@v1.8.4/mongo/cursor.go" root0="SKIP_INSPECTION" />
-    <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/telebot.v3@v3.0.0/options.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/telebot.v3@v3.0.0/chat.go" root0="SKIP_INSPECTION" />
     <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/telebot.v3@v3.0.0/media.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/telebot.v3@v3.0.0/message.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/telebot.v3@v3.0.0/options.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/tucnak/telebot.v3@v3.0.0-20211108093419-844466d6faf3/bot.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/tucnak/telebot.v3@v3.0.0-20211108093419-844466d6faf3/context.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/tucnak/telebot.v3@v3.0.0-20211108093419-844466d6faf3/telebot.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/sdk/go1.16.7/src/time/time.go" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
   </component>
   <component name="ProjectId" id="20sSZff8af6qNMYzbcoWE3kCbvz" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
@@ -69,20 +73,18 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">
-    <property name="DefaultGoTemplateProperty" value="Go File" />
-    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
-    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="configurable..is.expanded" value="false" />
-    <property name="configurable.GoLibrariesConfigurable.is.expanded" value="true" />
-    <property name="go.formatter.settings.were.checked" value="true" />
-    <property name="go.import.settings.migrated" value="true" />
-    <property name="go.modules.go.list.on.any.changes.was.set" value="true" />
-    <property name="go.sdk.automatically.set" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="settings.editor.selected.configurable" value="go.sdk" />
-  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.go.format.on.save.advertiser.fired&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.migrated.go.modules.settings&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.modules.go.list.on.any.changes.was.set&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.watchers.conflict.with.on.save.actions.check.performed&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/josephaveltsev&quot;
+  }
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$" />
@@ -151,7 +153,6 @@
         </entry>
       </map>
     </option>
-    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="renames project to scala-bot" />
@@ -174,10 +175,11 @@
     <MESSAGE value="changes message" />
     <MESSAGE value="v2" />
     <MESSAGE value="sends errors to channels" />
-    <option name="LAST_COMMIT_MESSAGE" value="sends errors to channels" />
+    <MESSAGE value="splits tags to columns" />
+    <option name="LAST_COMMIT_MESSAGE" value="splits tags to columns" />
   </component>
   <component name="VgoProject">
-    <integration-enabled>true</integration-enabled>
+    <settings-migrated>true</settings-migrated>
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -269,7 +271,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/util/helper.go</url>
-          <line>55</line>
+          <line>33</line>
           <option name="timeStamp" value="49" />
         </line-breakpoint>
       </breakpoints>

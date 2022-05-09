@@ -29,9 +29,9 @@ func File(bot *gotgbot.Bot, file *gotgbot.File) (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
-func SplitInlineKeyboardToColumns(k [][]gotgbot.InlineKeyboardButton, colNum int) [][]gotgbot.InlineKeyboardButton {
+func SplitKeyboardToColumns[T gotgbot.KeyboardButton | gotgbot.InlineKeyboardButton](k [][]T, colNum int) [][]T {
 
-	var newK [][]gotgbot.InlineKeyboardButton
+	var newK [][]T
 	var i int
 
 	for _, row := range k {
@@ -41,29 +41,7 @@ func SplitInlineKeyboardToColumns(k [][]gotgbot.InlineKeyboardButton, colNum int
 			}
 
 			if i == 0 {
-				newK = append(newK, []gotgbot.InlineKeyboardButton{button})
-			} else if i < colNum {
-				newK[len(newK)-1] = append(newK[len(newK)-1], button)
-			}
-			i++
-		}
-	}
-
-	return newK
-}
-func SplitKeyboardToColumns(k [][]gotgbot.KeyboardButton, colNum int) [][]gotgbot.KeyboardButton {
-
-	var newK [][]gotgbot.KeyboardButton
-	var i int
-
-	for _, row := range k {
-		for _, button := range row {
-			if i == colNum {
-				i = 0
-			}
-
-			if i == 0 {
-				newK = append(newK, []gotgbot.KeyboardButton{button})
+				newK = append(newK, []T{button})
 			} else if i < colNum {
 				newK[len(newK)-1] = append(newK[len(newK)-1], button)
 			}
