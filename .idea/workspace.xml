@@ -4,10 +4,11 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="v2">
+    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="sends errors to channels">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/controller/bot_controller.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/bot_controller.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/controller/bot_controller_settings.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/bot_controller_settings.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/controller/bot_controller_songs.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/bot_controller_songs.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/util/helper.go" beforeDir="false" afterPath="$PROJECT_DIR$/util/helper.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -172,7 +173,8 @@
     <MESSAGE value="hotfix" />
     <MESSAGE value="changes message" />
     <MESSAGE value="v2" />
-    <option name="LAST_COMMIT_MESSAGE" value="v2" />
+    <MESSAGE value="sends errors to channels" />
+    <option name="LAST_COMMIT_MESSAGE" value="sends errors to channels" />
   </component>
   <component name="VgoProject">
     <integration-enabled>true</integration-enabled>
@@ -257,8 +259,18 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/controller/bot_controller.go</url>
-          <line>476</line>
+          <line>475</line>
           <option name="timeStamp" value="47" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/controller/bot_controller_songs.go</url>
+          <line>422</line>
+          <option name="timeStamp" value="48" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/util/helper.go</url>
+          <line>55</line>
+          <option name="timeStamp" value="49" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

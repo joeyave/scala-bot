@@ -142,7 +142,7 @@ func (c *BotController) settingsBandMembers(bot *gotgbot.Bot, ctx *ext.Context, 
 		}
 	}
 
-	markup.InlineKeyboard = util.SplitKeyboardToColumns(markup.InlineKeyboard, 2)
+	markup.InlineKeyboard = util.SplitInlineKeyboardToColumns(markup.InlineKeyboard, 2)
 
 	markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.back", ctx.EffectiveUser.LanguageCode), CallbackData: util.CallbackData(state.SettingsCB, "")}})
 

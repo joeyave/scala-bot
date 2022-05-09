@@ -420,9 +420,12 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 				}
 				markup.Keyboard = append(markup.Keyboard, filterButtons)
 
+				var kb [][]gotgbot.KeyboardButton
 				for _, tag := range tags {
-					markup.Keyboard = append(markup.Keyboard, []gotgbot.KeyboardButton{{Text: tag}})
+					kb = append(kb, []gotgbot.KeyboardButton{{Text: tag}})
 				}
+
+				markup.Keyboard = append(markup.Keyboard, util.SplitKeyboardToColumns(kb, 2)...)
 
 				_, err = ctx.EffectiveChat.SendMessage(bot, txt.Get("text.chooseTag", ctx.EffectiveUser.LanguageCode), &gotgbot.SendMessageOpts{ReplyMarkup: markup})
 				if err != nil {
