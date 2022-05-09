@@ -315,7 +315,7 @@ func (c *BotController) search(index int) handlers.Response {
 				}
 			}
 		}
-		return nil
+		return c.Menu(bot, ctx)
 	}
 }
 
@@ -416,7 +416,7 @@ func (c *BotController) searchSetlist(index int) handlers.Response {
 				return c.searchSetlist(0)(bot, ctx)
 			}
 		}
-		return nil
+		return c.Menu(bot, ctx)
 	}
 }
 
@@ -425,6 +425,7 @@ func (c *BotController) Menu(bot *gotgbot.Bot, ctx *ext.Context) error {
 	user := ctx.Data["user"].(*entity.User)
 
 	user.State = entity.State{}
+	user.Cache = entity.Cache{}
 
 	replyMarkup := &gotgbot.ReplyKeyboardMarkup{
 		Keyboard:       keyboard.Menu(ctx.EffectiveUser.LanguageCode),

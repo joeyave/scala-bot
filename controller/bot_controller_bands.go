@@ -106,7 +106,7 @@ func (c *BotController) BandCreate(index int) handlers.Response {
 				return c.Menu(bot, ctx)
 			}
 		}
-		return nil
+		return c.Menu(bot, ctx)
 	}
 }
 

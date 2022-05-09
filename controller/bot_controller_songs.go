@@ -269,7 +269,7 @@ func (c *BotController) GetSongs(index int) handlers.Response {
 				}
 			}
 		}
-		return nil
+		return c.Menu(bot, ctx)
 	}
 }
 
@@ -434,7 +434,7 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 			}
 		}
 
-		return nil
+		return c.Menu(bot, ctx)
 	}
 }
 
@@ -675,7 +675,7 @@ func (c *BotController) SongVoicesCreateVoice(index int) handlers.Response {
 				return c.Menu(bot, ctx)
 			}
 		}
-		return nil
+		return c.Menu(bot, ctx)
 	}
 }
 

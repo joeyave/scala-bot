@@ -164,7 +164,7 @@ func (c *BotController) GetEvents(index int) handlers.Response {
 				return err
 			}
 		}
-		return nil
+		return c.Menu(bot, ctx)
 	}
 }
 
@@ -315,7 +315,7 @@ func (c *BotController) filterEvents(index int) handlers.Response {
 			}
 		}
 
-		return nil
+		return c.Menu(bot, ctx)
 	}
 }
 
