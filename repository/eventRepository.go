@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
-	"github.com/joeyave/scala-bot-v2/entity"
-	"github.com/joeyave/scala-bot-v2/helpers"
+	"github.com/joeyave/scala-bot/entity"
+	"github.com/joeyave/scala-bot/helpers"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"

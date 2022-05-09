@@ -2,8 +2,8 @@ package entity
 
 import (
 	"fmt"
-	"github.com/joeyave/scala-bot-v2/txt"
-	"github.com/joeyave/scala-bot-v2/util"
+	"github.com/joeyave/scala-bot/txt"
+	"github.com/joeyave/scala-bot/util"
 	"github.com/klauspost/lctime"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"strings"

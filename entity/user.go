@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/gorilla/schema"
-	"github.com/joeyave/scala-bot-v2/util"
+	"github.com/joeyave/scala-bot/util"
 	"github.com/klauspost/lctime"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"

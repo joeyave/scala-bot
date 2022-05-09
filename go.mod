@@ -1,4 +1,4 @@
-module github.com/joeyave/scala-bot-v2
+module github.com/joeyave/scala-bot
 
 go 1.17
 

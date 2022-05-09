@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/joeyave/scala-bot-v2/entity"
-	"github.com/joeyave/scala-bot-v2/repository"
+	"github.com/joeyave/scala-bot/entity"
+	"github.com/joeyave/scala-bot/repository"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 

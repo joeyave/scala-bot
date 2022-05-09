@@ -3,9 +3,9 @@ package keyboard
 import (
 	"fmt"
 	"github.com/PaulSonOfLars/gotgbot/v2"
-	"github.com/joeyave/scala-bot-v2/entity"
-	"github.com/joeyave/scala-bot-v2/txt"
-	"github.com/joeyave/scala-bot-v2/util"
+	"github.com/joeyave/scala-bot/entity"
+	"github.com/joeyave/scala-bot/txt"
+	"github.com/joeyave/scala-bot/util"
 	"github.com/klauspost/lctime"
 	"google.golang.org/api/drive/v3"
 	"regexp"

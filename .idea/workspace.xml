@@ -5,77 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="test">
-      <change afterPath="$PROJECT_DIR$/controller/bot_controller.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/controller/bot_controller_bands.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/controller/bot_controller_events.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/controller/bot_controller_settings.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/controller/bot_controller_songs.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/controller/drive_file_controller.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/controller/web_app_controller.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/entity/event.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/entity/song.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/entity/user.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/keyboard/buttons.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/keyboard/keyboards.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/service/roleService.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/service/userService.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/state/states.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/txt/txt.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/util/helper.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/util/util.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/webapp/assets/components/instant_search/InstantSearch.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/webapp/assets/components/instant_search/instant-search.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/webapp/assets/css/index.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/webapp/assets/css/index.css.map" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/webapp/assets/css/index.scss" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/webapp/assets/js/edit-event.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/webapp/assets/js/edit-song.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/webapp/templates/event.go.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/webapp/templates/header.go.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/webapp/templates/song.go.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.github/workflows/main.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/main.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Procfile" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/entities/band.go" beforeDir="false" afterPath="$PROJECT_DIR$/entity/band.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/entities/event.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/entities/membership.go" beforeDir="false" afterPath="$PROJECT_DIR$/entity/membership.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/entities/role.go" beforeDir="false" afterPath="$PROJECT_DIR$/entity/role.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/entities/song.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/entities/user.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/entities/voice.go" beforeDir="false" afterPath="$PROJECT_DIR$/entity/voice.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/functions.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/functions.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/handler.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/handlers.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/handlers.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/init.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/helpers/constants.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/constants.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/helpers/functions.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/functions.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/helpers/init.go" beforeDir="false" afterPath="$PROJECT_DIR$/helpers/init.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/helpers/layouts.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/helpers/logs.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/helpers/metronome.go" beforeDir="false" afterPath="$PROJECT_DIR$/metronome/metronome.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/manifest.yml" beforeDir="false" afterPath="$PROJECT_DIR$/manifest.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/repositories/bandRepository.go" beforeDir="false" afterPath="$PROJECT_DIR$/repository/bandRepository.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/repositories/eventRepository.go" beforeDir="false" afterPath="$PROJECT_DIR$/repository/eventRepository.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/repositories/membershipRepository.go" beforeDir="false" afterPath="$PROJECT_DIR$/repository/membershipRepository.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/repositories/roleRepository.go" beforeDir="false" afterPath="$PROJECT_DIR$/repository/roleRepository.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/repositories/songRepository.go" beforeDir="false" afterPath="$PROJECT_DIR$/repository/songRepository.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/repositories/userRepository.go" beforeDir="false" afterPath="$PROJECT_DIR$/repository/userRepository.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/repositories/voiceRepository.go" beforeDir="false" afterPath="$PROJECT_DIR$/repository/voiceRepository.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/bandService.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/bandService.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/driveFileService.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/drive_file_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/eventService.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/eventService.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/membershipService.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/membershipService.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/roleService.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/songService.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/songService.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/userService.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/voiceService.go" beforeDir="false" afterPath="$PROJECT_DIR$/service/voiceService.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/googlef424063251e2d68b.html" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -93,7 +23,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="master" />
+        <entry key="$PROJECT_DIR$" value="v2" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -238,7 +168,8 @@
     <MESSAGE value="improves performance&#10;improves adding event memberships flow" />
     <MESSAGE value="hotfix" />
     <MESSAGE value="changes message" />
-    <option name="LAST_COMMIT_MESSAGE" value="changes message" />
+    <MESSAGE value="v2" />
+    <option name="LAST_COMMIT_MESSAGE" value="v2" />
   </component>
   <component name="VgoProject">
     <integration-enabled>true</integration-enabled>

@@ -2,7 +2,7 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/joeyave/scala-bot-v2/service"
+	"github.com/joeyave/scala-bot/service"
 )
 
 type DriveFileController struct {

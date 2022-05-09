@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/flowchartsman/retry"
 	"github.com/joeyave/chords-transposer/transposer"
-	"github.com/joeyave/scala-bot-v2/helpers"
+	"github.com/joeyave/scala-bot/helpers"
 
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
