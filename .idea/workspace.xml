@@ -4,12 +4,8 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="splits tags to columns">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/controller/bot_controller_settings.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/bot_controller_settings.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="fixes bug with user notification &#10;updates go to 1.18">
       <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/helper.go" beforeDir="false" afterPath="$PROJECT_DIR$/util/helper.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -176,7 +172,8 @@
     <MESSAGE value="v2" />
     <MESSAGE value="sends errors to channels" />
     <MESSAGE value="splits tags to columns" />
-    <option name="LAST_COMMIT_MESSAGE" value="splits tags to columns" />
+    <MESSAGE value="fixes bug with user notification &#10;updates go to 1.18" />
+    <option name="LAST_COMMIT_MESSAGE" value="fixes bug with user notification &#10;updates go to 1.18" />
   </component>
   <component name="VgoProject">
     <settings-migrated>true</settings-migrated>
