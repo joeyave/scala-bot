@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
@@ -16,6 +17,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -451,7 +453,8 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 			Text: "Произошла ошибка. Поправим.",
 		})
 		if err != nil {
-			return 0
+			log.Error().Err(err).Msg("Error!")
+			return ext.DispatcherActionEndGroups
 		}
 	} else {
 		_, err := ctx.EffectiveChat.SendMessage(bot, "Произошла ошибка. Поправим.", nil)
@@ -468,6 +471,23 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 	}
 
 	// todo: send message to the logs channel
+	logsChannelID, err := strconv.ParseInt(os.Getenv("LOG_CHANNEL"), 10, 64)
+	if err == nil {
+		userJsonBytes, err := json.Marshal(user)
+		if err != nil {
+			log.Error().Err(err).Msg("Error!")
+			return ext.DispatcherActionEndGroups
+		}
+
+		_, err = bot.SendMessage(logsChannelID, fmt.Sprintf("Error handling update!\n<pre>error=%v</pre>\n<pre>user=%s</pre>", botErr, string(userJsonBytes)), &gotgbot.SendMessageOpts{
+			DisableWebPagePreview: true,
+			ParseMode:             "HTML",
+		})
+		if err != nil {
+			log.Error().Err(err).Msg("Error!")
+			return ext.DispatcherActionEndGroups
+		}
+	}
 
 	user.State = entity.State{}
 	_, err = c.UserService.UpdateOne(*user)

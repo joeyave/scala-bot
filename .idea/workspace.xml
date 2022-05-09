@@ -4,12 +4,10 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="test">
+    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="v2">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/controller/bot_controller.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/bot_controller.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/controller/bot_controller_bands.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/bot_controller_bands.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/controller/bot_controller_events.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/bot_controller_events.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/controller/bot_controller_songs.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/bot_controller_songs.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -256,6 +254,11 @@
           <url>file://$PROJECT_DIR$/handlers/handler.go</url>
           <line>175</line>
           <option name="timeStamp" value="46" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/controller/bot_controller.go</url>
+          <line>476</line>
+          <option name="timeStamp" value="47" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
