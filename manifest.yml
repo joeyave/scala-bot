@@ -1,6 +1,5 @@
 applications:
   - name: scala-chords-bot
-
     random-route: true
     memory: 256M
     instances: 1

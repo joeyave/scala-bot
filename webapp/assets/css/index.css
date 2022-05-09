@@ -1,0 +1,116 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap");
+.form-control {
+  border-radius: 10px;
+  /*font-size: 18px;*/
+}
+
+.form-control:focus {
+  box-shadow: none;
+}
+
+.date-input {
+  border-radius: 0;
+  border: none;
+  padding: 0;
+}
+
+.header-input {
+  font-weight: bold;
+  border-radius: 0;
+  padding: 0;
+  border: none;
+  font-size: 1.5rem;
+}
+.header-input:focus {
+  box-shadow: none;
+  outline: none;
+}
+
+.notes-input {
+  border-radius: 0;
+  padding: 0;
+  border: none;
+}
+
+.lyrics-div {
+  font-size: 1rem;
+  line-height: 1.4rem;
+  white-space: pre-wrap;
+}
+
+/*.lyrics-div * {*/
+/*    font-family: "Roboto Mono", monospace !important;*/
+/*    !*white-space: nowrap;*!*/
+/*    !*font-size: 18px !important;*!*/
+/*    line-height: 1.1;*/
+/*}*/
+/*.lyrics-div * {*/
+/*    !*font-size: calc(20px + 6 * ((100vw - 320px) / 680)) !important;*!*/
+/*    !*font-size: 20px !important;*!*/
+/*    !*font-size: 0.5vi !important;*!*/
+/*    !*font-size: calc(4vw + 4vh + 2vmin) !important;*!*/
+/*}*/
+/*.lyrics-div p span {*/
+/*    display: inline;*/
+/*    white-space: nowrap;*/
+/*}*/
+[list]::-webkit-calendar-picker-indicator {
+  display: none !important;
+}
+
+.sortable-list {
+  width: 100%;
+}
+.sortable-list .item {
+  display: flex;
+  margin-bottom: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  align-items: center;
+  justify-content: space-between;
+}
+.sortable-list .item i {
+  font-size: 16px;
+  cursor: pointer;
+  /*Increasing touch area */
+  display: inline-block;
+  position: relative;
+  z-index: 1;
+  padding: 12px 14px 12px 14px;
+  margin: -12px -14px -12px -14px;
+}
+
+.sortable-ghost {
+  opacity: 0;
+}
+
+.sortable-chosen {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.ts-control {
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  font-size: 1rem;
+}
+.ts-control input {
+  font-size: 1rem;
+}
+
+.ts-dropdown {
+  font-size: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+.ts-dropdown .active {
+  background-color: inherit;
+  color: inherit;
+}
+
+.ts-dropdown-content {
+  border-radius: 10px;
+}
+
+/*# sourceMappingURL=index.css.map */

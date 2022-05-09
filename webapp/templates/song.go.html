@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+{{template "global/header" .}}
+
+<body>
+
+<div class="container">
+    <form id="form">
+        <div class="mt-2 mb-2">
+            <textarea rows='1' type="text" class="header-input w-100" id="name" list="suggestions"
+                      placeholder="Название"
+                      autocomplete="off" required>{{ .Song.PDF.Name }}</textarea>
+            <select class="mb-2" id="tags" multiple>
+                {{ range $i, $tag := .Tags }}
+                    {{ if $tag.IsSelected}}
+                        <option value="{{ $tag.Name }}" selected>{{$tag.Name}}</option>
+                    {{else}}
+                        <option value="{{ $tag.Name }}">{{$tag.Name}}</option>
+                    {{end}}
+                {{ end }}
+            </select>
+            <select id="key" class="meta-select">
+                <option value="?">Key</option>
+                <optgroup label="Major">
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                    <option value="E">E</option>
+                    <option value="F">F</option>
+                    <option value="G">G</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                </optgroup>
+                <optgroup label="Major #">
+                    <option value="C#">C#</option>
+                    <option value="D#">D#</option>
+                    <option value="F#">F#</option>
+                    <option value="G#">G#</option>
+                    <option value="A#">A#</option>
+                </optgroup>
+                <optgroup label="Major b">
+                    <option value="Cb">Cb</option>
+                    <option value="Db">Db</option>
+                    <option value="Eb">Eb</option>
+                    <option value="Gb">Gb</option>
+                    <option value="Ab">Ab</option>
+                    <option value="Bb">Bb</option>
+                </optgroup>
+                <optgroup label="Minor">
+                    <option value="C">Am</option>
+                    <option value="D">Bm</option>
+                    <option value="E">Cm</option>
+                    <option value="F">Dm</option>
+                    <option value="G">Em</option>
+                    <option value="A">Fm</option>
+                    <option value="B">Gm</option>
+                </optgroup>
+                <optgroup label="Minor #">
+                    <option value="A#m">A#m</option>
+                    <option value="C#m">C#m</option>
+                    <option value="D#m">D#m</option>
+                    <option value="F#m">F#m</option>
+                    <option value="G#m">G#m</option>
+                </optgroup>
+                <optgroup label="Minor b">
+                    <option value="Abm">Abm</option>
+                    <option value="Bbm">Bbm</option>
+                    <option value="Dbm">Dbm</option>
+                    <option value="Ebm">Ebm</option>
+                    <option value="Gbm">Gbm</option>
+                </optgroup>
+            </select>
+            <select id="bpm">
+                {{ range $i, $key := .BPMs }}
+                    {{ if $key.IsSelected }}
+                        <option selected value="{{ $key.Value }}">{{ $key.Name }}</option>
+                    {{ else}}
+                        <option value="{{ $key.Value }}">{{ $key.Name }}</option>
+                    {{ end }}
+                {{ end }}
+            </select>
+            <select id="time">
+                {{ range $i, $key := .Times }}
+                    {{ if $key.IsSelected }}
+                        <option selected value="{{ $key.Value }}">{{ $key.Name }}</option>
+                    {{ else}}
+                        <option value="{{ $key.Value }}">{{ $key.Name }}</option>
+                    {{ end }}
+                {{ end }}
+            </select>
+        </div>
+        <select id="transpose-section" class="mb-2 visually-hidden" disabled required>
+            <option value="">Сохранить изменения в PDF?</option>
+            <option value="-1">В конец документа</option>
+            {{ range $i, $tag := .Sections }}
+                <option value="{{ $tag.Value }}">{{ $tag.Name }}</option>
+            {{ end }}
+        </select>
+
+        {{/*        <div class="mb-2 d-flex justify-content-end">*/}}
+        {{/*            <div class="form-check form-check-inline form-switch">*/}}
+        {{/*                <input type="checkbox" class="form-check-input" role="switch" id="showLyrics" checked>*/}}
+        {{/*                <label for="scales">Слова</label>*/}}
+        {{/*            </div>*/}}
+        {{/*            <div class="form-check form-check-inline form-switch">*/}}
+        {{/*                <input type="checkbox" class="form-check-input" role="switch" id="showChords" checked>*/}}
+        {{/*                <label for="horns">Аккорды</label>*/}}
+        {{/*            </div>*/}}
+        {{/*        </div>*/}}
+
+        <div id="lyrics-container" class="font-monospace">
+            {{ if eq .Action "create" }}
+                <textarea id="lyrics" class="form-control lyrics-input">{{ .Lyrics }}</textarea>
+            {{ else }}
+                <p id="lyrics" class="lyrics-div">{{ .Lyrics }}</p>
+            {{ end }}
+        </div>
+    </form>
+
+</div>
+
+<script type="text/javascript">
+    const action = {{ .Action }};
+
+    const lyricsHTML = {{ .Lyrics }};
+
+    const messageId = {{ .MessageID }};
+    const chatId = {{ .ChatID }};
+    const userId = {{ .UserID }};
+
+    const song = JSON.parse("{{ json .Song }}");
+</script>
+<script type="module" src="/webapp/assets/js/edit-song.js"></script>
+</body>
+</html>
