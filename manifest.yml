@@ -1,5 +1,6 @@
 applications:
   - name: scala-chords-bot
+    buildpack: https://github.com/cloudfoundry/go-buildpack.git#v1.9.44
     random-route: true
     memory: 256M
     instances: 1
