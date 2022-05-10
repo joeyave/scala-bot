@@ -89,7 +89,7 @@ func (c *BotController) song(bot *gotgbot.Bot, ctx *ext.Context, driveFileID str
 	}
 
 	markup := gotgbot.InlineKeyboardMarkup{
-		InlineKeyboard: keyboard.SongInit(song, user, ctx.EffectiveChat.Id, ctx.EffectiveMessage.MessageId, ctx.EffectiveUser.LanguageCode),
+		InlineKeyboard: keyboard.SongInit(song, user, 0, 0, ctx.EffectiveUser.LanguageCode),
 	}
 
 	sendDocumentByReader := func() (*gotgbot.Message, error) {
@@ -148,6 +148,10 @@ func (c *BotController) song(bot *gotgbot.Bot, ctx *ext.Context, driveFileID str
 	user.CallbackCache.MessageID = msg.MessageId
 	user.CallbackCache.UserID = user.ID
 	caption := user.CallbackCache.AddToText(song.Caption())
+
+	markup = gotgbot.InlineKeyboardMarkup{
+		InlineKeyboard: keyboard.SongInit(song, user, msg.Chat.Id, msg.MessageId, ctx.EffectiveUser.LanguageCode),
+	}
 
 	_, _, err = msg.EditCaption(bot, &gotgbot.EditMessageCaptionOpts{
 		ParseMode:   "HTML",
@@ -464,9 +468,9 @@ func (c *BotController) SongCB(bot *gotgbot.Bot, ctx *ext.Context) error {
 	if len(split) > 1 {
 		switch split[1] {
 		case "edit":
-			markup.InlineKeyboard = keyboard.SongEdit(song, user, user.CallbackCache.ChatID, user.CallbackCache.MessageID, ctx.EffectiveUser.LanguageCode)
+			markup.InlineKeyboard = keyboard.SongEdit(song, user, ctx.EffectiveUser.LanguageCode)
 		default:
-			markup.InlineKeyboard = keyboard.SongInit(song, user, ctx.EffectiveChat.Id, ctx.EffectiveMessage.MessageId, ctx.EffectiveUser.LanguageCode)
+			markup.InlineKeyboard = keyboard.SongInit(song, user, user.CallbackCache.ChatID, user.CallbackCache.MessageID, ctx.EffectiveUser.LanguageCode)
 		}
 	}
 
@@ -512,7 +516,7 @@ func (c *BotController) SongLike(bot *gotgbot.Bot, ctx *ext.Context) error {
 	}
 
 	markup := gotgbot.InlineKeyboardMarkup{}
-	markup.InlineKeyboard = keyboard.SongInit(song, user, ctx.EffectiveChat.Id, ctx.EffectiveMessage.MessageId, ctx.EffectiveUser.LanguageCode)
+	markup.InlineKeyboard = keyboard.SongInit(song, user, user.CallbackCache.ChatID, user.CallbackCache.MessageID, ctx.EffectiveUser.LanguageCode)
 
 	_, _, err = ctx.EffectiveMessage.EditReplyMarkup(bot, &gotgbot.EditMessageReplyMarkupOpts{
 		ReplyMarkup: markup,
@@ -962,7 +966,7 @@ func (c *BotController) SongStyle(bot *gotgbot.Bot, ctx *ext.Context) error {
 	}
 
 	markup := gotgbot.InlineKeyboardMarkup{
-		InlineKeyboard: keyboard.SongEdit(song, user, ctx.EffectiveChat.Id, ctx.EffectiveMessage.MessageId, ctx.EffectiveUser.LanguageCode),
+		InlineKeyboard: keyboard.SongEdit(song, user, ctx.EffectiveUser.LanguageCode),
 	}
 
 	caption := user.CallbackCache.AddToText(song.Caption())
@@ -1018,7 +1022,7 @@ func (c *BotController) SongAddLyricsPage(bot *gotgbot.Bot, ctx *ext.Context) er
 	}
 
 	markup := gotgbot.InlineKeyboardMarkup{
-		InlineKeyboard: keyboard.SongEdit(song, user, ctx.EffectiveChat.Id, ctx.EffectiveMessage.MessageId, ctx.EffectiveUser.LanguageCode),
+		InlineKeyboard: keyboard.SongEdit(song, user, ctx.EffectiveUser.LanguageCode),
 	}
 
 	caption := user.CallbackCache.AddToText(song.Caption())

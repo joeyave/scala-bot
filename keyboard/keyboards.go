@@ -112,13 +112,13 @@ func SongInit(song *entity.Song, user *entity.User, chatID int64, messageID int6
 		if liked {
 			keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
 				{Text: txt.Get("button.like", lang), CallbackData: util.CallbackData(state.SongLike, song.ID.Hex()+":dislike")},
-				{Text: txt.Get("button.voices", lang), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())}, // todo: enable
+				{Text: txt.Get("button.voices", lang), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())},
 				{Text: txt.Get("button.more", lang), CallbackData: util.CallbackData(state.SongCB, song.ID.Hex()+":edit")},
 			})
 		} else {
 			keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
 				{Text: txt.Get("button.unlike", lang), CallbackData: util.CallbackData(state.SongLike, song.ID.Hex()+":like")},
-				{Text: txt.Get("button.voices", lang), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())}, // todo: enable
+				{Text: txt.Get("button.voices", lang), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())},
 				{Text: txt.Get("button.more", lang), CallbackData: util.CallbackData(state.SongCB, song.ID.Hex()+":edit")},
 			})
 		}
@@ -139,7 +139,7 @@ func SongInit(song *entity.Song, user *entity.User, chatID int64, messageID int6
 	return keyboard
 }
 
-func SongEdit(song *entity.Song, user *entity.User, chatID, messageID int64, lang string) [][]gotgbot.InlineKeyboardButton {
+func SongEdit(song *entity.Song, user *entity.User, lang string) [][]gotgbot.InlineKeyboardButton {
 
 	keyboard := [][]gotgbot.InlineKeyboardButton{
 		//{

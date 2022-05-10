@@ -7,6 +7,7 @@ import (
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/keyboard"
 	"github.com/joeyave/scala-bot/service"
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"html/template"
 	"net/http"
@@ -386,7 +387,7 @@ func (h *WebAppController) EditSongConfirm(ctx *gin.Context) {
 	}
 
 	markup := gotgbot.InlineKeyboardMarkup{
-		InlineKeyboard: keyboard.SongEdit(song, user, chatID, messageID, "ru"),
+		InlineKeyboard: keyboard.SongInit(song, user, chatID, messageID, "ru"),
 	}
 
 	_, _, err = h.Bot.EditMessageMedia(gotgbot.InputMediaDocument{
@@ -401,6 +402,10 @@ func (h *WebAppController) EditSongConfirm(ctx *gin.Context) {
 		MessageId:   messageID,
 		ReplyMarkup: markup,
 	})
+	if err != nil {
+		log.Error().Err(err).Msg("error")
+		return
+	}
 
 	ctx.Status(http.StatusOK)
 }
