@@ -448,6 +448,12 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 
 	log.Error().Msgf("Error handling update: %v", botErr)
 
+	user, err := c.UserService.FindOneByID(ctx.EffectiveChat.Id)
+	if err != nil {
+		log.Error().Err(err).Msg("Error!")
+		return ext.DispatcherActionEndGroups
+	}
+
 	if ctx.CallbackQuery != nil {
 		_, err := ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
 			Text: "Произошла ошибка. Поправим.",
@@ -462,12 +468,12 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 			log.Error().Err(err).Msg("Error!")
 			return ext.DispatcherActionEndGroups
 		}
-	}
-
-	user, err := c.UserService.FindOneByID(ctx.EffectiveChat.Id)
-	if err != nil {
-		log.Error().Err(err).Msg("Error!")
-		return ext.DispatcherActionEndGroups
+		user.State = entity.State{}
+		_, err = c.UserService.UpdateOne(*user)
+		if err != nil {
+			log.Error().Err(err).Msg("Error!")
+			return ext.DispatcherActionEndGroups
+		}
 	}
 
 	// todo: send message to the logs channel
@@ -487,13 +493,6 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 			log.Error().Err(err).Msg("Error!")
 			return ext.DispatcherActionEndGroups
 		}
-	}
-
-	user.State = entity.State{}
-	_, err = c.UserService.UpdateOne(*user)
-	if err != nil {
-		log.Error().Err(err).Msg("Error!")
-		return ext.DispatcherActionEndGroups
 	}
 
 	return ext.DispatcherActionEndGroups

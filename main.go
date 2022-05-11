@@ -266,7 +266,7 @@ func main() {
 
 	go func() {
 		// Start receiving updates.
-		err = updater.StartPolling(bot, &ext.PollingOpts{DropPendingUpdates: true})
+		err = updater.StartPolling(bot, &ext.PollingOpts{})
 		if err != nil {
 			panic("failed to start polling: " + err.Error())
 		}
