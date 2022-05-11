@@ -469,7 +469,7 @@ func (s *DriveFileService) StyleOne(ID string) (*drive.File, error) {
 
 			requests = append(requests, &docs.Request{
 				UpdateParagraphStyle: &docs.UpdateParagraphStyleRequest{
-					Fields:         "*",
+					Fields:         "alignment",
 					ParagraphStyle: &style,
 					Range: &docs.Range{
 						StartIndex:      paragraph.StartIndex,
@@ -1179,7 +1179,7 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string) [
 
 		requests = append(requests, &docs.Request{
 			UpdateParagraphStyle: &docs.UpdateParagraphStyleRequest{
-				Fields:         "*",
+				Fields:         "alignment, lineSpacing, direction, spaceAbove, spaceBelow",
 				ParagraphStyle: &style,
 				Range: &docs.Range{
 					EndIndex:        paragraph.EndIndex,
