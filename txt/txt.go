@@ -234,6 +234,10 @@ var locales = map[string]map[string]string{
 	"text.addedLyricsPage": {
 		"ru": "На вторую страницу добавлены слова без аккордов.",
 	},
+
+	"command.menu": {
+		"ru": "menu",
+	},
 }
 
 func init() {

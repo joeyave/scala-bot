@@ -5,7 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="bugfix">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/txt/txt.go" beforeDir="false" afterPath="$PROJECT_DIR$/txt/txt.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -49,6 +51,7 @@
     <setting file="file://$USER_HOME$/go/pkg/mod/go.mongodb.org/mongo-driver@v1.7.4/mongo/collection.go" root0="SKIP_INSPECTION" />
     <setting file="file://$USER_HOME$/go/pkg/mod/go.mongodb.org/mongo-driver@v1.7.4/mongo/options/findoptions.go" root0="SKIP_INSPECTION" />
     <setting file="file://$USER_HOME$/go/pkg/mod/go.mongodb.org/mongo-driver@v1.8.4/mongo/cursor.go" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/go/pkg/mod/google.golang.org/api@v0.78.0/docs/v1/docs-gen.go" root0="SKIP_INSPECTION" />
     <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/telebot.v3@v3.0.0/chat.go" root0="SKIP_INSPECTION" />
     <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/telebot.v3@v3.0.0/media.go" root0="SKIP_INSPECTION" />
     <setting file="file://$USER_HOME$/go/pkg/mod/gopkg.in/telebot.v3@v3.0.0/message.go" root0="SKIP_INSPECTION" />
@@ -264,7 +267,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/controller/bot_controller.go</url>
-          <line>475</line>
+          <line>481</line>
           <option name="timeStamp" value="47" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
@@ -286,6 +289,11 @@
           <url>file://$PROJECT_DIR$/service/drive_file_service.go</url>
           <line>423</line>
           <option name="timeStamp" value="53" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/main.go</url>
+          <line>50</line>
+          <option name="timeStamp" value="54" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

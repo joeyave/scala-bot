@@ -48,6 +48,14 @@ func main() {
 		panic("failed to create new bot: " + err.Error())
 	}
 
+	commands, err := bot.SetMyCommands([]gotgbot.BotCommand{
+		{Command: "schedule", Description: txt.Get("button.schedule", "")},
+		{Command: "songs", Description: txt.Get("button.songs", "")},
+		{Command: "menu", Description: txt.Get("button.menu", "")},
+	}, &gotgbot.SetMyCommandsOpts{})
+	fmt.Println(commands)
+	fmt.Println(err)
+
 	mongoClient, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("MONGODB_URI")))
 	if err != nil {
 		log.Fatal().Err(err).Msg("error creating mongo client")
@@ -162,6 +170,10 @@ func main() {
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(callbackquery.All, botController.RegisterUser), 0)
 
 	// Plain keyboard.
+	dispatcher.AddHandlerToGroup(handlers.NewCommand("schedule", botController.GetEvents(0)), 1)
+	dispatcher.AddHandlerToGroup(handlers.NewCommand("songs", botController.GetSongs(0)), 1)
+	dispatcher.AddHandlerToGroup(handlers.NewCommand("menu", botController.Menu), 1)
+
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(func(msg *gotgbot.Message) bool {
 		return msg.Text == txt.Get("button.menu", msg.From.LanguageCode) || msg.Text == txt.Get("button.cancel", msg.From.LanguageCode)
 	}, botController.Menu), 1)
