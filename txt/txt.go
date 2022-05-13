@@ -156,7 +156,7 @@ var locales = map[string]map[string]string{
 	},
 
 	"text.defaultPlaceholder": {
-		"ru": "Фраза из песни или список",
+		"ru": "Слова или список",
 	},
 	"text.chooseEvent": {
 		"ru": "Выбери собрание:",

@@ -4,10 +4,12 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="bugfix">
+    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="adds menu button">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/controller/bot_controller.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/bot_controller.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/txt/txt.go" beforeDir="false" afterPath="$PROJECT_DIR$/txt/txt.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/webapp/assets/js/edit-song.js" beforeDir="false" afterPath="$PROJECT_DIR$/webapp/assets/js/edit-song.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/webapp/templates/song.go.html" beforeDir="false" afterPath="$PROJECT_DIR$/webapp/templates/song.go.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -157,7 +159,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="renames project to scala-bot" />
     <MESSAGE value="adds 'add lyrics page' logic" />
     <MESSAGE value="adds weekdays filter to schedule" />
     <MESSAGE value="adds weekdays filter to archive" />
@@ -182,7 +183,8 @@
     <MESSAGE value="fixes bug with user notification &#10;updates go to 1.17" />
     <MESSAGE value="updates to go1.18" />
     <MESSAGE value="bugfix" />
-    <option name="LAST_COMMIT_MESSAGE" value="bugfix" />
+    <MESSAGE value="adds menu button" />
+    <option name="LAST_COMMIT_MESSAGE" value="adds menu button" />
   </component>
   <component name="VgoProject">
     <settings-migrated>true</settings-migrated>
@@ -267,7 +269,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/controller/bot_controller.go</url>
-          <line>481</line>
+          <line>482</line>
           <option name="timeStamp" value="47" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
@@ -294,6 +296,11 @@
           <url>file://$PROJECT_DIR$/main.go</url>
           <line>50</line>
           <option name="timeStamp" value="54" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/controller/bot_controller_songs.go</url>
+          <line>33</line>
+          <option name="timeStamp" value="55" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

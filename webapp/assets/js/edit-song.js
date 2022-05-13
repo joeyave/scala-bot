@@ -96,7 +96,8 @@ window.addEventListener('DOMContentLoaded', (e) => {
                 "bpm": bpm.value,
                 "time": time.value,
                 "tags": Array.from(tags.selectedOptions)
-                    .map(({value}) => value)
+                    .map(({value}) => value),
+                "lyrics": lyrics.value
             })
 
             Telegram.WebApp.sendData(data)

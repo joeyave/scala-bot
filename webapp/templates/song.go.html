@@ -109,7 +109,7 @@
 
         <div id="lyrics-container" class="font-monospace">
             {{ if eq .Action "create" }}
-                <textarea id="lyrics" class="form-control lyrics-input">{{ .Lyrics }}</textarea>
+                <textarea id="lyrics" class="form-control lyrics-input"></textarea>
             {{ else }}
                 <p id="lyrics" class="lyrics-div">{{ .Lyrics }}</p>
             {{ end }}
