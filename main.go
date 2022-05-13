@@ -52,7 +52,7 @@ func main() {
 		{Command: "/schedule", Description: txt.Get("button.schedule", "")},
 		{Command: "/songs", Description: txt.Get("button.songs", "")},
 		{Command: "/menu", Description: txt.Get("button.menu", "")},
-	})
+	}, nil)
 	fmt.Println(commands)
 	fmt.Println(err)
 
