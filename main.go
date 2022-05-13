@@ -49,10 +49,10 @@ func main() {
 	}
 
 	commands, err := bot.SetMyCommands([]gotgbot.BotCommand{
-		{Command: "schedule", Description: txt.Get("button.schedule", "")},
-		{Command: "songs", Description: txt.Get("button.songs", "")},
-		{Command: "menu", Description: txt.Get("button.menu", "")},
-	}, &gotgbot.SetMyCommandsOpts{})
+		{Command: "/schedule", Description: txt.Get("button.schedule", "")},
+		{Command: "/songs", Description: txt.Get("button.songs", "")},
+		{Command: "/menu", Description: txt.Get("button.menu", "")},
+	})
 	fmt.Println(commands)
 	fmt.Println(err)
 
