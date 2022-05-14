@@ -139,6 +139,31 @@ func SongInit(song *entity.Song, user *entity.User, chatID int64, messageID int6
 	return keyboard
 }
 
+func SongInitIQ(song *entity.Song, user *entity.User, lang string) [][]gotgbot.InlineKeyboardButton {
+
+	var keyboard [][]gotgbot.InlineKeyboardButton
+
+	liked := false
+	for _, userID := range song.Likes {
+		if user.ID == userID {
+			liked = true
+			break
+		}
+	}
+
+	if liked {
+		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
+			{Text: txt.Get("button.voices", lang), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())},
+		})
+	} else {
+		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
+			{Text: txt.Get("button.voices", lang), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())},
+		})
+	}
+
+	return keyboard
+}
+
 func SongEdit(song *entity.Song, user *entity.User, lang string) [][]gotgbot.InlineKeyboardButton {
 
 	keyboard := [][]gotgbot.InlineKeyboardButton{

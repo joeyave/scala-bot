@@ -8,9 +8,12 @@ import (
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers/filters/callbackquery"
+	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers/filters/inlinequery"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers/filters/message"
 	"github.com/gin-gonic/gin"
 	"github.com/joeyave/scala-bot/controller"
+	"github.com/joeyave/scala-bot/entity"
+	"github.com/joeyave/scala-bot/keyboard"
 	"github.com/joeyave/scala-bot/repository"
 	"github.com/joeyave/scala-bot/service"
 	"github.com/joeyave/scala-bot/state"
@@ -28,6 +31,7 @@ import (
 	"html/template"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -48,17 +52,18 @@ func main() {
 		panic("failed to create new bot: " + err.Error())
 	}
 
-	commands, err := bot.SetMyCommands([]gotgbot.BotCommand{
+	_, err = bot.SetMyCommands([]gotgbot.BotCommand{
 		{Command: "/schedule", Description: txt.Get("button.schedule", "")},
 		{Command: "/songs", Description: txt.Get("button.songs", "")},
 		{Command: "/menu", Description: txt.Get("button.menu", "")},
 	}, nil)
-	fmt.Println(commands)
-	fmt.Println(err)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Error setting commands")
+	}
 
 	mongoClient, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("MONGODB_URI")))
 	if err != nil {
-		log.Fatal().Err(err).Msg("error creating mongo client")
+		log.Fatal().Err(err).Msg("Error creating mongo client")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -166,10 +171,40 @@ func main() {
 	})
 	dispatcher := updater.Dispatcher
 
+	dispatcher.AddHandlerToGroup(handlers.NewInlineQuery(inlinequery.All, func(bot *gotgbot.Bot, ctx *ext.Context) error {
+
+		user, err := userService.FindOneByID(ctx.EffectiveUser.Id)
+		if err == nil && user.BandID != primitive.NilObjectID {
+			ctx.Data["user"] = user
+			return nil
+		}
+
+		ctx.InlineQuery.Answer(bot, nil, &gotgbot.AnswerInlineQueryOpts{
+			SwitchPmText: "Выбрать или создать свою группу", // todo: put to txt
+		})
+
+		return nil
+	}), 0)
+
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(message.All, botController.RegisterUser), 0)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(callbackquery.All, botController.RegisterUser), 0)
 
 	// Plain keyboard.
+	dispatcher.AddHandlerToGroup(handlers.NewCommand("start", func(bot *gotgbot.Bot, ctx *ext.Context) error {
+		fmt.Println(ctx)
+
+		if strings.Contains(ctx.EffectiveMessage.Text, "addVoice") {
+			split := strings.Split(ctx.EffectiveMessage.Text, "addVoice")
+			ctx.CallbackQuery = &gotgbot.CallbackQuery{
+				Data: "0:" + split[1],
+			}
+			return botController.SongVoicesAddVoiceAskForAudio(bot, ctx)
+		}
+
+		//return botController.SettingsChooseBand(bot, ctx)
+		return nil // todo
+	}), 1)
+
 	dispatcher.AddHandlerToGroup(handlers.NewCommand("schedule", botController.GetEvents(0)), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCommand("songs", botController.GetSongs(0)), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCommand("menu", botController.Menu), 1)
@@ -201,7 +236,7 @@ func main() {
 		return msg.WebAppData != nil && msg.WebAppData.ButtonText == txt.Get("button.createDoc", msg.From.LanguageCode)
 	}, botController.CreateSong), 1)
 
-	// Inline keyboard.
+	// Callback query.
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.BandCreate_AskForName), botController.BandCreate_AskForName), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.RoleCreate_AskForName), botController.RoleCreate_AskForName), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.RoleCreate), botController.RoleCreate), 1)
@@ -238,6 +273,57 @@ func main() {
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SongCopyToMyBand), botController.SongCopyToMyBand), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SongStyle), botController.SongStyle), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SongAddLyricsPage), botController.SongAddLyricsPage), 1)
+
+	// Inline query.
+	dispatcher.AddHandlerToGroup(handlers.NewInlineQuery(inlinequery.All, func(bot *gotgbot.Bot, ctx *ext.Context) error {
+
+		user := ctx.Data["user"].(*entity.User)
+
+		//if len(ctx.InlineQuery.Query) < 2 {
+		//	ctx.InlineQuery.Answer(bot, nil, nil)
+		//	return nil
+		//}
+
+		driveFiles, _, err := driveFileService.FindSomeByFullTextAndFolderID(ctx.InlineQuery.Query, user.Band.DriveFolderID, "")
+		if err != nil {
+			return err
+		}
+
+		var driveFileIDs []string
+		for _, file := range driveFiles {
+			driveFileIDs = append(driveFileIDs, file.Id)
+		}
+
+		songs, err := songService.FindManyByDriveFileIDs(driveFileIDs)
+		if err != nil {
+			return err
+		}
+
+		var results []gotgbot.InlineQueryResult
+		for _, song := range songs {
+			if song.PDF.TgFileID == "" {
+				continue
+			}
+			result := gotgbot.InlineQueryResultCachedDocument{
+				Id:             song.ID.Hex(),
+				Title:          song.PDF.Name,
+				DocumentFileId: song.PDF.TgFileID,
+				ReplyMarkup: &gotgbot.InlineKeyboardMarkup{
+					InlineKeyboard: keyboard.SongInitIQ(song, user, ctx.EffectiveUser.LanguageCode),
+				},
+			}
+			results = append(results, result)
+		}
+
+		_, err = ctx.InlineQuery.Answer(bot, results, &gotgbot.AnswerInlineQueryOpts{
+			CacheTime: 1,
+		})
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}), 1)
 
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(message.All, botController.ChooseHandlerOrSearch), 1)
 

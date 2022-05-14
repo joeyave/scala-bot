@@ -73,7 +73,7 @@ func (c *BotController) RegisterUser(bot *gotgbot.Bot, ctx *ext.Context) error {
 	ctx.Data["user"] = user
 	user = ctx.Data["user"].(*entity.User)
 
-	user.Name = strings.TrimSpace(fmt.Sprintf("%s %s", ctx.EffectiveChat.FirstName, ctx.EffectiveChat.LastName))
+	user.Name = strings.TrimSpace(fmt.Sprintf("%s %s", ctx.EffectiveUser.FirstName, ctx.EffectiveUser.LastName))
 
 	// todo
 	//if user.BandID == primitive.NilObjectID && user.State.Name != helpers.ChooseBandState && user.State.Name != helpers.CreateBandState {
@@ -88,7 +88,7 @@ func (c *BotController) RegisterUser(bot *gotgbot.Bot, ctx *ext.Context) error {
 			if parsedData[0] == strconv.Itoa(state.SettingsChooseBand) || parsedData[0] == strconv.Itoa(state.BandCreate_AskForName) {
 				return nil
 			}
-		} else if user.State.Name == (state.BandCreate) {
+		} else if user.State.Name == state.BandCreate {
 			return nil
 		}
 
@@ -113,7 +113,7 @@ func (c *BotController) RegisterUser(bot *gotgbot.Bot, ctx *ext.Context) error {
 		return ext.EndGroups
 	}
 
-	if ctx.CallbackQuery != nil {
+	if ctx.CallbackQuery != nil && ctx.CallbackQuery.Message != nil {
 		for _, e := range ctx.CallbackQuery.Message.Entities {
 			if strings.HasPrefix(e.Url, util.CallbackCacheURL) {
 				u, err := url.Parse(e.Url)
@@ -449,7 +449,7 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 
 	log.Error().Msgf("Error handling update: %v", botErr)
 
-	user, err := c.UserService.FindOneByID(ctx.EffectiveChat.Id)
+	user, err := c.UserService.FindOneByID(ctx.EffectiveUser.Id)
 	if err != nil {
 		log.Error().Err(err).Msg("Error!")
 		return ext.DispatcherActionEndGroups
@@ -463,7 +463,11 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 			log.Error().Err(err).Msg("Error!")
 			return ext.DispatcherActionEndGroups
 		}
-	} else {
+	} else if ctx.InlineQuery != nil {
+		ctx.InlineQuery.Answer(bot, nil, &gotgbot.AnswerInlineQueryOpts{
+			CacheTime: 1,
+		})
+	} else if ctx.EffectiveChat != nil {
 		_, err := ctx.EffectiveChat.SendMessage(bot, "Произошла ошибка. Поправим.", nil)
 		if err != nil {
 			log.Error().Err(err).Msg("Error!")

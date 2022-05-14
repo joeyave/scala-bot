@@ -15,6 +15,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/api/drive/v3"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -470,15 +471,31 @@ func (c *BotController) SongCB(bot *gotgbot.Bot, ctx *ext.Context) error {
 		case "edit":
 			markup.InlineKeyboard = keyboard.SongEdit(song, user, ctx.EffectiveUser.LanguageCode)
 		default:
-			markup.InlineKeyboard = keyboard.SongInit(song, user, user.CallbackCache.ChatID, user.CallbackCache.MessageID, ctx.EffectiveUser.LanguageCode)
+			if ctx.EffectiveMessage != nil {
+				markup.InlineKeyboard = keyboard.SongInit(song, user, user.CallbackCache.ChatID, user.CallbackCache.MessageID, ctx.EffectiveUser.LanguageCode)
+			} else {
+				markup.InlineKeyboard = keyboard.SongInitIQ(song, user, ctx.EffectiveUser.LanguageCode)
+			}
 		}
 	}
 
-	_, _, err = ctx.EffectiveMessage.EditCaption(bot, &gotgbot.EditMessageCaptionOpts{
+	opts := &gotgbot.EditMessageCaptionOpts{
 		Caption:     user.CallbackCache.AddToText(song.Caption()),
 		ParseMode:   "HTML",
 		ReplyMarkup: markup,
-	})
+	}
+
+	if ctx.EffectiveMessage != nil {
+		opts.ChatId = ctx.EffectiveMessage.Chat.Id
+		opts.MessageId = ctx.EffectiveMessage.MessageId
+	} else {
+		opts.InlineMessageId = ctx.CallbackQuery.InlineMessageId
+	}
+
+	_, _, err = bot.EditMessageCaption(opts)
+	if err != nil {
+		return err
+	}
 
 	ctx.CallbackQuery.Answer(bot, nil)
 
@@ -561,21 +578,40 @@ func (c *BotController) songVoices(bot *gotgbot.Bot, ctx *ext.Context, songID pr
 	for _, voice := range song.Voices {
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: voice.Name, CallbackData: util.CallbackData(state.SongVoice, song.ID.Hex()+":"+voice.ID.Hex())}})
 	}
-	markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.addVoice", ctx.EffectiveUser.LanguageCode), CallbackData: util.CallbackData(state.SongVoicesCreateVoiceAskForAudio, song.ID.Hex())}})
+
+	if ctx.EffectiveMessage != nil {
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.addVoice", ctx.EffectiveUser.LanguageCode), CallbackData: util.CallbackData(state.SongVoicesCreateVoiceAskForAudio, song.ID.Hex())}})
+	} else {
+		deeplink, err := url.Parse(fmt.Sprintf("https://t.me/%s?start=addVoice%s", bot.Username, song.ID.Hex()))
+		if err != nil {
+			return err
+		}
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.addVoice", ctx.EffectiveUser.LanguageCode), Url: deeplink.String()}})
+	}
 	markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.back", ctx.EffectiveUser.LanguageCode), CallbackData: util.CallbackData(state.SongCB, song.ID.Hex()+":init")}})
 
 	caption := user.CallbackCache.AddToText(txt.Get("text.chooseVoice", ctx.EffectiveUser.LanguageCode))
 
-	_, _, err = ctx.EffectiveMessage.EditMedia(bot, &gotgbot.InputMediaDocument{
+	opts := &gotgbot.EditMessageMediaOpts{
+		ReplyMarkup: markup,
+	}
+
+	if ctx.EffectiveMessage != nil {
+		opts.ChatId = ctx.EffectiveMessage.Chat.Id
+		opts.MessageId = ctx.EffectiveMessage.MessageId
+	} else {
+		opts.InlineMessageId = ctx.CallbackQuery.InlineMessageId
+	}
+
+	_, _, err = bot.EditMessageMedia(&gotgbot.InputMediaDocument{
 		Media:     song.PDF.TgFileID,
 		Caption:   caption,
 		ParseMode: "HTML",
-	}, &gotgbot.EditMessageMediaOpts{
-		ReplyMarkup: markup,
-	})
+	}, opts)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -717,9 +753,12 @@ func (c *BotController) SongVoice(bot *gotgbot.Bot, ctx *ext.Context) error {
 		InlineKeyboard: [][]gotgbot.InlineKeyboardButton{
 			{
 				{Text: txt.Get("button.back", ctx.EffectiveUser.LanguageCode), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())},
-				{Text: txt.Get("button.delete", ctx.EffectiveUser.LanguageCode), CallbackData: util.CallbackData(state.SongVoiceDeleteConfirm, song.ID.Hex()+":"+voice.ID.Hex())},
 			},
 		},
+	}
+
+	if ctx.EffectiveMessage != nil {
+		markup.InlineKeyboard[0] = append(markup.InlineKeyboard[0], gotgbot.InlineKeyboardButton{Text: txt.Get("button.delete", ctx.EffectiveUser.LanguageCode), CallbackData: util.CallbackData(state.SongVoiceDeleteConfirm, song.ID.Hex()+":"+voice.ID.Hex())})
 	}
 
 	caption := user.CallbackCache.AddToText(song.Caption())
@@ -735,7 +774,18 @@ func (c *BotController) SongVoice(bot *gotgbot.Bot, ctx *ext.Context) error {
 			return err
 		}
 
-		msg, _, err := ctx.EffectiveMessage.EditMedia(bot, &gotgbot.InputMediaAudio{
+		opts := &gotgbot.EditMessageMediaOpts{
+			ReplyMarkup: markup,
+		}
+
+		if ctx.EffectiveMessage != nil {
+			opts.ChatId = ctx.EffectiveMessage.Chat.Id
+			opts.MessageId = ctx.EffectiveMessage.MessageId
+		} else {
+			opts.InlineMessageId = ctx.CallbackQuery.InlineMessageId
+		}
+
+		msg, _, err := bot.EditMessageMedia(&gotgbot.InputMediaAudio{
 			Media: gotgbot.NamedFile{
 				File:     reader,
 				FileName: voice.Name,
@@ -744,9 +794,7 @@ func (c *BotController) SongVoice(bot *gotgbot.Bot, ctx *ext.Context) error {
 			Caption:   caption,
 			Performer: song.PDF.Name,
 			Title:     voice.Name,
-		}, &gotgbot.EditMessageMediaOpts{
-			ReplyMarkup: markup,
-		})
+		}, opts)
 		if err != nil {
 			return err
 		}
@@ -757,15 +805,25 @@ func (c *BotController) SongVoice(bot *gotgbot.Bot, ctx *ext.Context) error {
 			return err
 		}
 	} else {
-		_, _, err := ctx.EffectiveMessage.EditMedia(bot, &gotgbot.InputMediaAudio{
+
+		opts := &gotgbot.EditMessageMediaOpts{
+			ReplyMarkup: markup,
+		}
+
+		if ctx.EffectiveMessage != nil {
+			opts.ChatId = ctx.EffectiveMessage.Chat.Id
+			opts.MessageId = ctx.EffectiveMessage.MessageId
+		} else {
+			opts.InlineMessageId = ctx.CallbackQuery.InlineMessageId
+		}
+
+		_, _, err := bot.EditMessageMedia(&gotgbot.InputMediaAudio{
 			Media:     voice.AudioFileID, // todo
 			ParseMode: "HTML",
 			Caption:   caption,
 			Performer: song.PDF.Name,
 			Title:     voice.Name,
-		}, &gotgbot.EditMessageMediaOpts{
-			ReplyMarkup: markup,
-		})
+		}, opts)
 		if err != nil {
 			return err
 		}

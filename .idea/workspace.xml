@@ -5,11 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="adds menu button">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/controller/bot_controller.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/bot_controller.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/txt/txt.go" beforeDir="false" afterPath="$PROJECT_DIR$/txt/txt.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/webapp/assets/js/edit-song.js" beforeDir="false" afterPath="$PROJECT_DIR$/webapp/assets/js/edit-song.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/webapp/templates/song.go.html" beforeDir="false" afterPath="$PROJECT_DIR$/webapp/templates/song.go.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/controller/bot_controller_songs.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/bot_controller_songs.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/keyboard/keyboards.go" beforeDir="false" afterPath="$PROJECT_DIR$/keyboard/keyboards.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -268,13 +269,8 @@
           <option name="timeStamp" value="46" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/controller/bot_controller.go</url>
-          <line>482</line>
-          <option name="timeStamp" value="47" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/controller/bot_controller_songs.go</url>
-          <line>426</line>
+          <line>427</line>
           <option name="timeStamp" value="48" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
@@ -293,14 +289,29 @@
           <option name="timeStamp" value="53" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/main.go</url>
-          <line>50</line>
-          <option name="timeStamp" value="54" />
+          <url>file://$PROJECT_DIR$/controller/bot_controller_songs.go</url>
+          <line>34</line>
+          <option name="timeStamp" value="55" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/controller/bot_controller_songs.go</url>
-          <line>33</line>
-          <option name="timeStamp" value="55" />
+          <line>765</line>
+          <option name="timeStamp" value="67" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/controller/bot_controller_songs.go</url>
+          <line>588</line>
+          <option name="timeStamp" value="68" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/main.go</url>
+          <line>197</line>
+          <option name="timeStamp" value="70" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/controller/bot_controller_songs.go</url>
+          <line>837</line>
+          <option name="timeStamp" value="71" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
