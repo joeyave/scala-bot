@@ -70,7 +70,7 @@ func (c *BotController) BandCreate(index int) handlers.Response {
 					ResizeKeyboard: true,
 				}
 
-				_, err := ctx.EffectiveChat.SendMessage(bot, "Теперь добавь имейл scala-drive@scala-chords-bot.iam.gserviceaccount.com в папку на Гугл Диске как редактора. После этого отправь мне ссылку на эту папку.", &gotgbot.SendMessageOpts{
+				_, err := ctx.EffectiveChat.SendMessage(bot, txt.Get("text.sendEmail", ctx.EffectiveUser.LanguageCode), &gotgbot.SendMessageOpts{
 					ReplyMarkup: markup,
 				})
 				if err != nil {
@@ -153,7 +153,7 @@ func (c *BotController) RoleCreate_ChoosePosition(bot *gotgbot.Bot, ctx *ext.Con
 	}
 	//markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.cancel", ctx.EffectiveUser.LanguageCode), CallbackData: "todo"}})
 
-	_, err := ctx.EffectiveChat.SendMessage(bot, "Роли выводятся в определенном порядке. После какой роли должна быть эта роль?", &gotgbot.SendMessageOpts{ReplyMarkup: markup})
+	_, err := ctx.EffectiveChat.SendMessage(bot, txt.Get("text.roleIndex", ctx.EffectiveUser.LanguageCode), &gotgbot.SendMessageOpts{ReplyMarkup: markup})
 	if err != nil {
 		return err
 	}

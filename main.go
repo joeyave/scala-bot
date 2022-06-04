@@ -53,10 +53,17 @@ func main() {
 	}
 
 	_, err = bot.SetMyCommands([]gotgbot.BotCommand{
+		{Command: "/schedule", Description: txt.Get("button.schedule", "uk")},
+		{Command: "/songs", Description: txt.Get("button.songs", "uk")},
+		{Command: "/menu", Description: txt.Get("button.menu", "uk")},
+	}, &gotgbot.SetMyCommandsOpts{LanguageCode: "uk"})
+
+	_, err = bot.SetMyCommands([]gotgbot.BotCommand{
 		{Command: "/schedule", Description: txt.Get("button.schedule", "")},
 		{Command: "/songs", Description: txt.Get("button.songs", "")},
 		{Command: "/menu", Description: txt.Get("button.menu", "")},
 	}, nil)
+
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error setting commands")
 	}
@@ -221,7 +228,7 @@ func main() {
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(func(msg *gotgbot.Message) bool {
 		return msg.Text == txt.Get("button.stats", msg.From.LanguageCode)
 	}, func(bot *gotgbot.Bot, ctx *ext.Context) error {
-		ctx.EffectiveChat.SendMessage(bot, "Статистика временно не доступна.", nil)
+		ctx.EffectiveChat.SendMessage(bot, txt.Get("text.noStats", ctx.EffectiveUser.LanguageCode), nil)
 		return nil
 	}), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(func(msg *gotgbot.Message) bool {

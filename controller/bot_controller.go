@@ -457,7 +457,7 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 
 	if ctx.CallbackQuery != nil {
 		_, err := ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
-			Text: "Произошла ошибка. Поправим.",
+			Text: txt.Get("text.serverError", ctx.EffectiveUser.LanguageCode),
 		})
 		if err != nil {
 			log.Error().Err(err).Msg("Error!")
@@ -468,7 +468,7 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 			CacheTime: 1,
 		})
 	} else if ctx.EffectiveChat != nil {
-		_, err := ctx.EffectiveChat.SendMessage(bot, "Произошла ошибка. Поправим.", nil)
+		_, err := ctx.EffectiveChat.SendMessage(bot, txt.Get("text.serverError", ctx.EffectiveUser.LanguageCode), nil)
 		if err != nil {
 			log.Error().Err(err).Msg("Error!")
 			return ext.DispatcherActionEndGroups

@@ -205,7 +205,7 @@ func (c *BotController) GetSongs(index int) handlers.Response {
 						},
 						ResizeKeyboard: true,
 					}
-					_, err := ctx.EffectiveChat.SendMessage(bot, "В папке на Google Диске нет документов.", &gotgbot.SendMessageOpts{ReplyMarkup: markup})
+					_, err := ctx.EffectiveChat.SendMessage(bot, txt.Get("text.noDocs", ctx.EffectiveUser.LanguageCode), &gotgbot.SendMessageOpts{ReplyMarkup: markup})
 					return err
 				}
 
@@ -702,7 +702,7 @@ func (c *BotController) SongVoicesCreateVoice(index int) handlers.Response {
 					return err
 				}
 
-				_, err = ctx.EffectiveChat.SendMessage(bot, "Добавление завершено.", nil) // todo: move text to txt
+				_, err = ctx.EffectiveChat.SendMessage(bot, txt.Get("text.added", ctx.EffectiveUser.LanguageCode), nil) // todo: move text to txt
 				if err != nil {
 					return err
 				}
