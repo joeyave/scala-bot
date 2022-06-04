@@ -4,13 +4,10 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="adds menu button">
+    <list default="true" id="a90295c9-fa32-4c2f-96f0-5421a473ea30" name="Changes" comment="adds ukrainian lang">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/controller/bot_controller.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/bot_controller.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/controller/bot_controller_bands.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/bot_controller_bands.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/controller/bot_controller_songs.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/bot_controller_songs.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/txt/txt.go" beforeDir="false" afterPath="$PROJECT_DIR$/txt/txt.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/util/util.go" beforeDir="false" afterPath="$PROJECT_DIR$/util/util.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -144,7 +141,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="adds 'add lyrics page' logic" />
     <MESSAGE value="adds weekdays filter to schedule" />
     <MESSAGE value="adds weekdays filter to archive" />
     <MESSAGE value="changes statistics logo" />
@@ -169,7 +165,8 @@
     <MESSAGE value="updates to go1.18" />
     <MESSAGE value="bugfix" />
     <MESSAGE value="adds menu button" />
-    <option name="LAST_COMMIT_MESSAGE" value="adds menu button" />
+    <MESSAGE value="adds ukrainian lang" />
+    <option name="LAST_COMMIT_MESSAGE" value="adds ukrainian lang" />
   </component>
   <component name="VgoProject">
     <settings-migrated>true</settings-migrated>

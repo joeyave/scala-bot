@@ -84,7 +84,7 @@ var locales = map[string]map[string]string{
 	},
 	"button.createEvent": {
 		"ru": "➕ Добавить собрание",
-		"uk": "➕ Додати собрание",
+		"uk": "➕ Додати захід",
 	},
 	"button.createRole": {
 		"ru": "➕ Создать роль",
