@@ -208,8 +208,8 @@ func main() {
 			return botController.SongVoicesAddVoiceAskForAudio(bot, ctx)
 		}
 
-		//return botController.SettingsChooseBand(bot, ctx)
-		return nil // todo
+		return botController.Menu(bot, ctx)
+		//return nil
 	}), 1)
 
 	dispatcher.AddHandlerToGroup(handlers.NewCommand("schedule", botController.GetEvents(0)), 1)
