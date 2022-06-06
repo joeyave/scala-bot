@@ -122,25 +122,27 @@ func IsWeekdayButton(text string) bool {
 	switch strings.ToLower(text) {
 	case "пн.", "вт.", "ср.", "чт.", "пт.", "сб.", "вс.":
 		return true
+	case "пн", "вт", "ср", "чт", "пт", "сб", "нд":
+		return true
 	}
 	return false
 }
 
 func ParseWeekdayButton(text string) time.Weekday {
 	switch strings.ToLower(text) {
-	case "пн.":
+	case "пн.", "пн":
 		return time.Monday
-	case "вт.":
+	case "вт.", "вт":
 		return time.Tuesday
-	case "ср.":
+	case "ср.", "ср":
 		return time.Wednesday
-	case "чт.":
+	case "чт.", "чт":
 		return time.Thursday
-	case "пт.":
+	case "пт.", "пт":
 		return time.Friday
-	case "сб.":
+	case "сб.", "сб":
 		return time.Saturday
-	case "вс.":
+	case "вс.", "нд":
 		return time.Sunday
 	}
 	return time.Sunday
