@@ -342,7 +342,9 @@ func (h *WebAppController) EditSongConfirm(ctx *gin.Context) {
 		}
 		_, err = h.DriveFileService.TransposeOne(song.DriveFileID, data.Key, section)
 
-		//song.PDF.Key = data.Key
+		if section == 0 {
+			song.PDF.Key = data.Key
+		}
 	}
 
 	if song.PDF.BPM != data.BPM {
