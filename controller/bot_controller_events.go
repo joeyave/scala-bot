@@ -148,7 +148,7 @@ func (c *BotController) GetEvents(index int) handlers.Response {
 					}
 				}
 
-				ctx.EffectiveChat.SendAction(bot, "typing")
+				ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				eventName, eventTime, err := keyboard.ParseEventButton(ctx.EffectiveMessage.Text)
 				if err != nil {
@@ -186,7 +186,7 @@ func (c *BotController) filterEvents(index int) handlers.Response {
 		switch index {
 		case 0:
 			{
-				ctx.EffectiveChat.SendAction(bot, "typing")
+				ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				// todo: refactor - extract to func
 				if (ctx.EffectiveMessage.Text == txt.Get("button.eventsWithMe", ctx.EffectiveUser.LanguageCode) || ctx.EffectiveMessage.Text == txt.Get("button.archive", ctx.EffectiveUser.LanguageCode) ||
@@ -298,7 +298,7 @@ func (c *BotController) filterEvents(index int) handlers.Response {
 					}
 				}
 
-				ctx.EffectiveChat.SendAction(bot, "typing")
+				ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				eventName, eventTime, err := keyboard.ParseEventButton(ctx.EffectiveMessage.Text)
 				if err != nil {

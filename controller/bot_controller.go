@@ -169,7 +169,7 @@ func (c *BotController) search(index int) handlers.Response {
 		switch index {
 		case 0:
 			{
-				ctx.EffectiveChat.SendAction(bot, "typing")
+				ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				var query string
 
@@ -297,7 +297,7 @@ func (c *BotController) search(index int) handlers.Response {
 					return c.search(0)(bot, ctx)
 				}
 
-				ctx.EffectiveChat.SendAction(bot, "upload_document")
+				ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
 
 				driveFileName := keyboard.ParseDriveFileButton(ctx.EffectiveMessage.Text)
 
@@ -339,7 +339,7 @@ func (c *BotController) searchSetlist(index int) handlers.Response {
 		case 0:
 			{
 				if len(user.Cache.SongNames) < 1 {
-					ctx.EffectiveChat.SendAction(bot, "upload_document")
+					ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
 
 					err := c.songsAlbum(bot, ctx, user.Cache.DriveFileIDs)
 					if err != nil {
@@ -348,7 +348,7 @@ func (c *BotController) searchSetlist(index int) handlers.Response {
 					return c.Menu(bot, ctx)
 				}
 
-				ctx.EffectiveChat.SendAction(bot, "typing")
+				ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				songNames := user.Cache.SongNames
 

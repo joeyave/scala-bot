@@ -42,6 +42,7 @@ window.addEventListener('DOMContentLoaded', (e) => {
 
         filter: ".song-remove",
         onFilter: function (e) {
+
             if (Sortable.utils.is(e.target, ".song-remove")) {
                 e.item.parentNode.removeChild(e.item);
                 // sortableInit = JSON.stringify(sortable.toArray())
@@ -100,12 +101,14 @@ window.addEventListener('DOMContentLoaded', (e) => {
                         </div>`
                         );
 
+                        Telegram.WebApp.HapticFeedback.notificationOccurred("success");
                         Notiflix.Notify.success('Песня добавлена в список!');
 
                         // sortableInit = JSON.stringify(sortable.toArray())
                         Telegram.WebApp.MainButton.show()
                         console.log("show")
                     } else {
+                        Telegram.WebApp.HapticFeedback.notificationOccurred("warning");
                         Notiflix.Notify.warning('Песня уже есть в списке.');
                     }
 

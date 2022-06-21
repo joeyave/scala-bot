@@ -9,14 +9,14 @@ import (
 
 func File(bot *gotgbot.Bot, file *gotgbot.File) (io.ReadCloser, error) {
 
-	url := bot.GetAPIURL() + "/file/bot" + bot.Token + "/" + file.FilePath
+	url := bot.GetAPIURL() + "/file/bot" + bot.GetToken() + "/" + file.FilePath
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := bot.Client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

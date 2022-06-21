@@ -32,7 +32,7 @@ type CreateSongData struct {
 
 func (c *BotController) CreateSong(bot *gotgbot.Bot, ctx *ext.Context) error {
 
-	ctx.EffectiveChat.SendAction(bot, "upload_document")
+	ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
 
 	var data *CreateSongData
 	err := json.Unmarshal([]byte(ctx.EffectiveMessage.WebAppData.Data), &data)
@@ -82,7 +82,7 @@ func (c *BotController) song(bot *gotgbot.Bot, ctx *ext.Context, driveFileID str
 
 	user := ctx.Data["user"].(*entity.User)
 
-	ctx.EffectiveChat.SendAction(bot, "upload_document")
+	ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
 
 	song, driveFile, err := c.SongService.FindOrCreateOneByDriveFileID(driveFileID)
 	if err != nil {
@@ -182,7 +182,7 @@ func (c *BotController) GetSongs(index int) handlers.Response {
 		switch index {
 		case 0:
 			{
-				ctx.EffectiveChat.SendAction(bot, "typing")
+				ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				if ctx.EffectiveMessage.Text == txt.Get("button.prev", ctx.EffectiveUser.LanguageCode) && user.Cache.NextPageToken.GetPrevValue() != "" {
 					user.Cache.NextPageToken = user.Cache.NextPageToken.Prev.Prev
@@ -254,7 +254,7 @@ func (c *BotController) GetSongs(index int) handlers.Response {
 					return c.filterSongs(0)(bot, ctx)
 				}
 
-				ctx.EffectiveChat.SendAction(bot, "upload_document")
+				ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
 
 				driveFileName := keyboard.ParseDriveFileButton(ctx.EffectiveMessage.Text)
 
@@ -294,7 +294,7 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 		switch index {
 		case 0:
 			{
-				ctx.EffectiveChat.SendAction(bot, "typing")
+				ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				switch ctx.EffectiveMessage.Text {
 				case txt.Get("button.like", ctx.EffectiveUser.LanguageCode), txt.Get("button.numbers", ctx.EffectiveUser.LanguageCode), txt.Get("button.calendar", ctx.EffectiveUser.LanguageCode):
@@ -391,7 +391,7 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 					return c.GetSongs(0)(bot, ctx)
 				}
 
-				ctx.EffectiveChat.SendAction(bot, "upload_document")
+				ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
 
 				songName := keyboard.ParseSongButton(ctx.EffectiveMessage.Text)
 
@@ -404,7 +404,7 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 			}
 		case 2:
 			{
-				ctx.EffectiveChat.SendAction(bot, "typing")
+				ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				tags, err := c.SongService.GetTags(user.BandID)
 				if err != nil {
@@ -670,7 +670,7 @@ func (c *BotController) SongVoicesCreateVoice(index int) handlers.Response {
 		switch index {
 		case 0:
 			{
-				ctx.EffectiveChat.SendAction(bot, "typing")
+				ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				fileID := ctx.EffectiveMessage.Voice.FileId
 				if fileID == "" {
@@ -764,7 +764,7 @@ func (c *BotController) SongVoice(bot *gotgbot.Bot, ctx *ext.Context) error {
 	caption := user.CallbackCache.AddToText(song.Caption())
 
 	if voice.AudioFileID == "" {
-		f, err := bot.GetFile(voice.FileID)
+		f, err := bot.GetFile(voice.FileID, nil)
 		if err != nil {
 			return err
 		}
@@ -966,7 +966,7 @@ func (c *BotController) SongCopyToMyBand(bot *gotgbot.Bot, ctx *ext.Context) err
 
 	user := ctx.Data["user"].(*entity.User)
 
-	//ctx.EffectiveChat.SendAction(bot, "typing")
+	//ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 	driveFileID := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 
