@@ -334,6 +334,10 @@ var locales = map[string]map[string]string{
 		"ru": "Добавлено.",
 		"uk": "Додано",
 	},
+	"text.noSongs": {
+		"ru": "В этом собраннии еще нет списка песен.",
+		"uk": "У цьому заході ще нема списку пісень.",
+	},
 
 	"command.menu": {
 		"ru": "menu",

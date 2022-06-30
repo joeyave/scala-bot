@@ -339,6 +339,13 @@ func (c *BotController) EventSetlistDocs(bot *gotgbot.Bot, ctx *ext.Context) err
 		driveFileIDs = append(driveFileIDs, song.DriveFileID)
 	}
 
+	if len(driveFileIDs) == 0 {
+		ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
+			Text: txt.Get("noSongs", ctx.EffectiveUser.LanguageCode),
+		})
+		return nil
+	}
+
 	err = c.songsAlbum(bot, ctx, driveFileIDs)
 	if err != nil {
 		return err
