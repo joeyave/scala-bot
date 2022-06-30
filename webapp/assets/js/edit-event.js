@@ -17,6 +17,10 @@ window.addEventListener('DOMContentLoaded', (e) => {
         delay: 150,
         delayOnTouchOnly: true,
         animation: 100,
+        onMove: function (evt) {
+            // console.log(evt.willInsertAfter);
+            Telegram.WebApp.HapticFeedback.impactOccurred("light")
+        },
         onUpdate: function (/**Event*/e) {
             // if (currOrder === order) {
             //     Telegram.WebApp.MainButton.hide()
@@ -44,6 +48,7 @@ window.addEventListener('DOMContentLoaded', (e) => {
         onFilter: function (e) {
 
             if (Sortable.utils.is(e.target, ".song-remove")) {
+                Telegram.WebApp.HapticFeedback.selectionChanged();
                 e.item.parentNode.removeChild(e.item);
                 // sortableInit = JSON.stringify(sortable.toArray())
                 Telegram.WebApp.MainButton.show()
@@ -101,15 +106,14 @@ window.addEventListener('DOMContentLoaded', (e) => {
                         </div>`
                         );
 
-                        Telegram.WebApp.HapticFeedback.notificationOccurred("success");
                         Notiflix.Notify.success('Песня добавлена в список!');
+                        Telegram.WebApp.HapticFeedback.notificationOccurred("success");
 
                         // sortableInit = JSON.stringify(sortable.toArray())
                         Telegram.WebApp.MainButton.show()
-                        console.log("show")
                     } else {
-                        Telegram.WebApp.HapticFeedback.notificationOccurred("warning");
                         Notiflix.Notify.warning('Песня уже есть в списке.');
+                        Telegram.WebApp.HapticFeedback.notificationOccurred("warning");
                     }
 
                     search.setLoading(false)
