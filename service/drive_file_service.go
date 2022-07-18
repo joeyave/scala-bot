@@ -1002,7 +1002,7 @@ func composeCloneWithoutChordsRequests(content []*docs.StructuralElement, index 
 					}
 				}
 				_, err := transposer.GuessKeyFromText(sb.String())
-				if err == nil {
+				if err == nil && segmentID == "" {
 					continue
 				}
 
