@@ -31,7 +31,12 @@ class InstantSearch {
         this.elements.input.addEventListener("input", () => {
             clearTimeout(delay);
 
-            const query = this.elements.input.value;
+            let query = this.elements.input.value;
+
+            let setlist = query.split("\n")
+            if (setlist.length > 1) {
+                query = setlist[0]
+            }
 
             delay = setTimeout(() => {
                 if (query.length < 2) {
@@ -95,8 +100,17 @@ class InstantSearch {
         );
 
         anchorElement.addEventListener("click", () => {
-            this.elements.input.value = "";
             this.populateResults([]);
+
+            let setlist = this.elements.input.value.split("\n");
+            setlist.shift()
+
+            if (setlist.length > 0) {
+                this.elements.input.value = setlist.join("\n");
+                this.elements.input.dispatchEvent(new Event("input"));
+            } else {
+                this.elements.input.value = "";
+            }
         })
         anchorElement.addEventListener(...this.options.resultEventListener(result, this))
 

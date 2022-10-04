@@ -11,6 +11,7 @@ window.addEventListener('DOMContentLoaded', (e) => {
     let songs = document.getElementById("songs")
     let notes = document.getElementById("notes")
     autosize(notes)
+    autosize(document.getElementById("song-search-input"))
 
     let sortable = new Sortable(songs, {
         group: "songs",
