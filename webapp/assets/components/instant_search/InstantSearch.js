@@ -31,11 +31,12 @@ class InstantSearch {
         this.elements.input.addEventListener("input", () => {
             clearTimeout(delay);
 
-            let query = this.elements.input.value;
+            let query = this.elements.input.value.replaceAll(/\(.*?\)|[1-9.()_]*/gi, "");
 
             let setlist = query.split("\n")
             if (setlist.length > 1) {
                 query = setlist[0]
+                console.log(query)
             }
 
             delay = setTimeout(() => {
@@ -107,8 +108,8 @@ class InstantSearch {
 
             if (setlist.length > 0) {
                 this.setLoading(true);
-                this.elements.input.dispatchEvent(new Event("input"));
                 this.elements.input.value = setlist.join("\n");
+                this.elements.input.dispatchEvent(new Event("input"));
             } else {
                 this.elements.input.value = "";
             }
