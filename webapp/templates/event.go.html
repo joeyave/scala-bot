@@ -20,25 +20,21 @@
         </div>
 
         <div class="d-flex flex-row mb-3">
-            <input type="date" id="date" value="{{ .Event.Time.Format " 2006-01-02" }}" required>
+            <input type="date" id="date" value="{{ .Event.Time.Format "2006-01-02" }}" required>
         </div>
 
         <div class="mb-3">
             <label>Песни</label>
-            {{/* <a class="text-black" data-bs-toggle="collapse" href="#collapseExample" role="button" */}}
-            {{/* aria-expanded="true" aria-controls="collapseExample">Скрыть</a>*/}}
+            {{/*            <a class="text-black" data-bs-toggle="collapse" href="#collapseExample" role="button"*/}}
+            {{/*               aria-expanded="true" aria-controls="collapseExample">Скрыть</a>*/}}
 
             <div class="collapse show" id="collapseExample">
-                {{/*
-                <div class="btn btn-light w-100 mb-2" id="add-song-button"><i class="fas fa-plus"></i> Добавить
-                    песню*/}}
-                    {{/*
-                </div>
-                */}}
+                {{/*                <div class="btn btn-light w-100 mb-2" id="add-song-button"><i class="fas fa-plus"></i> Добавить песню*/}}
+                {{/*                </div>*/}}
 
                 <div id="search" class="instant-search">
                     <div class="instant-search__input-container">
-                        <textarea id="song-search-input" class="instant-search__input"
+                        <textarea id="song-search-input" class="instant-search__input" type="text"
                                   spellcheck="false" placeholder="Добавить песню или список" rows="1"></textarea>
                         <i class="instant-search__icon fa fa-search"></i>
                         {{/* <i class="loader"></i>*/}}
@@ -47,10 +43,10 @@
 
                 <div id="songs" class="sortable-list">
                     {{ range $i, $song := .Event.Songs }}
-                    <div class="item">
-                        <span class="text" data-song-id="{{ hex $song.ID }}">{{ $song.PDF.Name }}</span>
-                        <i class="fas fa-trash-alt song-remove"></i>
-                    </div>
+                        <div class="item">
+                            <span class="text" data-song-id="{{ hex $song.ID }}">{{ $song.PDF.Name }}</span>
+                            <i class="fas fa-trash-alt song-remove"></i>
+                        </div>
                     {{ end }}
                 </div>
                 <div class="form-text">Песни можно перетаскивать.</div>
@@ -67,38 +63,13 @@
 </div>
 
 <script type="text/javascript">
-    const action = {
-    { .
-        Action
-    }
-    }
-    ;
+    const action = {{ .Action }};
 
-    let event = JSON.parse({
-    {
-        json.Event
-    }
-    })
-    ;
+    let event = JSON.parse({{ json .Event }});
 
-    const messageId = {
-    { .
-        MessageID
-    }
-    }
-    ;
-    const chatId = {
-    { .
-        ChatID
-    }
-    }
-    ;
-    const userId = {
-    { .
-        UserID
-    }
-    }
-    ;
+    const messageId = {{ .MessageID }};
+    const chatId = {{ .ChatID }};
+    const userId = {{ .UserID }};
 </script>
 <script type="module" src="/webapp/assets/js/edit-event.js"></script>
 </body>

@@ -106,12 +106,14 @@ class InstantSearch {
             setlist.shift()
 
             if (setlist.length > 0) {
-                this.elements.input.value = setlist.join("\n");
+                this.setLoading(true);
                 this.elements.input.dispatchEvent(new Event("input"));
+                this.elements.input.value = setlist.join("\n");
             } else {
                 this.elements.input.value = "";
             }
         })
+
         anchorElement.addEventListener(...this.options.resultEventListener(result, this))
 
         // // If provided, add a link for the result
