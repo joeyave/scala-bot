@@ -79,7 +79,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  z-index: 100;
+  z-index: 99999;
   max-height: 250px;
   overflow-y: auto;
   visibility: hidden;

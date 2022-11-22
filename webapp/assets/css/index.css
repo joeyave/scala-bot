@@ -1,15 +1,12 @@
 @import url("https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap");
 html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
   overflow-x: hidden;
 }
 
 body {
-  position: relative;
-}
-
-body {
-  margin: 0;
-  padding: 0;
   background-color: var(--tg-theme-bg-color);
   color: var(--tg-theme-text-color);
   color-scheme: var(--tg-color-scheme);
