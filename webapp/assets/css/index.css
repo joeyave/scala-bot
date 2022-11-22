@@ -1,4 +1,12 @@
 @import url("https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap");
+html, body {
+  overflow-x: hidden;
+}
+
+body {
+  position: relative;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -14,6 +22,10 @@ html.dark body {
   --page-hint-color: #9b9ba1;
   --hint-color: #64666d;
   --placeholder-color: #5d6163;
+}
+
+.chord {
+  color: var(--tg-theme-link-color);
 }
 
 .text-input {
@@ -79,6 +91,9 @@ html.dark body {
   font-size: 1rem;
   line-height: 1.4rem;
   white-space: pre-wrap;
+  background-color: var(--tg-theme-secondary-bg-color);
+  padding: 15px;
+  border-radius: 10px;
 }
 
 [list]::-webkit-calendar-picker-indicator {

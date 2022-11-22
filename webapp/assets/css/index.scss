@@ -3,9 +3,11 @@
 $default-border-radius: 10px;
 $default-box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
 
-html {
-  //font-size: 17px;
-  //line-height: 21px;
+html, body {
+  overflow-x: hidden;
+}
+body {
+  position: relative;
 }
 
 body {
@@ -18,12 +20,19 @@ body {
   --page-hint-color: #83878a;
   --hint-color: #74787a;
   --placeholder-color: #999da1;
+  //--chords-color: rgb(80%, 0%, 0%);
 }
 
 html.dark body {
   --page-hint-color: #9b9ba1;
   --hint-color: #64666d;
   --placeholder-color: #5d6163;
+  //--chords-color: rgb(253, 32, 32);
+}
+
+.chord {
+  color: var(--tg-theme-link-color);
+  //color: var(--chords-color);
 }
 
 .text-input {
@@ -94,6 +103,9 @@ html.dark body {
   font-size: 1rem;
   line-height: 1.4rem;
   white-space: pre-wrap;
+  background-color: var(--tg-theme-secondary-bg-color);
+  padding: 15px;
+  border-radius: $default-border-radius;
 }
 
 [list]::-webkit-calendar-picker-indicator {

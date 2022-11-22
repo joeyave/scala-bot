@@ -1109,7 +1109,8 @@ func docToHTML(doc *docs.Document) string {
 							text = fmt.Sprintf("<i>%s</i>", text)
 						}
 						if style.ForegroundColor != nil && style.ForegroundColor.Color != nil && style.ForegroundColor.Color.RgbColor != nil {
-							text = fmt.Sprintf(`<span style="color: rgb(%d%%, %d%%, %d%%)">%s</span>`, int(style.ForegroundColor.Color.RgbColor.Red*100), int(style.ForegroundColor.Color.RgbColor.Green*100), int(style.ForegroundColor.Color.RgbColor.Blue*100), text)
+							text = fmt.Sprintf(`<span class="chord">%s</span>`, text)
+							//text = fmt.Sprintf(`<span class="chord" style="color: rgb(%d%%, %d%%, %d%%)">%s</span>`, int(style.ForegroundColor.Color.RgbColor.Red*100), int(style.ForegroundColor.Color.RgbColor.Green*100), int(style.ForegroundColor.Color.RgbColor.Blue*100), text)
 						}
 					}
 
