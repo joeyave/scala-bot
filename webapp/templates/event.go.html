@@ -7,11 +7,10 @@
 
     <form id="form">
 
-        <div class=" mt-2">
-            <input type="text" class="form-control header-input" id="name" value="{{ .Event.Name }}" list="suggestions"
-                   placeholder="Название"
+        <div class="mt-2 mb-2">
+            <input type="text" class="text-input header-input" id="name" value="{{ .Event.Name }}" list="suggestions"
+                   placeholder="{{translate "text.title" .Lang}}"
                    required>
-
             <datalist id="suggestions">
                 {{ range $i, $name := .EventNames }}
                 <option value="{{ $name.Name }}">
@@ -24,40 +23,29 @@
         </div>
 
         <div class="mb-3">
-            <label>Песни</label>
-            {{/*            <a class="text-black" data-bs-toggle="collapse" href="#collapseExample" role="button"*/}}
-            {{/*               aria-expanded="true" aria-controls="collapseExample">Скрыть</a>*/}}
-
-            <div class="collapse show" id="collapseExample">
-                {{/*                <div class="btn btn-light w-100 mb-2" id="add-song-button"><i class="fas fa-plus"></i> Добавить песню*/}}
-                {{/*                </div>*/}}
-
-                <div id="search" class="instant-search">
-                    <div class="instant-search__input-container">
-                        <textarea id="song-search-input" class="instant-search__input" type="text"
-                                  spellcheck="false" placeholder="Добавить песню или список" rows="1"></textarea>
-                        <i class="instant-search__icon fa fa-search"></i>
-                        {{/* <i class="loader"></i>*/}}
-                    </div>
+            <div id="search" class="instant-search">
+                <div class="text-input instant-search__input-container">
+                        <textarea id="song-search-input" class="text-input instant-search__input" type="text"
+                                  spellcheck="false" placeholder="{{translate "text.addSongOrSetlist" .Lang}}"
+                                  rows="1"></textarea>
+                    <i class="instant-search__icon fa fa-search"></i>
                 </div>
-
-                <div id="songs" class="sortable-list">
-                    {{ range $i, $song := .Event.Songs }}
-                        <div class="item">
-                            <span class="text" data-song-id="{{ hex $song.ID }}">{{ $song.PDF.Name }}</span>
-                            <i class="fas fa-trash-alt song-remove"></i>
-                        </div>
-                    {{ end }}
-                </div>
-                <div class="form-text">Песни можно перетаскивать.</div>
             </div>
+
+            <div id="songs" class="sortable-list">
+                {{ range $i, $song := .Event.Songs }}
+                    <div class="item">
+                        <span class="text" data-song-id="{{ hex $song.ID }}">{{ $song.PDF.Name }}</span>
+                        <i class="fas fa-trash-alt song-remove"></i>
+                    </div>
+                {{ end }}
+            </div>
+            <div class="form-text">{{translate "text.changeSongsOrderHint" .Lang}}</div>
         </div>
 
         <div class="mb-3">
-            <label for="notes">Заметки</label>
-            <div class="grow-wrap">
-                <textarea type="text" class="form-control" id="notes">{{ .Event.Notes }}</textarea>
-            </div>
+                <textarea type="text" rows="1" class="text-input" id="notes"
+                          placeholder="{{translate "button.notes" .Lang}}">{{ .Event.Notes }}</textarea>
         </div>
     </form>
 </div>
@@ -70,6 +58,13 @@
     const messageId = {{ .MessageID }};
     const chatId = {{ .ChatID }};
     const userId = {{ .UserID }};
+    const lang = {{ .Lang }};
+
+    const createText = {{translate "text.create" .Lang}};
+    const saveText = {{translate "text.save" .Lang}};
+    const songAddedText = {{translate "text.songAdded" .Lang}};
+    const songExistsText = {{translate "text.songExists" .Lang}};
+
 </script>
 <script type="module" src="/webapp/assets/js/edit-event.js"></script>
 </body>

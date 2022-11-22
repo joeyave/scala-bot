@@ -1,28 +1,72 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
 
 $default-border-radius: 10px;
-$default-box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+$default-box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
 
-.form-control {
-  border-radius: $default-border-radius;
-  /*font-size: 18px;*/
+html {
+  //font-size: 17px;
+  //line-height: 21px;
 }
 
-.form-control:focus {
-  box-shadow: none;
-}
-
-.date-input {
-  border-radius: 0;
-  border: none;
+body {
+  margin: 0;
   padding: 0;
+  background-color: var(--tg-theme-bg-color);
+  color: var(--tg-theme-text-color);
+  color-scheme: var(--tg-color-scheme);
+
+  --page-hint-color: #83878a;
+  --hint-color: #74787a;
+  --placeholder-color: #999da1;
+}
+
+html.dark body {
+  --page-hint-color: #9b9ba1;
+  --hint-color: #64666d;
+  --placeholder-color: #5d6163;
+}
+
+.text-input {
+  background-color: var(--tg-theme-secondary-bg-color);
+  color: var(--tg-theme-text-color);
+
+  font-size: 17px;
+  line-height: 21px;
+
+  -webkit-font-smoothing: antialiased;
+  padding: 12px 14px;
+  box-sizing: border-box;
+  display: block;
+  outline: none;
+  border: none;
+  border-radius: $default-border-radius;
+  //box-shadow: $default-box-shadow;
+  resize: none;
+  -webkit-user-select: auto;
+  user-select: auto;
+  cursor: auto;
+  width: 100%;
+}
+
+.text-input::-webkit-input-placeholder {
+  color: var(--placeholder-color, #ccc);
+}
+
+.text-input::-moz-placeholder {
+  color: var(--placeholder-color, #ccc);
+}
+
+.text-input:-ms-input-placeholder {
+  color: var(--placeholder-color, #ccc);
 }
 
 .header-input {
+  background-color: var(--tg-theme-bg-color);
+
   font-weight: bold;
+  border: none;
   border-radius: 0;
   padding: 0;
-  border: none;
   font-size: 1.5rem;
 
   &:focus {
@@ -31,37 +75,26 @@ $default-box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
   }
 }
 
-.notes-input {
+.date-input {
   border-radius: 0;
-  padding: 0;
   border: none;
+  padding: 0;
+}
+
+.hint {
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+  padding: 10px 20px 14px;
+  color: var(--hint-color);
 }
 
 .lyrics-div {
-  //font-family: "Roboto Mono", monospace;
   font-size: 1rem;
   line-height: 1.4rem;
   white-space: pre-wrap;
 }
-
-/*.lyrics-div * {*/
-/*    font-family: "Roboto Mono", monospace !important;*/
-/*    !*white-space: nowrap;*!*/
-/*    !*font-size: 18px !important;*!*/
-/*    line-height: 1.1;*/
-/*}*/
-
-/*.lyrics-div * {*/
-/*    !*font-size: calc(20px + 6 * ((100vw - 320px) / 680)) !important;*!*/
-/*    !*font-size: 20px !important;*!*/
-/*    !*font-size: 0.5vi !important;*!*/
-/*    !*font-size: calc(4vw + 4vh + 2vmin) !important;*!*/
-/*}*/
-
-/*.lyrics-div p span {*/
-/*    display: inline;*/
-/*    white-space: nowrap;*/
-/*}*/
 
 [list]::-webkit-calendar-picker-indicator {
   display: none !important;
@@ -71,11 +104,13 @@ $default-box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
   width: 100%;
 
   .item {
+    background-color: var(--tg-theme-secondary-bg-color);
+
     display: flex;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     padding: 12px 14px;
     border-radius: $default-border-radius;
-    box-shadow: $default-box-shadow;
+    //box-shadow: $default-box-shadow;
     align-items: center;
     justify-content: space-between;
 
@@ -87,8 +122,8 @@ $default-box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
       display: inline-block;
       position: relative;
       z-index: 1;
-      padding: 12px 14px 12px 14px;
-      margin: -12px -14px -12px -14px;
+      padding: 12px 14px;
+      margin: -12px -14px;
     }
   }
 }
@@ -101,30 +136,6 @@ $default-box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
   background: rgba(0, 0, 0, 0.05);
 }
 
-.ts-control {
-  border: none;
-  border-radius: 0;
-  padding: 0;
-
-  font-size: 1rem;
-
-  input {
-    font-size: 1rem;
-  }
-}
-
-.ts-dropdown {
-  font-size: 1rem;
-
-  border-radius: $default-border-radius;
-  box-shadow: $default-box-shadow;
-
-  .active {
-    background-color: inherit;
-    color: inherit;
-  }
-}
-
-.ts-dropdown-content {
-  border-radius: $default-border-radius;
+.form-text {
+  color: var(--hint-color);
 }

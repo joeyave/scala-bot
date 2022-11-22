@@ -7,6 +7,7 @@ import (
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/keyboard"
 	"github.com/joeyave/scala-bot/service"
+	"github.com/joeyave/scala-bot/txt"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"html/template"
@@ -57,6 +58,7 @@ func (h *WebAppController) CreateEvent(ctx *gin.Context) {
 		"EventNames": eventNames,
 		"Event":      event,
 		"Action":     "create",
+		"Lang":       ctx.Query("lang"),
 	})
 }
 
@@ -94,6 +96,8 @@ func (h *WebAppController) EditEvent(ctx *gin.Context) {
 		"Event": event,
 
 		"EventNames": eventNames,
+
+		"Lang": ctx.Query("lang"),
 	})
 }
 
@@ -192,6 +196,8 @@ func (h *WebAppController) CreateSong(ctx *gin.Context) {
 		"BPMs":   valuesForSelect("?", bpms, "BPM"),
 		"Times":  valuesForSelect("?", times, "Time"),
 		"Tags":   songTags,
+
+		"Lang": ctx.Query("lang"),
 	})
 }
 
@@ -209,6 +215,8 @@ func (h *WebAppController) EditSong(ctx *gin.Context) {
 	if err != nil {
 		return
 	}
+
+	lang := ctx.Query("lang")
 
 	user, err := h.UserService.FindOneByID(userID)
 	if err != nil {
@@ -249,7 +257,7 @@ func (h *WebAppController) EditSong(ctx *gin.Context) {
 
 	var sectionsSelect []*SelectEntity
 	for i := 0; i < sectionsNumber; i++ {
-		sectionsSelect = append(sectionsSelect, &SelectEntity{Name: fmt.Sprintf("Вместо %d секции", i+1), Value: fmt.Sprint(i)})
+		sectionsSelect = append(sectionsSelect, &SelectEntity{Name: txt.Get("text.section", lang, i+1), Value: fmt.Sprint(i)})
 	}
 	fmt.Println(time.Since(start).String())
 
@@ -267,6 +275,8 @@ func (h *WebAppController) EditSong(ctx *gin.Context) {
 		"Lyrics":   template.HTML(lyrics),
 
 		"Song": song,
+
+		"Lang": ctx.Query("lang"),
 	})
 }
 
@@ -348,18 +358,12 @@ func (h *WebAppController) EditSongConfirm(ctx *gin.Context) {
 	}
 
 	if song.PDF.BPM != data.BPM {
-		_, err := h.DriveFileService.ReplaceAllTextByRegex(song.DriveFileID, bpmRegex, fmt.Sprintf("BPM: %s;", data.BPM))
-		if err != nil {
-			return
-		}
+		h.DriveFileService.ReplaceAllTextByRegex(song.DriveFileID, bpmRegex, fmt.Sprintf("BPM: %s;", data.BPM))
 		song.PDF.BPM = data.BPM
 	}
 
 	if song.PDF.Time != data.Time {
-		_, err := h.DriveFileService.ReplaceAllTextByRegex(song.DriveFileID, timeRegex, fmt.Sprintf("TIME: %s;", data.Time))
-		if err != nil {
-			return
-		}
+		h.DriveFileService.ReplaceAllTextByRegex(song.DriveFileID, timeRegex, fmt.Sprintf("TIME: %s;", data.Time))
 		song.PDF.Time = data.Time
 	}
 

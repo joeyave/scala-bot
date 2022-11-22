@@ -74,7 +74,7 @@ func EventEdit(event *entity.Event, user *entity.User, chatID, messageID int64, 
 
 	keyboard := [][]gotgbot.InlineKeyboardButton{
 		{
-			{Text: txt.Get("button.setlist", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/events/%s/edit?messageId=%d&chatId=%d&userId=%d", os.Getenv("HOST"), event.ID.Hex(), messageID, chatID, user.ID)}},
+			{Text: txt.Get("button.setlist", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/events/%s/edit?messageId=%d&chatId=%d&userId=%d&lang=%s", os.Getenv("HOST"), event.ID.Hex(), messageID, chatID, user.ID, lang)}},
 			{Text: txt.Get("button.members", lang), CallbackData: util.CallbackData(state.EventMembers, event.ID.Hex())},
 		},
 		//{
@@ -123,7 +123,7 @@ func SongInit(song *entity.Song, user *entity.User, chatID int64, messageID int6
 			})
 		}
 
-		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.edit", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/songs/%s/edit?userId=%d&messageId=%d&chatId=%d", os.Getenv("HOST"), song.ID.Hex(), user.ID, messageID, chatID)}}})
+		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.edit", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/songs/%s/edit?userId=%d&messageId=%d&chatId=%d&lang=%s", os.Getenv("HOST"), song.ID.Hex(), user.ID, messageID, chatID, lang)}}})
 
 	} else {
 		keyboard = [][]gotgbot.InlineKeyboardButton{

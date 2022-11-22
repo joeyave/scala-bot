@@ -11,13 +11,25 @@ window.addEventListener('DOMContentLoaded', (e) => {
     let bpm = document.getElementById('bpm')
     let time = document.getElementById('time')
     let tags = document.getElementById("tags")
+    let newTag = document.getElementById("new-tag")
 
-    new TomSelect('#tags', {
-        plugins: ['remove_button', 'input_autogrow'],
-        create: true,
-        // createFilter: /^\p{Lu}\p{Ll}+( \p{L}+)*$/gmu,
-        placeholder: "Добавить тег"
-    });
+    tags.onchange = function (e) {
+        let isCustom = Array.from(this.selectedOptions).find(value => value.value === "custom");
+
+        if (isCustom) {
+            newTag.hidden = false;
+            newTag.focus();
+        } else {
+            newTag.hidden = true;
+        }
+    }
+
+    // new TomSelect('#tags', {
+    //     plugins: ['remove_button', 'input_autogrow'],
+    //     create: true,
+    //     // createFilter: /^\p{Lu}\p{Ll}+( \p{L}+)*$/gmu,
+    //     placeholder: "Добавить тег"
+    // });
 
     Telegram.WebApp.ready()
 
@@ -80,7 +92,7 @@ window.addEventListener('DOMContentLoaded', (e) => {
         let lyrics = document.getElementById("lyrics")
         autosize(lyrics)
 
-        Telegram.WebApp.MainButton.setText("Создать")
+        Telegram.WebApp.MainButton.setText(createText)
 
         Telegram.WebApp.MainButton.onClick(function () {
 
@@ -90,22 +102,31 @@ window.addEventListener('DOMContentLoaded', (e) => {
             }
             Telegram.WebApp.MainButton.showProgress()
 
+            let t = Array.from(tags.selectedOptions)
+                .map(({value}) => {
+                    if (value === "custom") {
+                        return newTag.value
+                    }
+                    return value;
+                })
+                .filter(value => value)
+
             let data = JSON.stringify({
                 "name": name.value,
                 "key": key.value,
                 "bpm": bpm.value,
                 "time": time.value,
-                "tags": Array.from(tags.selectedOptions)
-                    .map(({value}) => value),
+                "tags": t,
                 "lyrics": lyrics.value
             })
+
 
             Telegram.WebApp.sendData(data)
         })
     }
 
     function editSong() {
-        Telegram.WebApp.MainButton.setText("Сохранить")
+        Telegram.WebApp.MainButton.setText(saveText)
 
         let lyricsDiv = document.getElementById("lyrics")
         let initLyricsDiv = lyricsDiv.cloneNode(true)
@@ -174,15 +195,27 @@ window.addEventListener('DOMContentLoaded', (e) => {
 
                 Telegram.WebApp.MainButton.showProgress()
 
+                let t = Array.from(tags.selectedOptions)
+                    .map(({value}) => {
+                        if (value === "custom") {
+                            return newTag.value
+                        }
+                        return value;
+                    })
+                    .filter(value => value)
+
+                console.log(t)
+
                 let data = JSON.stringify({
                     "name": name.value,
                     "key": key.value,
                     "transposeSection": transposeSection.value,
                     "bpm": bpm.value,
                     "time": time.value,
-                    "tags": Array.from(tags.selectedOptions)
-                        .map(({value}) => value)
+                    "tags": t
                 })
+
+                console.log(newTag.value)
 
                 await fetch(`/web-app/songs/${song.id}/edit/confirm?queryId=${Telegram.WebApp.initDataUnsafe.query_id}&messageId=${messageId}&chatId=${chatId}&userId=${userId}`, {
                     method: "POST",

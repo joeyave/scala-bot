@@ -108,13 +108,13 @@ window.addEventListener('DOMContentLoaded', (e) => {
                         </div>`
                         );
 
-                        Notiflix.Notify.success('Песня добавлена в список!');
+                        Notiflix.Notify.success(songAddedText);
                         Telegram.WebApp.HapticFeedback.notificationOccurred("success");
 
                         // sortableInit = JSON.stringify(sortable.toArray())
                         Telegram.WebApp.MainButton.show()
                     } else {
-                        Notiflix.Notify.warning('Песня уже есть в списке.');
+                        Notiflix.Notify.warning(songExistsText);
                         Telegram.WebApp.HapticFeedback.notificationOccurred("warning");
                     }
 
@@ -167,7 +167,7 @@ window.addEventListener('DOMContentLoaded', (e) => {
 
 
     function editEvent(event) {
-        Telegram.WebApp.MainButton.setText("Сохранить")
+        Telegram.WebApp.MainButton.setText(saveText)
 
         Telegram.WebApp.MainButton.onClick(async function () {
 
@@ -192,7 +192,7 @@ window.addEventListener('DOMContentLoaded', (e) => {
                 "notes": notes.value
             })
 
-            await fetch(`/web-app/events/${event.id}/edit/confirm?queryId=${Telegram.WebApp.initDataUnsafe.query_id}&messageId=${messageId}&chatId=${chatId}&userId=${userId}`, {
+            await fetch(`/web-app/events/${event.id}/edit/confirm?queryId=${Telegram.WebApp.initDataUnsafe.query_id}&messageId=${messageId}&chatId=${chatId}&userId=${userId}&lang=${lang}`, {
                 method: "POST",
                 headers: {'Content-Type': 'application/json'},
                 body: data,
@@ -203,7 +203,7 @@ window.addEventListener('DOMContentLoaded', (e) => {
     }
 
     function createEvent() {
-        Telegram.WebApp.MainButton.setText("Создать")
+        Telegram.WebApp.MainButton.setText(createText)
 
         Telegram.WebApp.MainButton.onClick(function () {
 

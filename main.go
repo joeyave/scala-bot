@@ -349,6 +349,7 @@ func main() {
 			}
 			return string(jsonBytes)
 		},
+		"translate": txt.Get,
 	})
 
 	router.LoadHTMLGlob("webapp/templates/*.go.html")

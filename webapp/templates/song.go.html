@@ -4,13 +4,16 @@
 
 <body>
 
-<div class="container">
-    <form id="form">
-        <div class="mt-2 mb-2">
-            <textarea rows='1' type="text" class="header-input w-100" id="name" list="suggestions"
-                      placeholder="Название"
-                      autocomplete="off" required>{{ .Song.PDF.Name }}</textarea>
-            <select class="mb-2" id="tags" multiple>
+<form class="container" id="form">
+    <div class="row mt-2 mb-2">
+        <div class="col">
+            <textarea rows='1' type="text" class="text-input header-input" id="name" list="suggestions"
+                      placeholder="{{translate "text.title" .Lang}}" autocomplete="off" required>{{ .Song.PDF.Name }}</textarea>
+        </div>
+    </div>
+    <div class="row mb-2 align-items-center row-cols-auto">
+        <div class="col mr-1">
+            <select id="tags" multiple>
                 {{ range $i, $tag := .Tags }}
                     {{ if $tag.IsSelected}}
                         <option value="{{ $tag.Name }}" selected>{{$tag.Name}}</option>
@@ -18,7 +21,15 @@
                         <option value="{{ $tag.Name }}">{{$tag.Name}}</option>
                     {{end}}
                 {{ end }}
+                <option value="custom">{{translate "text.newTag" .Lang}}</option>
             </select>
+        </div>
+        <div class="col">
+            <input class="new-tag-input" type="text" id="new-tag" placeholder="{{translate "text.newTag" .Lang}}" multiple hidden>
+        </div>
+    </div>
+    <div class="row mb-2">
+        <div class="col">
             <select id="key" class="meta-select">
                 <option value="?">Key</option>
                 <optgroup label="Major">
@@ -88,35 +99,30 @@
                 {{ end }}
             </select>
         </div>
-        <select id="transpose-section" class="mb-2 visually-hidden" disabled required>
-            <option value="">Сохранить изменения в PDF?</option>
-            <option value="-1">В конец документа</option>
-            {{ range $i, $tag := .Sections }}
-                <option value="{{ $tag.Value }}">{{ $tag.Name }}</option>
-            {{ end }}
-        </select>
-
-        {{/*        <div class="mb-2 d-flex justify-content-end">*/}}
-        {{/*            <div class="form-check form-check-inline form-switch">*/}}
-        {{/*                <input type="checkbox" class="form-check-input" role="switch" id="showLyrics" checked>*/}}
-        {{/*                <label for="scales">Слова</label>*/}}
-        {{/*            </div>*/}}
-        {{/*            <div class="form-check form-check-inline form-switch">*/}}
-        {{/*                <input type="checkbox" class="form-check-input" role="switch" id="showChords" checked>*/}}
-        {{/*                <label for="horns">Аккорды</label>*/}}
-        {{/*            </div>*/}}
-        {{/*        </div>*/}}
-
-        <div id="lyrics-container" class="font-monospace">
-            {{ if eq .Action "create" }}
-                <textarea id="lyrics" class="form-control lyrics-input"></textarea>
-            {{ else }}
-                <p id="lyrics" class="lyrics-div">{{ .Lyrics }}</p>
-            {{ end }}
+    </div>
+    <div class="row mb-2">
+        <div class="col">
+            <select id="transpose-section" class="visually-hidden" disabled required>
+                <option value="">{{translate "text.whereToStore" .Lang}}</option>
+                <option value="-1">{{translate "text.docEnd" .Lang}}</option>
+                {{ range $i, $tag := .Sections }}
+                    <option value="{{ $tag.Value }}">{{ $tag.Name }}</option>
+                {{ end }}
+            </select>
         </div>
-    </form>
-
-</div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <div id="lyrics-container" class="font-monospace">
+                {{ if eq .Action "create" }}
+                    <textarea id="lyrics" class="text-input" placeholder="{{translate "text.lyricsWithChords" .Lang}}"></textarea>
+                {{ else }}
+                    <p id="lyrics" class="lyrics-div">{{ .Lyrics }}</p>
+                {{ end }}
+            </div>
+        </div>
+    </div>
+</form>
 
 <script type="text/javascript">
     const action = {{ .Action }};
@@ -128,6 +134,11 @@
     const userId = {{ .UserID }};
 
     const song = JSON.parse("{{ json .Song }}");
+
+    const lang = {{ .Lang }};
+
+    const createText = {{translate "text.create" .Lang}};
+    const saveText = {{translate "text.save" .Lang}};
 </script>
 <script type="module" src="/webapp/assets/js/edit-song.js"></script>
 </body>
