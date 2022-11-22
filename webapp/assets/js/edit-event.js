@@ -39,9 +39,11 @@ window.addEventListener('DOMContentLoaded', (e) => {
 
             if (!hide.includes(false) && sortableInit === JSON.stringify(sortable.toArray())) {
                 Telegram.WebApp.MainButton.hide()
+                Telegram.WebApp.disableClosingConfirmation()
                 console.log("hide")
             } else {
                 Telegram.WebApp.MainButton.show()
+                Telegram.WebApp.enableClosingConfirmation()
                 console.log("show")
             }
         },
@@ -54,6 +56,7 @@ window.addEventListener('DOMContentLoaded', (e) => {
                 e.item.parentNode.removeChild(e.item);
                 // sortableInit = JSON.stringify(sortable.toArray())
                 Telegram.WebApp.MainButton.show()
+                Telegram.WebApp.enableClosingConfirmation()
                 console.log("show")
             }
         },
@@ -113,6 +116,7 @@ window.addEventListener('DOMContentLoaded', (e) => {
 
                         // sortableInit = JSON.stringify(sortable.toArray())
                         Telegram.WebApp.MainButton.show()
+                        Telegram.WebApp.enableClosingConfirmation()
                     } else {
                         Notiflix.Notify.warning(songExistsText);
                         Telegram.WebApp.HapticFeedback.notificationOccurred("warning");
@@ -145,9 +149,11 @@ window.addEventListener('DOMContentLoaded', (e) => {
 
         if (!hide.includes(false) && sortableInit === JSON.stringify(sortable.toArray())) {
             Telegram.WebApp.MainButton.hide()
+            Telegram.WebApp.disableClosingConfirmation()
             console.log("hide")
         } else {
             Telegram.WebApp.MainButton.show()
+            Telegram.WebApp.enableClosingConfirmation()
             console.log("show")
         }
     })

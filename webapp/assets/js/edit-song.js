@@ -75,9 +75,11 @@ window.addEventListener('DOMContentLoaded', (e) => {
 
         if (!hide.includes(false)) {
             Telegram.WebApp.MainButton.hide()
+            Telegram.WebApp.disableClosingConfirmation()
             console.log("hide")
         } else {
             Telegram.WebApp.MainButton.show()
+            Telegram.WebApp.enableClosingConfirmation()
             console.log("show")
         }
     })
