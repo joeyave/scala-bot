@@ -22,7 +22,7 @@
             <input type="date" id="date" value="{{ .Event.Time.Format "2006-01-02" }}" required>
         </div>
 
-        <div class="mb-3">
+        <div class="mb-2 position-relative">
             <div id="search" class="instant-search">
                 <div class="text-input instant-search__input-container">
                         <textarea id="song-search-input" class="text-input instant-search__input" type="text"
@@ -31,7 +31,9 @@
                     <i class="instant-search__icon fa fa-search"></i>
                 </div>
             </div>
+        </div>
 
+        <div class="mb-3">
             <div id="songs" class="sortable-list">
                 {{ range $i, $song := .Event.Songs }}
                     <div class="item">

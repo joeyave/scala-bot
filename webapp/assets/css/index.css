@@ -13,12 +13,14 @@ body {
   --page-hint-color: #83878a;
   --hint-color: #74787a;
   --placeholder-color: #999da1;
+  --box-shadow: 0 0 3px 1px rgba(0, 0, 0, 0.2);
 }
 
 html.dark body {
   --page-hint-color: #9b9ba1;
   --hint-color: #64666d;
   --placeholder-color: #5d6163;
+  --box-shadow: 0 0 3px 1px 0 #171717;
 }
 
 .chord {

@@ -9,11 +9,13 @@ class InstantSearch {
         this.options = options;
         this.elements = {
             main: instantSearch,
+            inputContainer: instantSearch.querySelector(".instant-search__input-container"),
             input: instantSearch.querySelector(".instant-search__input"),
             icon: instantSearch.querySelector(".instant-search__icon"),
             resultsContainer: document.createElement("div")
         };
 
+        this.elements.resultsContainer.id = "instant-search-results-container"
         this.elements.resultsContainer.classList.add(
             "instant-search__results-container"
         );
@@ -52,15 +54,57 @@ class InstantSearch {
         });
 
         this.elements.input.addEventListener("focus", () => {
-            this.elements.resultsContainer.classList.add(
-                "instant-search__results-container--visible"
-            );
+            if (this.elements.resultsContainer.childNodes.length > 0) {
+                this.elements.resultsContainer.classList.add(
+                    "instant-search__results-container--visible"
+                );
+                this.elements.inputContainer.classList.add("instant-search__input-container--with-results");
+            }
         });
 
-        this.elements.input.addEventListener("blur", () => {
+        // let isResultSelected = false;
+        // this.elements.resultsContainer.addEventListener("mouseover", () => {
+        //     console.log("true")
+        //     isResultSelected = true;
+        // })
+        // this.elements.resultsContainer.addEventListener("mouseout", () => {
+        //     console.log("false")
+        //     isResultSelected = false;
+        // })
+        // this.elements.resultsContainer.addEventListener("touchstart", () => {
+        //     console.log("true")
+        //     isResultSelected = true;
+        // })
+        // this.elements.resultsContainer.addEventListener("touchend", () => {
+        //     console.log("false")
+        //     isResultSelected = false;
+        // })
+        //
+        // this.elements.input.addEventListener("blur", () => {
+        //     if (isResultSelected) {
+        //         return
+        //     }
+        //     this.elements.resultsContainer.classList.remove(
+        //         "instant-search__results-container--visible"
+        //     );
+        //     this.elements.inputContainer.classList.remove("instant-search__input-container--with-results");
+        // });
+
+        document.addEventListener("mousedown", (e) => {
+
+            if (this.elements.main === e.target || this.elements.main.contains(e.target)) {
+                return;
+            }
+            // if (e.target.id === this.elements.main.id ||
+            //     e.target.id === this.elements.input ||
+            //     e.target.id === this.elements.resultsContainer.id ||
+            // e.target.className.contains("instant-search__title")) {
+            //     return
+            // }
             this.elements.resultsContainer.classList.remove(
                 "instant-search__results-container--visible"
             );
+            this.elements.inputContainer.classList.remove("instant-search__input-container--with-results");
         });
     }
 
@@ -83,6 +127,15 @@ class InstantSearch {
                 this.createResultElement(result)
             );
         }
+
+
+        if (results.length > 0) {
+            this.elements.inputContainer.classList.add("instant-search__input-container--with-results");
+            this.elements.resultsContainer.classList.add("instant-search__results-container--visible");
+        } else {
+            this.elements.inputContainer.classList.remove("instant-search__input-container--with-results");
+            this.elements.resultsContainer.classList.remove("instant-search__results-container--visible");
+        }
     }
 
     /**
@@ -92,7 +145,7 @@ class InstantSearch {
      * @returns {HTMLAnchorElement}
      */
     createResultElement(result) {
-        const anchorElement = document.createElement("a");
+        const anchorElement = document.createElement("div");
 
         anchorElement.classList.add("instant-search__result");
         anchorElement.insertAdjacentHTML(
@@ -100,20 +153,8 @@ class InstantSearch {
             this.options.templateFunction(result)
         );
 
-        anchorElement.addEventListener("click", () => {
-            this.populateResults([]);
-
-            let setlist = this.elements.input.value.split("\n");
-            setlist.shift()
-
-            if (setlist.length > 0) {
-                this.setLoading(true);
-                this.elements.input.value = setlist.join("\n");
-                this.elements.input.dispatchEvent(new Event("input"));
-            } else {
-                this.elements.input.value = "";
-            }
-        })
+        // anchorElement.addEventListener("click", () => {
+        // })
 
         anchorElement.addEventListener(...this.options.resultEventListener(result, this))
 
@@ -172,6 +213,15 @@ class InstantSearch {
     setLoading(b) {
         this.elements.icon.classList.toggle("loader", b);
     }
+}
+
+function childOf(node, ancestor) {
+    var child = node;
+    while (child !== null) {
+        if (child === ancestor) return true;
+        child = child.parentNode;
+    }
+    return false;
 }
 
 export default InstantSearch;

@@ -79,6 +79,7 @@ window.addEventListener('DOMContentLoaded', (e) => {
         resultEventListener: (result, search) => {
             return [
                 "click", async () => {
+                    console.log("click")
 
                     search.setLoading(true)
                     // Notiflix.Block.dots('.sortable-list');
@@ -120,6 +121,24 @@ window.addEventListener('DOMContentLoaded', (e) => {
                     } else {
                         Notiflix.Notify.warning(songExistsText);
                         Telegram.WebApp.HapticFeedback.notificationOccurred("warning");
+                    }
+
+                    search.elements.resultsContainer.classList.remove(
+                        "instant-search__results-container--visible"
+                    );
+                    search.elements.inputContainer.classList.remove("instant-search__input-container--with-results");
+
+                    search.populateResults([]);
+
+                    let setlist = search.elements.input.value.split("\n");
+                    setlist.shift()
+
+                    if (setlist.length > 0) {
+                        search.setLoading(true);
+                        search.elements.input.value = setlist.join("\n");
+                        search.elements.input.dispatchEvent(new Event("input"));
+                    } else {
+                        search.elements.input.value = "";
                     }
 
                     search.setLoading(false)
