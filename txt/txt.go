@@ -403,10 +403,10 @@ func init() {
 
 func Get(key, lang string, a ...interface{}) string {
 	switch lang {
-	case "uk":
-		return ukPrinter.Sprintf(key, a)
+	case "ru":
+		return ruPrinter.Sprintf(key, a)
 	}
-	return ruPrinter.Sprintf(key, a...)
+	return ukPrinter.Sprintf(key, a...)
 }
 
 var ukPrinter = message.NewPrinter(language.Ukrainian)
