@@ -316,7 +316,7 @@ var locales = map[string]map[string]string{
 	},
 	"text.noStats": {
 		"ru": "Статистика временно не доступна.",
-		"uk": "Статистика тимчасово недоступна",
+		"uk": "Статистика тимчасово недоступна.",
 	},
 	"text.serverError": {
 		"ru": "Произошла ошибка.",
@@ -336,7 +336,7 @@ var locales = map[string]map[string]string{
 	},
 	"text.added": {
 		"ru": "Добавлено.",
-		"uk": "Додано",
+		"uk": "Додано.",
 	},
 	"text.noSongs": {
 		"ru": "В этом собраннии еще нет списка песен.",
