@@ -101,8 +101,11 @@ html.dark body {
 
 .sortable-list {
   width: 100%;
+  -webkit-user-select: none; /* Safari */
+  user-select: none; /* Standard syntax */
 }
 .sortable-list .item {
+  cursor: move;
   background-color: var(--tg-theme-secondary-bg-color);
   display: flex;
   margin-bottom: 4px;
@@ -122,12 +125,21 @@ html.dark body {
   margin: -12px -14px;
 }
 
-.sortable-ghost {
+.sortable-chosen.sortable-ghost {
   opacity: 0;
 }
 
-.sortable-chosen {
-  background: rgba(0, 0, 0, 0.05);
+.sortable-fallback {
+  opacity: 1 !important;
+}
+
+.sortable-ghost, .sortable-chosen {
+  filter: brightness(90%);
+}
+
+html.dark .sortable-ghost, html.dark .sortable-chosen {
+  background-color: var(--tg-theme-bg-color);
+  filter: brightness(85%);
 }
 
 .form-text {

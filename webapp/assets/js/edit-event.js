@@ -16,12 +16,18 @@ window.addEventListener('DOMContentLoaded', (e) => {
 
     let sortable = new Sortable(songs, {
         group: "songs",
+        // forceFallback: true, // todo: set true on pc.
         delay: 150,
         delayOnTouchOnly: true,
         animation: 100,
+        // Element is chosen
+        onChoose: function (/**Event*/evt) {
+           Telegram.WebApp.HapticFeedback.impactOccurred("light")
+           // Telegram.WebApp.HapticFeedback.impactOccurred("light")
+        },
         onMove: function (evt) {
             // console.log(evt.willInsertAfter);
-            Telegram.WebApp.HapticFeedback.impactOccurred("light")
+            Telegram.WebApp.HapticFeedback.selectionChanged()
         },
         onUpdate: function (/**Event*/e) {
             // if (currOrder === order) {

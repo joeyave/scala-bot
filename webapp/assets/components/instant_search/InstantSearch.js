@@ -132,6 +132,7 @@ class InstantSearch {
         if (results.length > 0) {
             this.elements.inputContainer.classList.add("instant-search__input-container--with-results");
             this.elements.resultsContainer.classList.add("instant-search__results-container--visible");
+            Telegram.WebApp.HapticFeedback.impactOccurred("light");
         } else {
             this.elements.inputContainer.classList.remove("instant-search__input-container--with-results");
             this.elements.resultsContainer.classList.remove("instant-search__results-container--visible");
