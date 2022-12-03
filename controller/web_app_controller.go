@@ -30,6 +30,39 @@ type WebAppController struct {
 	RoleService       *service.RoleService
 }
 
+func (h *WebAppController) Statistics(ctx *gin.Context) {
+
+	fmt.Println(ctx.Request.URL.String())
+
+	hex := ctx.Query("bandId")
+	bandID, err := primitive.ObjectIDFromHex(hex)
+	if err != nil {
+		return
+	}
+
+	band, err := h.BandService.FindOneByID(bandID)
+	if err != nil {
+		return
+	}
+
+	event := &entity.Event{
+		Time:   time.Now(),
+		BandID: bandID,
+		Band:   band,
+	}
+	eventNames, err := h.EventService.GetMostFrequentEventNames(bandID, 4)
+	if err != nil {
+		return
+	}
+
+	ctx.HTML(http.StatusOK, "event.go.html", gin.H{
+		"EventNames": eventNames,
+		"Event":      event,
+		"Action":     "create",
+		"Lang":       ctx.Query("lang"),
+	})
+}
+
 func (h *WebAppController) CreateEvent(ctx *gin.Context) {
 
 	fmt.Println(ctx.Request.URL.String())

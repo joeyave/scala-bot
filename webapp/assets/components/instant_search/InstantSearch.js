@@ -216,13 +216,4 @@ class InstantSearch {
     }
 }
 
-function childOf(node, ancestor) {
-    var child = node;
-    while (child !== null) {
-        if (child === ancestor) return true;
-        child = child.parentNode;
-    }
-    return false;
-}
-
 export default InstantSearch;
