@@ -23,6 +23,15 @@ html.dark body {
   --box-shadow: 0 0 3px 1px 0 #171717;
 }
 
+.table > :not(caption) > * > * {
+  background-color: var(--tg-theme-bg-color) !important;
+  color: var(--tg-theme-text-color) !important;
+}
+
+.table > :not(:first-child) {
+  border-top: 2px solid var(--tg-theme-text-color);
+}
+
 .chord {
   color: var(--tg-theme-link-color);
 }

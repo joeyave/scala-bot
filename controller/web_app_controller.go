@@ -30,6 +30,68 @@ type WebAppController struct {
 	RoleService       *service.RoleService
 }
 
+// case helpers.Members:
+//
+//	users, err := h.userService.FindManyExtraByBandID(user.BandID)
+//	if err != nil {
+//		return err
+//	}
+//
+//	usersStr := ""
+//	event, err := h.eventService.FindOneOldestByBandID(user.BandID)
+//	if err == nil {
+//		usersStr = fmt.Sprintf("Статистика ведется с %s", lctime.Strftime("%d %B, %Y", event.Time))
+//	}
+//
+//	for _, user := range users {
+//		if user.User == nil || user.User.Name == "" {
+//			continue
+//		}
+//
+//		usersStr = fmt.Sprintf("%s\n\n<b><a href=\"tg://user?id=%d\">%s</a></b>\nВсего участий: %d", usersStr, user.User.ID, user.User.Name, len(user.Events))
+//
+//		if len(user.Events) > 0 {
+//			usersStr = fmt.Sprintf("%s\nИз них:", usersStr)
+//		}
+//
+//		mp := map[entities.Role]int{}
+//
+//		for _, event := range user.Events {
+//			for _, membership := range event.Memberships {
+//				if membership.UserID == user.User.ID {
+//					mp[*membership.Role]++
+//					break
+//				}
+//			}
+//		}
+//
+//		for role, num := range mp {
+//			usersStr = fmt.Sprintf("%s\n - %s: %d", usersStr, role.Name, num)
+//		}
+//	}
+//
+//	return c.Send(usersStr, telebot.ModeHTML)
+
+type User struct {
+	ID     int64    `json:"id"`
+	Name   string   `json:"name"`
+	Events []*Event `json:"events"`
+
+	//Events2 map[time.Weekday]map[string]int `json:"events2"`
+}
+
+type Event struct {
+	ID    primitive.ObjectID `json:"id"`
+	Date  time.Time          `json:"date"`
+	Name  string             `json:"name"`
+	Roles []*Role            `json:"roles"`
+}
+
+type Role struct {
+	ID   primitive.ObjectID `json:"id"`
+	Name string             `json:"name"`
+}
+
 func (h *WebAppController) Statistics(ctx *gin.Context) {
 
 	fmt.Println(ctx.Request.URL.String())
@@ -45,21 +107,74 @@ func (h *WebAppController) Statistics(ctx *gin.Context) {
 		return
 	}
 
-	event := &entity.Event{
-		Time:   time.Now(),
-		BandID: bandID,
-		Band:   band,
-	}
-	eventNames, err := h.EventService.GetMostFrequentEventNames(bandID, 4)
+	users, err := h.UserService.FindManyExtraByBandID(bandID)
 	if err != nil {
-		return
+		return // todo
 	}
 
-	ctx.HTML(http.StatusOK, "event.go.html", gin.H{
-		"EventNames": eventNames,
-		"Event":      event,
-		"Action":     "create",
-		"Lang":       ctx.Query("lang"),
+	h.RoleService.FindAll()
+
+	var viewUsers []*User
+	for _, user := range users {
+		viewUser := &User{
+			ID:   user.ID,
+			Name: user.Name,
+		}
+
+		for _, event := range user.Events {
+			viewEvent := &Event{
+				ID:   event.ID,
+				Date: event.Time,
+				Name: event.Name,
+			}
+
+			for _, membership := range event.Memberships {
+				if membership.UserID == user.ID {
+					viewRole := &Role{
+						ID:   membership.Role.ID,
+						Name: membership.Role.Name,
+					}
+					viewEvent.Roles = append(viewEvent.Roles, viewRole)
+					break
+				}
+			}
+
+			viewUser.Events = append(viewUser.Events, viewEvent)
+		}
+
+		viewUsers = append(viewUsers, viewUser)
+	}
+
+	//var viewUsers []*User
+	//for _, user := range users {
+	//	viewUser := &User{
+	//		ID:   user.ID,
+	//		Name: user.Name,
+	//	}
+	//
+	//	mp := make(map[time.Weekday]map[string]int)
+	//	for _, event := range user.Events {
+	//		for _, membership := range event.Memberships {
+	//			if membership.UserID == user.ID {
+	//
+	//				if mp[event.Time.Weekday()] == nil {
+	//					mp[event.Time.Weekday()] = make(map[string]int)
+	//				}
+	//				mp[event.Time.Weekday()][membership.Role.Name]++
+	//			}
+	//		}
+	//	}
+	//
+	//	viewUser.Events2 = mp
+	//
+	//	viewUsers = append(viewUsers, viewUser)
+	//}
+
+	ctx.HTML(http.StatusOK, "statistics.go.html", gin.H{
+		"Lang": ctx.Query("lang"),
+
+		"Users": viewUsers,
+		"Roles": band.Roles,
 	})
 }
 

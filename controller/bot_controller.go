@@ -430,7 +430,7 @@ func (c *BotController) Menu(bot *gotgbot.Bot, ctx *ext.Context) error {
 	user.Cache = entity.Cache{}
 
 	replyMarkup := &gotgbot.ReplyKeyboardMarkup{
-		Keyboard:              keyboard.Menu(ctx.EffectiveUser.LanguageCode),
+		Keyboard:              keyboard.Menu(user, ctx.EffectiveUser.LanguageCode),
 		ResizeKeyboard:        true,
 		InputFieldPlaceholder: txt.Get("text.defaultPlaceholder", ctx.EffectiveUser.LanguageCode),
 	}

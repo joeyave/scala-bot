@@ -4,41 +4,39 @@
 
 <body>
 <div class="container">
-    <table class="table table-sm">
+    <select id="roles" multiple>
+        {{ range $i, $role := .Roles }}
+            <option value="{{ hex $role.ID }}">{{$role.Name}}</option>
+        {{end}}
+    </select>
+
+    <table class="table table-sm" id="filtered-table">
         <thead>
         <tr>
-            <th scope="col">#</th>
             <th scope="col">First</th>
-            <th scope="col">Last</th>
             <th scope="col">Handle</th>
         </tr>
         </thead>
-        <tbody>
-        <tr>
-            <th scope="row">1</th>
-            <td>Mark</td>
-            <td>Otto</td>
-            <td>@mdo</td>
-        </tr>
-        <tr>
-            <th scope="row">2</th>
-            <td>Jacob</td>
-            <td>Thornton</td>
-            <td>@fat</td>
-        </tr>
-        <tr>
-            <th scope="row">3</th>
-            <td colspan="2">Larry the Bird</td>
-            <td>@twitter</td>
-        </tr>
-        </tbody>
+        {{/*        <tbody>*/}}
+        {{/*        <tr>*/}}
+        {{/*            <td>Mark</td>*/}}
+        {{/*            <td>@mdo</td>*/}}
+        {{/*        </tr>*/}}
+        {{/*        <tr>*/}}
+        {{/*            <td>Jacob</td>*/}}
+        {{/*            <td>@fat</td>*/}}
+        {{/*        </tr>*/}}
+        {{/*        <tr>*/}}
+        {{/*            <td>Larry the Bird</td>*/}}
+        {{/*            <td>@twitter</td>*/}}
+        {{/*        </tr>*/}}
+        {{/*        </tbody>*/}}
     </table>
 </div>
 
 <script type="text/javascript">
-    const chatId = {{ .ChatID }};
-    const userId = {{ .UserID }};
     const lang = {{ .Lang }};
+    let users = {{ .Users }};
 
     {{/*const createText = {{translate "text.create" .Lang}};*/}}
 

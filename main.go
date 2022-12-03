@@ -356,6 +356,8 @@ func main() {
 	router.Static("/webapp/assets", "./webapp/assets")
 
 	router.Use()
+	router.GET("/web-app/statistics", webAppController.Statistics)
+
 	router.GET("/web-app/events/create", webAppController.CreateEvent)
 	router.GET("/web-app/songs/create", webAppController.CreateSong)
 

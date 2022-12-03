@@ -10,10 +10,10 @@ import (
 	"os"
 )
 
-func Menu(lang string) [][]gotgbot.KeyboardButton {
+func Menu(user *entity.User, lang string) [][]gotgbot.KeyboardButton {
 	return [][]gotgbot.KeyboardButton{
 		{{Text: txt.Get("button.schedule", lang)}},
-		{{Text: txt.Get("button.songs", lang)}, {Text: txt.Get("button.stats", lang)}},
+		{{Text: txt.Get("button.songs", lang)}, {Text: txt.Get("button.stats", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/statistics?bandId=%s&lang=%s", os.Getenv("HOST"), user.BandID.Hex(), lang)}}},
 		{{Text: txt.Get("button.settings", lang)}},
 	}
 }
