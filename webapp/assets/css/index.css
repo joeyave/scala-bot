@@ -6,6 +6,10 @@ html, body {
   overflow-x: hidden;
 }
 
+select[multiple] {
+  width: 100%;
+}
+
 body {
   background-color: var(--tg-theme-bg-color);
   color: var(--tg-theme-text-color);

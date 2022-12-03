@@ -4,6 +4,7 @@ import (
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/repository"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"time"
 )
 
 type UserService struct {
@@ -52,6 +53,6 @@ func (s *UserService) FindManyByBandIDAndRoleID(bandID, roleID primitive.ObjectI
 	return s.userRepository.FindManyExtraByBandIDAndRoleID(bandID, roleID)
 }
 
-func (s *UserService) FindManyExtraByBandID(bandID primitive.ObjectID) ([]*entity.UserWithEvents, error) {
-	return s.userRepository.FindManyExtraByBandID(bandID)
+func (s *UserService) FindManyExtraByBandID(bandID primitive.ObjectID, from, to time.Time) ([]*entity.UserWithEvents, error) {
+	return s.userRepository.FindManyExtraByBandID(bandID, from, to)
 }

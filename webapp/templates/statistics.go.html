@@ -4,17 +4,37 @@
 
 <body>
 <div class="container">
-    <select id="roles" multiple>
-        {{ range $i, $role := .Roles }}
-            <option value="{{ hex $role.ID }}">{{$role.Name}}</option>
-        {{end}}
-    </select>
+    <div class="row">
+        <div class="col">
+            <input type="date" id="from-date" value="{{ .FromDate.Format "2006-01-02" }}" required>
+        </div>
+        <div class="col">
+            <select id="roles" multiple>
+                <option disabled selected value="">{{ translate "text.role" .Lang }}</option>
+                {{ range $i, $role := .Roles }}
+                    <option value="{{ hex $role.ID }}">{{$role.Name}}</option>
+                {{end}}
+            </select>
+        </div>
+        <div class="col">
+            <select id="weekdays" multiple>
+                <option disabled selected value="">{{ translate "text.weekday" .Lang }}</option>
+                <option value="1">{{ translate "text.mon" .Lang }}</option>
+                <option value="2">{{ translate "text.tue" .Lang }}</option>
+                <option value="3">{{ translate "text.wed" .Lang }}</option>
+                <option value="4">{{ translate "text.thu" .Lang }}</option>
+                <option value="5">{{ translate "text.fri" .Lang }}</option>
+                <option value="6">{{ translate "text.sat" .Lang }}</option>
+                <option value="0">{{ translate "text.san" .Lang }}</option>
+            </select>
+        </div>
+    </div>
 
     <table class="table table-sm" id="filtered-table">
         <thead>
         <tr>
-            <th scope="col">First</th>
-            <th scope="col">Handle</th>
+            <th scope="col">{{ translate "text.name" .Lang }}</th>
+            <th scope="col">{{ translate "text.memCount" .Lang }}</th>
         </tr>
         </thead>
         {{/*        <tbody>*/}}
@@ -36,7 +56,9 @@
 
 <script type="text/javascript">
     const lang = {{ .Lang }};
+    const bandId = {{ .BandID }};
     let users = {{ .Users }};
+    let initFromDate = {{.FromDate.Format "2006-01-02"}};
 
     {{/*const createText = {{translate "text.create" .Lang}};*/}}
 

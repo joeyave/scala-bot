@@ -72,26 +72,6 @@ type WebAppController struct {
 //
 //	return c.Send(usersStr, telebot.ModeHTML)
 
-type User struct {
-	ID     int64    `json:"id"`
-	Name   string   `json:"name"`
-	Events []*Event `json:"events"`
-
-	//Events2 map[time.Weekday]map[string]int `json:"events2"`
-}
-
-type Event struct {
-	ID    primitive.ObjectID `json:"id"`
-	Date  time.Time          `json:"date"`
-	Name  string             `json:"name"`
-	Roles []*Role            `json:"roles"`
-}
-
-type Role struct {
-	ID   primitive.ObjectID `json:"id"`
-	Name string             `json:"name"`
-}
-
 func (h *WebAppController) Statistics(ctx *gin.Context) {
 
 	fmt.Println(ctx.Request.URL.String())
@@ -107,43 +87,43 @@ func (h *WebAppController) Statistics(ctx *gin.Context) {
 		return
 	}
 
-	users, err := h.UserService.FindManyExtraByBandID(bandID)
-	if err != nil {
-		return // todo
-	}
-
-	h.RoleService.FindAll()
-
-	var viewUsers []*User
-	for _, user := range users {
-		viewUser := &User{
-			ID:   user.ID,
-			Name: user.Name,
-		}
-
-		for _, event := range user.Events {
-			viewEvent := &Event{
-				ID:   event.ID,
-				Date: event.Time,
-				Name: event.Name,
-			}
-
-			for _, membership := range event.Memberships {
-				if membership.UserID == user.ID {
-					viewRole := &Role{
-						ID:   membership.Role.ID,
-						Name: membership.Role.Name,
-					}
-					viewEvent.Roles = append(viewEvent.Roles, viewRole)
-					break
-				}
-			}
-
-			viewUser.Events = append(viewUser.Events, viewEvent)
-		}
-
-		viewUsers = append(viewUsers, viewUser)
-	}
+	//users, err := h.UserService.FindManyExtraByBandID(bandID)
+	//if err != nil {
+	//	return // todo
+	//}
+	//
+	//h.RoleService.FindAll()
+	//
+	//var viewUsers []*User
+	//for _, user := range users {
+	//	viewUser := &User{
+	//		ID:   user.ID,
+	//		Name: user.Name,
+	//	}
+	//
+	//	for _, event := range user.Events {
+	//		viewEvent := &Event{
+	//			ID:   event.ID,
+	//			Date: event.Time.Format("02.01.2006 15:04"),
+	//			Name: event.Name,
+	//		}
+	//
+	//		for _, membership := range event.Memberships {
+	//			if membership.UserID == user.ID {
+	//				viewRole := &Role{
+	//					ID:   membership.Role.ID,
+	//					Name: membership.Role.Name,
+	//				}
+	//				viewEvent.Roles = append(viewEvent.Roles, viewRole)
+	//				break
+	//			}
+	//		}
+	//
+	//		viewUser.Events = append(viewUser.Events, viewEvent)
+	//	}
+	//
+	//	viewUsers = append(viewUsers, viewUser)
+	//}
 
 	//var viewUsers []*User
 	//for _, user := range users {
@@ -173,8 +153,10 @@ func (h *WebAppController) Statistics(ctx *gin.Context) {
 	ctx.HTML(http.StatusOK, "statistics.go.html", gin.H{
 		"Lang": ctx.Query("lang"),
 
-		"Users": viewUsers,
-		"Roles": band.Roles,
+		//"Users": viewUsers,
+		"FromDate": time.Date(time.Now().Year(), time.January, 1, 0, 0, 0, 0, time.Local),
+		"BandID":   bandID.Hex(),
+		"Roles":    band.Roles,
 	})
 }
 

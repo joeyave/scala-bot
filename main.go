@@ -156,6 +156,9 @@ func main() {
 		DriveFileService: driveFileService,
 		SongService:      songService,
 	}
+	userController := controller.UserController{
+		UserService: userService,
+	}
 
 	// Create updater and dispatcher.
 	updater := ext.NewUpdater(&ext.UpdaterOpts{
@@ -369,6 +372,8 @@ func main() {
 
 	router.GET("/api/drive-files/search", driveFileController.Search)
 	router.GET("/api/songs/find-by-drive-file-id", driveFileController.FindByDriveFileID)
+
+	router.GET("/api/users-with-events", userController.UsersWithEvents)
 
 	go func() {
 		// Start receiving updates.

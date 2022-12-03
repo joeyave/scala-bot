@@ -391,6 +391,51 @@ var locales = map[string]map[string]string{
 		"ru": "Песня уже есть в списке.",
 		"uk": "Пісня вже є у списку.",
 	},
+	"text.role": {
+		"ru": "Роль",
+		"uk": "Роль",
+	},
+	"text.weekday": {
+		"ru": "День недели",
+		"uk": "День тижня",
+	},
+
+	"text.mon": {
+		"ru": "Понедельник",
+		"uk": "Понеділок",
+	},
+	"text.tue": {
+		"ru": "Вторник",
+		"uk": "Вівторок",
+	},
+	"text.wed": {
+		"ru": "Среда",
+		"uk": "Середа",
+	},
+	"text.thu": {
+		"ru": "Четверг",
+		"uk": "Четвер",
+	},
+	"text.fri": {
+		"ru": "Пятница",
+		"uk": "П'ятниця",
+	},
+	"text.sat": {
+		"ru": "Суббота",
+		"uk": "Субота",
+	},
+	"text.sun": {
+		"ru": "Воскресенье",
+		"uk": "Неділя",
+	},
+	"text.name": {
+		"ru": "Имя",
+		"uk": "Ім'я",
+	},
+	"text.memCount": {
+		"ru": "Количество участий",
+		"uk": "Кількість участей",
+	},
 }
 
 func init() {
@@ -411,5 +456,5 @@ func Get(key, lang string, a ...interface{}) string {
 
 var ukPrinter = message.NewPrinter(language.Ukrainian)
 
-//var enPrinter = message.NewPrinter(language.English)
+// var enPrinter = message.NewPrinter(language.English)
 var ruPrinter = message.NewPrinter(language.Russian)

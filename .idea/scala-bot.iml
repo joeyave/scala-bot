@@ -11,5 +11,6 @@
     <orderEntry type="library" name="Sortable" level="application" />
     <orderEntry type="library" name="autosize.js" level="application" />
     <orderEntry type="library" name="notiflix" level="application" />
+    <orderEntry type="library" name="moment.js" level="application" />
   </component>
 </module>
