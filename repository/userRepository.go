@@ -174,9 +174,7 @@ func (r *UserRepository) UpdateOne(user entity.User) (*entity.User, error) {
 	return r.FindOneByID(newUser.ID)
 }
 
-func (r *UserRepository) FindManyExtraByBandID(bandID primitive.ObjectID, from, to time.Time) ([]*entity.UserWithEvents, error) {
-
- 	fromDate := primitive.NewObjectIDFromTimestamp(from)
+func (r *UserRepository) FindManyExtraByBandIDAndRoleID(bandID primitive.ObjectID, roleID primitive.ObjectID) ([]*entity.UserWithEvents, error) {
 	pipeline := bson.A{
 		bson.M{
 			"$match": bson.M{
@@ -277,53 +275,59 @@ func (r *UserRepository) FindManyExtraByBandID(bandID primitive.ObjectID, from, 
 	return r.findWithExtra(pipeline)
 }
 
-func (r *UserRepository) FindManyExtraByBandID(bandID primitive.ObjectID) ([]*entity.UserWithEvents, error) {
+func (r *UserRepository) FindManyExtraByBandID(bandID primitive.ObjectID, from, to time.Time) ([]*entity.UserWithEvents, error) {
+
+	fromDate := primitive.NewObjectIDFromTimestamp(from)
+
 	pipeline := bson.A{
 		bson.M{
 			"$match": bson.M{
 				"bandId": bandID,
 			},
 		},
-		bson.M{
-			"$lookup": bson.M{
-				"from": "bands",
-				"let":  bson.M{"bandId": "$bandId"},
-				"pipeline": bson.A{
-					bson.M{
-						"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$_id", "$$bandId"}}},
-					},
-					bson.M{
-						"$lookup": bson.M{
-							"from": "roles",
-							"let":  bson.M{"bandId": "$_id"},
-							"pipeline": bson.A{
-								bson.M{
-									"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$bandId", "$$bandId"}}},
-								},
-								bson.M{
-									"$sort": bson.M{
-										"priority": 1,
-									},
-								},
-							},
-							"as": "roles",
-						},
-					},
-				},
-				"as": "band",
-			},
-		},
-		bson.M{
-			"$unwind": bson.M{
-				"path":                       "$band",
-				"preserveNullAndEmptyArrays": true,
-			},
-		},
+		//bson.M{
+		//	"$lookup": bson.M{
+		//		"from": "bands",
+		//		"let":  bson.M{"bandId": "$bandId"},
+		//		"pipeline": bson.A{
+		//			bson.M{
+		//				"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$_id", "$$bandId"}}},
+		//			},
+		//			bson.M{
+		//				"$lookup": bson.M{
+		//					"from": "roles",
+		//					"let":  bson.M{"bandId": "$_id"},
+		//					"pipeline": bson.A{
+		//						bson.M{
+		//							"$match": bson.M{"$expr": bson.M{"$eq": bson.A{"$bandId", "$$bandId"}}},
+		//						},
+		//						bson.M{
+		//							"$sort": bson.M{
+		//								"priority": 1,
+		//							},
+		//						},
+		//					},
+		//					"as": "roles",
+		//				},
+		//			},
+		//		},
+		//		"as": "band",
+		//	},
+		//},
+		//bson.M{
+		//	"$unwind": bson.M{
+		//		"path":                       "$band",
+		//		"preserveNullAndEmptyArrays": true,
+		//	},
+		//},
 		bson.M{
 			"$lookup": bson.M{
 				"from": "events",
 				"let":  bson.M{"userId": "$_id"},
 				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{"_id": bson.M{"$gte": fromDate}},
+					},
 					bson.M{
 						"$lookup": bson.M{
 							"from": "memberships",
@@ -362,7 +366,9 @@ func (r *UserRepository) FindManyExtraByBandID(bandID primitive.ObjectID) ([]*en
 						},
 					},
 					bson.M{
-						"$match": bson.M{"$expr": bson.M{"$in": bson.A{"$$userId", "$memberships.userId"}}},
+						"$match": bson.M{
+							"$expr": bson.M{"$in": bson.A{"$$userId", "$memberships.userId"}},
+						},
 					},
 				},
 				"as": "events",
