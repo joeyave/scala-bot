@@ -174,7 +174,9 @@ func (r *UserRepository) UpdateOne(user entity.User) (*entity.User, error) {
 	return r.FindOneByID(newUser.ID)
 }
 
-func (r *UserRepository) FindManyExtraByBandIDAndRoleID(bandID primitive.ObjectID, roleID primitive.ObjectID) ([]*entity.UserWithEvents, error) {
+func (r *UserRepository) FindManyExtraByBandID(bandID primitive.ObjectID, from, to time.Time) ([]*entity.UserWithEvents, error) {
+
+ 	fromDate := primitive.NewObjectIDFromTimestamp(from)
 	pipeline := bson.A{
 		bson.M{
 			"$match": bson.M{
