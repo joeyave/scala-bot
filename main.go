@@ -33,9 +33,16 @@ import (
 	"os"
 	"strings"
 	"time"
+	_ "time/tzdata" // This is mandatory for AWS containers.
 )
 
 func main() {
+	location, err := time.LoadLocation("Europe/Kiev")
+	if err != nil {
+		log.Fatal().Msgf("Err loading location: %v", err)
+	}
+	time.Local = location
+
 	out := zerolog.ConsoleWriter{
 		Out:        os.Stdout,
 		TimeFormat: time.RFC3339,
