@@ -7,7 +7,7 @@ require (
 	github.com/flowchartsman/retry v1.2.0
 	github.com/gin-gonic/gin v1.8.2
 	github.com/gorilla/schema v1.2.0
-	github.com/joeyave/chords-transposer v0.0.9
+	github.com/joeyave/chords-transposer v0.0.10
 	github.com/klauspost/lctime v0.1.0
 	github.com/rs/zerolog v1.28.0
 	go.mongodb.org/mongo-driver v1.11.1
