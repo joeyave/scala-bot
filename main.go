@@ -170,7 +170,7 @@ func main() {
 	// Create updater and dispatcher.
 	updater := ext.NewUpdater(&ext.UpdaterOpts{
 		ErrorLog: nil,
-		DispatcherOpts: ext.DispatcherOpts{
+		Dispatcher: ext.NewDispatcher(&ext.DispatcherOpts{
 			Error: botController.Error,
 			Panic: func(b *gotgbot.Bot, ctx *ext.Context, r interface{}) {
 				err, ok := r.(error)
@@ -180,9 +180,8 @@ func main() {
 					botController.Error(bot, ctx, fmt.Errorf("panic: %s", fmt.Sprint(r)))
 				}
 			}, // todo
-			ErrorLog:    nil,
-			MaxRoutines: 0,
-		},
+			ErrorLog: nil,
+		}),
 	})
 	dispatcher := updater.Dispatcher
 
