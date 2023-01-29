@@ -196,3 +196,45 @@ func (c *BotController) SettingsBandAddAdmin(bot *gotgbot.Bot, ctx *ext.Context)
 
 	return c.settingsBandMembers(bot, ctx, bandID)
 }
+
+func (c *BotController) SettingsChangeLocation_AskForLocation(bot *gotgbot.Bot, ctx *ext.Context) error {
+
+	//user := ctx.Data["user"].(*entity.User)
+
+	text := txt.Get("text.changeLocation", ctx.EffectiveUser.LanguageCode)
+	markup := &gotgbot.ReplyKeyboardMarkup{
+		Keyboard: [][]gotgbot.KeyboardButton{{{
+			Text:            txt.Get("button.shareLocation", ctx.EffectiveUser.LanguageCode),
+			RequestLocation: true,
+		}}},
+		ResizeKeyboard: true,
+		//OneTimeKeyboard: true,
+	}
+	_, err := ctx.EffectiveChat.SendMessage(bot, text, &gotgbot.SendMessageOpts{
+		ReplyMarkup: markup,
+	})
+	if err != nil {
+		return err
+	}
+
+	ctx.CallbackQuery.Answer(bot, nil)
+
+	return nil
+}
+
+func (c *BotController) SettingsChangeLocation(bot *gotgbot.Bot, ctx *ext.Context) error {
+
+	user := ctx.Data["user"].(*entity.User)
+
+	tz := c.TimeZoneFinder.GetTimezoneName(ctx.EffectiveMessage.Location.Longitude, ctx.EffectiveMessage.Location.Latitude)
+	text := txt.Get("text.yourTimeZone", ctx.EffectiveUser.LanguageCode, tz)
+	_, err := ctx.EffectiveChat.SendMessage(bot, text, &gotgbot.SendMessageOpts{
+		ParseMode: "HTML",
+	})
+	if err != nil {
+		return err
+	}
+
+	user.TimeZone = tz
+	return c.Menu(bot, ctx)
+}

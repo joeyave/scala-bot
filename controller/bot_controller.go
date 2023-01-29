@@ -13,6 +13,7 @@ import (
 	"github.com/joeyave/scala-bot/state"
 	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
+	"github.com/ringsaturn/tzf"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
@@ -33,6 +34,8 @@ type BotController struct {
 	MembershipService *service.MembershipService
 	EventService      *service.EventService
 	RoleService       *service.RoleService
+	TimeZoneFinder    *tzf.DefaultFinder
+
 	//OldHandler        *myhandlers.Handler
 }
 

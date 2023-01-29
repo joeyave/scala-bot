@@ -25,6 +25,7 @@ func Settings(user *entity.User, lang string) [][]gotgbot.InlineKeyboardButton {
 	if user.IsAdmin() {
 		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.addAdmin", lang), CallbackData: util.CallbackData(state.SettingsBandMembers, user.BandID.Hex())}})
 	}
+	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.changeLocation", lang), CallbackData: util.CallbackData(state.SettingsChangeLocation, "")}})
 	return keyboard
 }
 

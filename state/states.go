@@ -57,6 +57,8 @@ const (
 	SettingsBandMembers
 	SettingsBandAddAdmin
 
+	SettingsChangeLocation
+
 	SongCopyToMyBand
 	SongStyle
 	SongAddLyricsPage

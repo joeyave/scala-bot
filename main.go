@@ -19,6 +19,7 @@ import (
 	"github.com/joeyave/scala-bot/state"
 	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
+	"github.com/ringsaturn/tzf"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -88,7 +89,12 @@ func main() {
 	defer mongoClient.Disconnect(ctx)
 	err = mongoClient.Ping(ctx, readpref.Primary())
 	if err != nil {
-		log.Fatal().Err(err).Msg("error pinging mongo")
+		log.Fatal().Err(err).Msg("Error pinging mongo:")
+	}
+
+	timeZoneFinder, err := tzf.NewDefaultFinder()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Error loading timezone finder:")
 	}
 
 	driveRepository, err := drive.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("GOOGLEAPIS_CREDENTIALS"))))
@@ -146,6 +152,7 @@ func main() {
 		MembershipService: membershipService,
 		EventService:      eventService,
 		RoleService:       roleService,
+		TimeZoneFinder:    timeZoneFinder,
 	}
 	webAppController := controller.WebAppController{
 		Bot: bot,
@@ -223,6 +230,8 @@ func main() {
 	dispatcher.AddHandlerToGroup(handlers.NewCommand("songs", botController.GetSongs(0)), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCommand("menu", botController.Menu), 1)
 
+	dispatcher.AddHandlerToGroup(handlers.NewMessage(message.Location, botController.SettingsChangeLocation), 1)
+
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(func(msg *gotgbot.Message) bool {
 		return msg.Text == txt.Get("button.menu", msg.From.LanguageCode) || msg.Text == txt.Get("button.cancel", msg.From.LanguageCode)
 	}, botController.Menu), 1)
@@ -232,12 +241,6 @@ func main() {
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(func(msg *gotgbot.Message) bool {
 		return msg.Text == txt.Get("button.songs", msg.From.LanguageCode)
 	}, botController.GetSongs(0)), 1)
-	dispatcher.AddHandlerToGroup(handlers.NewMessage(func(msg *gotgbot.Message) bool {
-		return msg.Text == txt.Get("button.stats", msg.From.LanguageCode)
-	}, func(bot *gotgbot.Bot, ctx *ext.Context) error {
-		ctx.EffectiveChat.SendMessage(bot, txt.Get("text.noStats", ctx.EffectiveUser.LanguageCode), nil)
-		return nil
-	}), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(func(msg *gotgbot.Message) bool {
 		return msg.Text == txt.Get("button.settings", msg.From.LanguageCode)
 	}, botController.Settings), 1)
@@ -260,6 +263,7 @@ func main() {
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SettingsChooseBand), botController.SettingsChooseBand), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SettingsBandMembers), botController.SettingsBandMembers), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SettingsBandAddAdmin), botController.SettingsBandAddAdmin), 1)
+	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SettingsChangeLocation), botController.SettingsChangeLocation_AskForLocation), 1)
 
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.EventCB), botController.EventCB), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.EventSetlistDocs), botController.EventSetlistDocs), 1)

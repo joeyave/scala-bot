@@ -13,9 +13,10 @@ import (
 )
 
 type User struct {
-	ID   int64  `bson:"_id,omitempty" json:"id,omitempty"`
-	Name string `bson:"name,omitempty" json:"name,omitempty"`
-	Role string `bson:"role" json:"role,omitempty"`
+	ID       int64  `bson:"_id,omitempty" json:"id,omitempty"`
+	Name     string `bson:"name,omitempty" json:"name,omitempty"`
+	Role     string `bson:"role" json:"role,omitempty"`
+	TimeZone string `bson:"timeZone,omitempty" json:"timeZone"`
 
 	State         State         `bson:"state,omitempty" json:"state"`
 	Cache         Cache         `bson:"cache" json:"-"`
