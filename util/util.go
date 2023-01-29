@@ -27,10 +27,10 @@ func SplitTextByNewlines(query string) []string {
 
 func IetfToIsoLangCode(languageCode string) string {
 	switch languageCode {
-	case "uk":
-		return "uk_UA"
-	default:
+	case "ru":
 		return "ru_RU"
+	default:
+		return "uk_UA"
 	}
 }
 
