@@ -7,7 +7,9 @@ import (
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers"
 	"github.com/gorilla/schema"
+	"github.com/hbollon/go-edlib"
 	"github.com/joeyave/scala-bot/entity"
+	"github.com/joeyave/scala-bot/helpers"
 	"github.com/joeyave/scala-bot/keyboard"
 	"github.com/joeyave/scala-bot/service"
 	"github.com/joeyave/scala-bot/state"
@@ -15,12 +17,12 @@ import (
 	"github.com/joeyave/scala-bot/util"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/drive/v3"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -503,96 +505,98 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 	return ext.DispatcherActionEndGroups
 }
 
+// todo: document that func
 func (c *BotController) songsAlbum(bot *gotgbot.Bot, ctx *ext.Context, driveFileIDs []string) error {
 
-	var waitGroup sync.WaitGroup
-	waitGroup.Add(len(driveFileIDs))
-	bigAlbum := make([]gotgbot.InputMedia, len(driveFileIDs))
+	// Concurrently download drive files and return []gotgbot.InputMedia.
+	getAlbum := func(fileIDs []string, downloadAll bool) ([]gotgbot.InputMedia, error) {
+		g := new(errgroup.Group)
 
-	for i := range driveFileIDs {
-		go func(i int) {
-			defer waitGroup.Done()
-
-			song, driveFile, err := c.SongService.FindOrCreateOneByDriveFileID(driveFileIDs[i])
-			if err != nil {
-				return
-			}
-
-			if song.PDF.TgFileID == "" {
-				reader, err := c.DriveFileService.DownloadOneByID(driveFile.Id)
+		album := make([]gotgbot.InputMedia, len(fileIDs))
+		for i, fileID := range fileIDs {
+			i, fileID := i, fileID // Important! See https://golang.org/doc/faq#closures_and_goroutines.
+			g.Go(func() error {
+				song, _, err := c.SongService.FindOrCreateOneByDriveFileID(fileID)
 				if err != nil {
-					return
+					return err
 				}
 
-				bigAlbum[i] = gotgbot.InputMediaDocument{
-					Media:   gotgbot.NamedFile{File: *reader, FileName: fmt.Sprintf("%s.pdf", song.PDF.Name)},
-					Caption: song.Meta(),
-				}
-			} else {
-				bigAlbum[i] = gotgbot.InputMediaDocument{
-					Media:   song.PDF.TgFileID,
-					Caption: song.Meta(),
-				}
-			}
-		}(i)
-	}
-	waitGroup.Wait()
-
-	inputMediaChunks := chunkAlbum(bigAlbum, 10)
-	driveFileIDsChunks := chunk(driveFileIDs, 10)
-
-	for i := range inputMediaChunks {
-		_, err := bot.SendMediaGroup(ctx.EffectiveChat.Id, inputMediaChunks[i], nil)
-		if err != nil { // todo: try to download all
-			var waitGroup sync.WaitGroup
-			waitGroup.Add(len(driveFileIDsChunks[i]))
-			inputMedia := make([]gotgbot.InputMedia, len(driveFileIDsChunks[i]))
-
-			for i := range driveFileIDsChunks[i] {
-				go func(i int) {
-					defer waitGroup.Done()
-
-					song, _, err := c.SongService.FindOrCreateOneByDriveFileID(driveFileIDs[i])
+				if song.PDF.TgFileID == "" || downloadAll {
+					reader, err := c.DriveFileService.DownloadOneByID(fileID)
 					if err != nil {
-						return
+						return err
 					}
 
-					reader, err := c.DriveFileService.DownloadOneByID(driveFileIDs[i])
-					if err != nil {
-						return
-					}
-
-					inputMedia[i] = gotgbot.InputMediaDocument{
+					album[i] = gotgbot.InputMediaDocument{
 						Media:   gotgbot.NamedFile{File: *reader, FileName: fmt.Sprintf("%s.pdf", song.PDF.Name)},
 						Caption: song.Meta(),
 					}
-				}(i)
-			}
-			waitGroup.Wait()
+				} else {
+					album[i] = gotgbot.InputMediaDocument{
+						Media:   song.PDF.TgFileID,
+						Caption: song.Meta(),
+					}
+				}
 
-			_, err = bot.SendMediaGroup(ctx.EffectiveChat.Id, inputMedia, nil)
+				return nil
+			})
+		}
+		err := g.Wait()
+		return album, err
+	}
+
+	// Подготавливаем файлы: берем из кеша (если файл уже есть на серверах телеграм) или загружаем.
+	bigAlbum, err := getAlbum(driveFileIDs, false)
+	if err != nil {
+		return err
+	}
+
+	// Если файлов больше чем 10, разделяем их на чанки и отправляем по очереди (ограничения ТГ).
+	inputMediaChunks := helpers.Chunk(bigAlbum, 10)
+	for i, inputMediaChunk := range inputMediaChunks {
+		_, err := bot.SendMediaGroup(ctx.EffectiveChat.Id, inputMediaChunk, nil)
+
+		// Если не смогли отправить чанк, возможно проблема с файлами из кеша - TgFileID невалидный.
+		// Попробуем скачать все файлы из чанка и отправить.
+		if err != nil {
+			driveFileIDsChunks := helpers.Chunk(driveFileIDs, 10)
+			driveFileIDsChunk := driveFileIDsChunks[i]
+			album, err := getAlbum(driveFileIDsChunk, true)
 			if err != nil {
 				return err
 			}
+			msgs, err := bot.SendMediaGroup(ctx.EffectiveChat.Id, album, nil)
+			if err != nil {
+				return err
+			}
+
+			// Попробуем обновить TgFileID у файлов.
+			updateSongs := func(msgs []gotgbot.Message, driveFileIDs []string) {
+				songs, err := c.SongService.FindManyByDriveFileIDs(driveFileIDs)
+				if err == nil {
+					if len(songs) != len(msgs) || len(songs) != len(driveFileIDs) {
+						return
+					}
+					for j, song := range songs {
+						doc := msgs[j].Document
+						// На всякий случай сравниваем названия. Сравниваем с помощью алгоритма Levenshtein.
+						//Получаем процент схожести двух строк. Пропускаем больше 90%.
+						str1 := song.PDF.Name
+						str2 := strings.ReplaceAll(strings.TrimSuffix(doc.FileName, ".pdf"), "_", " ")
+						similarity, err := edlib.StringsSimilarity(str1, str2, edlib.Levenshtein)
+						fmt.Printf("similarity: %g, str1: %s, str2: %s\n", similarity, str1, str2)
+						if err == nil && similarity > 0.9 {
+							song.PDF.TgFileID = doc.FileId
+						}
+					}
+					c.SongService.UpdateMany(songs)
+				}
+			}
+			go updateSongs(msgs, driveFileIDsChunk)
 		}
 	}
 
 	return nil
-}
-
-func chunkAlbum(items []gotgbot.InputMedia, chunkSize int) (chunks [][]gotgbot.InputMedia) {
-	for chunkSize < len(items) {
-		items, chunks = items[chunkSize:], append(chunks, items[0:chunkSize:chunkSize])
-	}
-
-	return append(chunks, items)
-}
-func chunk(items []string, chunkSize int) (chunks [][]string) {
-	for chunkSize < len(items) {
-		items, chunks = items[chunkSize:], append(chunks, items[0:chunkSize:chunkSize])
-	}
-
-	return append(chunks, items)
 }
 
 func (c *BotController) NotifyUsers(bot *gotgbot.Bot) {

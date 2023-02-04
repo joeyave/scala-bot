@@ -702,7 +702,7 @@ func (c *BotController) SongVoicesCreateVoice(index int) handlers.Response {
 					return err
 				}
 
-				_, err = ctx.EffectiveChat.SendMessage(bot, txt.Get("text.added", ctx.EffectiveUser.LanguageCode), nil) // todo: move text to txt
+				_, err = ctx.EffectiveChat.SendMessage(bot, txt.Get("text.added", ctx.EffectiveUser.LanguageCode), nil)
 				if err != nil {
 					return err
 				}
