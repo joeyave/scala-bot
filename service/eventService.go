@@ -148,6 +148,7 @@ func (s *EventService) ToHtmlStringByEvent(event entity.Event, lang string) stri
 				defer waitGroup.Done()
 				driveFile, err := s.driveFileService.FindOneByID(event.Songs[i].DriveFileID)
 				if err != nil {
+					// todo: output some message.
 					return
 				}
 				songName := fmt.Sprintf("%d. <a href=\"%s\">%s</a>  (%s)", i+1, driveFile.WebViewLink, driveFile.Name, event.Songs[i].Meta())

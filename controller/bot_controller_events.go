@@ -8,6 +8,7 @@ import (
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers"
 	"github.com/joeyave/scala-bot/entity"
+	"github.com/joeyave/scala-bot/helpers"
 	"github.com/joeyave/scala-bot/keyboard"
 	"github.com/joeyave/scala-bot/metronome"
 	"github.com/joeyave/scala-bot/state"
@@ -126,8 +127,6 @@ func (c *BotController) GetEvents(index int) handlers.Response {
 				if err != nil {
 					return err
 				}
-
-				//user.Cache.Filter = "-" // todo: remove
 
 				user.State.Index = 1
 
@@ -379,7 +378,7 @@ func (c *BotController) EventSetlistMetronome(bot *gotgbot.Bot, ctx *ext.Context
 		bigAlbum = append(bigAlbum, audio)
 	}
 
-	chunks := chunkAlbum(bigAlbum, 10)
+	chunks := helpers.Chunk(bigAlbum, 10)
 
 	for _, album := range chunks {
 		_, err := bot.SendMediaGroup(ctx.EffectiveChat.Id, album, nil)
