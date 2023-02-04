@@ -228,38 +228,6 @@ func (r *SongRepository) UpdateOne(song entity.Song) (*entity.Song, error) {
 	return r.FindOneByID(newSong.ID)
 }
 
-func (r *SongRepository) UpdateMany(songs []*entity.Song) (*mongo.BulkWriteResult, error) {
-
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
-
-	var models []mongo.WriteModel
-	for _, song := range songs {
-		if song.ID.IsZero() {
-			song.ID = r.generateUniqueID()
-		}
-
-		upsert := true
-		song.Band = nil
-		song.Voices = nil
-		model := &mongo.UpdateOneModel{
-			Upsert: &upsert,
-			Filter: bson.M{"_id": song.ID},
-			Update: bson.M{"$set": song},
-		}
-		models = append(models, model)
-	}
-
-	ordered := false
-	res, err := collection.BulkWrite(context.TODO(), models, &options.BulkWriteOptions{
-		Ordered: &ordered,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return res, err
-}
-
 func (r *SongRepository) DeleteOneByDriveFileID(driveFileID string) error {
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
 
@@ -544,6 +512,11 @@ func (r *SongRepository) GetTags(bandID primitive.ObjectID) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// tagsRaw, err := collection.Distinct(context.TODO(), "tags", bson.D{}, nil)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	tags := make([]string, len(frequencies))
 	for i, v := range frequencies {

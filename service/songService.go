@@ -4,11 +4,10 @@ import (
 	"errors"
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/repository"
-	"go.mongodb.org/mongo-driver/mongo"
-	"golang.org/x/sync/errgroup"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
+	"sync"
 	"time"
 )
 
@@ -95,36 +94,31 @@ func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entity.
 }
 
 func (s *SongService) FindOrCreateManyByDriveFileIDs(driveFileIDs []string) ([]*entity.Song, []*drive.File, error) {
-
-	errwg := new(errgroup.Group)
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(len(driveFileIDs))
 	songs := make([]*entity.Song, len(driveFileIDs))
 	driveFiles := make([]*drive.File, len(driveFileIDs))
-
+	var err error
 	for i := range driveFileIDs {
-		i := i
-		errwg.Go(func() error {
-			song, driveFile, err := s.FindOrCreateOneByDriveFileID(driveFileIDs[i])
-			if err != nil {
-				return err
+		go func(i int) {
+			defer waitGroup.Done()
+
+			song, driveFile, _err := s.FindOrCreateOneByDriveFileID(driveFileIDs[i])
+			if _err != nil {
+				err = _err
 			}
 			songs[i] = song
 			driveFiles[i] = driveFile
-			return nil
-		})
+		}(i)
 	}
-	err := errwg.Wait()
-	if err != nil {
-		return nil, nil, err
-	}
+	waitGroup.Wait()
+
 	return songs, driveFiles, err
+
 }
 
 func (s *SongService) UpdateOne(song entity.Song) (*entity.Song, error) {
 	return s.songRepository.UpdateOne(song)
-}
-
-func (s *SongService) UpdateMany(songs []*entity.Song) (*mongo.BulkWriteResult, error) {
-	return s.songRepository.UpdateMany(songs)
 }
 
 func (s *SongService) DeleteOneByDriveFileID(driveFileID string) error {

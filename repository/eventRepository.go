@@ -714,6 +714,7 @@ func (r *EventRepository) PullSongID(eventID primitive.ObjectID, songID primitiv
 	return err
 }
 
+// TODO: add band id
 func (r *EventRepository) GetMostFrequentEventNames(bandID primitive.ObjectID, limit int) ([]*entity.EventNameFrequencies, error) {
 
 	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")

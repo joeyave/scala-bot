@@ -6,7 +6,6 @@ import (
 	"github.com/flowchartsman/retry"
 	"github.com/joeyave/chords-transposer/transposer"
 	"github.com/joeyave/scala-bot/helpers"
-	"golang.org/x/sync/errgroup"
 
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
@@ -14,6 +13,7 @@ import (
 	"io/ioutil"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -115,19 +115,22 @@ func (s *DriveFileService) FindOneByID(ID string) (*drive.File, error) {
 
 func (s *DriveFileService) FindManyByIDs(IDs []string) ([]*drive.File, error) {
 
-	errwg := new(errgroup.Group)
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(len(IDs))
 	driveFiles := make([]*drive.File, len(IDs))
+	var err error
 	for i := range IDs {
-		i := i
-		errwg.Go(func() error {
-			driveFile, err := s.FindOneByID(IDs[i])
-			if err == nil {
-				driveFiles[i] = driveFile
+		go func(i int) {
+			defer waitGroup.Done()
+
+			driveFile, _err := s.FindOneByID(IDs[i])
+			if _err != nil {
+				err = _err
 			}
-			return err
-		})
+			driveFiles[i] = driveFile
+		}(i)
 	}
-	err := errwg.Wait()
+	waitGroup.Wait()
 
 	return driveFiles, err
 }
