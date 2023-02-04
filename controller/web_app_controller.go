@@ -87,69 +87,6 @@ func (h *WebAppController) Statistics(ctx *gin.Context) {
 		return
 	}
 
-	//users, err := h.UserService.FindManyExtraByBandID(bandID)
-	//if err != nil {
-	//	return // todo
-	//}
-	//
-	//h.RoleService.FindAll()
-	//
-	//var viewUsers []*User
-	//for _, user := range users {
-	//	viewUser := &User{
-	//		ID:   user.ID,
-	//		Name: user.Name,
-	//	}
-	//
-	//	for _, event := range user.Events {
-	//		viewEvent := &Event{
-	//			ID:   event.ID,
-	//			Date: event.Time.Format("02.01.2006 15:04"),
-	//			Name: event.Name,
-	//		}
-	//
-	//		for _, membership := range event.Memberships {
-	//			if membership.UserID == user.ID {
-	//				viewRole := &Role{
-	//					ID:   membership.Role.ID,
-	//					Name: membership.Role.Name,
-	//				}
-	//				viewEvent.Roles = append(viewEvent.Roles, viewRole)
-	//				break
-	//			}
-	//		}
-	//
-	//		viewUser.Events = append(viewUser.Events, viewEvent)
-	//	}
-	//
-	//	viewUsers = append(viewUsers, viewUser)
-	//}
-
-	//var viewUsers []*User
-	//for _, user := range users {
-	//	viewUser := &User{
-	//		ID:   user.ID,
-	//		Name: user.Name,
-	//	}
-	//
-	//	mp := make(map[time.Weekday]map[string]int)
-	//	for _, event := range user.Events {
-	//		for _, membership := range event.Memberships {
-	//			if membership.UserID == user.ID {
-	//
-	//				if mp[event.Time.Weekday()] == nil {
-	//					mp[event.Time.Weekday()] = make(map[string]int)
-	//				}
-	//				mp[event.Time.Weekday()][membership.Role.Name]++
-	//			}
-	//		}
-	//	}
-	//
-	//	viewUser.Events2 = mp
-	//
-	//	viewUsers = append(viewUsers, viewUser)
-	//}
-
 	ctx.HTML(http.StatusOK, "statistics.go.html", gin.H{
 		"Lang": ctx.Query("lang"),
 
