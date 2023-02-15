@@ -2,11 +2,8 @@ runtime: go118
 
 instance_class: F1
 automatic_scaling:
-  min_idle_instances: automatic
-  max_idle_instances: 0
-  min_pending_latency: automatic
-  max_pending_latency: 0.030s
   max_instances: 1
+  min_instances: 1
 
 env_variables:
   BOT_TOKEN: $BOT_TOKEN
