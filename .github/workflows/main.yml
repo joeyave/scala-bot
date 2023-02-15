@@ -15,6 +15,7 @@ jobs:
           LOG_CHANNEL: ${{ secrets.LOG_CHANNEL }}
           MONGODB_DATABASE_NAME: ${{ secrets.MONGODB_DATABASE_NAME }}
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          HOST: ${{ secrets.HOST }}
 
       - id: auth
         name: Authenticate to Google Cloud
