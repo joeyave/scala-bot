@@ -1,7 +1,7 @@
 name: Deploy
 on:
   push:
-    branches: [ production ]
+    branches: [ migrate_to_google_cloud ]
 jobs:
   deploy:
     runs-on: ubuntu-latest
