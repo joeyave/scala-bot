@@ -5,24 +5,24 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-  steps:
-    - uses: actions/checkout@v3
-    - uses: golang-enthusiast/app-yaml-env-compiler@v1.0
-      env:
-        BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-        FILES_CHANNEL_ID: ${{ secrets.FILES_CHANNEL_ID }}
-        GOOGLEAPIS_CREDENTIALS: ${{ secrets.GOOGLEAPIS_CREDENTIALS }}
-        LOG_CHANNEL: ${{ secrets.LOG_CHANNEL }}
-        MONGODB_DATABASE_NAME: ${{ secrets.MONGODB_DATABASE_NAME }}
-        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: golang-enthusiast/app-yaml-env-compiler@v1.0
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          FILES_CHANNEL_ID: ${{ secrets.FILES_CHANNEL_ID }}
+          GOOGLEAPIS_CREDENTIALS: ${{ secrets.GOOGLEAPIS_CREDENTIALS }}
+          LOG_CHANNEL: ${{ secrets.LOG_CHANNEL }}
+          MONGODB_DATABASE_NAME: ${{ secrets.MONGODB_DATABASE_NAME }}
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
 
-    - id: auth
-      name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v1
-      with:
-        credentials_json: ${{ secrets.GCLOUD_AUTH }}
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCLOUD_AUTH }}
 
-    - id: deploy
-      uses: google-github-actions/deploy-appengine@v1
-      with:
-        deliverables: app.yaml
+      - id: deploy
+        uses: google-github-actions/deploy-appengine@v1
+        with:
+          deliverables: app.yaml
