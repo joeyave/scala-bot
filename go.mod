@@ -7,12 +7,10 @@ require (
 	github.com/flowchartsman/retry v1.2.0
 	github.com/gin-gonic/gin v1.8.2
 	github.com/gorilla/schema v1.2.0
-	github.com/hbollon/go-edlib v1.6.0
 	github.com/joeyave/chords-transposer v0.0.10
 	github.com/klauspost/lctime v0.1.0
 	github.com/rs/zerolog v1.29.0
 	go.mongodb.org/mongo-driver v1.11.1
-	golang.org/x/sync v0.1.0
 	golang.org/x/text v0.6.0
 	google.golang.org/api v0.109.0
 )
@@ -32,6 +30,7 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.1 // indirect
 	github.com/googleapis/gax-go/v2 v2.7.0 // indirect
+	github.com/hbollon/go-edlib v1.6.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.15.15 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
@@ -51,6 +50,7 @@ require (
 	golang.org/x/crypto v0.5.0 // indirect
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/oauth2 v0.4.0 // indirect
+	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230202175211-008b39050e57 // indirect

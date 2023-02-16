@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy to IBM Cloud Foundry
 on:
   push:
     branches: [ master ]
@@ -6,25 +6,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
-      - uses: golang-enthusiast/app-yaml-env-compiler@v1.0
-        env:
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          FILES_CHANNEL_ID: ${{ secrets.FILES_CHANNEL_ID }}
-          GOOGLEAPIS_CREDENTIALS: ${{ secrets.GOOGLEAPIS_CREDENTIALS }}
-          LOG_CHANNEL: ${{ secrets.LOG_CHANNEL }}
-          MONGODB_DATABASE_NAME: ${{ secrets.MONGODB_DATABASE_NAME }}
-          MONGODB_URI: ${{ secrets.MONGODB_URI }}
-          HOST: ${{ secrets.HOST }}
-
-      - id: auth
-        name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
+      - uses: actions/checkout@v2
+      - name: Deploy to IBM Cloud Foundry
+        uses: IBM/cloudfoundry-deploy@master
         with:
-          credentials_json: ${{ secrets.GCLOUD_AUTH }}
-
-      - id: deploy
-        uses: google-github-actions/deploy-appengine@v1
-        with:
-          deliverables: app.yaml
+          IBM_CLOUD_API_KEY: ${{ secrets.IBM_CLOUD_API_KEY }}
+          IBM_CLOUD_CF_API: ${{ secrets.IBM_CLOUD_CF_API }}
+          IBM_CLOUD_CF_ORG: ${{ secrets.IBM_CLOUD_CF_ORG }}
+          IBM_CLOUD_CF_SPACE: ${{ secrets.IBM_CLOUD_CF_SPACE }}
