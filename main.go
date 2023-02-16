@@ -49,7 +49,7 @@ func main() {
 	}
 	log.Logger = zerolog.New(out).Level(zerolog.GlobalLevel()).With().Timestamp().Logger()
 
-	// Create bot from environment value
+	// Create bot from environment value.
 	bot, err := gotgbot.NewBot(os.Getenv("BOT_TOKEN"), &gotgbot.BotOpts{
 		Client: http.Client{},
 	})
