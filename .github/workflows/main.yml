@@ -66,9 +66,6 @@ jobs:
             export BOT_TOKEN=${{ secrets.BOT_TOKEN }}
             export FILES_CHANNEL_ID=${{ secrets.FILES_CHANNEL_ID }}
             export HOST=https://${{ secrets.VM_SSH_HOST }}:8080
-            
-            sudo systemctl restart scala-bot.service &&
-            sudo systemctl status scala-bot
 
             #      - name: 'Publish JAR'
             #        uses: actions/upload-artifact@v2-preview
@@ -147,7 +144,7 @@ jobs:
             #          while ! nc -w5 -z ${{ env.INSTANCE_IP }} 22; do
             #                  sleep 5
             #                  echo "SSH not available..."
-            #          done; echo "SSH ready!"
+          #          done; echo "SSH ready!"
 
           #      - name: 'Stop App'
           #        uses: appleboy/ssh-action@v0.1.4
