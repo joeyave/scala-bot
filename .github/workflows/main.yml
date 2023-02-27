@@ -42,6 +42,15 @@ jobs:
           source: "webapp/*"
           target: "dist/webapp"
 
+      - name: 'Copy service file to OCI'
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VM_SSH_HOST }}
+          username: ${{ secrets.VM_SSH_USER }}
+          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          source: "scala-bot.service"
+          target: "/etc/systemd/system"
+
       - name: 'Deploy and rebuild on server'
         uses: appleboy/ssh-action@master
         with:
@@ -58,8 +67,8 @@ jobs:
             export FILES_CHANNEL_ID=${{ secrets.FILES_CHANNEL_ID }}
             export HOST=https://${{ secrets.VM_SSH_HOST }}:8080
             
-            systemctl restart scala-bot.service &&
-            systemctl status scala-bot
+            sudo systemctl restart scala-bot.service &&
+            sudo systemctl status scala-bot
 
             #      - name: 'Publish JAR'
             #        uses: actions/upload-artifact@v2-preview
@@ -140,8 +149,8 @@ jobs:
             #                  echo "SSH not available..."
             #          done; echo "SSH ready!"
 
-            #      - name: 'Stop App'
-            #        uses: appleboy/ssh-action@v0.1.4
+          #      - name: 'Stop App'
+          #        uses: appleboy/ssh-action@v0.1.4
           #        with:
           #          host: ${{env.INSTANCE_IP}}
           #          username: opc
