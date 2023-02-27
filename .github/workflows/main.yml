@@ -57,7 +57,7 @@ jobs:
             BOT_TOKEN=${{ secrets.BOT_TOKEN }}
             FILES_CHANNEL_ID=${{ secrets.FILES_CHANNEL_ID }}
             HOST=https://${{ secrets.VM_SSH_HOST }}:8080
-            /dist/app
+            dist/app
 
             #      - name: 'Publish JAR'
             #        uses: actions/upload-artifact@v2-preview
