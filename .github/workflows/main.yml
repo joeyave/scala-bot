@@ -48,8 +48,16 @@ jobs:
           host: ${{ secrets.VM_SSH_HOST }}
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
-          port: ${{ secrets.port }}
           script:
+            export MONGODB_URI=${{ secrets.MONGODB_URI }}
+            export MONGODB_DATABASE_NAME=${{ secrets.MONGODB_DATABASE_NAME }}
+            export LOG_CHANNEL=${{ secrets.LOG_CHANNEL }}
+            export GOOGLEAPIS_CREDENTIALS=${{ secrets.GOOGLEAPIS_CREDENTIALS }}
+            export FILES_CHANNEL_ID=${{ secrets.FILES_CHANNEL_ID }}
+            export BOT_TOKEN=${{ secrets.BOT_TOKEN }}
+            export FILES_CHANNEL_ID=${{ secrets.FILES_CHANNEL_ID }}
+            export HOST=https://${{ secrets.VM_SSH_HOST }}:8080
+            
             systemctl restart scala-bot.service &&
             systemctl status scala-bot
 
@@ -134,8 +142,8 @@ jobs:
 
             #      - name: 'Stop App'
             #        uses: appleboy/ssh-action@v0.1.4
-            #        with:
-            #          host: ${{env.INSTANCE_IP}}
+          #        with:
+          #          host: ${{env.INSTANCE_IP}}
           #          username: opc
           #          key: ${{secrets.VM_SSH_PRIVATE_KEY}}
           #          script: |
