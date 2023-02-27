@@ -48,7 +48,7 @@ jobs:
           host: ${{ secrets.VM_SSH_HOST }}
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
-          script: |
+          script:
             cd dist &&
             MONGODB_URI='${{ secrets.MONGODB_URI }}'
             MONGODB_DATABASE_NAME='${{ secrets.MONGODB_DATABASE_NAME }}'
