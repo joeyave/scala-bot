@@ -45,9 +45,9 @@ jobs:
       - name: 'Stop App'
         uses: appleboy/ssh-action@v0.1.4
         with:
-          host: ${{env.INSTANCE_IP}}
-          username: opc
-          key: ${{secrets.VM_SSH_PRIVATE_KEY}}
+          host: ${{ secrets.VM_SSH_HOST }}
+          username: ${{ secrets.VM_SSH_USER }}
+          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script: |
             pid=`ps aux | grep "scala-bot" | awk '{print $2}'`
             if [ "$pid" == "" ]; then
@@ -57,7 +57,7 @@ jobs:
             fi
             sudo mkdir -p ~/app
 
-      - name: 'Deploy and rebuild on server'
+      - name: 'Run new App'
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VM_SSH_HOST }}
@@ -146,7 +146,7 @@ jobs:
             #            --query 'data [0]."public-ip"' \
             #            --raw-output \
             #          )" >> $GITHUB_ENV
-            #          echo Instance IP: ${{ env.INSTANCE_IP }}
+          #          echo Instance IP: ${{ env.INSTANCE_IP }}
 
           #      - name: 'Wait for SSH'
           #        run: |
