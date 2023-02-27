@@ -19,9 +19,9 @@ jobs:
         run: go get .
 
       - name: 'Build'
-        run: go build -v ./...
+        run: go build -v ./... -o app
 
-      - name: SCP to Ocean
+      - name: 'Copy binary to OCI'
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.VM_SSH_HOST }}
