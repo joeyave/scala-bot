@@ -49,6 +49,7 @@ jobs:
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script:
+            cd dist \
             MONGODB_URI='${{ secrets.MONGODB_URI }}'
             MONGODB_DATABASE_NAME='${{ secrets.MONGODB_DATABASE_NAME }}'
             LOG_CHANNEL='${{ secrets.LOG_CHANNEL }}'
@@ -57,7 +58,7 @@ jobs:
             BOT_TOKEN='${{ secrets.BOT_TOKEN }}'
             FILES_CHANNEL_ID='${{ secrets.FILES_CHANNEL_ID }}'
             HOST='https://${{ secrets.VM_SSH_HOST }}:8080'
-            dist/app
+            ./app
 
             #      - name: 'Publish JAR'
             #        uses: actions/upload-artifact@v2-preview
