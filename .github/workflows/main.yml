@@ -49,14 +49,14 @@ jobs:
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script:
-            MONGODB_URI=${{ secrets.MONGODB_URI }} \
-            MONGODB_DATABASE_NAME=${{ secrets.MONGODB_DATABASE_NAME }} \
-            LOG_CHANNEL=${{ secrets.LOG_CHANNEL }} \
-            GOOGLEAPIS_CREDENTIALS=${{ secrets.GOOGLEAPIS_CREDENTIALS }} \
-            FILES_CHANNEL_ID=${{ secrets.FILES_CHANNEL_ID }} \
-            BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
-            FILES_CHANNEL_ID=${{ secrets.FILES_CHANNEL_ID }} \
-            HOST=https://${{ secrets.VM_SSH_HOST }}:8080 \
+            MONGODB_URI=${{ secrets.MONGODB_URI }}
+            MONGODB_DATABASE_NAME=${{ secrets.MONGODB_DATABASE_NAME }}
+            LOG_CHANNEL=${{ secrets.LOG_CHANNEL }}
+            GOOGLEAPIS_CREDENTIALS=${{ secrets.GOOGLEAPIS_CREDENTIALS }}
+            FILES_CHANNEL_ID=${{ secrets.FILES_CHANNEL_ID }}
+            BOT_TOKEN=${{ secrets.BOT_TOKEN }}
+            FILES_CHANNEL_ID=${{ secrets.FILES_CHANNEL_ID }}
+            HOST=https://${{ secrets.VM_SSH_HOST }}:8080
             /dist/app
 
             #      - name: 'Publish JAR'
