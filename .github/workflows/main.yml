@@ -46,7 +46,7 @@ jobs:
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.VM_SSH_HOST }}
-          username: root
+          username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           source: "scala-bot.service"
           target: "/etc/systemd/system"
