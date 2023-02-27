@@ -22,7 +22,7 @@ jobs:
         env:
           GOOS: linux
           GOARCH: arm
-        run: go build -o app main.go
+        run: go build -o scala-bot main.go
 
       - name: 'Copy binary to OCI'
         uses: appleboy/scp-action@master
@@ -30,8 +30,8 @@ jobs:
           host: ${{ secrets.VM_SSH_HOST }}
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
-          source: "app"
-          target: "dist"
+          source: "scala-bot"
+          target: "build"
 
       - name: 'Copy static files to OCI'
         uses: appleboy/scp-action@master
@@ -40,7 +40,22 @@ jobs:
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           source: "webapp/*"
-          target: "dist"
+          target: "build"
+
+      - name: 'Stop App'
+        uses: appleboy/ssh-action@v0.1.4
+        with:
+          host: ${{env.INSTANCE_IP}}
+          username: opc
+          key: ${{secrets.VM_SSH_PRIVATE_KEY}}
+          script: |
+            pid=`ps aux | grep "scala-bot" | awk '{print $2}'`
+            if [ "$pid" == "" ]; then
+            echo "Process not found"
+            else
+            kill -9 $pid
+            fi
+            sudo mkdir -p ~/app
 
       - name: 'Deploy and rebuild on server'
         uses: appleboy/ssh-action@master
@@ -49,7 +64,8 @@ jobs:
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script:
-            cd dist &&
+            cp build/* app/ &&
+            cd app &&
             MONGODB_URI='${{ secrets.MONGODB_URI }}'
             MONGODB_DATABASE_NAME='${{ secrets.MONGODB_DATABASE_NAME }}'
             LOG_CHANNEL='${{ secrets.LOG_CHANNEL }}'
@@ -58,7 +74,7 @@ jobs:
             BOT_TOKEN='${{ secrets.BOT_TOKEN }}'
             FILES_CHANNEL_ID='${{ secrets.FILES_CHANNEL_ID }}'
             HOST='http://${{ secrets.VM_SSH_HOST }}:8080'
-            ./app
+            ./scala-bot
 
             #      - name: 'Publish JAR'
             #        uses: actions/upload-artifact@v2-preview
@@ -132,28 +148,14 @@ jobs:
             #          )" >> $GITHUB_ENV
             #          echo Instance IP: ${{ env.INSTANCE_IP }}
 
-            #      - name: 'Wait for SSH'
-            #        run: |
-            #          while ! nc -w5 -z ${{ env.INSTANCE_IP }} 22; do
-            #                  sleep 5
+          #      - name: 'Wait for SSH'
+          #        run: |
+          #          while ! nc -w5 -z ${{ env.INSTANCE_IP }} 22; do
+          #                  sleep 5
           #                  echo "SSH not available..."
           #          done; echo "SSH ready!"
 
-          #      - name: 'Stop App'
-          #        uses: appleboy/ssh-action@v0.1.4
-          #        with:
-          #          host: ${{env.INSTANCE_IP}}
-          #          username: opc
-          #          key: ${{secrets.VM_SSH_PRIVATE_KEY}}
-          #          script: |
-#            pid=`ps aux | grep "[c]icd-demo.jar" | awk '{print $2}'`
-#            if [ "$pid" == "" ]; then
-#            echo "Process not found"
-#            else
-#            kill -9 $pid
-#            fi
-#            sudo mkdir -p /app
-#
+
 #      - name: 'Push JAR'
 #        uses: appleboy/scp-action@v0.1.4
 #        with:
