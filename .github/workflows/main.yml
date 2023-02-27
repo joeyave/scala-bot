@@ -40,7 +40,7 @@ jobs:
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           source: "webapp/*"
-          target: "webapp"
+          target: "dist/webapp"
 
       - name: 'Deploy and rebuild on server'
         uses: appleboy/ssh-action@master
@@ -137,8 +137,8 @@ jobs:
             #        with:
             #          host: ${{env.INSTANCE_IP}}
             #          username: opc
-            #          key: ${{secrets.VM_SSH_PRIVATE_KEY}}
-            #          script: |
+          #          key: ${{secrets.VM_SSH_PRIVATE_KEY}}
+          #          script: |
 #            pid=`ps aux | grep "[c]icd-demo.jar" | awk '{print $2}'`
 #            if [ "$pid" == "" ]; then
 #            echo "Process not found"
