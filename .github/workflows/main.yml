@@ -40,6 +40,9 @@ jobs:
 
       - name: 'Install OCI CLI'
         run: |
+          curl -L -O https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh
+          chmod +x install.sh
+          ./install.sh --accept-all-defaults
           echo "/home/runner/bin" >> $GITHUB_PATH
           exec -l $SHELL
 
@@ -59,24 +62,24 @@ jobs:
             --raw-output \
           )" >> $GITHUB_ENV
 
-      - name: 'Create Instance'
-        if: ${{!env.INSTANCE_OCID}}
-        run: |
-          echo "INSTANCE_OCID=$( \
-            oci compute instance launch \
-              -c ${{secrets.VM_COMPARTMENT_OCID}} \
-              --availability-domain ${{secrets.VM_AVAILABILITY_DOMAIN}} \
-              --shape ${{secrets.VM_SHAPE}} \
-              --shape-config '{"memoryInGBs": 4, "ocpus": 1}' \
-              --assign-public-ip true \
-              --display-name cicd-demo \
-              --image-id ${{secrets.VM_CUSTOM_IMAGE_OCID}} \
-              --ssh-authorized-keys-file /home/runner/.oci/id_vm.pub \
-              --subnet-id ${{secrets.VM_SUBNET_OCID}} \
-              --wait-for-state RUNNING \
-              --query "data.id" \
-              --raw-output \
-          )" >> $GITHUB_ENV
+#      - name: 'Create Instance'
+#        if: ${{!env.INSTANCE_OCID}}
+#        run: |
+#          echo "INSTANCE_OCID=$( \
+#            oci compute instance launch \
+#              -c ${{secrets.VM_COMPARTMENT_OCID}} \
+#              --availability-domain ${{secrets.VM_AVAILABILITY_DOMAIN}} \
+#              --shape ${{secrets.VM_SHAPE}} \
+#              --shape-config '{"memoryInGBs": 4, "ocpus": 1}' \
+#              --assign-public-ip true \
+#              --display-name cicd-demo \
+#              --image-id ${{secrets.VM_CUSTOM_IMAGE_OCID}} \
+#              --ssh-authorized-keys-file /home/runner/.oci/id_vm.pub \
+#              --subnet-id ${{secrets.VM_SUBNET_OCID}} \
+#              --wait-for-state RUNNING \
+#              --query "data.id" \
+#              --raw-output \
+#          )" >> $GITHUB_ENV
 
       - name: 'Get Instance IP'
         run: |
