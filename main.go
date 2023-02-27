@@ -361,7 +361,7 @@ func main() {
 		"translate": txt.Get,
 	})
 
-	router.LoadHTMLGlob("webapp/templates/*.go.html")
+	router.LoadHTMLGlob("./webapp/templates/*.go.html")
 	router.Static("/webapp/assets", "./webapp/assets")
 
 	router.Use()
