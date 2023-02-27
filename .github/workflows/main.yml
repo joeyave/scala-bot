@@ -19,7 +19,7 @@ jobs:
         run: go get .
 
       - name: 'Build'
-        run: go build -v ./... -o app
+        run: go build -o app -v ./...
 
       - name: 'Copy binary to OCI'
         uses: appleboy/scp-action@master
