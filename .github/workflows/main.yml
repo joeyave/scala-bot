@@ -57,7 +57,7 @@ jobs:
             FILES_CHANNEL_ID='${{ secrets.FILES_CHANNEL_ID }}'
             BOT_TOKEN='${{ secrets.BOT_TOKEN }}'
             FILES_CHANNEL_ID='${{ secrets.FILES_CHANNEL_ID }}'
-            HOST='https://${{ secrets.VM_SSH_HOST }}:8080'
+            HOST='http://${{ secrets.VM_SSH_HOST }}:8080'
             ./app
 
             #      - name: 'Publish JAR'
