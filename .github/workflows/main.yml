@@ -40,7 +40,7 @@ jobs:
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           source: "webapp/*"
-          target: "dist/webapp"
+          target: "dist"
 
       - name: 'Deploy and rebuild on server'
         uses: appleboy/ssh-action@master
@@ -135,7 +135,7 @@ jobs:
             #        run: |
             #          while ! nc -w5 -z ${{ env.INSTANCE_IP }} 22; do
             #                  sleep 5
-            #                  echo "SSH not available..."
+          #                  echo "SSH not available..."
           #          done; echo "SSH ready!"
 
           #      - name: 'Stop App'
