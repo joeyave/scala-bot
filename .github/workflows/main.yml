@@ -43,18 +43,14 @@ jobs:
           target: "build"
 
       - name: 'Stop App'
+        continue-on-error: true
         uses: appleboy/ssh-action@v0.1.4
         with:
           host: ${{ secrets.VM_SSH_HOST }}
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script: |
-            pid=`ps aux | grep "scala-bot-app" | awk '{print $2}'`
-            if [ "$pid" == "" ]; then
-            echo "Process not found"
-            else
-            kill -9 $pid
-            fi
+            killall scala-bot-app
 
       - name: 'Run new App'
         uses: appleboy/ssh-action@master
@@ -144,7 +140,7 @@ jobs:
             #            oci compute instance list-vnics \
             #            --instance-id ${{env.INSTANCE_OCID}} \
             #            --query 'data [0]."public-ip"' \
-            #            --raw-output \
+          #            --raw-output \
           #          )" >> $GITHUB_ENV
           #          echo Instance IP: ${{ env.INSTANCE_IP }}
 
