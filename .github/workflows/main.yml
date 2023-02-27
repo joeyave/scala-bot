@@ -55,7 +55,6 @@ jobs:
             else
             kill -9 $pid
             fi
-            sudo mkdir -p ~/app
 
       - name: 'Run new App'
         uses: appleboy/ssh-action@master
@@ -64,7 +63,8 @@ jobs:
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script:
-            cp build/* app/ &&
+            sudo mkdir -p ~/app &&
+            sudo cp -r ~/build/* ~/app &&
             cd app &&
             MONGODB_URI='${{ secrets.MONGODB_URI }}'
             MONGODB_DATABASE_NAME='${{ secrets.MONGODB_DATABASE_NAME }}'
