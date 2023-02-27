@@ -42,15 +42,6 @@ jobs:
           source: "webapp/*"
           target: "dist/webapp"
 
-      - name: 'Copy service file to OCI'
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VM_SSH_HOST }}
-          username: ${{ secrets.VM_SSH_USER }}
-          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
-          source: "scala-bot.service"
-          target: "/etc/systemd/system"
-
       - name: 'Deploy and rebuild on server'
         uses: appleboy/ssh-action@master
         with:
