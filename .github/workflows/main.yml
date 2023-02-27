@@ -22,7 +22,7 @@ jobs:
         env:
           GOOS: linux
           GOARCH: arm
-        run: go build -o scala-bot main.go
+        run: go build -o scala-bot-app main.go
 
       - name: 'Copy binary to OCI'
         uses: appleboy/scp-action@master
@@ -30,7 +30,7 @@ jobs:
           host: ${{ secrets.VM_SSH_HOST }}
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
-          source: "scala-bot"
+          source: "scala-bot-app"
           target: "build"
 
       - name: 'Copy static files to OCI'
@@ -49,7 +49,7 @@ jobs:
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script: |
-            pid=`ps aux | grep "scala-bot" | awk '{print $2}'`
+            pid=`ps aux | grep "scala-bot-app" | awk '{print $2}'`
             if [ "$pid" == "" ]; then
             echo "Process not found"
             else
@@ -74,7 +74,7 @@ jobs:
             BOT_TOKEN='${{ secrets.BOT_TOKEN }}'
             FILES_CHANNEL_ID='${{ secrets.FILES_CHANNEL_ID }}'
             HOST='http://${{ secrets.VM_SSH_HOST }}:8080'
-            ./scala-bot
+            ./scala-bot-app
 
             #      - name: 'Publish JAR'
             #        uses: actions/upload-artifact@v2-preview
@@ -114,7 +114,7 @@ jobs:
             #            oci compute instance list \
             #            --lifecycle-state RUNNING \
             #            --compartment-id ${{secrets.VM_COMPARTMENT_OCID}} \
-            #            --display-name scala-bot \
+            #            --display-name scala-bot-app \
             #            --query "data [0].id" \
             #            --raw-output \
             #          )" >> $GITHUB_ENV
@@ -145,7 +145,7 @@ jobs:
             #            --instance-id ${{env.INSTANCE_OCID}} \
             #            --query 'data [0]."public-ip"' \
             #            --raw-output \
-            #          )" >> $GITHUB_ENV
+          #          )" >> $GITHUB_ENV
           #          echo Instance IP: ${{ env.INSTANCE_IP }}
 
           #      - name: 'Wait for SSH'
