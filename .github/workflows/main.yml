@@ -50,8 +50,8 @@ jobs:
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           port: ${{ secrets.port }}
           script:
-            systemctl restart goweb.service &&
-            systemctl status goweb
+            systemctl restart scala-bot.service &&
+            systemctl status scala-bot
 
             #      - name: 'Publish JAR'
             #        uses: actions/upload-artifact@v2-preview
@@ -136,7 +136,7 @@ jobs:
             #        uses: appleboy/ssh-action@v0.1.4
             #        with:
             #          host: ${{env.INSTANCE_IP}}
-            #          username: opc
+          #          username: opc
           #          key: ${{secrets.VM_SSH_PRIVATE_KEY}}
           #          script: |
 #            pid=`ps aux | grep "[c]icd-demo.jar" | awk '{print $2}'`
