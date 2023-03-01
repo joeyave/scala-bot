@@ -34,6 +34,7 @@ jobs:
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script: |
             cd build
+            sudo docker rm $(docker ps -a -q)
             sudo docker build -t scala-bot-image:latest .
             sudo docker stop scala-bot
             sudo docker rm scala-bot
@@ -46,4 +47,4 @@ jobs:
             -e BOT_TOKEN='${{ secrets.BOT_TOKEN }}' \
             -e FILES_CHANNEL_ID='${{ secrets.FILES_CHANNEL_ID }}' \
             -e HOST='{{ secrets.HOST }}' \
-            --publish 8080:8080 scala-bot-image:latest
+            --publish 8080:8080 scala-bot-image:latest --name scala-bot
