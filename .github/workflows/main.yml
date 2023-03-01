@@ -9,13 +9,15 @@ jobs:
     name: Build Job
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
+
       - name: 'Copy binary to OCI'
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.GCP_SSH_HOST }}
           username: ${{ secrets.GCP_SSH_USER }}
           key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
-          source: "./"
+          source: "."
           target: "build"
 
       - name: 'Deploy'
