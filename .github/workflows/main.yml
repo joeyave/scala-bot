@@ -9,7 +9,14 @@ jobs:
     name: Build Job
     runs-on: ubuntu-latest
     steps:
-
+      - name: 'Copy binary to OCI'
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.GCP_SSH_HOST }}
+          username: ${{ secrets.GCP_SSH_USER }}
+          key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          source: "./"
+          target: "build"
 
       - name: 'Deploy'
         uses: appleboy/ssh-action@master
@@ -18,6 +25,7 @@ jobs:
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script: |
+            cd build
             sudo docker build -t scala-bot-image:latest .
             sudo docker stop scala-bot
             sudo docker rm scala-bot
