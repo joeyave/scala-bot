@@ -46,4 +46,4 @@ jobs:
             -e BOT_TOKEN='${{ secrets.BOT_TOKEN }}' \
             -e FILES_CHANNEL_ID='${{ secrets.FILES_CHANNEL_ID }}' \
             -e HOST='{{ secrets.HOST }}' \
-            --publish 8080:8080 scala-bot
+            --publish 8080:8080 scala-bot-image:latest
