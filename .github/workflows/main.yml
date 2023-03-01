@@ -16,10 +16,10 @@ jobs:
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script: |
-            docker build -t scala-bot-image:latest .
-            docker stop scala-bot
-            docker rm scala-bot
-            docker run -e MONGODB_URI='${{ secrets.MONGODB_URI }}' \
+            sudo docker build -t scala-bot-image:latest .
+            sudo docker stop scala-bot
+            sudo docker rm scala-bot
+            sudo docker run -e MONGODB_URI='${{ secrets.MONGODB_URI }}' \
             -e MONGODB_DATABASE_NAME='${{ secrets.MONGODB_DATABASE_NAME }}' \
             -e LOG_CHANNEL='${{ secrets.LOG_CHANNEL }}' \
             -e GOOGLEAPIS_CREDENTIALS='${{ secrets.GOOGLEAPIS_CREDENTIALS }}' \
