@@ -9,6 +9,8 @@ jobs:
     name: Build Job
     runs-on: ubuntu-latest
     steps:
+
+
       - name: 'Deploy'
         uses: appleboy/ssh-action@master
         with:
@@ -19,7 +21,8 @@ jobs:
             sudo docker build -t scala-bot-image:latest .
             sudo docker stop scala-bot
             sudo docker rm scala-bot
-            sudo docker run -e MONGODB_URI='${{ secrets.MONGODB_URI }}' \
+            sudo docker run -d \
+            -e MONGODB_URI='${{ secrets.MONGODB_URI }}' \
             -e MONGODB_DATABASE_NAME='${{ secrets.MONGODB_DATABASE_NAME }}' \
             -e LOG_CHANNEL='${{ secrets.LOG_CHANNEL }}' \
             -e GOOGLEAPIS_CREDENTIALS='${{ secrets.GOOGLEAPIS_CREDENTIALS }}' \
