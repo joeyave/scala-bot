@@ -1,4 +1,4 @@
-FROM arm64v8/golang:1.18
+FROM arm64v8/golang:1.18-alpine
 
 WORKDIR /app
 

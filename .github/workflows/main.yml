@@ -34,7 +34,6 @@ jobs:
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script: |
             cd build
-            docker stop $(docker ps -aq)
             sudo docker build -t scala-bot-image:latest .
             sudo docker stop scala-bot
             sudo docker rm scala-bot
