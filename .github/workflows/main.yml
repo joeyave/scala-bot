@@ -17,7 +17,7 @@ jobs:
       #          cp -TR . ../build
       #          tar -cvf deploy.tar ../build/
 
-      - name: 'Copy binary to OCI'
+      - name: 'Copy source files to server'
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.VM_SSH_HOST }}
@@ -26,7 +26,7 @@ jobs:
           source: "."
           target: "build"
 
-      - name: 'Deploy'
+      - name: 'Build docker image and run a container'
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VM_SSH_HOST }}
@@ -46,5 +46,4 @@ jobs:
             -e BOT_TOKEN='${{ secrets.BOT_TOKEN }}' \
             -e FILES_CHANNEL_ID='${{ secrets.FILES_CHANNEL_ID }}' \
             -e HOST='{{ secrets.HOST }}' \
-            -d --name scala-bot --publish 8080:8080 \ 
-            scala-bot-image:latest
+            -d --name scala-bot --publish 8080:8080 scala-bot-image:latest
