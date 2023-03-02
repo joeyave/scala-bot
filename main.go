@@ -364,7 +364,10 @@ func main() {
 	router.LoadHTMLGlob("./webapp/templates/*.go.html")
 	router.Static("/webapp/assets", "./webapp/assets")
 
-	router.Use()
+	router.Any("/check", func(c *gin.Context) {
+		c.Status(200)
+	})
+
 	router.GET("/web-app/statistics", webAppController.Statistics)
 
 	router.GET("/web-app/events/create", webAppController.CreateEvent)
