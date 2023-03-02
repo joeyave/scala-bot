@@ -23,7 +23,7 @@ jobs:
           host: ${{ secrets.VM_SSH_HOST }}
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
-          source: "."
+          source: "docker-stack.yml"
           target: "build"
 
       - name: 'Build docker image and run a container'
