@@ -58,7 +58,7 @@ jobs:
           script: |
             cd build
             sudo docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/scala-bot-image .
-            sudo docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }} 
+            echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
             sudo docker push ${{ secrets.DOCKERHUB_USERNAME }}/scala-bot-image
 
       - name: 'Update service'
