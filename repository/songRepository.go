@@ -217,7 +217,7 @@ func (r *SongRepository) UpdateOne(song entity.Song) (*entity.Song, error) {
 	}
 
 	// channel, err := r.driveClient.Files.Watch(song.DriveFileID, &drive.Channel{
-	//	Address: fmt.Sprintf("%s/driveFileChangeCallback", os.Getenv("HOST")),
+	//	Address: fmt.Sprintf("%s/driveFileChangeCallback", os.Getenv("DOMAIN")),
 	//	Id:      uuid.New().String(),
 	//	Kind:    "api#channel",
 	//	Type:    "web_hook",
