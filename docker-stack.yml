@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
   app:
-    image: joeyave/scala-bot-image:latest
+    image: ${DOCKERHUB_USERNAME}/scala-bot-image:latest
     ports:
       - "8080:8080"
 
