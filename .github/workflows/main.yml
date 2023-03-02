@@ -17,28 +17,28 @@ jobs:
       #          cp -TR . ../build
       #          tar -cvf deploy.tar ../build/
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-        with:
-          platforms: 'linux/arm64/v8'
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          platforms: 'linux/arm64/v8'
-          file: ./Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/scala-bot-image:latest
+      #      - name: Set up QEMU
+      #        uses: docker/setup-qemu-action@v2
+      #        with:
+      #          platforms: 'linux/arm64/v8'
+      #
+      #      - name: Set up Docker Buildx
+      #        uses: docker/setup-buildx-action@v2
+      #
+      #      - name: Login to Docker Hub
+      #        uses: docker/login-action@v2
+      #        with:
+      #          username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      #
+      #      - name: Build and push
+      #        uses: docker/build-push-action@v4
+      #        with:
+      #          context: .
+      #          platforms: 'linux/arm64/v8'
+      #          file: ./Dockerfile
+      #          push: true
+      #          tags: ${{ secrets.DOCKERHUB_USERNAME }}/scala-bot-image:latest
 
       - name: 'Copy source files to server'
         uses: appleboy/scp-action@master
@@ -46,10 +46,22 @@ jobs:
           host: ${{ secrets.VM_SSH_HOST }}
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
-          source: "docker-stack.yml"
+          source: "."
           target: "build"
 
-      - name: 'Build docker image and run a container'
+      - name: 'Build image and push'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VM_SSH_HOST }}
+          username: ${{ secrets.VM_SSH_USER }}
+          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          script: |
+            cd build
+            sudo docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/scala-bot-image .
+            sudo docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }} 
+            sudo docker push ${{ secrets.DOCKERHUB_USERNAME }}/scala-bot-image
+
+      - name: 'Update service'
         uses: appleboy/ssh-action@master
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
