@@ -35,6 +35,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
+          platforms: 'linux/arm64/v8'
           file: ./Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/scala-bot-image:latest
@@ -42,7 +43,6 @@ jobs:
       - name: 'Copy source files to server'
         uses: appleboy/scp-action@master
         with:
-          platforms: linux/arm64/v8
           host: ${{ secrets.VM_SSH_HOST }}
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
