@@ -12,7 +12,7 @@ services:
       MONGODB_DATABASE_NAME:
       FILES_CHANNEL_ID:
       GOOGLEAPIS_CREDENTIALS:
-      HOST:
+      DOMAIN:
       LOG_CHANNEL:
 
     deploy:

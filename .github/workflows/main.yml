@@ -69,7 +69,7 @@ jobs:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
           MONGODB_DATABASE_NAME: ${{ secrets.MONGODB_DATABASE_NAME }}
           GOOGLEAPIS_CREDENTIALS: ${{ secrets.GOOGLEAPIS_CREDENTIALS }}
-          DOMAIN: ${{ secrets.HOST }}
+          DOMAIN: ${{ secrets.DOMAIN }}
           LOG_CHANNEL: ${{ secrets.LOG_CHANNEL }}
         with:
           host: ${{ secrets.VM_SSH_HOST }}
