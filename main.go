@@ -365,7 +365,7 @@ func main() {
 	router.Static("/webapp/assets", "./webapp/assets")
 
 	router.Any("/check", func(c *gin.Context) {
-		c.Status(200)
+		c.JSON(200, gin.H{"status": "ok"})
 	})
 
 	router.GET("/web-app/statistics", webAppController.Statistics)
