@@ -1,4 +1,4 @@
-FROM arm64v8/golang:1.18-alpine
+FROM golang:1.18-alpine
 
 WORKDIR /app
 
@@ -9,8 +9,8 @@ RUN go mod download
 
 COPY ./ ./
 
-ENV GOOS=linux
-ENV GOARCH=arm
+#ENV GOOS=linux
+#ENV GOARCH=arm
 
 RUN go build -o /scala-bot
 
