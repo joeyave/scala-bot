@@ -28,22 +28,19 @@ jobs:
 
       - name: 'Build docker image and run a container'
         uses: appleboy/ssh-action@master
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          MONGODB_DATABASE_NAME: ${{ secrets.MONGODB_DATABASE_NAME }}
+          GOOGLEAPIS_CREDENTIALS: ${{ secrets.GOOGLEAPIS_CREDENTIALS }}
+          LOG_CHANNEL: ${{ secrets.LOG_CHANNEL }}
+          HOST: ${{ secrets.HOST }}
+
         with:
           host: ${{ secrets.VM_SSH_HOST }}
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          envs: BOT_TOKEN, MONGODB_URI, MONGODB_DATABASE_NAME, GOOGLEAPIS_CREDENTIALS, HOST, LOG_CHANNEL
           script: |
             cd build
-            sudo docker build -t scala-bot-image:latest .
-            sudo docker stop scala-bot
-            sudo docker rm scala-bot
-            sudo docker run \
-            -e MONGODB_URI='${{ secrets.MONGODB_URI }}' \
-            -e MONGODB_DATABASE_NAME='${{ secrets.MONGODB_DATABASE_NAME }}' \
-            -e LOG_CHANNEL='${{ secrets.LOG_CHANNEL }}' \
-            -e GOOGLEAPIS_CREDENTIALS='${{ secrets.GOOGLEAPIS_CREDENTIALS }}' \
-            -e FILES_CHANNEL_ID='${{ secrets.FILES_CHANNEL_ID }}' \
-            -e BOT_TOKEN='${{ secrets.BOT_TOKEN }}' \
-            -e FILES_CHANNEL_ID='${{ secrets.FILES_CHANNEL_ID }}' \
-            -e HOST='{{ secrets.HOST }}' \
-            -d --name scala-bot --publish 8080:8080 scala-bot-image:latest
+            sudo docker stack deploy -c docker-stack.yml scala-bot

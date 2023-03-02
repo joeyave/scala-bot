@@ -1,0 +1,35 @@
+version: '3.7'
+
+services:
+  app:
+    image: joeyave/scala-bot-image:latest
+    ports:
+      - "8080:8080"
+
+    environment:
+      BOT_TOKEN:
+      MONGODB_URI:
+      MONGODB_DATABASE_NAME:
+      FILES_CHANNEL_ID:
+      GOOGLEAPIS_CREDENTIALS:
+      HOST:
+      LOG_CHANNEL:
+
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 2
+        order: start-first
+        failure_action: rollback
+        delay: 10s
+      rollback_config:
+        parallelism: 0
+        order: stop-first
+
+#    healthcheck:
+#      test: [ "CMD", "curl", "-f", "http://localhost:8080 || exit 1" ]
