@@ -79,3 +79,4 @@ jobs:
           script: |
             cd build
             sudo -E docker stack deploy -c docker-stack.yml scala-bot
+            sudo docker image prune -f
