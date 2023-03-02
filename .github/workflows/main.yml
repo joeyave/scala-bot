@@ -42,4 +42,4 @@ jobs:
           envs: BOT_TOKEN, MONGODB_URI, MONGODB_DATABASE_NAME, GOOGLEAPIS_CREDENTIALS, HOST, LOG_CHANNEL
           script: |
             cd build
-            sudo docker stack deploy -c docker-stack.yml scala-bot
+            sudo -E docker stack deploy -c docker-stack.yml scala-bot
