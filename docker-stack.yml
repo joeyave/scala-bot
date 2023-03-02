@@ -16,14 +16,14 @@ services:
       LOG_CHANNEL:
 
     deploy:
-      replicas: 2
+      replicas: 1
       restart_policy:
         condition: any
         delay: 5s
         max_attempts: 3
         window: 120s
       update_config:
-        parallelism: 2
+        parallelism: 1
         order: start-first
         failure_action: rollback
         delay: 10s
