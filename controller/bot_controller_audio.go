@@ -52,6 +52,8 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 
 	user := ctx.Data["user"].(*entity.User)
 
+	ctx.EffectiveChat.SendMessage(bot, "Processing...", nil)
+
 	audio := user.Cache.Audio
 	f, err := bot.GetFile(audio.FileId, nil)
 	if err != nil {
@@ -64,7 +66,7 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 	}
 
 	// Write the input data to a temporary file
-	tmpFile, err := os.CreateTemp("", "input")
+	tmpFile, err := os.CreateTemp("", "input*.mp3")
 	if err != nil {
 		return err
 	}
@@ -77,9 +79,8 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 		return err
 	}
 
-	ctx.EffectiveChat.SendMessage(bot, "Processing file. It can take some time.", nil)
+	cmd := exec.Command("rubberband-r3", "-p", ctx.EffectiveMessage.Text, tmpFile.Name(), "-")
 
-	cmd := exec.Command("rubberband", "-p", ctx.EffectiveMessage.Text, tmpFile.Name(), "-")
 	newFileBytes, err := cmd.Output()
 	if err != nil {
 		return err
