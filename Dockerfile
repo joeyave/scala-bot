@@ -4,7 +4,7 @@ WORKDIR /app
 
 RUN echo "deb http://deb.debian.org/debian sid main"
 RUN tee -a /etc/apt/sources.list
-RUN apt-get update && apt-get install -y rubberband-cli=3.1.2+dfsg0
+RUN apt-get update && apt-get install -y rubberband-cli
 
 COPY go.mod ./
 COPY go.sum ./
