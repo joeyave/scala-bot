@@ -60,11 +60,11 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 	}
 
 	// Write the input data to a temporary file
-	tmpFile, err := os.CreateTemp("/", "input")
+	tmpFile, err := os.CreateTemp("", "input")
 	if err != nil {
 		return err
 	}
-	//defer os.Remove(tmpFile.Name())
+	defer os.Remove(tmpFile.Name())
 
 	if _, err := io.Copy(tmpFile, reader); err != nil {
 		return err
@@ -81,7 +81,8 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 	cmd.Stderr = &stdBuffer
 
 	newFileBytes, err := cmd.Output()
-	fmt.Println(string(stdBuffer.Bytes()))
+	ctx.EffectiveChat.SendMessage(bot, string(stdBuffer.Bytes()), nil)
+	fmt.Println()
 	if err != nil {
 		return err
 	}
