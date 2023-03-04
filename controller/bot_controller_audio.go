@@ -19,7 +19,11 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 	user := ctx.Data["user"].(*entity.User)
 
 	markup := &gotgbot.ReplyKeyboardMarkup{
-		Keyboard:       [][]gotgbot.KeyboardButton{{{Text: txt.Get("button.menu", ctx.EffectiveUser.LanguageCode)}}},
+		Keyboard: [][]gotgbot.KeyboardButton{
+			{{Text: "1"}, {Text: "2"}, {Text: "3"}, {Text: "4"}, {Text: "5"}, {Text: "6"}, {Text: "7"}, {Text: "8"}},
+			{{Text: "-1"}, {Text: "-2"}, {Text: "-3"}, {Text: "-4"}, {Text: "-5"}, {Text: "-6"}, {Text: "-7"}, {Text: "-8"}},
+			{{Text: txt.Get("button.menu", ctx.EffectiveUser.LanguageCode)}},
+		},
 		ResizeKeyboard: true,
 	}
 	_, err := ctx.EffectiveChat.SendMessage(bot, txt.Get("text.sendSemitones", ctx.EffectiveUser.LanguageCode), &gotgbot.SendMessageOpts{
