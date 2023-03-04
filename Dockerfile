@@ -3,7 +3,7 @@ FROM ubuntu:23.04
 WORKDIR /app
 
 RUN apt-get update && apt-get -y install \
-    golang \
+    golang=1.18 \
     rubberband-cli
 
 
@@ -16,6 +16,7 @@ COPY ./ ./
 
 #ENV GOOS=linux
 #ENV GOARCH=arm
+#ENV GODEBUG=tls13=0
 
 RUN go build -buildvcs=false -o /scala-bot
 
