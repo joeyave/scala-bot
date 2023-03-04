@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"github.com/PaulSonOfLars/gotgbot/v2"
@@ -81,35 +82,52 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 
 	cmd := exec.Command("rubberband", "-p", ctx.EffectiveMessage.Text, tmpFile.Name(), "-")
 
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	if err := cmd.Start(); err != nil {
+		fmt.Println(err)
+		return err
+	}
+	scanner := bufio.NewScanner(stdout)
+	for scanner.Scan() {
+		fmt.Println(scanner.Text())
+	}
+	if err := cmd.Wait(); err != nil {
+		fmt.Println(err)
+		return err
+	}
+
 	var stdBuffer bytes.Buffer
 	cmd.Stderr = &stdBuffer
 
-	newFileBytes, err := cmd.Output()
-	// todo: remove.
-	ctx.EffectiveChat.SendMessage(bot, string(stdBuffer.Bytes()), nil)
-	fmt.Println()
-	if err != nil {
-		return err
-	}
-
-	ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
-
-	opts := &gotgbot.SendAudioOpts{
-		Duration:  audio.Duration,
-		Performer: audio.Performer,
-		Title:     audio.Title,
-	}
-	if audio.Thumb != nil {
-		thumbFileID := gotgbot.InputFile(audio.Thumb.FileId)
-		opts.Thumb = &thumbFileID
-	}
-	_, err = bot.SendAudio(ctx.EffectiveChat.Id, &gotgbot.NamedFile{
-		File:     bytes.NewReader(newFileBytes),
-		FileName: fmt.Sprintf("%s", audio.FileName),
-	}, opts)
-	if err != nil {
-		return err
-	}
+	//newFileBytes, err := cmd.Output()
+	//// todo: remove.
+	//ctx.EffectiveChat.SendMessage(bot, string(stdBuffer.Bytes()), nil)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
+	//
+	//opts := &gotgbot.SendAudioOpts{
+	//	Duration:  audio.Duration,
+	//	Performer: audio.Performer,
+	//	Title:     audio.Title,
+	//}
+	//if audio.Thumb != nil {
+	//	thumbFileID := gotgbot.InputFile(audio.Thumb.FileId)
+	//	opts.Thumb = &thumbFileID
+	//}
+	//_, err = bot.SendAudio(ctx.EffectiveChat.Id, &gotgbot.NamedFile{
+	//	File:     bytes.NewReader(newFileBytes),
+	//	FileName: fmt.Sprintf("%s", audio.FileName),
+	//}, opts)
+	//if err != nil {
+	//	return err
+	//}
 
 	return nil
 }
