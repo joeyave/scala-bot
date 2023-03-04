@@ -2,6 +2,7 @@ FROM golang:1.20
 
 WORKDIR /app
 
+RUN echo "deb http://deb.debian.org/debian sid main" | sudo tee -a /etc/apt/sources.list
 RUN apt-get update && apt-get install -y rubberband-cli=3.1.2+dfsg0
 
 COPY go.mod ./
