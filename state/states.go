@@ -11,11 +11,13 @@ const (
 	GetSongs
 	FilterSongs
 
-	SongVoicesCreateVoice
+	SongVoices_CreateVoice
 
 	BandCreate
 
 	RoleCreate_ChoosePosition
+
+	TransposeAudio
 )
 
 // Inline states.

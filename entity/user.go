@@ -59,6 +59,7 @@ type Cache struct {
 	SongID        primitive.ObjectID `bson:"song_id,omitempty"`
 	Band          *Band              `bson:"band,omitempty"`
 	Role          *Role              `bson:"role,omitempty"`
+	Audio         *gotgbot.Audio     `json:"audio,omitempty"`
 }
 
 type CallbackCache struct {

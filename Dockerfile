@@ -1,6 +1,8 @@
-FROM golang:1.18-alpine
+FROM golang:1.20
 
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y rubberband-cli
 
 COPY go.mod ./
 COPY go.sum ./
@@ -12,6 +14,6 @@ COPY ./ ./
 #ENV GOOS=linux
 #ENV GOARCH=arm
 
-RUN go build -o /scala-bot
+RUN go build -buildvcs=false -o /scala-bot
 
 CMD [ "/scala-bot" ]

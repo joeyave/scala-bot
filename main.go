@@ -339,6 +339,8 @@ func main() {
 		return nil
 	}), 1)
 
+	dispatcher.AddHandlerToGroup(handlers.NewMessage(message.Audio, botController.TransposeAudio_AskForSemitonesNumber), 1)
+
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(message.All, botController.ChooseHandlerOrSearch), 1)
 
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(message.All, botController.UpdateUser), 2)

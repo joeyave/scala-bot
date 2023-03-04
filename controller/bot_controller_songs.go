@@ -638,7 +638,7 @@ func (c *BotController) SongVoicesAddVoiceAskForAudio(bot *gotgbot.Bot, ctx *ext
 	}
 
 	user.State = entity.State{
-		Name: state.SongVoicesCreateVoice,
+		Name: state.SongVoices_CreateVoice,
 	}
 	user.Cache = entity.Cache{
 		Voice: &entity.Voice{SongID: songID},
@@ -652,15 +652,15 @@ func (c *BotController) SongVoicesAddVoiceAskForAudio(bot *gotgbot.Bot, ctx *ext
 	return nil
 }
 
-func (c *BotController) SongVoicesCreateVoice(index int) handlers.Response {
+func (c *BotController) SongVoices_CreateVoice(index int) handlers.Response {
 	return func(bot *gotgbot.Bot, ctx *ext.Context) error {
 
 		user := ctx.Data["user"].(*entity.User)
 
-		if user.State.Name != state.SongVoicesCreateVoice {
+		if user.State.Name != state.SongVoices_CreateVoice {
 			user.State = entity.State{
 				Index: index,
-				Name:  state.SongVoicesCreateVoice,
+				Name:  state.SongVoices_CreateVoice,
 			}
 			user.Cache = entity.Cache{
 				Voice: user.Cache.Voice,
