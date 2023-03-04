@@ -66,7 +66,7 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 	}
 
 	// Write the input data to a temporary file
-	tmpFile, err := os.CreateTemp("", "input*.mp3")
+	tmpFile, err := os.CreateTemp("", "input*")
 	if err != nil {
 		return err
 	}
