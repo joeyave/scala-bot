@@ -79,7 +79,7 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 
 	ctx.EffectiveChat.SendMessage(bot, "Processing file. It can take some time.", nil)
 
-	cmd := exec.Command("rubberband-r3", "-p", ctx.EffectiveMessage.Text, tmpFile.Name(), "-")
+	cmd := exec.Command("rubberband", "-p", ctx.EffectiveMessage.Text, tmpFile.Name(), "-")
 
 	var stdBuffer bytes.Buffer
 	cmd.Stderr = &stdBuffer
