@@ -3,7 +3,8 @@ FROM ubuntu:23.04
 WORKDIR /app
 
 RUN apt-get update && apt-get -y install \
-    golang=1.18 \
+    ca-certificates \
+    golang \
     rubberband-cli
 
 
