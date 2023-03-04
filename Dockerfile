@@ -1,11 +1,12 @@
-FROM golang:1.20
+FROM ubuntu:23.04
 
 WORKDIR /app
 
-RUN echo "deb http://deb.debian.org/debian sid main"
-RUN tee -a /etc/apt/sources.list
-RUN apt-get update && apt-get install -y rubberband-cli
-RUN rubberband -v
+RUN apt-get update && apt-get -y install \
+    golang \
+    rubberband-cli
+
+
 COPY go.mod ./
 COPY go.sum ./
 
