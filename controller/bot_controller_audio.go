@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
@@ -12,6 +13,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"time"
 )
 
 func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, ctx *ext.Context) error {
@@ -79,7 +81,9 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 		return err
 	}
 
-	cmd := exec.Command("rubberband-r3", "-p", ctx.EffectiveMessage.Text, tmpFile.Name(), "-")
+	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	cmd := exec.CommandContext(ctxWithTimeout, "rubberband-r3", "-p", ctx.EffectiveMessage.Text, tmpFile.Name(), "-")
 
 	newFileBytes, err := cmd.Output()
 	if err != nil {
