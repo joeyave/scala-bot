@@ -83,7 +83,7 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 
 	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
-	cmd := exec.CommandContext(ctxWithTimeout, "rubberband-r3", "-p", ctx.EffectiveMessage.Text, tmpFile.Name(), "-")
+	cmd := exec.CommandContext(ctxWithTimeout, "rubberband-r3", "-p", ctx.EffectiveMessage.Text, "--quiet", tmpFile.Name(), "-")
 
 	newFileBytes, err := cmd.Output()
 	if err != nil {
