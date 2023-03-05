@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -67,28 +68,69 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 		return err
 	}
 
-	// Write the input data to a temporary file
-	tmpFile, err := os.CreateTemp("", "input*")
+	inputTmpFile, err := os.CreateTemp("", "input_audio_*")
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tmpFile.Name())
+	defer os.Remove(inputTmpFile.Name())
 
-	if _, err := io.Copy(tmpFile, reader); err != nil {
+	if _, err := io.Copy(inputTmpFile, reader); err != nil {
 		return err
 	}
-	if err := tmpFile.Close(); err != nil {
+	if err := inputTmpFile.Close(); err != nil {
+		return err
+	}
+
+	outTmpFile, err := os.CreateTemp("", "output_audio_*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(outTmpFile.Name())
+
+	if err := outTmpFile.Close(); err != nil {
 		return err
 	}
 
 	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
-	cmd := exec.CommandContext(ctxWithTimeout, "rubberband-r3", "-p", ctx.EffectiveMessage.Text, "--quiet", tmpFile.Name(), "-")
-
-	newFileBytes, err := cmd.Output()
+	cmd := exec.CommandContext(ctxWithTimeout, "rubberband-r3", "-p", ctx.EffectiveMessage.Text, inputTmpFile.Name(), outTmpFile.Name())
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return err
 	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	scanner := bufio.NewScanner(stdout)
+	go func() {
+		for scanner.Scan() {
+			fmt.Println(scanner.Text())
+		}
+	}()
+	scanner = bufio.NewScanner(stderr)
+	go func() {
+		for scanner.Scan() {
+			fmt.Println(scanner.Text())
+		}
+	}()
+
+	if err := cmd.Wait(); err != nil {
+		return err
+	}
+
+	newFileBytes, err := os.ReadFile(outTmpFile.Name())
+	if err != nil {
+		return err
+	}
+
+	//newFileBytes, err := cmd.Output()
+	//if err != nil {
+	//	return err
+	//}
 
 	ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
 
