@@ -11,13 +11,17 @@ import (
 	"github.com/joeyave/scala-bot/state"
 	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
+	ffmpeg "github.com/u2takey/ffmpeg-go"
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 )
+
+var ffmpegAudioExt = "mp3"
 
 func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, ctx *ext.Context) error {
 
@@ -140,10 +144,11 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 		return err
 	}
 
-	reader, err := util.File(bot, f)
+	originalFileBytes, err := util.File(bot, f)
 	if err != nil {
 		return err
 	}
+	defer originalFileBytes.Close()
 
 	inputTmpFile, err := os.CreateTemp("", "input_audio_*")
 	if err != nil {
@@ -151,11 +156,30 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 	}
 	defer os.Remove(inputTmpFile.Name())
 
-	if _, err := io.Copy(inputTmpFile, reader); err != nil {
-		return err
-	}
-	if err := inputTmpFile.Close(); err != nil {
-		return err
+	converted := false
+	if user.CallbackCache.AudioMimeType == "audio/mp4" {
+		converted = true
+		if err := inputTmpFile.Close(); err != nil {
+			return err
+		}
+
+		err = ffmpeg.
+			Input("pipe:").
+			Output(inputTmpFile.Name(), ffmpeg.KwArgs{"f": ffmpegAudioExt, "c:v": "copy", "c:a": "libmp3lame", "q:a": "4"}).
+			WithInput(originalFileBytes).
+			OverWriteOutput().
+			ErrorToStdOut().
+			Run()
+		if err != nil {
+			return err
+		}
+	} else {
+		if _, err := io.Copy(inputTmpFile, originalFileBytes); err != nil {
+			return err
+		}
+		if err := inputTmpFile.Close(); err != nil {
+			return err
+		}
 	}
 
 	outTmpFile, err := os.CreateTemp("", "output_audio_*")
@@ -168,9 +192,11 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 		return err
 	}
 
-	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
+	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
-	cmd := exec.CommandContext(ctxWithTimeout, "rubberband-r3", "-p", semitones, inputTmpFile.Name(), outTmpFile.Name())
+
+	// todo: consider adding "--ignore-clipping".
+	cmd := exec.CommandContext(ctxWithTimeout, "rubberband-r3", "-p", semitones, "--ignore-clipping", inputTmpFile.Name(), outTmpFile.Name())
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		return err
@@ -250,16 +276,21 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 			Duration:  user.CallbackCache.AudioDuration,
 			Performer: user.CallbackCache.AudioPerformer,
 			Title:     fmt.Sprintf("%s (%s)", user.CallbackCache.AudioTitle, s),
-		}
-		if user.CallbackCache.AudioThumbFileId != "" {
-			thumbFileID := gotgbot.InputFile(user.CallbackCache.AudioThumbFileId)
-			opts.Thumb = &thumbFileID
+			Thumb:     user.CallbackCache.AudioThumbFileId,
 		}
 
-		_, err = bot.SendAudio(ctx.EffectiveChat.Id, &gotgbot.NamedFile{
+		extension := filepath.Ext(user.CallbackCache.AudioFileName)
+		fileName := strings.TrimSuffix(user.CallbackCache.AudioFileName, extension)
+		if converted {
+			extension = "." + ffmpegAudioExt
+		}
+
+		file := gotgbot.NamedFile{
 			File:     bytes.NewReader(newFileBytes),
-			FileName: fmt.Sprintf("%s (%s)", user.CallbackCache.AudioFileName, s),
-		}, opts)
+			FileName: fmt.Sprintf("%s (%s)%s", fileName, s, extension),
+		}
+
+		_, err = bot.SendAudio(ctx.EffectiveChat.Id, file, opts)
 		if err != nil {
 			return err
 		}

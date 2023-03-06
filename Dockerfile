@@ -5,7 +5,8 @@ WORKDIR /app
 RUN apt-get update && apt-get -y install \
     ca-certificates \
     golang \
-    rubberband-cli
+    rubberband-cli \
+    ffmpeg
 
 
 COPY go.mod ./
