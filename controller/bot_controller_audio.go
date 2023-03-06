@@ -242,8 +242,7 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	// todo: consider adding "--ignore-clipping".
-	args := []string{"-p", split[0]}
+	args := []string{"-p", split[0], "-F"}
 
 	useR3, err := strconv.ParseBool(split[1])
 	if err != nil {
