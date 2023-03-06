@@ -203,6 +203,10 @@ var locales = map[string]map[string]string{
 		"ru": "Добавить админа",
 		"uk": "Додати адміна",
 	},
+	"button.continue": {
+		"ru": "Продолжить (%s)",
+		"uk": "Продовжити (%s)",
+	},
 
 	"text.title": {
 		"ru": "Название",

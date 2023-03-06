@@ -59,8 +59,6 @@ func (c *BotController) ChooseHandlerOrSearch(bot *gotgbot.Bot, ctx *ext.Context
 		return c.BandCreate(user.State.Index)(bot, ctx)
 	case state.RoleCreate_ChoosePosition:
 		return c.RoleCreate_ChoosePosition(bot, ctx)
-	case state.TransposeAudio:
-		return c.TransposeAudio(bot, ctx)
 	}
 
 	return c.search(user.State.Index)(bot, ctx)

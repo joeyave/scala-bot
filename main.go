@@ -288,6 +288,9 @@ func main() {
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SongStyle), botController.SongStyle), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SongAddLyricsPage), botController.SongAddLyricsPage), 1)
 
+	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.TransposeAudio_AskForSemitonesNumber), botController.TransposeAudio_AskForSemitonesNumber), 1)
+	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.TransposeAudio), botController.TransposeAudio), 1)
+
 	// Inline query.
 	dispatcher.AddHandlerToGroup(handlers.NewInlineQuery(inlinequery.All, func(bot *gotgbot.Bot, ctx *ext.Context) error {
 
@@ -340,6 +343,7 @@ func main() {
 	}), 1)
 
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(message.Audio, botController.TransposeAudio_AskForSemitonesNumber), 1)
+	dispatcher.AddHandlerToGroup(handlers.NewMessage(message.Voice, botController.TransposeAudio_AskForSemitonesNumber), 1)
 
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(message.All, botController.ChooseHandlerOrSearch), 1)
 

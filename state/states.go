@@ -16,8 +16,6 @@ const (
 	BandCreate
 
 	RoleCreate_ChoosePosition
-
-	TransposeAudio
 )
 
 // Inline states.
@@ -67,4 +65,7 @@ const (
 
 	RoleCreate_AskForName
 	RoleCreate
+
+	TransposeAudio_AskForSemitonesNumber
+	TransposeAudio
 )

@@ -14,39 +14,113 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strconv"
+	"strings"
 	"time"
 )
 
 func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, ctx *ext.Context) error {
 
 	user := ctx.Data["user"].(*entity.User)
+	semitones := 0
+	if ctx.CallbackQuery != nil {
+		payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
+		split := strings.Split(payload, ":")
+		delta, err := strconv.Atoi(split[0])
+		if err != nil {
+			return err
+		}
+		//oldSemitones, err := strconv.Atoi(split[1])
+		//if err != nil {
+		//	return err
+		//}
+		//semitones = oldSemitones + delta
+		semitones = delta
+	} else if ctx.EffectiveMessage.Audio != nil {
+		audio := ctx.EffectiveMessage.Audio
+		// todo: remove what's not needed.
+		user.CallbackCache.AudioFileId = audio.FileId
+		user.CallbackCache.AudioFileUniqueId = audio.FileUniqueId
+		user.CallbackCache.AudioDuration = audio.Duration
+		user.CallbackCache.AudioPerformer = audio.Performer
+		user.CallbackCache.AudioTitle = audio.Title
+		user.CallbackCache.AudioFileName = audio.FileName
+		user.CallbackCache.AudioMimeType = audio.MimeType
+		user.CallbackCache.AudioFileSize = audio.FileSize
 
-	markup := &gotgbot.ReplyKeyboardMarkup{
-		Keyboard: [][]gotgbot.KeyboardButton{
-			{{Text: "1"}, {Text: "2"}, {Text: "3"}, {Text: "4"}, {Text: "5"}, {Text: "6"}, {Text: "7"}, {Text: "8"}},
-			{{Text: "-1"}, {Text: "-2"}, {Text: "-3"}, {Text: "-4"}, {Text: "-5"}, {Text: "-6"}, {Text: "-7"}, {Text: "-8"}},
-			{{Text: txt.Get("button.menu", ctx.EffectiveUser.LanguageCode)}},
+		if audio.Thumb != nil {
+			user.CallbackCache.AudioThumbFileId = audio.Thumb.FileId
+			user.CallbackCache.AudioThumbFileUniqueId = audio.Thumb.FileUniqueId
+			user.CallbackCache.AudioThumbWidth = audio.Thumb.Width
+			user.CallbackCache.AudioThumbHeight = audio.Thumb.Height
+			user.CallbackCache.AudioThumbFileSize = audio.Thumb.FileSize
+		}
+	} else if ctx.EffectiveMessage.Voice != nil {
+		voice := ctx.EffectiveMessage.Voice
+		// todo: remove what's not needed.
+		user.CallbackCache.AudioFileId = voice.FileId
+		user.CallbackCache.AudioFileUniqueId = voice.FileUniqueId
+		user.CallbackCache.AudioDuration = voice.Duration
+		user.CallbackCache.AudioMimeType = voice.MimeType
+		user.CallbackCache.AudioFileSize = voice.FileSize
+	}
+
+	markup := &gotgbot.InlineKeyboardMarkup{
+		InlineKeyboard: [][]gotgbot.InlineKeyboardButton{
+			{
+				{Text: "-1", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("-1:%d", semitones))},
+				{Text: "-2", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("-2:%d", semitones))},
+				{Text: "-3", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("-3:%d", semitones))},
+				{Text: "-4", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("-4:%d", semitones))},
+				{Text: "-5", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("-5:%d", semitones))},
+				{Text: "-6", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("-6:%d", semitones))},
+			},
+			{
+				{Text: "+1", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("+1:%d", semitones))},
+				{Text: "+2", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("+2:%d", semitones))},
+				{Text: "+3", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("+3:%d", semitones))},
+				{Text: "+4", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("+4:%d", semitones))},
+				{Text: "+5", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("+5:%d", semitones))},
+				{Text: "+6", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("+6:%d", semitones))},
+			},
 		},
-		ResizeKeyboard: true,
-	}
-	_, err := ctx.EffectiveChat.SendMessage(bot, txt.Get("text.sendSemitones", ctx.EffectiveUser.LanguageCode), &gotgbot.SendMessageOpts{
-		ReplyMarkup: markup,
-	})
-	if err != nil {
-		return err
 	}
 
-	user.State = entity.State{
-		Name: state.TransposeAudio,
-	}
-	user.Cache = entity.Cache{
-		Audio: ctx.EffectiveMessage.Audio,
+	s := strconv.Itoa(semitones)
+	if !strings.HasPrefix(s, "-") {
+		s = "+" + s
 	}
 
-	//_, err = c.UserService.UpdateOne(*user)
-	//if err != nil {
-	//	return err
-	//}
+	text := user.CallbackCache.AddToText(txt.Get("text.sendSemitones", ctx.EffectiveUser.LanguageCode))
+	//text := user.CallbackCache.AddToText(txt.Get("text.sendSemitones", ctx.EffectiveUser.LanguageCode, user.CallbackCache.AudioFileName, s))
+
+	if ctx.CallbackQuery != nil {
+		if semitones != 0 {
+			markup.InlineKeyboard = append(markup.InlineKeyboard,
+				[]gotgbot.InlineKeyboardButton{
+					{Text: txt.Get("button.continue", ctx.EffectiveUser.LanguageCode, s), CallbackData: util.CallbackData(state.TransposeAudio, fmt.Sprintf("%d", semitones))},
+				})
+		}
+
+		//ctx.EffectiveMessage.EditText(bot, text, &gotgbot.EditMessageTextOpts{
+		//	ReplyMarkup:           *markup,
+		//	ParseMode:             "HTML",
+		//	DisableWebPagePreview: true,
+		//})
+		ctx.EffectiveMessage.EditReplyMarkup(bot, &gotgbot.EditMessageReplyMarkupOpts{
+			ReplyMarkup: *markup,
+		})
+	} else {
+		_, err := ctx.EffectiveChat.SendMessage(bot, text, &gotgbot.SendMessageOpts{
+			ReplyMarkup:           markup,
+			ParseMode:             "HTML",
+			DisableWebPagePreview: true,
+			ReplyToMessageId:      ctx.EffectiveMessage.MessageId,
+		})
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -54,11 +128,14 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error {
 
 	user := ctx.Data["user"].(*entity.User)
+	semitones := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 
-	ctx.EffectiveChat.SendMessage(bot, "Processing...", nil)
+	processingMsg, _, err := ctx.EffectiveMessage.EditText(bot, "Processing...", &gotgbot.EditMessageTextOpts{})
+	if err != nil {
+		return err
+	}
 
-	audio := user.Cache.Audio
-	f, err := bot.GetFile(audio.FileId, nil)
+	f, err := bot.GetFile(user.CallbackCache.AudioFileId, nil)
 	if err != nil {
 		return err
 	}
@@ -91,9 +168,9 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 		return err
 	}
 
-	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
 	defer cancel()
-	cmd := exec.CommandContext(ctxWithTimeout, "rubberband-r3", "-p", ctx.EffectiveMessage.Text, inputTmpFile.Name(), outTmpFile.Name())
+	cmd := exec.CommandContext(ctxWithTimeout, "rubberband-r3", "-p", semitones, inputTmpFile.Name(), outTmpFile.Name())
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		return err
@@ -101,11 +178,41 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 	if err := cmd.Start(); err != nil {
 		return err
 	}
-	scanner := bufio.NewScanner(stderr)
+
+	wordsScanner := bufio.NewScanner(stderr)
+	wordsScanner.Split(bufio.ScanWords)
+
 	go func() {
-		for scanner.Scan() {
-	  ctx.EffectiveChat.SendMessage(bot, scanner.Text(), nil)
-			fmt.Println(scanner.Text())
+		processingStage := false
+		currPercentage := 0
+
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+
+		for wordsScanner.Scan() {
+			//fmt.Println(wordsScanner.Text())
+
+			if wordsScanner.Text() == "Processing..." {
+				processingStage = true
+			} else if strings.EqualFold(wordsScanner.Text(), "NOTE:") { // Clipping detected.
+				processingStage = false
+			}
+
+			percentage, err := strconv.Atoi(strings.TrimSuffix(wordsScanner.Text(), "%"))
+			if err != nil {
+				continue
+			}
+
+			if processingStage && percentage > currPercentage {
+				currPercentage = percentage
+
+				select {
+				case <-ticker.C:
+					processingMsg.EditText(bot, "Processing... "+wordsScanner.Text(), nil)
+					fmt.Println(wordsScanner.Text())
+				default:
+				}
+			}
 		}
 	}()
 
@@ -125,22 +232,30 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 
 	ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
 
-	opts := &gotgbot.SendAudioOpts{
-		Duration:  audio.Duration,
-		Performer: audio.Performer,
-		Title:     audio.Title,
+	s := semitones
+	if !strings.HasPrefix(s, "-") {
+		s = "+" + s
 	}
-	if audio.Thumb != nil {
-		thumbFileID := gotgbot.InputFile(audio.Thumb.FileId)
+
+	opts := &gotgbot.SendAudioOpts{
+		Duration:  user.CallbackCache.AudioDuration,
+		Performer: user.CallbackCache.AudioPerformer,
+		Title:     fmt.Sprintf("%s (%s)", user.CallbackCache.AudioTitle, s),
+	}
+	if user.CallbackCache.AudioThumbFileId != "" {
+		thumbFileID := gotgbot.InputFile(user.CallbackCache.AudioThumbFileId)
 		opts.Thumb = &thumbFileID
 	}
+
 	_, err = bot.SendAudio(ctx.EffectiveChat.Id, &gotgbot.NamedFile{
 		File:     bytes.NewReader(newFileBytes),
-		FileName: fmt.Sprintf("%s", audio.FileName),
+		FileName: fmt.Sprintf("%s (%s)", user.CallbackCache.AudioFileName, s),
 	}, opts)
 	if err != nil {
 		return err
 	}
+
+	processingMsg.Delete(bot, nil)
 
 	return nil
 }
