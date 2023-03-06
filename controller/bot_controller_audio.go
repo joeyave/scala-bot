@@ -94,10 +94,6 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	cmd := exec.CommandContext(ctxWithTimeout, "rubberband-r3", "-p", ctx.EffectiveMessage.Text, inputTmpFile.Name(), outTmpFile.Name())
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return err
-	}
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		return err
@@ -105,15 +101,10 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 	if err := cmd.Start(); err != nil {
 		return err
 	}
-	scanner := bufio.NewScanner(stdout)
+	scanner := bufio.NewScanner(stderr)
 	go func() {
 		for scanner.Scan() {
-			fmt.Println(scanner.Text())
-		}
-	}()
-	scanner = bufio.NewScanner(stderr)
-	go func() {
-		for scanner.Scan() {
+	  ctx.EffectiveChat.SendMessage(bot, scanner.Text(), nil)
 			fmt.Println(scanner.Text())
 		}
 	}()
