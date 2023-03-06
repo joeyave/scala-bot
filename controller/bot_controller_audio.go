@@ -196,7 +196,7 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 	defer cancel()
 
 	// todo: consider adding "--ignore-clipping".
-	cmd := exec.CommandContext(ctxWithTimeout, "rubberband-r3", "-p", semitones, "--ignore-clipping", inputTmpFile.Name(), outTmpFile.Name())
+	cmd := exec.CommandContext(ctxWithTimeout, "rubberband-r3", "-p", semitones, inputTmpFile.Name(), outTmpFile.Name())
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		return err
