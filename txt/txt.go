@@ -215,6 +215,14 @@ var locales = map[string]map[string]string{
 		"ru": "Без проверки на клиппинг",
 		"uk": "Без перевірки на кліппінг",
 	},
+	"button.fine": {
+		"ru": "Качественно",
+		"uk": "Якісно",
+	},
+	"button.fast": {
+		"ru": "Быстро",
+		"uk": "Швидко",
+	},
 
 	"text.title": {
 		"ru": "Название",
