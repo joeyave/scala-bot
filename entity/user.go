@@ -70,20 +70,26 @@ type CallbackCache struct {
 	MessageID int64 `schema:"messageId,omitempty"`
 	UserID    int64 `schema:"userId,omitempty"`
 
-	AudioFileId       string `schema:"audioFileId,omitempty"`
-	AudioFileUniqueId string `schema:"audioFileUniqueId,omitempty"`
-	AudioDuration     int64  `schema:"audioDuration,omitempty"`
-	AudioPerformer    string `schema:"audioPerformer,omitempty"`
-	AudioTitle        string `schema:"audioTitle,omitempty"`
-	AudioFileName     string `schema:"audioFileName,omitempty"`
-	AudioMimeType     string `schema:"audioMimeType,omitempty"`
-	AudioFileSize     int64  `schema:"audioFileSize,omitempty"`
+	AudioFileId    string `schema:"audioFileId,omitempty"`
+	AudioDuration  int64  `schema:"audioDuration,omitempty"`
+	AudioPerformer string `schema:"audioPerformer,omitempty"`
+	AudioTitle     string `schema:"audioTitle,omitempty"`
+	AudioFileName  string `schema:"audioFileName,omitempty"`
+	AudioMimeType  string `schema:"audioMimeType,omitempty"`
+	AudioFileSize  int64  `schema:"audioFileSize,omitempty"`
 
 	AudioThumbFileId       string `schema:"thumbFileId,omitempty"`
 	AudioThumbFileUniqueId string `schema:"thumbFileUniqueId,omitempty"`
 	AudioThumbWidth        int64  `schema:"thumbWidth,omitempty"`
 	AudioThumbHeight       int64  `schema:"thumbHeight,omitempty"`
 	AudioThumbFileSize     int64  `schema:"thumbFileSize,omitempty"`
+
+	IsVoice bool `schema:"isVoice,omitempty"`
+
+	//VoiceFileId   string `schema:"voiceFileId,omitempty"`
+	//VoiceDuration int64  `schema:"voiceDuration,omitempty"`
+	//VoiceMimeType string `schema:"voiceMimeType,omitempty"`
+	//VoiceFileSize int64  `schema:"voiceFileSize,omitempty"`
 }
 
 var encoder = schema.NewEncoder()

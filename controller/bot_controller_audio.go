@@ -39,8 +39,8 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 	} else if ctx.EffectiveMessage.Audio != nil {
 		audio := ctx.EffectiveMessage.Audio
 		// todo: remove what's not needed.
+		user.CallbackCache.IsVoice = false
 		user.CallbackCache.AudioFileId = audio.FileId
-		user.CallbackCache.AudioFileUniqueId = audio.FileUniqueId
 		user.CallbackCache.AudioDuration = audio.Duration
 		user.CallbackCache.AudioPerformer = audio.Performer
 		user.CallbackCache.AudioTitle = audio.Title
@@ -58,8 +58,8 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 	} else if ctx.EffectiveMessage.Voice != nil {
 		voice := ctx.EffectiveMessage.Voice
 		// todo: remove what's not needed.
+		user.CallbackCache.IsVoice = true
 		user.CallbackCache.AudioFileId = voice.FileId
-		user.CallbackCache.AudioFileUniqueId = voice.FileUniqueId
 		user.CallbackCache.AudioDuration = voice.Duration
 		user.CallbackCache.AudioMimeType = voice.MimeType
 		user.CallbackCache.AudioFileSize = voice.FileSize
@@ -237,22 +237,32 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 		s = "+" + s
 	}
 
-	opts := &gotgbot.SendAudioOpts{
-		Duration:  user.CallbackCache.AudioDuration,
-		Performer: user.CallbackCache.AudioPerformer,
-		Title:     fmt.Sprintf("%s (%s)", user.CallbackCache.AudioTitle, s),
-	}
-	if user.CallbackCache.AudioThumbFileId != "" {
-		thumbFileID := gotgbot.InputFile(user.CallbackCache.AudioThumbFileId)
-		opts.Thumb = &thumbFileID
-	}
+	if user.CallbackCache.IsVoice {
+		opts := &gotgbot.SendVoiceOpts{
+			Duration: user.CallbackCache.AudioDuration,
+		}
+		_, err := bot.SendVoice(ctx.EffectiveChat.Id, newFileBytes, opts)
+		if err != nil {
+			return err
+		}
+	} else {
+		opts := &gotgbot.SendAudioOpts{
+			Duration:  user.CallbackCache.AudioDuration,
+			Performer: user.CallbackCache.AudioPerformer,
+			Title:     fmt.Sprintf("%s (%s)", user.CallbackCache.AudioTitle, s),
+		}
+		if user.CallbackCache.AudioThumbFileId != "" {
+			thumbFileID := gotgbot.InputFile(user.CallbackCache.AudioThumbFileId)
+			opts.Thumb = &thumbFileID
+		}
 
-	_, err = bot.SendAudio(ctx.EffectiveChat.Id, &gotgbot.NamedFile{
-		File:     bytes.NewReader(newFileBytes),
-		FileName: fmt.Sprintf("%s (%s)", user.CallbackCache.AudioFileName, s),
-	}, opts)
-	if err != nil {
-		return err
+		_, err = bot.SendAudio(ctx.EffectiveChat.Id, &gotgbot.NamedFile{
+			File:     bytes.NewReader(newFileBytes),
+			FileName: fmt.Sprintf("%s (%s)", user.CallbackCache.AudioFileName, s),
+		}, opts)
+		if err != nil {
+			return err
+		}
 	}
 
 	processingMsg.Delete(bot, nil)
