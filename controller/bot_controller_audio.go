@@ -26,20 +26,39 @@ var ffmpegAudioExt = "mp3"
 func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, ctx *ext.Context) error {
 
 	user := ctx.Data["user"].(*entity.User)
+
 	semitones := 0
+	useR3 := false
+	skipClipping := false
+	more := false
 	if ctx.CallbackQuery != nil {
 		payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 		split := strings.Split(payload, ":")
-		delta, err := strconv.Atoi(split[0])
+		_semitones, err := strconv.Atoi(split[0])
 		if err != nil {
 			return err
 		}
-		//oldSemitones, err := strconv.Atoi(split[1])
-		//if err != nil {
-		//	return err
-		//}
-		//semitones = oldSemitones + delta
-		semitones = delta
+		semitones = _semitones
+
+		_useR3, err := strconv.ParseBool(split[1])
+		if err != nil {
+			return err
+		}
+		useR3 = _useR3
+
+		_skipClipping, err := strconv.ParseBool(split[2])
+		if err != nil {
+			return err
+		}
+		skipClipping = _skipClipping
+
+		if len(split) > 3 {
+			_more, err := strconv.ParseBool(split[3])
+			if err != nil {
+				return err
+			}
+			more = _more
+		}
 	} else if ctx.EffectiveMessage.Audio != nil {
 		audio := ctx.EffectiveMessage.Audio
 		// todo: remove what's not needed.
@@ -69,26 +88,52 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 		user.CallbackCache.AudioFileSize = voice.FileSize
 	}
 
-	markup := &gotgbot.InlineKeyboardMarkup{
-		InlineKeyboard: [][]gotgbot.InlineKeyboardButton{
-			{
-				{Text: "-1", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("-1:%d", semitones))},
-				{Text: "-2", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("-2:%d", semitones))},
-				{Text: "-3", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("-3:%d", semitones))},
-				{Text: "-4", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("-4:%d", semitones))},
-				{Text: "-5", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("-5:%d", semitones))},
-				{Text: "-6", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("-6:%d", semitones))},
-			},
-			{
-				{Text: "+1", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("+1:%d", semitones))},
-				{Text: "+2", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("+2:%d", semitones))},
-				{Text: "+3", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("+3:%d", semitones))},
-				{Text: "+4", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("+4:%d", semitones))},
-				{Text: "+5", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("+5:%d", semitones))},
-				{Text: "+6", CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("+6:%d", semitones))},
-			},
-		},
+	markup := &gotgbot.InlineKeyboardMarkup{}
+
+	buttonText := txt.Get("button.qualitatively", ctx.EffectiveUser.LanguageCode)
+	if useR3 {
+		buttonText += " ✅"
 	}
+	markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: buttonText, CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("%d:%t:%t", semitones, !useR3, skipClipping))}})
+
+	buttonText = txt.Get("button.skipClippingCheck", ctx.EffectiveUser.LanguageCode)
+	if skipClipping {
+		buttonText += " ✅"
+	}
+	markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: buttonText, CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("%d:%t:%t", semitones, useR3, !skipClipping))}})
+
+	limit := 4
+	if more {
+		limit = 12
+	}
+	//markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{})
+	for i := 0; i > -limit; i-- {
+		if i%4 == 0 || i == 0 {
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{})
+		}
+		buttonText = fmt.Sprintf("%d", i-1)
+		if semitones == i-1 {
+			buttonText = fmt.Sprintf("〔%s〕", buttonText)
+		}
+		markup.InlineKeyboard[len(markup.InlineKeyboard)-1] = append(markup.InlineKeyboard[len(markup.InlineKeyboard)-1], gotgbot.InlineKeyboardButton{Text: buttonText, CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("%d:%t:%t:%t", i-1, useR3, skipClipping, more))})
+	}
+	//markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{})
+	for i := 0; i < limit; i++ {
+		if i%4 == 0 || i == 0 {
+			markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{})
+		}
+
+		buttonText = fmt.Sprintf("+%d", i+1)
+		if semitones == i+1 {
+			buttonText = fmt.Sprintf("〔%s〕", buttonText)
+		}
+		markup.InlineKeyboard[len(markup.InlineKeyboard)-1] = append(markup.InlineKeyboard[len(markup.InlineKeyboard)-1], gotgbot.InlineKeyboardButton{Text: buttonText, CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("%d:%t:%t:%t", i+1, useR3, skipClipping, more))})
+	}
+	buttonText = "▿"
+	if more {
+		buttonText = "△"
+	}
+	markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: buttonText, CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("%d:%t:%t:%t", semitones, useR3, skipClipping, !more))}})
 
 	s := strconv.Itoa(semitones)
 	if !strings.HasPrefix(s, "-") {
@@ -102,7 +147,7 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 		if semitones != 0 {
 			markup.InlineKeyboard = append(markup.InlineKeyboard,
 				[]gotgbot.InlineKeyboardButton{
-					{Text: txt.Get("button.continue", ctx.EffectiveUser.LanguageCode, s), CallbackData: util.CallbackData(state.TransposeAudio, fmt.Sprintf("%d", semitones))},
+					{Text: txt.Get("button.continue", ctx.EffectiveUser.LanguageCode, s), CallbackData: util.CallbackData(state.TransposeAudio, fmt.Sprintf("%d:%t:%t", semitones, useR3, skipClipping))},
 				})
 		}
 
@@ -114,6 +159,7 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 		ctx.EffectiveMessage.EditReplyMarkup(bot, &gotgbot.EditMessageReplyMarkupOpts{
 			ReplyMarkup: *markup,
 		})
+		ctx.CallbackQuery.Answer(bot, nil)
 	} else {
 		_, err := ctx.EffectiveChat.SendMessage(bot, text, &gotgbot.SendMessageOpts{
 			ReplyMarkup:           markup,
@@ -132,7 +178,8 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error {
 
 	user := ctx.Data["user"].(*entity.User)
-	semitones := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
+	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
+	split := strings.Split(payload, ":")
 
 	processingMsg, _, err := ctx.EffectiveMessage.EditText(bot, "Processing...", &gotgbot.EditMessageTextOpts{})
 	if err != nil {
@@ -196,7 +243,27 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 	defer cancel()
 
 	// todo: consider adding "--ignore-clipping".
-	cmd := exec.CommandContext(ctxWithTimeout, "rubberband-r3", "-p", semitones, inputTmpFile.Name(), outTmpFile.Name())
+	args := []string{"-p", split[0]}
+
+	useR3, err := strconv.ParseBool(split[1])
+	if err != nil {
+		return err
+	}
+	if useR3 {
+		args = append(args, "-3")
+	}
+
+	skipClipping, err := strconv.ParseBool(split[2])
+	if err != nil {
+		return err
+	}
+	if skipClipping {
+		args = append(args, "--ignore-clipping")
+	}
+
+	args = append(args, inputTmpFile.Name(), outTmpFile.Name())
+
+	cmd := exec.CommandContext(ctxWithTimeout, "rubberband-r3", args...)
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		return err
@@ -258,7 +325,7 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 
 	ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
 
-	s := semitones
+	s := split[0]
 	if !strings.HasPrefix(s, "-") {
 		s = "+" + s
 	}

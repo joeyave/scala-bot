@@ -204,8 +204,16 @@ var locales = map[string]map[string]string{
 		"uk": "Додати адміна",
 	},
 	"button.continue": {
-		"ru": "Продолжить (%s)",
-		"uk": "Продовжити (%s)",
+		"ru": "Продолжить",
+		"uk": "Продовжити",
+	},
+	"button.qualitatively": {
+		"ru": "Качественно, но долго",
+		"uk": "Якісно, але довго",
+	},
+	"button.skipClippingCheck": {
+		"ru": "Без проверки на клиппинг",
+		"uk": "Без перевірки на кліппінг",
 	},
 
 	"text.title": {
