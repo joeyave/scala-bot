@@ -175,6 +175,8 @@ var sem = mysemaphore.NewWeighted(2)
 
 func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error {
 
+	ctx.CallbackQuery.Answer(bot, nil)
+
 	user := ctx.Data["user"].(*entity.User)
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 	split := strings.Split(payload, ":")
