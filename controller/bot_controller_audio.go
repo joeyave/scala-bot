@@ -191,21 +191,10 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 		return err
 	}
 
-	f, err := bot.GetFile(user.CallbackCache.AudioFileId, nil)
-	if err != nil {
-		return err
-	}
-
-	originalFileBytes, err := util.File(bot, f)
-	if err != nil {
-		return err
-	}
-	defer originalFileBytes.Close()
-
-	ctxWithCancel, cancel := context.WithCancel(context.Background())
+	ctxWithCancel, stopSendingQueueMessages := context.WithCancel(context.Background())
 
 	go func(id int64, ctx context.Context) {
-		ticker := time.NewTicker(1 * time.Second)
+		ticker := time.NewTicker(3 * time.Second)
 		defer ticker.Stop()
 		for {
 			select {
@@ -219,14 +208,7 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 		}
 	}(ctx.EffectiveMessage.MessageId, ctxWithCancel)
 
-	sem.Acquire(context.TODO(), ctx.EffectiveMessage.MessageId)
-	// send signal to stop goroutine.
-	cancel()
-	defer sem.Release()
-	converted, newFileBytes, err := c.transposeAudio(bot, user.CallbackCache.AudioMimeType, originalFileBytes, semitones, fine, processingMsg)
-	//if strings.Contains(user.CallbackCache.AudioFileName, "err") {
-	//	err = errors.New("test err")
-	//}
+	converted, newFileBytes, err := c.transposeAudio(bot, ctx, stopSendingQueueMessages, sem, user.CallbackCache.AudioMimeType, user.CallbackCache.AudioFileId, semitones, fine, processingMsg)
 	if err != nil {
 		processingMsg.EditText(bot, fmt.Sprintf("Error: %v", err), nil)
 		return err
@@ -277,7 +259,27 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 	return nil
 }
 
-func (c *BotController) transposeAudio(bot *gotgbot.Bot, mimeType string, originalFileBytes io.ReadCloser, semitones string, fine bool, processingMsg *gotgbot.Message) (bool, []byte, error) {
+func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQueueMessages context.CancelFunc, sem *mysemaphore.Weighted, mimeType string, audioFileID string, semitones string, fine bool, processingMsg *gotgbot.Message) (bool, []byte, error) {
+	err := sem.Acquire(context.TODO(), ctx.EffectiveMessage.MessageId)
+	if err != nil {
+		sem.Release()
+		stopQueueMessages()
+		return false, nil, err
+	}
+	defer sem.Release()
+	stopQueueMessages()
+
+	f, err := bot.GetFile(audioFileID, nil)
+	if err != nil {
+		return false, nil, err
+	}
+
+	originalFileBytes, err := util.File(bot, f)
+	if err != nil {
+		return false, nil, err
+	}
+	defer originalFileBytes.Close()
+
 	inputTmpFile, err := os.CreateTemp("", "input_audio_*")
 	if err != nil {
 		return false, nil, err
@@ -366,7 +368,7 @@ func sendProgressToUser(stderr io.Reader, bot *gotgbot.Bot, processingMsg *gotgb
 	defer ticker.Stop()
 
 	for scanner.Scan() {
-		//fmt.Println(wordsScanner.Text())
+		fmt.Println(scanner.Text())
 
 		if scanner.Text() == "Processing..." {
 			processingStage = true
