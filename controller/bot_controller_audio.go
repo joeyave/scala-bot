@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
+	"github.com/joeyave/scala-bot/controller/mysemaphore"
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/state"
 	"github.com/joeyave/scala-bot/txt"
@@ -170,11 +171,18 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 	return nil
 }
 
+var sem = mysemaphore.NewWeighted(2)
+
 func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error {
 
 	user := ctx.Data["user"].(*entity.User)
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 	split := strings.Split(payload, ":")
+	semitones := split[0]
+	fine, err := strconv.ParseBool(split[1])
+	if err != nil {
+		return err
+	}
 
 	processingMsg, _, err := ctx.EffectiveMessage.EditText(bot, "Processing...", &gotgbot.EditMessageTextOpts{})
 	if err != nil {
@@ -192,124 +200,35 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 	}
 	defer originalFileBytes.Close()
 
-	inputTmpFile, err := os.CreateTemp("", "input_audio_*")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(inputTmpFile.Name())
+	ctxWithCancel, cancel := context.WithCancel(context.Background())
 
-	converted := false
-	if user.CallbackCache.AudioMimeType == "audio/mp4" {
-		converted = true
-		if err := inputTmpFile.Close(); err != nil {
-			return err
-		}
-
-		err = ffmpeg.
-			Input("pipe:").
-			Output(inputTmpFile.Name(), ffmpeg.KwArgs{"f": ffmpegAudioExt, "c:v": "copy", "c:a": "libmp3lame", "q:a": "4"}).
-			WithInput(originalFileBytes).
-			OverWriteOutput().
-			ErrorToStdOut().
-			Run()
-		if err != nil {
-			return err
-		}
-	} else {
-		if _, err := io.Copy(inputTmpFile, originalFileBytes); err != nil {
-			return err
-		}
-		if err := inputTmpFile.Close(); err != nil {
-			return err
-		}
-	}
-
-	outTmpFile, err := os.CreateTemp("", "output_audio_*")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(outTmpFile.Name())
-
-	if err := outTmpFile.Close(); err != nil {
-		return err
-	}
-
-	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	defer cancel()
-
-	args := []string{"-p", split[0]}
-
-	fine, err := strconv.ParseBool(split[1])
-	if err != nil {
-		return err
-	}
-	if fine {
-		args = append(args, "-3")
-	} else {
-		args = append(args, "-2", "--ignore-clipping")
-	}
-
-	args = append(args, inputTmpFile.Name(), outTmpFile.Name())
-
-	cmd := exec.CommandContext(ctxWithTimeout, "rubberband", args...)
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return err
-	}
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-
-	wordsScanner := bufio.NewScanner(stderr)
-	wordsScanner.Split(bufio.ScanWords)
-
-	go func() {
-		processingStage := false
-		currPercentage := 0
-
-		ticker := time.NewTicker(time.Second)
+	go func(id int64, ctx context.Context) {
+		ticker := time.NewTicker(1 * time.Second)
 		defer ticker.Stop()
-
-		for wordsScanner.Scan() {
-			//fmt.Println(wordsScanner.Text())
-
-			if wordsScanner.Text() == "Processing..." {
-				processingStage = true
-			} else if strings.EqualFold(wordsScanner.Text(), "NOTE:") { // Clipping detected.
-				processingStage = false
-			}
-
-			percentage, err := strconv.Atoi(strings.TrimSuffix(wordsScanner.Text(), "%"))
-			if err != nil {
-				continue
-			}
-
-			if processingStage && percentage > currPercentage {
-				currPercentage = percentage
-
-				select {
-				case <-ticker.C:
-					processingMsg.EditText(bot, "Processing... "+wordsScanner.Text(), nil)
-					//fmt.Println(wordsScanner.Text())
-				default:
-				}
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				pos := sem.Position(id) + 1
+				processingMsg.EditText(bot, fmt.Sprintf("Position in queue: %d", pos), nil)
+				fmt.Println("start", id, "position in queue:", pos)
 			}
 		}
-	}()
+	}(ctx.EffectiveMessage.MessageId, ctxWithCancel)
 
-	if err := cmd.Wait(); err != nil {
-		return err
-	}
-
-	newFileBytes, err := os.ReadFile(outTmpFile.Name())
-	if err != nil {
-		return err
-	}
-
-	//newFileBytes, err := cmd.Output()
-	//if err != nil {
-	//	return err
+	sem.Acquire(context.TODO(), ctx.EffectiveMessage.MessageId)
+	// send signal to stop goroutine.
+	cancel()
+	defer sem.Release()
+	converted, newFileBytes, err := c.transposeAudio(bot, user.CallbackCache.AudioMimeType, originalFileBytes, semitones, fine, processingMsg)
+	//if strings.Contains(user.CallbackCache.AudioFileName, "err") {
+	//	err = errors.New("test err")
 	//}
+	if err != nil {
+		processingMsg.EditText(bot, fmt.Sprintf("Error: %v", err), nil)
+		return err
+	}
 
 	ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
 
@@ -354,4 +273,119 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 	processingMsg.Delete(bot, nil)
 
 	return nil
+}
+
+func (c *BotController) transposeAudio(bot *gotgbot.Bot, mimeType string, originalFileBytes io.ReadCloser, semitones string, fine bool, processingMsg *gotgbot.Message) (bool, []byte, error) {
+	inputTmpFile, err := os.CreateTemp("", "input_audio_*")
+	if err != nil {
+		return false, nil, err
+	}
+	defer os.Remove(inputTmpFile.Name())
+
+	converted := false
+	if mimeType == "audio/mp4" {
+		converted = true
+		if err := inputTmpFile.Close(); err != nil {
+			return false, nil, err
+		}
+
+		err := ffmpeg.
+			Input("pipe:").
+			Output(inputTmpFile.Name(), ffmpeg.KwArgs{"f": ffmpegAudioExt, "c:v": "copy", "c:a": "libmp3lame", "q:a": "4"}).
+			WithInput(originalFileBytes).
+			OverWriteOutput().
+			//ErrorToStdOut().
+			Run()
+		if err != nil {
+			return false, nil, err
+		}
+	} else {
+		if _, err := io.Copy(inputTmpFile, originalFileBytes); err != nil {
+			return false, nil, err
+		}
+		if err := inputTmpFile.Close(); err != nil {
+			return false, nil, err
+		}
+	}
+
+	outTmpFile, err := os.CreateTemp("", "output_audio_*")
+	if err != nil {
+		return false, nil, err
+	}
+	defer os.Remove(outTmpFile.Name())
+
+	if err := outTmpFile.Close(); err != nil {
+		return false, nil, err
+	}
+
+	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	args := []string{"-p", semitones}
+
+	if fine {
+		args = append(args, "-3")
+	} else {
+		args = append(args, "-2", "--ignore-clipping")
+	}
+
+	args = append(args, inputTmpFile.Name(), outTmpFile.Name())
+
+	cmd := exec.CommandContext(ctxWithTimeout, "rubberband", args...)
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return false, nil, err
+	}
+	if err := cmd.Start(); err != nil {
+		return false, nil, err
+	}
+
+	go sendProgressToUser(stderr, bot, processingMsg)
+
+	if err := cmd.Wait(); err != nil {
+		return false, nil, err
+	}
+
+	newFileBytes, err := os.ReadFile(outTmpFile.Name())
+	if err != nil {
+		return false, nil, err
+	}
+	return converted, newFileBytes, nil
+}
+
+func sendProgressToUser(stderr io.Reader, bot *gotgbot.Bot, processingMsg *gotgbot.Message) {
+	scanner := bufio.NewScanner(stderr)
+	scanner.Split(bufio.ScanWords)
+
+	processingStage := false
+	currPercentage := 0
+
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	for scanner.Scan() {
+		//fmt.Println(wordsScanner.Text())
+
+		if scanner.Text() == "Processing..." {
+			processingStage = true
+		} else if strings.EqualFold(scanner.Text(), "NOTE:") { // Clipping detected.
+			processingStage = false
+		}
+
+		percentage, err := strconv.Atoi(strings.TrimSuffix(scanner.Text(), "%"))
+		if err != nil {
+			continue
+		}
+
+		if processingStage && percentage > currPercentage {
+			currPercentage = percentage
+
+			select {
+			case <-ticker.C:
+				processingMsg.EditText(bot, "Processing... "+scanner.Text(), nil)
+				//fmt.Println(wordsScanner.Text())
+			default:
+			}
+		}
+	}
 }

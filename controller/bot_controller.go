@@ -458,13 +458,13 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 	}
 
 	if ctx.CallbackQuery != nil {
-		_, err := ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
+		ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
 			Text: txt.Get("text.serverError", ctx.EffectiveUser.LanguageCode),
 		})
-		if err != nil {
-			log.Error().Err(err).Msg("Error!")
-			return ext.DispatcherActionEndGroups
-		}
+		//if err != nil {
+		//	log.Error().Err(err).Msg("Error!")
+		//	return ext.DispatcherActionEndGroups
+		//}
 	} else if ctx.InlineQuery != nil {
 		ctx.InlineQuery.Answer(bot, nil, &gotgbot.AnswerInlineQueryOpts{
 			CacheTime: 1,
