@@ -318,7 +318,7 @@ func (c *BotController) transposeAudio(bot *gotgbot.Bot, mimeType string, origin
 		return false, nil, err
 	}
 
-	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
 	args := []string{"-p", semitones}
