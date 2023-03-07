@@ -171,7 +171,7 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 	return nil
 }
 
-var sem = mysemaphore.NewWeighted(2)
+var sem = mysemaphore.NewWeighted(100)
 
 func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error {
 
@@ -208,7 +208,12 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 		}
 	}(ctx.EffectiveMessage.MessageId, ctxWithCancel)
 
-	converted, newFileBytes, err := c.transposeAudio(bot, ctx, stopSendingQueueMessages, sem, user.CallbackCache.AudioMimeType, user.CallbackCache.AudioFileId, semitones, fine, processingMsg)
+	weight := int64(1)
+	if !user.CallbackCache.IsVoice {
+		weight = user.CallbackCache.AudioFileSize / 1000000 * 10
+	}
+
+	converted, newFileBytes, err := c.transposeAudio(bot, ctx, stopSendingQueueMessages, sem, weight, user.CallbackCache.AudioMimeType, user.CallbackCache.AudioFileId, semitones, fine, processingMsg)
 	if err != nil {
 		processingMsg.EditText(bot, fmt.Sprintf("Error: %v", err), nil)
 		return err
@@ -259,14 +264,14 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 	return nil
 }
 
-func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQueueMessages context.CancelFunc, sem *mysemaphore.Weighted, mimeType string, audioFileID string, semitones string, fine bool, processingMsg *gotgbot.Message) (bool, []byte, error) {
-	err := sem.Acquire(context.TODO(), ctx.EffectiveMessage.MessageId)
+func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQueueMessages context.CancelFunc, sem *mysemaphore.Weighted, weight int64, mimeType string, audioFileID string, semitones string, fine bool, processingMsg *gotgbot.Message) (bool, []byte, error) {
+	err := sem.Acquire(context.TODO(), weight, ctx.EffectiveMessage.MessageId)
 	if err != nil {
-		sem.Release()
+		sem.Release(weight)
 		stopQueueMessages()
 		return false, nil, err
 	}
-	defer sem.Release()
+	defer sem.Release(weight)
 	stopQueueMessages()
 
 	f, err := bot.GetFile(audioFileID, nil)
@@ -322,7 +327,7 @@ func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQ
 		return false, nil, err
 	}
 
-	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
 	args := []string{"-p", semitones}
