@@ -214,7 +214,12 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 
 	weight := int64(1)
 	if !user.CallbackCache.IsVoice {
-		weight = user.CallbackCache.AudioFileSize / 1000000 * 10
+		mb := user.CallbackCache.AudioFileSize / 1000000
+		coef := int64(2)
+		if fine {
+			coef = 5
+		}
+		weight = mb * coef
 	}
 
 	converted, newFileBytes, err := c.transposeAudio(bot, ctx, stopSendingQueueMessages, sem, weight, user.CallbackCache.AudioMimeType, user.CallbackCache.AudioFileId, semitones, fine, processingMsg)
