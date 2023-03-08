@@ -196,13 +196,17 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 	go func(id int64, ctx context.Context) {
 		ticker := time.NewTicker(3 * time.Second)
 		defer ticker.Stop()
+		prevPos := 0
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
 				pos := sem.Position(id) + 1
-				processingMsg.EditText(bot, fmt.Sprintf("Position in queue: %d", pos), nil)
+				if pos != prevPos {
+					processingMsg.EditText(bot, fmt.Sprintf("Position in queue: %d", pos), nil)
+				}
+				prevPos = pos
 				fmt.Println("start", id, "position in queue:", pos)
 			}
 		}
