@@ -186,7 +186,7 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 		return err
 	}
 
-	processingMsg, _, err := ctx.EffectiveMessage.EditText(bot, "Processing...", &gotgbot.EditMessageTextOpts{})
+	processingMsg, _, err := ctx.EffectiveMessage.EditText(bot, "Starting...", &gotgbot.EditMessageTextOpts{})
 	if err != nil {
 		return err
 	}
@@ -194,7 +194,7 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 	ctxWithCancel, stopSendingQueueMessages := context.WithCancel(context.Background())
 
 	go func(id int64, ctx context.Context) {
-		ticker := time.NewTicker(3 * time.Second)
+		ticker := time.NewTicker(5 * time.Second)
 		defer ticker.Stop()
 		prevPos := 0
 		for {
@@ -205,9 +205,9 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 				pos := sem.Position(id) + 1
 				if pos != prevPos {
 					processingMsg.EditText(bot, fmt.Sprintf("Position in queue: %d", pos), nil)
+					//fmt.Println("start", id, "position in queue:", pos)
 				}
 				prevPos = pos
-				fmt.Println("start", id, "position in queue:", pos)
 			}
 		}
 	}(ctx.EffectiveMessage.MessageId, ctxWithCancel)
@@ -247,8 +247,10 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 		opts := &gotgbot.SendAudioOpts{
 			Duration:  user.CallbackCache.AudioDuration,
 			Performer: user.CallbackCache.AudioPerformer,
-			Title:     fmt.Sprintf("%s (%s)", user.CallbackCache.AudioTitle, s),
 			Thumb:     user.CallbackCache.AudioThumbFileId,
+		}
+		if user.CallbackCache.AudioTitle != "" {
+			opts.Title = fmt.Sprintf("%s (%s)", user.CallbackCache.AudioTitle, s)
 		}
 
 		extension := filepath.Ext(user.CallbackCache.AudioFileName)
@@ -283,6 +285,8 @@ func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQ
 	defer sem.Release(weight)
 	stopQueueMessages()
 
+	processingMsg.EditText(bot, "Downloading...", nil)
+
 	f, err := bot.GetFile(audioFileID, nil)
 	if err != nil {
 		return false, nil, err
@@ -302,6 +306,7 @@ func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQ
 
 	converted := false
 	if mimeType == "audio/mp4" {
+		processingMsg.EditText(bot, "Converting...", nil)
 		converted = true
 		if err := inputTmpFile.Close(); err != nil {
 			return false, nil, err
@@ -325,6 +330,8 @@ func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQ
 			return false, nil, err
 		}
 	}
+
+	processingMsg.EditText(bot, "Processing...", nil)
 
 	outTmpFile, err := os.CreateTemp("", "output_audio_*")
 	if err != nil {
@@ -382,7 +389,7 @@ func sendProgressToUser(stderr io.Reader, bot *gotgbot.Bot, processingMsg *gotgb
 	defer ticker.Stop()
 
 	for scanner.Scan() {
-		fmt.Println(scanner.Text())
+		//fmt.Println(scanner.Text())
 
 		if scanner.Text() == "Processing..." {
 			processingStage = true
