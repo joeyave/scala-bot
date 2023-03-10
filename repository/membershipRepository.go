@@ -67,7 +67,7 @@ func (r *MembershipRepository) FindMultipleByEventID(eventID primitive.ObjectID)
 }
 
 func (r *MembershipRepository) find(m bson.M) ([]*entity.Membership, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("memberships")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("memberships")
 
 	pipeline := bson.A{
 		bson.M{
@@ -175,7 +175,7 @@ func (r *MembershipRepository) UpdateOne(membership entity.Membership) (*entity.
 		membership.ID = r.generateUniqueID()
 	}
 
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("memberships")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("memberships")
 
 	filter := bson.M{"_id": membership.ID}
 
@@ -207,14 +207,14 @@ func (r *MembershipRepository) UpdateOne(membership entity.Membership) (*entity.
 }
 
 func (r *MembershipRepository) DeleteOneByID(ID primitive.ObjectID) error {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("memberships")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("memberships")
 
 	_, err := collection.DeleteOne(context.TODO(), bson.M{"_id": ID})
 	return err
 }
 
 func (r *MembershipRepository) DeleteManyByEventID(eventID primitive.ObjectID) error {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("memberships")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("memberships")
 
 	_, err := collection.DeleteMany(context.TODO(), bson.M{"eventId": eventID})
 	return err

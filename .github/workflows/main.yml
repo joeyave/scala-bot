@@ -66,16 +66,16 @@ jobs:
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          MONGODB_URI: ${{ secrets.MONGODB_URI }}
-          MONGODB_DATABASE_NAME: ${{ secrets.MONGODB_DATABASE_NAME }}
-          GOOGLEAPIS_CREDENTIALS: ${{ secrets.GOOGLEAPIS_CREDENTIALS }}
-          DOMAIN: ${{ secrets.DOMAIN }}
-          LOG_CHANNEL: ${{ secrets.LOG_CHANNEL }}
+          BOT_MONGODB_URI: ${{ secrets.BOT_MONGODB_URI }}
+          BOT_MONGODB_NAME: ${{ secrets.BOT_MONGODB_NAME }}
+          BOT_GOOGLEAPIS_KEY: ${{ secrets.BOT_GOOGLEAPIS_KEY }}
+          BOT_DOMAIN: ${{ secrets.BOT_DOMAIN }}
+          BOT_ALERTS_CHANNEL_ID: ${{ secrets.BOT_ALERTS_CHANNEL_ID }}
         with:
           host: ${{ secrets.VM_SSH_HOST }}
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
-          envs: DOCKERHUB_USERNAME, BOT_TOKEN, MONGODB_URI, MONGODB_DATABASE_NAME, GOOGLEAPIS_CREDENTIALS, DOMAIN, LOG_CHANNEL
+          envs: DOCKERHUB_USERNAME, BOT_TOKEN, BOT_MONGODB_URI, BOT_MONGODB_NAME, BOT_GOOGLEAPIS_KEY, BOT_DOMAIN, BOT_ALERTS_CHANNEL_ID
           script: |
             cd build
             sudo -E docker stack deploy -c docker-stack.yml scala-bot

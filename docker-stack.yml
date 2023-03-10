@@ -8,12 +8,12 @@ services:
 
     environment:
       BOT_TOKEN:
-      MONGODB_URI:
-      MONGODB_DATABASE_NAME:
-      FILES_CHANNEL_ID:
-      GOOGLEAPIS_CREDENTIALS:
-      DOMAIN:
-      LOG_CHANNEL:
+      BOT_MONGODB_URI:
+      BOT_MONGODB_NAME:
+      BOT_FILES_CHANNEL_ID:
+      BOT_GOOGLEAPIS_KEY:
+      BOT_DOMAIN:
+      BOT_ALERTS_CHANNEL_ID:
 
     deploy:
       replicas: 1

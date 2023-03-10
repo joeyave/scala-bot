@@ -24,7 +24,7 @@ func NewUserRepository(mongoClient *mongo.Client) *UserRepository {
 }
 
 func (r *UserRepository) FindAll() ([]*entity.User, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("users")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("users")
 	cursor, err := collection.Find(context.TODO(), bson.D{})
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (r *UserRepository) FindManyByBandID(bandID primitive.ObjectID) ([]*entity.
 }
 
 func (r *UserRepository) find(m bson.M, opts ...bson.M) ([]*entity.User, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("users")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("users")
 
 	pipeline := bson.A{
 		bson.M{
@@ -143,7 +143,7 @@ func (r *UserRepository) find(m bson.M, opts ...bson.M) ([]*entity.User, error) 
 }
 
 func (r *UserRepository) UpdateOne(user entity.User) (*entity.User, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("users")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("users")
 
 	filter := bson.M{"_id": user.ID}
 
@@ -392,7 +392,7 @@ func (r *UserRepository) FindManyExtraByBandID(bandID primitive.ObjectID, from, 
 }
 
 func (r *UserRepository) findWithExtra(pipeline bson.A) ([]*entity.UserWithEvents, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("users")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("users")
 
 	cur, err := collection.Aggregate(context.TODO(), pipeline)
 	if err != nil {

@@ -285,7 +285,7 @@ func (r *EventRepository) FindOneByNameAndTimeAndBandID(name string, t time.Time
 }
 
 func (r *EventRepository) GetAlias(ctx context.Context, eventID primitive.ObjectID, lang string) (string, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("events")
 
 	result := collection.FindOne(ctx, bson.M{"_id": eventID})
 	if result.Err() != nil {
@@ -302,7 +302,7 @@ func (r *EventRepository) GetAlias(ctx context.Context, eventID primitive.Object
 }
 
 func (r *EventRepository) find(m bson.M, opts ...bson.M) ([]*entity.Event, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("events")
 
 	pipeline := bson.A{
 		bson.M{
@@ -540,7 +540,7 @@ func (r *EventRepository) UpdateOne(event entity.Event) (*entity.Event, error) {
 		event.ID = r.generateUniqueID()
 	}
 
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("events")
 
 	filter := bson.M{"_id": event.ID}
 
@@ -573,14 +573,14 @@ func (r *EventRepository) UpdateOne(event entity.Event) (*entity.Event, error) {
 }
 
 func (r *EventRepository) DeleteOneByID(ID primitive.ObjectID) error {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("events")
 
 	_, err := collection.DeleteOne(context.TODO(), bson.M{"_id": ID})
 	return err
 }
 
 func (r *EventRepository) GetEventWithSongs(eventID primitive.ObjectID) (*entity.Event, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("events")
 
 	pipeline := bson.A{
 		bson.M{
@@ -649,7 +649,7 @@ func (r *EventRepository) GetEventWithSongs(eventID primitive.ObjectID) (*entity
 }
 
 func (r *EventRepository) PushSongID(eventID primitive.ObjectID, songID primitive.ObjectID) error {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("events")
 
 	filter := bson.M{
 		"_id":     eventID,
@@ -667,7 +667,7 @@ func (r *EventRepository) PushSongID(eventID primitive.ObjectID, songID primitiv
 }
 
 func (r *EventRepository) ChangeSongIDPosition(eventID primitive.ObjectID, songID primitive.ObjectID, newPosition int) error {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("events")
 
 	filter := bson.M{
 		"_id": eventID,
@@ -700,7 +700,7 @@ func (r *EventRepository) ChangeSongIDPosition(eventID primitive.ObjectID, songI
 }
 
 func (r *EventRepository) PullSongID(eventID primitive.ObjectID, songID primitive.ObjectID) error {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("events")
 
 	filter := bson.M{"_id": eventID}
 
@@ -716,7 +716,7 @@ func (r *EventRepository) PullSongID(eventID primitive.ObjectID, songID primitiv
 
 func (r *EventRepository) GetMostFrequentEventNames(bandID primitive.ObjectID, limit int) ([]*entity.EventNameFrequencies, error) {
 
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("events")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("events")
 
 	pipeline := bson.A{
 		bson.M{

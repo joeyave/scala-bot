@@ -484,7 +484,7 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 	}
 
 	// todo: send message to the logs channel
-	logsChannelID, err := strconv.ParseInt(os.Getenv("LOG_CHANNEL"), 10, 64)
+	logsChannelID, err := strconv.ParseInt(os.Getenv("BOT_ALERTS_CHANNEL_ID"), 10, 64)
 	if err == nil {
 		userJsonBytes, err := json.Marshal(user)
 		if err != nil {

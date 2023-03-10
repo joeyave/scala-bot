@@ -73,7 +73,7 @@ func main() {
 		log.Fatal().Err(err).Msg("Error setting commands")
 	}
 
-	mongoClient, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("MONGODB_URI")))
+	mongoClient, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("BOT_MONGODB_URI")))
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error creating mongo client")
 	}
@@ -91,12 +91,12 @@ func main() {
 		log.Fatal().Err(err).Msg("error pinging mongo")
 	}
 
-	driveRepository, err := drive.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("GOOGLEAPIS_CREDENTIALS"))))
+	driveRepository, err := drive.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("BOT_GOOGLEAPIS_KEY"))))
 	if err != nil {
 		log.Fatal().Msgf("Unable to retrieve Drive client: %v", err)
 	}
 
-	docsRepository, err := docs.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("GOOGLEAPIS_CREDENTIALS"))))
+	docsRepository, err := docs.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("BOT_GOOGLEAPIS_KEY"))))
 	if err != nil {
 		log.Fatal().Msgf("Unable to retrieve Docs client: %v", err)
 	}

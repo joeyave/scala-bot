@@ -36,7 +36,7 @@ func (r *SongRepository) FindManyLiked(userID int64) ([]*entity.Song, error) {
 
 func (r *SongRepository) FindManyByDriveFileIDs(IDs []string) ([]*entity.Song, error) {
 
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	pipeline := bson.A{
 		bson.M{
@@ -128,7 +128,7 @@ func (r *SongRepository) FindOneByName(name string) (*entity.Song, error) {
 }
 
 func (r *SongRepository) find(m bson.M) ([]*entity.Song, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	pipeline := bson.A{
 		bson.M{
@@ -186,7 +186,7 @@ func (r *SongRepository) UpdateOne(song entity.Song) (*entity.Song, error) {
 		song.ID = r.generateUniqueID()
 	}
 
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	filter := bson.M{
 		"_id": song.ID,
@@ -217,7 +217,7 @@ func (r *SongRepository) UpdateOne(song entity.Song) (*entity.Song, error) {
 	}
 
 	// channel, err := r.driveClient.Files.Watch(song.DriveFileID, &drive.Channel{
-	//	Address: fmt.Sprintf("%s/driveFileChangeCallback", os.Getenv("DOMAIN")),
+	//	Address: fmt.Sprintf("%s/driveFileChangeCallback", os.Getenv("BOT_DOMAIN")),
 	//	Id:      uuid.New().String(),
 	//	Kind:    "api#channel",
 	//	Type:    "web_hook",
@@ -230,7 +230,7 @@ func (r *SongRepository) UpdateOne(song entity.Song) (*entity.Song, error) {
 
 func (r *SongRepository) UpdateMany(songs []*entity.Song) (*mongo.BulkWriteResult, error) {
 
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	var models []mongo.WriteModel
 	for _, song := range songs {
@@ -261,14 +261,14 @@ func (r *SongRepository) UpdateMany(songs []*entity.Song) (*mongo.BulkWriteResul
 }
 
 func (r *SongRepository) DeleteOneByDriveFileID(driveFileID string) error {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	_, err := collection.DeleteOne(context.TODO(), bson.M{"driveFileId": driveFileID})
 	return err
 }
 
 func (r *SongRepository) Like(songID primitive.ObjectID, userID int64) error {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	filter := bson.M{
 		"_id":   songID,
@@ -286,7 +286,7 @@ func (r *SongRepository) Like(songID primitive.ObjectID, userID int64) error {
 }
 
 func (r *SongRepository) Dislike(songID primitive.ObjectID, userID int64) error {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	filter := bson.M{"_id": songID}
 
@@ -402,7 +402,7 @@ func (r *SongRepository) FindManyExtraByPageNumberLiked(userID int64, pageNumber
 }
 
 func (r *SongRepository) findWithExtra(m bson.M, opts ...bson.M) ([]*entity.SongWithEvents, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	pipeline := bson.A{
 		bson.M{
@@ -527,7 +527,7 @@ func (r *SongRepository) findWithExtra(m bson.M, opts ...bson.M) ([]*entity.Song
 }
 
 func (r *SongRepository) GetTags(bandID primitive.ObjectID) ([]string, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	pipeline := bson.A{
 		bson.M{"$match": bson.M{"bandId": bandID}},
@@ -556,7 +556,7 @@ func (r *SongRepository) GetTags(bandID primitive.ObjectID) ([]string, error) {
 }
 
 func (r *SongRepository) TagOrUntag(tag string, songID primitive.ObjectID) (*entity.Song, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	filter := bson.M{
 		"_id": songID,
