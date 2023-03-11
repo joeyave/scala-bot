@@ -28,6 +28,10 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 
 	user := ctx.Data["user"].(*entity.User)
 
+	if user.State.Name == state.SongVoices_CreateVoice {
+		return c.SongVoices_CreateVoice(user.State.Index)(bot, ctx)
+	}
+
 	semitones := 0
 	//useR3 := false
 	//skipClipping := false

@@ -672,11 +672,12 @@ func (c *BotController) SongVoices_CreateVoice(index int) handlers.Response {
 			{
 				ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
-				fileID := ctx.EffectiveMessage.Voice.FileId
-				if fileID == "" {
+				fileID := ""
+				if ctx.EffectiveMessage.Voice != nil {
+					fileID = ctx.EffectiveMessage.Voice.FileId
+				} else {
 					fileID = ctx.EffectiveMessage.Audio.FileId
 				}
-
 				user.Cache.Voice.FileID = fileID
 
 				markup := &gotgbot.ReplyKeyboardMarkup{

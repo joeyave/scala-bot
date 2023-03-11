@@ -18,7 +18,7 @@ jobs:
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           source: "."
-          target: "build"
+          target: "build" # todo: change target folder to project specific.
 
       - name: 'Build image and push to Dockerhub'
         uses: appleboy/ssh-action@master
