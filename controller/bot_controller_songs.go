@@ -14,6 +14,7 @@ import (
 	"github.com/joeyave/scala-bot/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"golang.org/x/exp/slices"
 	"google.golang.org/api/drive/v3"
 	"net/url"
 	"os"
@@ -575,6 +576,9 @@ func (c *BotController) songVoices(bot *gotgbot.Bot, ctx *ext.Context, songID pr
 
 	markup := gotgbot.InlineKeyboardMarkup{}
 
+	slices.SortStableFunc[*entity.Voice](song.Voices, func(v1, v2 *entity.Voice) bool {
+		return v1.Name < v2.Name
+	})
 	for _, voice := range song.Voices {
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: voice.Name, CallbackData: util.CallbackData(state.SongVoice, song.ID.Hex()+":"+voice.ID.Hex())}})
 	}
