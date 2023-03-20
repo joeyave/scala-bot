@@ -174,7 +174,7 @@ func (r *UserRepository) UpdateOne(user entity.User) (*entity.User, error) {
 	return r.FindOneByID(newUser.ID)
 }
 
-func (r *UserRepository) FindManyExtraByBandIDAndRoleID(bandID primitive.ObjectID, roleID primitive.ObjectID) ([]*entity.UserWithEvents, error) {
+func (r *UserRepository) FindManyExtraByBandIDAndRoleID(bandID primitive.ObjectID, roleID primitive.ObjectID, from time.Time) ([]*entity.UserWithEvents, error) {
 	pipeline := bson.A{
 		bson.M{
 			"$match": bson.M{
@@ -221,6 +221,11 @@ func (r *UserRepository) FindManyExtraByBandIDAndRoleID(bandID primitive.ObjectI
 				"from": "events",
 				"let":  bson.M{"userId": "$_id"},
 				"pipeline": bson.A{
+					bson.M{
+						"$match": bson.M{
+							"$expr": bson.M{"$gte": bson.A{"$time", from}},
+						},
+					},
 					bson.M{
 						"$lookup": bson.M{
 							"from": "memberships",
