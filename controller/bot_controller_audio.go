@@ -71,12 +71,12 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 		user.CallbackCache.AudioMimeType = audio.MimeType
 		user.CallbackCache.AudioFileSize = audio.FileSize
 
-		if audio.Thumb != nil {
-			user.CallbackCache.AudioThumbFileId = audio.Thumb.FileId
-			user.CallbackCache.AudioThumbFileUniqueId = audio.Thumb.FileUniqueId
-			user.CallbackCache.AudioThumbWidth = audio.Thumb.Width
-			user.CallbackCache.AudioThumbHeight = audio.Thumb.Height
-			user.CallbackCache.AudioThumbFileSize = audio.Thumb.FileSize
+		if audio.Thumbnail != nil {
+			user.CallbackCache.AudioThumbFileId = audio.Thumbnail.FileId
+			user.CallbackCache.AudioThumbFileUniqueId = audio.Thumbnail.FileUniqueId
+			user.CallbackCache.AudioThumbWidth = audio.Thumbnail.Width
+			user.CallbackCache.AudioThumbHeight = audio.Thumbnail.Height
+			user.CallbackCache.AudioThumbFileSize = audio.Thumbnail.FileSize
 		}
 	} else if ctx.EffectiveMessage.Voice != nil {
 		voice := ctx.EffectiveMessage.Voice
@@ -251,7 +251,7 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 		opts := &gotgbot.SendAudioOpts{
 			Duration:  user.CallbackCache.AudioDuration,
 			Performer: user.CallbackCache.AudioPerformer,
-			Thumb:     user.CallbackCache.AudioThumbFileId,
+			Thumbnail: user.CallbackCache.AudioThumbFileId,
 		}
 		if user.CallbackCache.AudioTitle != "" {
 			opts.Title = fmt.Sprintf("%s (%s)", user.CallbackCache.AudioTitle, s)
