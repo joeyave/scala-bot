@@ -791,8 +791,7 @@ func (c *BotController) eventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *e
 		return err
 	}
 
-	fromDate := time.Date(time.Now().Year(), time.January, 1, 0, 0, 0, 0, time.Local)
-	usersWithEvents, err := c.UserService.FindManyByBandIDAndRoleID(event.BandID, roleID, fromDate)
+	usersWithEvents, err := c.UserService.FindManyByBandIDAndRoleID(event.BandID, roleID)
 	if err != nil {
 		return err
 	}
