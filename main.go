@@ -37,6 +37,9 @@ import (
 )
 
 func main() {
+
+	// test
+
 	location, err := time.LoadLocation("Europe/Kiev")
 	if err != nil {
 		log.Fatal().Msgf("Err loading location: %v", err)
