@@ -576,8 +576,13 @@ func (c *BotController) songVoices(bot *gotgbot.Bot, ctx *ext.Context, songID pr
 
 	markup := gotgbot.InlineKeyboardMarkup{}
 
-	slices.SortStableFunc[*entity.Voice](song.Voices, func(v1, v2 *entity.Voice) bool {
-		return v1.Name < v2.Name
+	slices.SortStableFunc(song.Voices, func(v1, v2 *entity.Voice) int {
+		if v1.Name < v2.Name {
+			return -1
+		} else if v1.Name > v2.Name {
+			return 1
+		}
+		return 0
 	})
 	for _, voice := range song.Voices {
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: voice.Name, CallbackData: util.CallbackData(state.SongVoice, song.ID.Hex()+":"+voice.ID.Hex())}})

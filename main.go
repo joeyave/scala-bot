@@ -14,7 +14,6 @@ import (
 	"github.com/joeyave/scala-bot/controller"
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/keyboard"
-	"github.com/joeyave/scala-bot/migrations"
 	"github.com/joeyave/scala-bot/repository"
 	"github.com/joeyave/scala-bot/service"
 	"github.com/joeyave/scala-bot/state"
@@ -30,7 +29,6 @@ import (
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
 	"html/template"
-	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -52,9 +50,7 @@ func main() {
 	log.Logger = zerolog.New(out).Level(zerolog.GlobalLevel()).With().Timestamp().Logger()
 
 	// Create bot from environment value.
-	bot, err := gotgbot.NewBot(os.Getenv("BOT_TOKEN"), &gotgbot.BotOpts{
-		Client: http.Client{},
-	})
+	bot, err := gotgbot.NewBot(os.Getenv("BOT_TOKEN"), &gotgbot.BotOpts{})
 	if err != nil {
 		panic("failed to create new bot: " + err.Error())
 	}
@@ -91,11 +87,6 @@ func main() {
 	err = mongoClient.Ping(ctx, readpref.Primary())
 	if err != nil {
 		log.Fatal().Err(err).Msg("error pinging mongo")
-	}
-
-	err = migrations.MigrateLikes(mongoClient)
-	if err != nil {
-		log.Fatal().Err(err).Msg("error migrating likes for song collection")
 	}
 
 	driveRepository, err := drive.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("BOT_GOOGLEAPIS_KEY"))))
@@ -200,11 +191,17 @@ func main() {
 			return nil
 		}
 
-		ctx.InlineQuery.Answer(bot, nil, &gotgbot.AnswerInlineQueryOpts{
-			SwitchPmText: "Выбрать или создать свою группу", // todo: put to txt
+		_, err = ctx.InlineQuery.Answer(bot, nil, &gotgbot.AnswerInlineQueryOpts{
+			Button: &gotgbot.InlineQueryResultsButton{
+				Text:           txt.Get("text.selectOrCreateBand", ctx.EffectiveUser.LanguageCode), // todo: put in txt
+				StartParameter: "test",
+			},
 		})
+		if err != nil {
+			return err
+		}
 
-		return nil
+		return ext.EndGroups
 	}), 0)
 
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(message.All, botController.RegisterUser), 0)

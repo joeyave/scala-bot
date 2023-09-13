@@ -30,9 +30,16 @@ func (r *SongRepository) FindAll() ([]*entity.Song, error) {
 }
 
 func (r *SongRepository) FindManyLiked(userID int64) ([]*entity.Song, error) {
-	return r.find(bson.M{
-		"likes": bson.M{"$elemMatch": bson.M{"userId": userID}},
-	})
+	return r.find(
+		bson.M{
+			"likes": bson.M{"$elemMatch": bson.M{"userId": userID}},
+		},
+		bson.M{
+			"$sort": bson.M{
+				"likes.time": -1,
+			},
+		},
+	)
 }
 
 func (r *SongRepository) FindManyByDriveFileIDs(IDs []string) ([]*entity.Song, error) {
@@ -128,7 +135,7 @@ func (r *SongRepository) FindOneByName(name string) (*entity.Song, error) {
 	return songs[0], nil
 }
 
-func (r *SongRepository) find(m bson.M) ([]*entity.Song, error) {
+func (r *SongRepository) find(m bson.M, opts ...bson.M) ([]*entity.Song, error) {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	pipeline := bson.A{
@@ -157,6 +164,10 @@ func (r *SongRepository) find(m bson.M) ([]*entity.Song, error) {
 				"preserveNullAndEmptyArrays": true,
 			},
 		},
+	}
+
+	for _, o := range opts {
+		pipeline = append(pipeline, o)
 	}
 
 	cur, err := collection.Aggregate(context.TODO(), pipeline)
@@ -399,6 +410,11 @@ func (r *SongRepository) FindManyExtraByPageNumberLiked(userID int64, pageNumber
 		bson.M{
 			"likes": bson.M{
 				"$elemMatch": bson.M{"userId": userID},
+			},
+		},
+		bson.M{
+			"$sort": bson.M{
+				"likes.time": -1,
 			},
 		},
 		bson.M{
