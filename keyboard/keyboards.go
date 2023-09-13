@@ -95,8 +95,8 @@ func SongInit(song *entity.Song, user *entity.User, chatID int64, messageID int6
 	if song.BandID == user.BandID {
 
 		liked := false
-		for _, userID := range song.Likes {
-			if user.ID == userID {
+		for _, like := range song.Likes {
+			if user.ID == like.UserID {
 				liked = true
 				break
 			}
@@ -137,8 +137,8 @@ func SongInitIQ(song *entity.Song, user *entity.User, lang string) [][]gotgbot.I
 	var keyboard [][]gotgbot.InlineKeyboardButton
 
 	liked := false
-	for _, userID := range song.Likes {
-		if user.ID == userID {
+	for _, like := range song.Likes {
+		if user.ID == like.UserID {
 			liked = true
 			break
 		}

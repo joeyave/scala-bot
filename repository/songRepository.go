@@ -6,6 +6,7 @@ import (
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/helpers"
 	"sort"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -30,7 +31,7 @@ func (r *SongRepository) FindAll() ([]*entity.Song, error) {
 
 func (r *SongRepository) FindManyLiked(userID int64) ([]*entity.Song, error) {
 	return r.find(bson.M{
-		"likes": bson.M{"$in": bson.A{userID}},
+		"likes": bson.M{"$elemMatch": bson.M{"userId": userID}},
 	})
 }
 
@@ -270,14 +271,20 @@ func (r *SongRepository) DeleteOneByDriveFileID(driveFileID string) error {
 func (r *SongRepository) Like(songID primitive.ObjectID, userID int64) error {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
+	// Create a new Like struct with the user ID and the current time.
+	newLike := &entity.Like{
+		UserID: userID,
+		Time:   time.Now(),
+	}
+
 	filter := bson.M{
 		"_id":   songID,
-		"likes": bson.M{"$nin": bson.A{userID}},
+		"likes": bson.M{"$not": bson.M{"$elemMatch": bson.M{"userId": userID}}},
 	}
 
 	update := bson.M{
 		"$push": bson.M{
-			"likes": userID,
+			"likes": newLike,
 		},
 	}
 
@@ -292,7 +299,7 @@ func (r *SongRepository) Dislike(songID primitive.ObjectID, userID int64) error 
 
 	update := bson.M{
 		"$pull": bson.M{
-			"likes": userID,
+			"likes": bson.M{"userId": userID},
 		},
 	}
 
@@ -390,7 +397,9 @@ func (r *SongRepository) FindManyExtraByDriveFileIDs(driveFileIDs []string) ([]*
 func (r *SongRepository) FindManyExtraByPageNumberLiked(userID int64, pageNumber int) ([]*entity.SongWithEvents, error) {
 	return r.findWithExtra(
 		bson.M{
-			"likes": bson.M{"$in": bson.A{userID}},
+			"likes": bson.M{
+				"$elemMatch": bson.M{"userId": userID},
+			},
 		},
 		bson.M{
 			"$skip": pageNumber * helpers.SongsPageSize,

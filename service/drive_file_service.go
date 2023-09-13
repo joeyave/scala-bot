@@ -184,6 +184,25 @@ func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key str
 		},
 	})
 
+	// todo: test and include.
+	//requests = append(requests, &docs.Request{
+	//	UpdateDocumentStyle: &docs.UpdateDocumentStyleRequest{
+	//		DocumentStyle: &docs.DocumentStyle{
+	//			PageSize: &docs.Size{
+	//				Width: &docs.Dimension{
+	//					Magnitude: 595.276, // A4 width in points
+	//					Unit:      "PT",
+	//				},
+	//				Height: &docs.Dimension{
+	//					Magnitude: 841.890, // A4 height in points
+	//					Unit:      "PT",
+	//				},
+	//			},
+	//		},
+	//		Fields: "*",
+	//	},
+	//})
+
 	if lyrics != "" {
 		requests = append(requests, &docs.Request{
 			InsertText: &docs.InsertTextRequest{

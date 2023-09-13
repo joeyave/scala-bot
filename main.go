@@ -14,6 +14,7 @@ import (
 	"github.com/joeyave/scala-bot/controller"
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/keyboard"
+	"github.com/joeyave/scala-bot/migrations"
 	"github.com/joeyave/scala-bot/repository"
 	"github.com/joeyave/scala-bot/service"
 	"github.com/joeyave/scala-bot/state"
@@ -37,8 +38,6 @@ import (
 )
 
 func main() {
-
-	// test
 
 	location, err := time.LoadLocation("Europe/Kiev")
 	if err != nil {
@@ -92,6 +91,11 @@ func main() {
 	err = mongoClient.Ping(ctx, readpref.Primary())
 	if err != nil {
 		log.Fatal().Err(err).Msg("error pinging mongo")
+	}
+
+	err = migrations.MigrateLikes(mongoClient)
+	if err != nil {
+		log.Fatal().Err(err).Msg("error migrating likes for song collection")
 	}
 
 	driveRepository, err := drive.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("BOT_GOOGLEAPIS_KEY"))))
