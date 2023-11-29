@@ -11,7 +11,7 @@ const (
 	GetSongs
 	FilterSongs
 
-	SongVoicesCreateVoice
+	SongVoices_CreateVoice
 
 	BandCreate
 
@@ -65,4 +65,7 @@ const (
 
 	RoleCreate_AskForName
 	RoleCreate
+
+	TransposeAudio_AskForSemitonesNumber
+	TransposeAudio
 )

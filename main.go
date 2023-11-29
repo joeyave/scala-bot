@@ -29,7 +29,6 @@ import (
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
 	"html/template"
-	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -37,6 +36,7 @@ import (
 )
 
 func main() {
+
 	location, err := time.LoadLocation("Europe/Kiev")
 	if err != nil {
 		log.Fatal().Msgf("Err loading location: %v", err)
@@ -50,9 +50,7 @@ func main() {
 	log.Logger = zerolog.New(out).Level(zerolog.GlobalLevel()).With().Timestamp().Logger()
 
 	// Create bot from environment value.
-	bot, err := gotgbot.NewBot(os.Getenv("BOT_TOKEN"), &gotgbot.BotOpts{
-		Client: http.Client{},
-	})
+	bot, err := gotgbot.NewBot(os.Getenv("BOT_TOKEN"), &gotgbot.BotOpts{})
 	if err != nil {
 		panic("failed to create new bot: " + err.Error())
 	}
@@ -73,7 +71,7 @@ func main() {
 		log.Fatal().Err(err).Msg("Error setting commands")
 	}
 
-	mongoClient, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("MONGODB_URI")))
+	mongoClient, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("BOT_MONGODB_URI")))
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error creating mongo client")
 	}
@@ -91,12 +89,12 @@ func main() {
 		log.Fatal().Err(err).Msg("error pinging mongo")
 	}
 
-	driveRepository, err := drive.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("GOOGLEAPIS_CREDENTIALS"))))
+	driveRepository, err := drive.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("BOT_GOOGLEAPIS_KEY"))))
 	if err != nil {
 		log.Fatal().Msgf("Unable to retrieve Drive client: %v", err)
 	}
 
-	docsRepository, err := docs.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("GOOGLEAPIS_CREDENTIALS"))))
+	docsRepository, err := docs.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("BOT_GOOGLEAPIS_KEY"))))
 	if err != nil {
 		log.Fatal().Msgf("Unable to retrieve Docs client: %v", err)
 	}
@@ -168,22 +166,19 @@ func main() {
 	}
 
 	// Create updater and dispatcher.
-	updater := ext.NewUpdater(&ext.UpdaterOpts{
-		ErrorLog: nil,
-		Dispatcher: ext.NewDispatcher(&ext.DispatcherOpts{
-			Error: botController.Error,
-			Panic: func(b *gotgbot.Bot, ctx *ext.Context, r interface{}) {
-				err, ok := r.(error)
-				if ok {
-					botController.Error(bot, ctx, err)
-				} else {
-					botController.Error(bot, ctx, fmt.Errorf("panic: %s", fmt.Sprint(r)))
-				}
-			}, // todo
-			ErrorLog: nil,
-		}),
+	dispatcher := ext.NewDispatcher(&ext.DispatcherOpts{
+		Error: botController.Error,
+		Panic: func(b *gotgbot.Bot, ctx *ext.Context, r interface{}) {
+			err, ok := r.(error)
+			if ok {
+				botController.Error(bot, ctx, err)
+			} else {
+				botController.Error(bot, ctx, fmt.Errorf("panic: %s", fmt.Sprint(r)))
+			}
+		},
+		MaxRoutines: ext.DefaultMaxRoutines,
 	})
-	dispatcher := updater.Dispatcher
+	updater := ext.NewUpdater(dispatcher, nil)
 
 	dispatcher.AddHandlerToGroup(handlers.NewInlineQuery(inlinequery.All, func(bot *gotgbot.Bot, ctx *ext.Context) error {
 
@@ -193,11 +188,17 @@ func main() {
 			return nil
 		}
 
-		ctx.InlineQuery.Answer(bot, nil, &gotgbot.AnswerInlineQueryOpts{
-			SwitchPmText: "Выбрать или создать свою группу", // todo: put to txt
+		_, err = ctx.InlineQuery.Answer(bot, nil, &gotgbot.AnswerInlineQueryOpts{
+			Button: &gotgbot.InlineQueryResultsButton{
+				Text:           txt.Get("text.selectOrCreateBand", ctx.EffectiveUser.LanguageCode), // todo: put in txt
+				StartParameter: "test",
+			},
 		})
+		if err != nil {
+			return err
+		}
 
-		return nil
+		return ext.EndGroups
 	}), 0)
 
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(message.All, botController.RegisterUser), 0)
@@ -288,6 +289,9 @@ func main() {
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SongStyle), botController.SongStyle), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SongAddLyricsPage), botController.SongAddLyricsPage), 1)
 
+	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.TransposeAudio_AskForSemitonesNumber), botController.TransposeAudio_AskForSemitonesNumber), 1)
+	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.TransposeAudio), botController.TransposeAudio), 1)
+
 	// Inline query.
 	dispatcher.AddHandlerToGroup(handlers.NewInlineQuery(inlinequery.All, func(bot *gotgbot.Bot, ctx *ext.Context) error {
 
@@ -339,6 +343,9 @@ func main() {
 		return nil
 	}), 1)
 
+	dispatcher.AddHandlerToGroup(handlers.NewMessage(message.Audio, botController.TransposeAudio_AskForSemitonesNumber), 1)
+	dispatcher.AddHandlerToGroup(handlers.NewMessage(message.Voice, botController.TransposeAudio_AskForSemitonesNumber), 1)
+
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(message.All, botController.ChooseHandlerOrSearch), 1)
 
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(message.All, botController.UpdateUser), 2)
@@ -361,10 +368,13 @@ func main() {
 		"translate": txt.Get,
 	})
 
-	router.LoadHTMLGlob("webapp/templates/*.go.html")
+	router.LoadHTMLGlob("./webapp/templates/*.go.html")
 	router.Static("/webapp/assets", "./webapp/assets")
 
-	router.Use()
+	router.Any("/check", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok"})
+	})
+
 	router.GET("/web-app/statistics", webAppController.Statistics)
 
 	router.GET("/web-app/events/create", webAppController.CreateEvent)

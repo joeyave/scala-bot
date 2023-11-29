@@ -9,7 +9,7 @@ import (
 
 func File(bot *gotgbot.Bot, file *gotgbot.File) (io.ReadCloser, error) {
 
-	url := bot.GetAPIURL() + "/file/bot" + bot.GetToken() + "/" + file.FilePath
+	url := bot.GetAPIURL(nil) + "/file/bot" + bot.Token + "/" + file.FilePath
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {

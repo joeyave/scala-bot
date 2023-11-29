@@ -49,7 +49,7 @@ func (r *BandRepository) FindOneByDriveFolderID(driveFolderID string) (*entity.B
 }
 
 func (r *BandRepository) find(m bson.M) ([]*entity.Band, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("bands")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("bands")
 
 	pipeline := bson.A{
 		bson.M{
@@ -93,7 +93,7 @@ func (r *BandRepository) UpdateOne(band entity.Band) (*entity.Band, error) {
 		band.ID = r.generateUniqueID()
 	}
 
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("bands")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("bands")
 
 	filter := bson.M{"_id": band.ID}
 

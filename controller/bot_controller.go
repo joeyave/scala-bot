@@ -53,8 +53,8 @@ func (c *BotController) ChooseHandlerOrSearch(bot *gotgbot.Bot, ctx *ext.Context
 		return c.filterSongs(user.State.Index)(bot, ctx)
 	case state.SearchSetlist:
 		return c.searchSetlist(user.State.Index)(bot, ctx)
-	case state.SongVoicesCreateVoice:
-		return c.SongVoicesCreateVoice(user.State.Index)(bot, ctx)
+	case state.SongVoices_CreateVoice:
+		return c.SongVoices_CreateVoice(user.State.Index)(bot, ctx)
 	case state.BandCreate:
 		return c.BandCreate(user.State.Index)(bot, ctx)
 	case state.RoleCreate_ChoosePosition:
@@ -458,13 +458,13 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 	}
 
 	if ctx.CallbackQuery != nil {
-		_, err := ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
+		ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
 			Text: txt.Get("text.serverError", ctx.EffectiveUser.LanguageCode),
 		})
-		if err != nil {
-			log.Error().Err(err).Msg("Error!")
-			return ext.DispatcherActionEndGroups
-		}
+		//if err != nil {
+		//	log.Error().Err(err).Msg("Error!")
+		//	return ext.DispatcherActionEndGroups
+		//}
 	} else if ctx.InlineQuery != nil {
 		ctx.InlineQuery.Answer(bot, nil, &gotgbot.AnswerInlineQueryOpts{
 			CacheTime: 1,
@@ -484,7 +484,7 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 	}
 
 	// todo: send message to the logs channel
-	logsChannelID, err := strconv.ParseInt(os.Getenv("LOG_CHANNEL"), 10, 64)
+	logsChannelID, err := strconv.ParseInt(os.Getenv("BOT_ALERTS_CHANNEL_ID"), 10, 64)
 	if err == nil {
 		userJsonBytes, err := json.Marshal(user)
 		if err != nil {

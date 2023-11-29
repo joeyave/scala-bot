@@ -41,7 +41,7 @@ func (r *RoleRepository) FindOneByID(ID primitive.ObjectID) (*entity.Role, error
 }
 
 func (r *RoleRepository) find(m bson.M) ([]*entity.Role, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("roles")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("roles")
 
 	pipeline := bson.A{
 		bson.M{
@@ -77,7 +77,7 @@ func (r *RoleRepository) UpdateOne(role entity.Role) (*entity.Role, error) {
 		role.ID = r.generateUniqueID()
 	}
 
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("roles")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("roles")
 
 	filter := bson.M{"_id": role.ID}
 

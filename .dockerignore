@@ -1,0 +1,11 @@
+# docker build deps
+docker/*
+Dockerfile
+Jenkinsfile
+
+# git files
+.git/*
+.gitignore
+
+# project files
+README.md

@@ -13,7 +13,7 @@ import (
 func Menu(user *entity.User, lang string) [][]gotgbot.KeyboardButton {
 	return [][]gotgbot.KeyboardButton{
 		{{Text: txt.Get("button.schedule", lang)}},
-		{{Text: txt.Get("button.songs", lang)}, {Text: txt.Get("button.stats", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/statistics?bandId=%s&lang=%s", os.Getenv("HOST"), user.BandID.Hex(), lang)}}},
+		{{Text: txt.Get("button.songs", lang)}, {Text: txt.Get("button.stats", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/statistics?bandId=%s&lang=%s", os.Getenv("BOT_DOMAIN"), user.BandID.Hex(), lang)}}},
 		{{Text: txt.Get("button.settings", lang)}},
 	}
 }
@@ -62,7 +62,7 @@ func EventInit(event *entity.Event, user *entity.User, lang string) [][]gotgbot.
 
 	if user.IsAdmin() || user.IsEventMember(event) {
 		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
-			//{Text: txt.Get("button.edit", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/events/%s/edit", os.Getenv("HOST"), event.ID.Hex())}},
+			//{Text: txt.Get("button.edit", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/events/%s/edit", os.Getenv("BOT_DOMAIN"), event.ID.Hex())}},
 			{Text: txt.Get("button.edit", lang), CallbackData: util.CallbackData(state.EventCB, event.ID.Hex()+":edit")},
 		})
 	}
@@ -74,7 +74,7 @@ func EventEdit(event *entity.Event, user *entity.User, chatID, messageID int64, 
 
 	keyboard := [][]gotgbot.InlineKeyboardButton{
 		{
-			{Text: txt.Get("button.setlist", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/events/%s/edit?messageId=%d&chatId=%d&userId=%d&lang=%s", os.Getenv("HOST"), event.ID.Hex(), messageID, chatID, user.ID, lang)}},
+			{Text: txt.Get("button.setlist", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/events/%s/edit?messageId=%d&chatId=%d&userId=%d&lang=%s", os.Getenv("BOT_DOMAIN"), event.ID.Hex(), messageID, chatID, user.ID, lang)}},
 			{Text: txt.Get("button.members", lang), CallbackData: util.CallbackData(state.EventMembers, event.ID.Hex())},
 		},
 		{
@@ -95,8 +95,8 @@ func SongInit(song *entity.Song, user *entity.User, chatID int64, messageID int6
 	if song.BandID == user.BandID {
 
 		liked := false
-		for _, userID := range song.Likes {
-			if user.ID == userID {
+		for _, like := range song.Likes {
+			if user.ID == like.UserID {
 				liked = true
 				break
 			}
@@ -116,7 +116,7 @@ func SongInit(song *entity.Song, user *entity.User, chatID int64, messageID int6
 			})
 		}
 
-		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.edit", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/songs/%s/edit?userId=%d&messageId=%d&chatId=%d&lang=%s", os.Getenv("HOST"), song.ID.Hex(), user.ID, messageID, chatID, lang)}}})
+		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.edit", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/songs/%s/edit?userId=%d&messageId=%d&chatId=%d&lang=%s", os.Getenv("BOT_DOMAIN"), song.ID.Hex(), user.ID, messageID, chatID, lang)}}})
 
 	} else {
 		keyboard = [][]gotgbot.InlineKeyboardButton{
@@ -137,8 +137,8 @@ func SongInitIQ(song *entity.Song, user *entity.User, lang string) [][]gotgbot.I
 	var keyboard [][]gotgbot.InlineKeyboardButton
 
 	liked := false
-	for _, userID := range song.Likes {
-		if user.ID == userID {
+	for _, like := range song.Likes {
+		if user.ID == like.UserID {
 			liked = true
 			break
 		}
@@ -161,7 +161,7 @@ func SongEdit(song *entity.Song, user *entity.User, lang string) [][]gotgbot.Inl
 
 	keyboard := [][]gotgbot.InlineKeyboardButton{
 		//{
-		//	{Text: txt.Get("button.edit", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/songs/%s/edit?userId=%d&messageId=%d&chatId=%d", os.Getenv("HOST"), song.ID.Hex(), user.ID, messageID, chatID)}},
+		//	{Text: txt.Get("button.edit", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/songs/%s/edit?userId=%d&messageId=%d&chatId=%d", os.Getenv("BOT_DOMAIN"), song.ID.Hex(), user.ID, messageID, chatID)}},
 		//},
 		{
 			{Text: txt.Get("button.docLink", lang), Url: song.PDF.WebViewLink},

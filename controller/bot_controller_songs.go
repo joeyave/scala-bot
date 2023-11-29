@@ -14,6 +14,7 @@ import (
 	"github.com/joeyave/scala-bot/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"golang.org/x/exp/slices"
 	"google.golang.org/api/drive/v3"
 	"net/url"
 	"os"
@@ -215,8 +216,8 @@ func (c *BotController) GetSongs(index int) handlers.Response {
 				}
 
 				markup.Keyboard = append(markup.Keyboard, keyboard.GetSongsStateFilterButtons(ctx.EffectiveUser.LanguageCode))
-				markup.Keyboard = append(markup.Keyboard, []gotgbot.KeyboardButton{{Text: txt.Get("button.createDoc", ctx.EffectiveUser.LanguageCode), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/songs/create?userId=%d&lang=%s", os.Getenv("HOST"), user.ID, ctx.EffectiveUser.LanguageCode)}}})
-				//markup.Keyboard = append(markup.Keyboard, []gotgbot.KeyboardButton{{Text: txt.Get("button.createDoc", ctx.EffectiveUser.LanguageCode), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/songs/create?userId=%d", os.Getenv("HOST"), user.ID)}}})
+				markup.Keyboard = append(markup.Keyboard, []gotgbot.KeyboardButton{{Text: txt.Get("button.createDoc", ctx.EffectiveUser.LanguageCode), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/songs/create?userId=%d&lang=%s", os.Getenv("BOT_DOMAIN"), user.ID, ctx.EffectiveUser.LanguageCode)}}})
+				//markup.Keyboard = append(markup.Keyboard, []gotgbot.KeyboardButton{{Text: txt.Get("button.createDoc", ctx.EffectiveUser.LanguageCode), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/songs/create?userId=%d", os.Getenv("BOT_DOMAIN"), user.ID)}}})
 
 				likedSongs, likedSongErr := c.SongService.FindManyLiked(user.ID)
 
@@ -575,6 +576,14 @@ func (c *BotController) songVoices(bot *gotgbot.Bot, ctx *ext.Context, songID pr
 
 	markup := gotgbot.InlineKeyboardMarkup{}
 
+	slices.SortStableFunc(song.Voices, func(v1, v2 *entity.Voice) int {
+		if v1.Name < v2.Name {
+			return -1
+		} else if v1.Name > v2.Name {
+			return 1
+		}
+		return 0
+	})
 	for _, voice := range song.Voices {
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: voice.Name, CallbackData: util.CallbackData(state.SongVoice, song.ID.Hex()+":"+voice.ID.Hex())}})
 	}
@@ -638,7 +647,7 @@ func (c *BotController) SongVoicesAddVoiceAskForAudio(bot *gotgbot.Bot, ctx *ext
 	}
 
 	user.State = entity.State{
-		Name: state.SongVoicesCreateVoice,
+		Name: state.SongVoices_CreateVoice,
 	}
 	user.Cache = entity.Cache{
 		Voice: &entity.Voice{SongID: songID},
@@ -652,15 +661,15 @@ func (c *BotController) SongVoicesAddVoiceAskForAudio(bot *gotgbot.Bot, ctx *ext
 	return nil
 }
 
-func (c *BotController) SongVoicesCreateVoice(index int) handlers.Response {
+func (c *BotController) SongVoices_CreateVoice(index int) handlers.Response {
 	return func(bot *gotgbot.Bot, ctx *ext.Context) error {
 
 		user := ctx.Data["user"].(*entity.User)
 
-		if user.State.Name != state.SongVoicesCreateVoice {
+		if user.State.Name != state.SongVoices_CreateVoice {
 			user.State = entity.State{
 				Index: index,
-				Name:  state.SongVoicesCreateVoice,
+				Name:  state.SongVoices_CreateVoice,
 			}
 			user.Cache = entity.Cache{
 				Voice: user.Cache.Voice,
@@ -672,11 +681,12 @@ func (c *BotController) SongVoicesCreateVoice(index int) handlers.Response {
 			{
 				ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
-				fileID := ctx.EffectiveMessage.Voice.FileId
-				if fileID == "" {
+				fileID := ""
+				if ctx.EffectiveMessage.Voice != nil {
+					fileID = ctx.EffectiveMessage.Voice.FileId
+				} else {
 					fileID = ctx.EffectiveMessage.Audio.FileId
 				}
-
 				user.Cache.Voice.FileID = fileID
 
 				markup := &gotgbot.ReplyKeyboardMarkup{

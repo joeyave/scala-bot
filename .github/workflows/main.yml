@@ -1,16 +1,53 @@
-name: Deploy to IBM Cloud Foundry
+name: cicd-demo
 on:
   push:
-    branches: [ master ]
+    branches:
+      - 'develop'
+      - 'master'
 jobs:
-  deploy:
+  build-job:
+    name: Build Job
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Deploy to IBM Cloud Foundry
-        uses: IBM/cloudfoundry-deploy@master
+      - uses: actions/checkout@v3
+
+      - name: 'Copy source files to server'
+        uses: appleboy/scp-action@master
         with:
-          IBM_CLOUD_API_KEY: ${{ secrets.IBM_CLOUD_API_KEY }}
-          IBM_CLOUD_CF_API: ${{ secrets.IBM_CLOUD_CF_API }}
-          IBM_CLOUD_CF_ORG: ${{ secrets.IBM_CLOUD_CF_ORG }}
-          IBM_CLOUD_CF_SPACE: ${{ secrets.IBM_CLOUD_CF_SPACE }}
+          host: ${{ secrets.VM_SSH_HOST }}
+          username: ${{ secrets.VM_SSH_USER }}
+          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          source: "."
+          target: "build" # todo: change target folder to project specific.
+
+      - name: 'Build image and push to Dockerhub'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VM_SSH_HOST }}
+          username: ${{ secrets.VM_SSH_USER }}
+          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          script: |
+            cd build &&
+            sudo docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/scala-bot-image . &&
+            echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin &&
+            sudo docker push ${{ secrets.DOCKERHUB_USERNAME }}/scala-bot-image
+
+      - name: 'Update service'
+        uses: appleboy/ssh-action@master
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          BOT_MONGODB_URI: ${{ secrets.BOT_MONGODB_URI }}
+          BOT_MONGODB_NAME: ${{ secrets.BOT_MONGODB_NAME }}
+          BOT_GOOGLEAPIS_KEY: ${{ secrets.BOT_GOOGLEAPIS_KEY }}
+          BOT_DOMAIN: ${{ secrets.BOT_DOMAIN }}
+          BOT_ALERTS_CHANNEL_ID: ${{ secrets.BOT_ALERTS_CHANNEL_ID }}
+        with:
+          host: ${{ secrets.VM_SSH_HOST }}
+          username: ${{ secrets.VM_SSH_USER }}
+          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          envs: DOCKERHUB_USERNAME, BOT_TOKEN, BOT_MONGODB_URI, BOT_MONGODB_NAME, BOT_GOOGLEAPIS_KEY, BOT_DOMAIN, BOT_ALERTS_CHANNEL_ID
+          script: |
+            cd build
+            sudo -E docker stack deploy -c docker-stack.yml scala-bot
+            sudo docker system prune -f

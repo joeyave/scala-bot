@@ -6,6 +6,7 @@ import (
 	"github.com/klauspost/lctime"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"strings"
+	"time"
 )
 
 type Song struct {
@@ -20,8 +21,29 @@ type Song struct {
 
 	Voices []*Voice `bson:"voices,omitempty" json:"-"`
 
+	Likes []*Like  `bson:"likes,omitempty" json:"-"`
+	Tags  []string `bson:"tags" json:"tags"`
+}
+
+type OldSong struct {
+	ID primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+
+	DriveFileID string `bson:"driveFileId,omitempty" json:"driveFileId"`
+
+	BandID primitive.ObjectID `bson:"bandId,omitempty" json:"bandId"`
+	Band   *Band              `bson:"band,omitempty" json:"band"`
+
+	PDF PDF `bson:"pdf,omitempty" json:"pdf"`
+
+	Voices []*Voice `bson:"voices,omitempty" json:"-"`
+
 	Likes []int64  `bson:"likes,omitempty" json:"-"`
 	Tags  []string `bson:"tags" json:"tags"`
+}
+
+type Like struct {
+	UserID int64     `bson:"userId"`
+	Time   time.Time `bson:"time"`
 }
 
 type PDF struct {

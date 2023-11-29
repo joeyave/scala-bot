@@ -6,6 +6,7 @@ import (
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/helpers"
 	"sort"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -29,14 +30,21 @@ func (r *SongRepository) FindAll() ([]*entity.Song, error) {
 }
 
 func (r *SongRepository) FindManyLiked(userID int64) ([]*entity.Song, error) {
-	return r.find(bson.M{
-		"likes": bson.M{"$in": bson.A{userID}},
-	})
+	return r.find(
+		bson.M{
+			"likes": bson.M{"$elemMatch": bson.M{"userId": userID}},
+		},
+		bson.M{
+			"$sort": bson.M{
+				"likes.time": -1,
+			},
+		},
+	)
 }
 
 func (r *SongRepository) FindManyByDriveFileIDs(IDs []string) ([]*entity.Song, error) {
 
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	pipeline := bson.A{
 		bson.M{
@@ -127,8 +135,8 @@ func (r *SongRepository) FindOneByName(name string) (*entity.Song, error) {
 	return songs[0], nil
 }
 
-func (r *SongRepository) find(m bson.M) ([]*entity.Song, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+func (r *SongRepository) find(m bson.M, opts ...bson.M) ([]*entity.Song, error) {
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	pipeline := bson.A{
 		bson.M{
@@ -156,6 +164,10 @@ func (r *SongRepository) find(m bson.M) ([]*entity.Song, error) {
 				"preserveNullAndEmptyArrays": true,
 			},
 		},
+	}
+
+	for _, o := range opts {
+		pipeline = append(pipeline, o)
 	}
 
 	cur, err := collection.Aggregate(context.TODO(), pipeline)
@@ -186,7 +198,7 @@ func (r *SongRepository) UpdateOne(song entity.Song) (*entity.Song, error) {
 		song.ID = r.generateUniqueID()
 	}
 
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	filter := bson.M{
 		"_id": song.ID,
@@ -217,7 +229,7 @@ func (r *SongRepository) UpdateOne(song entity.Song) (*entity.Song, error) {
 	}
 
 	// channel, err := r.driveClient.Files.Watch(song.DriveFileID, &drive.Channel{
-	//	Address: fmt.Sprintf("%s/driveFileChangeCallback", os.Getenv("HOST")),
+	//	Address: fmt.Sprintf("%s/driveFileChangeCallback", os.Getenv("BOT_DOMAIN")),
 	//	Id:      uuid.New().String(),
 	//	Kind:    "api#channel",
 	//	Type:    "web_hook",
@@ -230,7 +242,7 @@ func (r *SongRepository) UpdateOne(song entity.Song) (*entity.Song, error) {
 
 func (r *SongRepository) UpdateMany(songs []*entity.Song) (*mongo.BulkWriteResult, error) {
 
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	var models []mongo.WriteModel
 	for _, song := range songs {
@@ -261,23 +273,29 @@ func (r *SongRepository) UpdateMany(songs []*entity.Song) (*mongo.BulkWriteResul
 }
 
 func (r *SongRepository) DeleteOneByDriveFileID(driveFileID string) error {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	_, err := collection.DeleteOne(context.TODO(), bson.M{"driveFileId": driveFileID})
 	return err
 }
 
 func (r *SongRepository) Like(songID primitive.ObjectID, userID int64) error {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
+
+	// Create a new Like struct with the user ID and the current time.
+	newLike := &entity.Like{
+		UserID: userID,
+		Time:   time.Now(),
+	}
 
 	filter := bson.M{
 		"_id":   songID,
-		"likes": bson.M{"$nin": bson.A{userID}},
+		"likes": bson.M{"$not": bson.M{"$elemMatch": bson.M{"userId": userID}}},
 	}
 
 	update := bson.M{
 		"$push": bson.M{
-			"likes": userID,
+			"likes": newLike,
 		},
 	}
 
@@ -286,13 +304,13 @@ func (r *SongRepository) Like(songID primitive.ObjectID, userID int64) error {
 }
 
 func (r *SongRepository) Dislike(songID primitive.ObjectID, userID int64) error {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	filter := bson.M{"_id": songID}
 
 	update := bson.M{
 		"$pull": bson.M{
-			"likes": userID,
+			"likes": bson.M{"userId": userID},
 		},
 	}
 
@@ -390,7 +408,14 @@ func (r *SongRepository) FindManyExtraByDriveFileIDs(driveFileIDs []string) ([]*
 func (r *SongRepository) FindManyExtraByPageNumberLiked(userID int64, pageNumber int) ([]*entity.SongWithEvents, error) {
 	return r.findWithExtra(
 		bson.M{
-			"likes": bson.M{"$in": bson.A{userID}},
+			"likes": bson.M{
+				"$elemMatch": bson.M{"userId": userID},
+			},
+		},
+		bson.M{
+			"$sort": bson.M{
+				"likes.time": -1,
+			},
 		},
 		bson.M{
 			"$skip": pageNumber * helpers.SongsPageSize,
@@ -402,7 +427,7 @@ func (r *SongRepository) FindManyExtraByPageNumberLiked(userID int64, pageNumber
 }
 
 func (r *SongRepository) findWithExtra(m bson.M, opts ...bson.M) ([]*entity.SongWithEvents, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	pipeline := bson.A{
 		bson.M{
@@ -527,7 +552,7 @@ func (r *SongRepository) findWithExtra(m bson.M, opts ...bson.M) ([]*entity.Song
 }
 
 func (r *SongRepository) GetTags(bandID primitive.ObjectID) ([]string, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	pipeline := bson.A{
 		bson.M{"$match": bson.M{"bandId": bandID}},
@@ -556,7 +581,7 @@ func (r *SongRepository) GetTags(bandID primitive.ObjectID) ([]string, error) {
 }
 
 func (r *SongRepository) TagOrUntag(tag string, songID primitive.ObjectID) (*entity.Song, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("songs")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	filter := bson.M{
 		"_id": songID,

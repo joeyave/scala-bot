@@ -71,8 +71,8 @@ func SongButton(song *entity.SongWithEvents, user *entity.User, lang string, opt
 			text += fmt.Sprintf(" (%s)", song.Stats(lang))
 		}
 		if opts.ShowLike {
-			for _, userID := range song.Song.Likes {
-				if user.ID == userID {
+			for _, like := range song.Song.Likes {
+				if user.ID == like.UserID {
 					text += fmt.Sprintf(" %s", txt.Get("button.like", ""))
 					break
 				}

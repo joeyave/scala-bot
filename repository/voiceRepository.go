@@ -34,7 +34,7 @@ func (r *VoiceRepository) UpdateOne(voice entity.Voice) (*entity.Voice, error) {
 		voice.ID = r.generateUniqueID()
 	}
 
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("voices")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("voices")
 
 	filter := bson.M{
 		"_id": voice.ID,
@@ -62,14 +62,14 @@ func (r *VoiceRepository) UpdateOne(voice entity.Voice) (*entity.Voice, error) {
 }
 
 func (r *VoiceRepository) DeleteOneByID(ID primitive.ObjectID) error {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("voices")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("voices")
 
 	_, err := collection.DeleteOne(context.TODO(), bson.M{"_id": ID})
 	return err
 }
 
 func (r *VoiceRepository) findOne(m bson.M) (*entity.Voice, error) {
-	collection := r.mongoClient.Database(os.Getenv("MONGODB_DATABASE_NAME")).Collection("voices")
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("voices")
 
 	result := collection.FindOne(context.TODO(), m)
 	if result.Err() != nil {
