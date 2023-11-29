@@ -10,6 +10,7 @@ import (
 	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/exp/slices"
 	"strconv"
 	"strings"
 )
@@ -24,20 +25,43 @@ func (c *BotController) SettingsChooseBand(bot *gotgbot.Bot, ctx *ext.Context) e
 		return err
 	}
 
-	band, err := c.BandService.FindOneByID(bandID)
+	//band, err := c.BandService.FindOneByID(bandID)
 
-	user.BandID = bandID
-
-	_, _, err = bot.EditMessageText(txt.Get("text.addedToBand", ctx.EffectiveUser.LanguageCode, band.Name), &gotgbot.EditMessageTextOpts{
-		ChatId:    ctx.EffectiveChat.Id,
-		MessageId: ctx.EffectiveMessage.MessageId,
-		//ReplyMarkup: gotgbot.InlineKeyboardMarkup{},
+	index := slices.IndexFunc(user.BandIDs, func(id primitive.ObjectID) bool {
+		return id == bandID
 	})
-	if err != nil {
-		return err
+
+	if index == -1 { // If adding.
+		user.BandID = bandID
+		user.BandIDs = append(user.BandIDs, bandID)
+
+		//_, _, err = bot.EditMessageText(txt.Get("text.addedToBand", ctx.EffectiveUser.LanguageCode, band.Name), &gotgbot.EditMessageTextOpts{
+		//	ChatId:    ctx.EffectiveChat.Id,
+		//	MessageId: ctx.EffectiveMessage.MessageId,
+		//})
+		//if err != nil {
+		//	return err
+		//}
+
+	} else { // If removing.
+		user.BandIDs = slices.Delete(user.BandIDs, index, index+1)
+
+		if len(user.BandIDs) > 0 {
+			user.BandID = user.BandIDs[0]
+		} else {
+			user.BandID = primitive.NilObjectID
+		}
+
+		//_, _, err = bot.EditMessageText(txt.Get("text.removedFromBand", ctx.EffectiveUser.LanguageCode, band.Name), &gotgbot.EditMessageTextOpts{
+		//	ChatId:    ctx.EffectiveChat.Id,
+		//	MessageId: ctx.EffectiveMessage.MessageId,
+		//})
+		//if err != nil {
+		//	return err
+		//}
 	}
 
-	return c.Menu(bot, ctx)
+	return c.SettingsBands(bot, ctx)
 }
 
 func (c *BotController) Settings(bot *gotgbot.Bot, ctx *ext.Context) error {
@@ -81,7 +105,7 @@ func (c *BotController) SettingsCB(bot *gotgbot.Bot, ctx *ext.Context) error {
 
 func (c *BotController) SettingsBands(bot *gotgbot.Bot, ctx *ext.Context) error {
 
-	//user := ctx.Data["user"].(*entity.User)
+	user := ctx.Data["user"].(*entity.User)
 
 	markup := gotgbot.InlineKeyboardMarkup{}
 
@@ -90,7 +114,15 @@ func (c *BotController) SettingsBands(bot *gotgbot.Bot, ctx *ext.Context) error 
 		return err
 	}
 	for _, band := range bands {
-		markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: band.Name, CallbackData: util.CallbackData(state.SettingsChooseBand, band.ID.Hex())}})
+		text := band.Name
+		contains := slices.ContainsFunc(user.BandIDs, func(id primitive.ObjectID) bool {
+			return id == band.ID
+		})
+		if contains || user.BandID == band.ID {
+			text = "✔️ " + text
+		}
+
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: text, CallbackData: util.CallbackData(state.SettingsChooseBand, band.ID.Hex())}})
 	}
 	markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.createBand", ctx.EffectiveUser.LanguageCode), CallbackData: util.CallbackData(state.BandCreate_AskForName, "")}})
 	markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.back", ctx.EffectiveUser.LanguageCode), CallbackData: util.CallbackData(state.SettingsCB, "")}})
@@ -135,7 +167,7 @@ func (c *BotController) settingsBandMembers(bot *gotgbot.Bot, ctx *ext.Context, 
 	for _, member := range members {
 		text := member.Name
 		if member.Role == entity.AdminRole {
-			text += " ✔️"
+			text = "✔️ " + text
 			markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: text, CallbackData: util.CallbackData(state.SettingsBandAddAdmin, fmt.Sprintf("%s:%d:delete", bandID.Hex(), member.ID))}})
 		} else {
 			markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: text, CallbackData: util.CallbackData(state.SettingsBandAddAdmin, fmt.Sprintf("%s:%d:add", bandID.Hex(), member.ID))}})

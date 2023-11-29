@@ -23,6 +23,8 @@ type User struct {
 
 	BandID primitive.ObjectID `bson:"bandId,omitempty" json:"band_id,omitempty"`
 	Band   *Band              `bson:"band,omitempty" json:"-"`
+
+	BandIDs []primitive.ObjectID `bson:"bandIDs,omitempty" json:"bandIDs,omitempty"`
 }
 
 func (u *User) IsAdmin() bool {

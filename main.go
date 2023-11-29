@@ -166,22 +166,19 @@ func main() {
 	}
 
 	// Create updater and dispatcher.
-	updater := ext.NewUpdater(&ext.UpdaterOpts{
-		ErrorLog: nil,
-		Dispatcher: ext.NewDispatcher(&ext.DispatcherOpts{
-			Error: botController.Error,
-			Panic: func(b *gotgbot.Bot, ctx *ext.Context, r interface{}) {
-				err, ok := r.(error)
-				if ok {
-					botController.Error(bot, ctx, err)
-				} else {
-					botController.Error(bot, ctx, fmt.Errorf("panic: %s", fmt.Sprint(r)))
-				}
-			}, // todo
-			ErrorLog: nil,
-		}),
+	dispatcher := ext.NewDispatcher(&ext.DispatcherOpts{
+		Error: botController.Error,
+		Panic: func(b *gotgbot.Bot, ctx *ext.Context, r interface{}) {
+			err, ok := r.(error)
+			if ok {
+				botController.Error(bot, ctx, err)
+			} else {
+				botController.Error(bot, ctx, fmt.Errorf("panic: %s", fmt.Sprint(r)))
+			}
+		},
+		MaxRoutines: ext.DefaultMaxRoutines,
 	})
-	dispatcher := updater.Dispatcher
+	updater := ext.NewUpdater(dispatcher, nil)
 
 	dispatcher.AddHandlerToGroup(handlers.NewInlineQuery(inlinequery.All, func(bot *gotgbot.Bot, ctx *ext.Context) error {
 
