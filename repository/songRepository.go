@@ -29,10 +29,11 @@ func (r *SongRepository) FindAll() ([]*entity.Song, error) {
 	return r.find(bson.M{})
 }
 
-func (r *SongRepository) FindManyLiked(userID int64) ([]*entity.Song, error) {
+func (r *SongRepository) FindManyLiked(bandID primitive.ObjectID, userID int64) ([]*entity.Song, error) {
 	return r.find(
 		bson.M{
-			"likes": bson.M{"$elemMatch": bson.M{"userId": userID}},
+			"bandId": bandID,
+			"likes":  bson.M{"$elemMatch": bson.M{"userId": userID}},
 		},
 		bson.M{
 			"$sort": bson.M{
@@ -405,9 +406,10 @@ func (r *SongRepository) FindManyExtraByDriveFileIDs(driveFileIDs []string) ([]*
 	)
 }
 
-func (r *SongRepository) FindManyExtraByPageNumberLiked(userID int64, pageNumber int) ([]*entity.SongWithEvents, error) {
+func (r *SongRepository) FindManyExtraByPageNumberLiked(bandID primitive.ObjectID, userID int64, pageNumber int) ([]*entity.SongWithEvents, error) {
 	return r.findWithExtra(
 		bson.M{
+			"bandId": bandID,
 			"likes": bson.M{
 				"$elemMatch": bson.M{"userId": userID},
 			},

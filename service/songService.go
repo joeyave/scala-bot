@@ -35,16 +35,16 @@ func (s *SongService) FindAll() ([]*entity.Song, error) {
 	return s.songRepository.FindAll()
 }
 
-func (s *SongService) FindManyLiked(userID int64) ([]*entity.Song, error) {
-	return s.songRepository.FindManyLiked(userID)
+func (s *SongService) FindManyLiked(bandID primitive.ObjectID, userID int64) ([]*entity.Song, error) {
+	return s.songRepository.FindManyLiked(bandID, userID)
 }
 
 func (s *SongService) FindManyByDriveFileIDs(IDs []string) ([]*entity.Song, error) {
 	return s.songRepository.FindManyByDriveFileIDs(IDs)
 }
 
-func (s *SongService) FindManyExtraLiked(userID int64, pageNumber int) ([]*entity.SongWithEvents, error) {
-	return s.songRepository.FindManyExtraByPageNumberLiked(userID, pageNumber)
+func (s *SongService) FindManyExtraLiked(bandID primitive.ObjectID, userID int64, pageNumber int) ([]*entity.SongWithEvents, error) {
+	return s.songRepository.FindManyExtraByPageNumberLiked(bandID, userID, pageNumber)
 }
 
 func (s *SongService) FindOneByID(ID primitive.ObjectID) (*entity.Song, error) {

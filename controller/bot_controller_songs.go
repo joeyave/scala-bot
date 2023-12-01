@@ -219,7 +219,7 @@ func (c *BotController) GetSongs(index int) handlers.Response {
 				markup.Keyboard = append(markup.Keyboard, []gotgbot.KeyboardButton{{Text: txt.Get("button.createDoc", ctx.EffectiveUser.LanguageCode), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/songs/create?userId=%d&lang=%s", os.Getenv("BOT_DOMAIN"), user.ID, ctx.EffectiveUser.LanguageCode)}}})
 				//markup.Keyboard = append(markup.Keyboard, []gotgbot.KeyboardButton{{Text: txt.Get("button.createDoc", ctx.EffectiveUser.LanguageCode), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/songs/create?userId=%d", os.Getenv("BOT_DOMAIN"), user.ID)}}})
 
-				likedSongs, likedSongErr := c.SongService.FindManyLiked(user.ID)
+				likedSongs, likedSongErr := c.SongService.FindManyLiked(user.BandID, user.ID)
 
 				for _, driveFile := range driveFiles {
 					opts := &keyboard.DriveFileButtonOpts{
@@ -313,7 +313,7 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 
 				switch user.Cache.Filter {
 				case txt.Get("button.like", ctx.EffectiveUser.LanguageCode):
-					songs, err = c.SongService.FindManyExtraLiked(user.ID, user.Cache.PageIndex)
+					songs, err = c.SongService.FindManyExtraLiked(user.BandID, user.ID, user.Cache.PageIndex)
 				case txt.Get("button.calendar", ctx.EffectiveUser.LanguageCode):
 					songs, err = c.SongService.FindAllExtraByPageNumberSortedByLatestEventDate(user.BandID, user.Cache.PageIndex)
 				case txt.Get("button.numbers", ctx.EffectiveUser.LanguageCode):

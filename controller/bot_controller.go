@@ -254,7 +254,7 @@ func (c *BotController) search(index int) handlers.Response {
 					markup.InputFieldPlaceholder = txt.Get("text.defaultPlaceholder", ctx.EffectiveUser.LanguageCode)
 				}
 
-				likedSongs, likedSongErr := c.SongService.FindManyLiked(user.ID)
+				likedSongs, likedSongErr := c.SongService.FindManyLiked(user.BandID, user.ID)
 
 				set := make(map[string]*entity.Band)
 				for i, driveFile := range driveFiles {
