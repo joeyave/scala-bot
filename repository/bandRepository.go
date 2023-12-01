@@ -30,6 +30,15 @@ func (r *BandRepository) FindAll() ([]*entity.Band, error) {
 	return bands, nil
 }
 
+func (r *BandRepository) FindManyByIDs(ids []primitive.ObjectID) ([]*entity.Band, error) {
+	bands, err := r.find(bson.M{"_id": bson.M{"$in": ids}})
+	if err != nil {
+		return nil, err
+	}
+
+	return bands, nil
+}
+
 func (r *BandRepository) FindOneByID(ID primitive.ObjectID) (*entity.Band, error) {
 	bands, err := r.find(bson.M{"_id": ID})
 	if err != nil {
