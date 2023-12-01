@@ -96,6 +96,7 @@ func (c *BotController) BandCreate(index int) handlers.Response {
 				}
 
 				user.BandID = band.ID
+				user.BandIDs = append(user.BandIDs, band.ID)
 
 				text := fmt.Sprintf("Ты добавлен в группу \"%s\" как администратор.", band.Name)
 				_, err = ctx.EffectiveChat.SendMessage(bot, text, nil)
