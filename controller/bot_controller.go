@@ -17,6 +17,7 @@ import (
 	"github.com/joeyave/scala-bot/util"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/exp/slices"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/drive/v3"
 	"net/url"
@@ -159,6 +160,15 @@ func (c *BotController) search(index int) handlers.Response {
 	return func(bot *gotgbot.Bot, ctx *ext.Context) error {
 
 		user := ctx.Data["user"].(*entity.User)
+
+		bandIndex := slices.IndexFunc(user.Cache.Bands, func(band *entity.Band) bool {
+			return band.Name == ctx.EffectiveMessage.Text
+		})
+		if bandIndex != -1 {
+			chosenBand := user.Cache.Bands[bandIndex]
+			user.BandID = chosenBand.ID
+			return c.Menu(bot, ctx)
+		}
 
 		if user.State.Name != state.Search {
 			user.State = entity.State{
@@ -431,13 +441,20 @@ func (c *BotController) Menu(bot *gotgbot.Bot, ctx *ext.Context) error {
 	user.State = entity.State{}
 	user.Cache = entity.Cache{}
 
+	bands, err := c.BandService.FindManyByIDs(user.BandIDs)
+	if err != nil {
+		return err
+	}
+
+	user.Cache.Bands = bands
+
 	replyMarkup := &gotgbot.ReplyKeyboardMarkup{
-		Keyboard:              keyboard.Menu(user, ctx.EffectiveUser.LanguageCode),
+		Keyboard:              keyboard.Menu(user, bands, ctx.EffectiveUser.LanguageCode),
 		ResizeKeyboard:        true,
 		InputFieldPlaceholder: txt.Get("text.defaultPlaceholder", ctx.EffectiveUser.LanguageCode),
 	}
 
-	_, err := ctx.EffectiveChat.SendMessage(bot, txt.Get("text.menu", ctx.EffectiveUser.LanguageCode), &gotgbot.SendMessageOpts{
+	_, err = ctx.EffectiveChat.SendMessage(bot, txt.Get("text.menu", ctx.EffectiveUser.LanguageCode), &gotgbot.SendMessageOpts{
 		ReplyMarkup: replyMarkup,
 	})
 	if err != nil {

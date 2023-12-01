@@ -62,6 +62,7 @@ type Cache struct {
 	Band          *Band              `bson:"band,omitempty"`
 	Role          *Role              `bson:"role,omitempty"`
 	Audio         *gotgbot.Audio     `json:"audio,omitempty"`
+	Bands         []*Band            `json:"bands,omitempty"`
 }
 
 type CallbackCache struct {

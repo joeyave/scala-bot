@@ -178,7 +178,11 @@ func (r *UserRepository) FindManyExtraByBandIDAndRoleID(bandID primitive.ObjectI
 	pipeline := bson.A{
 		bson.M{
 			"$match": bson.M{
-				"bandId": bandID,
+				"bandIDs": bson.M{
+					"$elemMatch": bson.M{
+						"$eq": bandID,
+					},
+				},
 			},
 		},
 		bson.M{

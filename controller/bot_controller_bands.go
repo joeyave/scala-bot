@@ -158,6 +158,8 @@ func (c *BotController) RoleCreate_ChoosePosition(bot *gotgbot.Bot, ctx *ext.Con
 		return err
 	}
 
+	user.State = entity.State{}
+
 	return nil
 }
 

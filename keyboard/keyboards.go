@@ -10,12 +10,25 @@ import (
 	"os"
 )
 
-func Menu(user *entity.User, lang string) [][]gotgbot.KeyboardButton {
-	return [][]gotgbot.KeyboardButton{
+func Menu(user *entity.User, bands []*entity.Band, lang string) [][]gotgbot.KeyboardButton {
+	keyboard := [][]gotgbot.KeyboardButton{{}}
+
+	if len(user.BandIDs) > 1 {
+		for _, band := range bands {
+			text := band.Name
+			if user.BandID == band.ID {
+				text = SelectedButton(band.Name).Text
+			}
+			keyboard[0] = append(keyboard[0], gotgbot.KeyboardButton{Text: text})
+		}
+	}
+
+	keyboard = append(keyboard, [][]gotgbot.KeyboardButton{
 		{{Text: txt.Get("button.schedule", lang)}},
 		{{Text: txt.Get("button.songs", lang)}, {Text: txt.Get("button.stats", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/statistics?bandId=%s&lang=%s", os.Getenv("BOT_DOMAIN"), user.BandID.Hex(), lang)}}},
 		{{Text: txt.Get("button.settings", lang)}},
-	}
+	}...)
+	return keyboard
 }
 
 func Settings(user *entity.User, lang string) [][]gotgbot.InlineKeyboardButton {
