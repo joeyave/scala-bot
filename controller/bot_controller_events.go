@@ -33,9 +33,11 @@ func (c *BotController) event(bot *gotgbot.Bot, ctx *ext.Context, event *entity.
 	}
 
 	msg, err := ctx.EffectiveChat.SendMessage(bot, html, &gotgbot.SendMessageOpts{
-		ParseMode:             "HTML",
-		DisableWebPagePreview: true,
-		ReplyMarkup:           markup,
+		ParseMode: "HTML",
+		LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
+			IsDisabled: true,
+		},
+		ReplyMarkup: markup,
 	})
 	if err != nil {
 		return err
@@ -46,9 +48,11 @@ func (c *BotController) event(bot *gotgbot.Bot, ctx *ext.Context, event *entity.
 	text := user.CallbackCache.AddToText(html)
 
 	_, _, err = msg.EditText(bot, text, &gotgbot.EditMessageTextOpts{
-		ParseMode:             "HTML",
-		DisableWebPagePreview: true,
-		ReplyMarkup:           markup,
+		ParseMode: "HTML",
+		LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
+			IsDisabled: true,
+		},
+		ReplyMarkup: markup,
 	})
 	if err != nil {
 		return err
@@ -427,9 +431,11 @@ func (c *BotController) EventCB(bot *gotgbot.Bot, ctx *ext.Context) error {
 	text := user.CallbackCache.AddToText(html)
 
 	_, _, err = ctx.EffectiveMessage.EditText(bot, text, &gotgbot.EditMessageTextOpts{
-		ParseMode:             "HTML",
-		DisableWebPagePreview: true,
-		ReplyMarkup:           markup,
+		ParseMode: "HTML",
+		LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
+			IsDisabled: true,
+		},
+		ReplyMarkup: markup,
 	})
 
 	ctx.CallbackQuery.Answer(bot, nil)
@@ -468,9 +474,11 @@ func (c *BotController) eventSetlist(bot *gotgbot.Bot, ctx *ext.Context, event *
 	text = user.CallbackCache.AddToText(text)
 
 	_, _, err := ctx.EffectiveMessage.EditText(bot, text, &gotgbot.EditMessageTextOpts{
-		ParseMode:             "HTML",
-		DisableWebPagePreview: true,
-		ReplyMarkup:           markup,
+		ParseMode: "HTML",
+		LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
+			IsDisabled: true,
+		},
+		ReplyMarkup: markup,
 	})
 	if err != nil {
 		return err
@@ -602,9 +610,11 @@ func (c *BotController) eventMembers(bot *gotgbot.Bot, ctx *ext.Context, event *
 	text = user.CallbackCache.AddToText(text)
 
 	_, _, err := ctx.EffectiveMessage.EditText(bot, text, &gotgbot.EditMessageTextOpts{
-		ParseMode:             "HTML",
-		DisableWebPagePreview: true,
-		ReplyMarkup:           markup,
+		ParseMode: "HTML",
+		LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
+			IsDisabled: true,
+		},
+		ReplyMarkup: markup,
 	})
 	if err != nil {
 		return err
@@ -737,9 +747,11 @@ func (c *BotController) EventMembersAddMemberChooseRole(bot *gotgbot.Bot, ctx *e
 	text := user.CallbackCache.AddToText(b.String())
 
 	_, _, err = ctx.EffectiveMessage.EditText(bot, text, &gotgbot.EditMessageTextOpts{
-		ParseMode:             "HTML",
-		DisableWebPagePreview: true,
-		ReplyMarkup:           markup,
+		ParseMode: "HTML",
+		LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
+			IsDisabled: true,
+		},
+		ReplyMarkup: markup,
 	})
 	if err != nil {
 		return err
@@ -844,9 +856,11 @@ func (c *BotController) eventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *e
 	text := user.CallbackCache.AddToText(b.String())
 
 	_, _, err = ctx.EffectiveMessage.EditText(bot, text, &gotgbot.EditMessageTextOpts{
-		ParseMode:             "HTML",
-		DisableWebPagePreview: true,
-		ReplyMarkup:           markup,
+		ParseMode: "HTML",
+		LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
+			IsDisabled: true,
+		},
+		ReplyMarkup: markup,
 	})
 	if err != nil {
 		return err

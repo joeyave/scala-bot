@@ -224,11 +224,13 @@ func (h *WebAppController) EditEventConfirm(ctx *gin.Context) {
 	text := user.CallbackCache.AddToText(html)
 
 	_, _, err = h.Bot.EditMessageText(text, &gotgbot.EditMessageTextOpts{
-		ChatId:                chatID,
-		MessageId:             messageID,
-		ParseMode:             "HTML",
-		DisableWebPagePreview: true,
-		ReplyMarkup:           markup,
+		ChatId:    chatID,
+		MessageId: messageID,
+		ParseMode: "HTML",
+		LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
+			IsDisabled: true,
+		},
+		ReplyMarkup: markup,
 	})
 
 	ctx.Status(http.StatusOK)

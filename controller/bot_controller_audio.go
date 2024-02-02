@@ -154,7 +154,10 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 		//ctx.EffectiveMessage.EditText(bot, text, &gotgbot.EditMessageTextOpts{
 		//	ReplyMarkup:           *markup,
 		//	ParseMode:             "HTML",
-		//	DisableWebPagePreview: true,
+		//	LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
+		//IsDisabled:
+		//	true,
+		//},
 		//})
 		ctx.EffectiveMessage.EditReplyMarkup(bot, &gotgbot.EditMessageReplyMarkupOpts{
 			ReplyMarkup: *markup,
@@ -162,10 +165,14 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 		ctx.CallbackQuery.Answer(bot, nil)
 	} else {
 		_, err := ctx.EffectiveChat.SendMessage(bot, text, &gotgbot.SendMessageOpts{
-			ReplyMarkup:           markup,
-			ParseMode:             "HTML",
-			DisableWebPagePreview: true,
-			ReplyToMessageId:      ctx.EffectiveMessage.MessageId,
+			ReplyMarkup: markup,
+			ParseMode:   "HTML",
+			LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
+				IsDisabled: true,
+			},
+			ReplyParameters: &gotgbot.ReplyParameters{
+				MessageId: ctx.EffectiveMessage.MessageId,
+			},
 		})
 		if err != nil {
 			return err

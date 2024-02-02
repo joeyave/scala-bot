@@ -117,30 +117,33 @@ func (c *BotController) RegisterUser(bot *gotgbot.Bot, ctx *ext.Context) error {
 	}
 
 	if ctx.CallbackQuery != nil && ctx.CallbackQuery.Message != nil {
-		for _, e := range ctx.CallbackQuery.Message.Entities {
-			if strings.HasPrefix(e.Url, util.CallbackCacheURL) {
-				u, err := url.Parse(e.Url)
-				if err != nil {
-					return err
+		message, ok := ctx.CallbackQuery.Message.(gotgbot.Message)
+		if ok {
+			for _, e := range message.Entities {
+				if strings.HasPrefix(e.Url, util.CallbackCacheURL) {
+					u, err := url.Parse(e.Url)
+					if err != nil {
+						return err
+					}
+					err = decoder.Decode(&user.CallbackCache, u.Query())
+					if err != nil {
+						return err
+					}
+					break
 				}
-				err = decoder.Decode(&user.CallbackCache, u.Query())
-				if err != nil {
-					return err
-				}
-				break
 			}
-		}
-		for _, e := range ctx.CallbackQuery.Message.CaptionEntities {
-			if strings.HasPrefix(e.Url, util.CallbackCacheURL) {
-				u, err := url.Parse(e.Url)
-				if err != nil {
-					return err
+			for _, e := range message.CaptionEntities {
+				if strings.HasPrefix(e.Url, util.CallbackCacheURL) {
+					u, err := url.Parse(e.Url)
+					if err != nil {
+						return err
+					}
+					err = decoder.Decode(&user.CallbackCache, u.Query())
+					if err != nil {
+						return err
+					}
+					break
 				}
-				err = decoder.Decode(&user.CallbackCache, u.Query())
-				if err != nil {
-					return err
-				}
-				break
 			}
 		}
 	}
@@ -510,8 +513,10 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 		}
 
 		_, err = bot.SendMessage(logsChannelID, fmt.Sprintf("Error handling update!\n<pre>error=%v</pre>\n<pre>user=%s</pre>", botErr, string(userJsonBytes)), &gotgbot.SendMessageOpts{
-			DisableWebPagePreview: true,
-			ParseMode:             "HTML",
+			LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
+				IsDisabled: true,
+			},
+			ParseMode: "HTML",
 		})
 		if err != nil {
 			log.Error().Err(err).Msg("Error!")

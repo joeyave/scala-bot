@@ -205,8 +205,10 @@ func (c *BotController) SettingsCleanupDatabase(bot *gotgbot.Bot, ctx *ext.Conte
 			}
 
 			_, _, _ = msg.EditText(bot, builder.String(), &gotgbot.EditMessageTextOpts{
-				ParseMode:             "HTML",
-				DisableWebPagePreview: true,
+				ParseMode: "HTML",
+				LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
+					IsDisabled: true,
+				},
 			})
 		}
 	}
@@ -214,8 +216,10 @@ func (c *BotController) SettingsCleanupDatabase(bot *gotgbot.Bot, ctx *ext.Conte
 	builder.WriteString(fmt.Sprintf("\n\nDone!"))
 
 	_, _, _ = msg.EditText(bot, builder.String(), &gotgbot.EditMessageTextOpts{
-		ParseMode:             "HTML",
-		DisableWebPagePreview: true,
+		ParseMode: "HTML",
+		LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
+			IsDisabled: true,
+		},
 	})
 
 	return nil
