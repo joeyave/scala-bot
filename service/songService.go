@@ -133,12 +133,22 @@ func (s *SongService) DeleteOneByDriveFileID(driveFileID string) error {
 		return err
 	}
 
-	err = s.songRepository.DeleteOneByDriveFileID(driveFileID)
+	_, err = s.songRepository.DeleteOneByDriveFileID(driveFileID)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (s *SongService) DeleteOneByDriveFileIDFromDatabase(driveFileID string) (bool, error) {
+	deletedCount, err := s.songRepository.DeleteOneByDriveFileID(driveFileID)
+	deleted := deletedCount > 0
+	if err != nil {
+		return deleted, err
+	}
+
+	return deleted, nil
 }
 
 func (s *SongService) Like(songID primitive.ObjectID, userID int64) error {

@@ -31,3 +31,7 @@ func (s *VoiceService) UpdateOne(voice entity.Voice) (*entity.Voice, error) {
 func (s *VoiceService) DeleteOne(ID primitive.ObjectID) error {
 	return s.voiceRepository.DeleteOneByID(ID)
 }
+
+func (s *VoiceService) DeleteManyByIDs(IDs []primitive.ObjectID) error {
+	return s.voiceRepository.DeleteManyByIDs(IDs)
+}

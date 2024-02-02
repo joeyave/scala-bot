@@ -55,6 +55,7 @@ const (
 	SettingsChooseBand
 
 	SettingsBandMembers
+	SettingsCleanupDatabase
 	SettingsBandAddAdmin
 
 	SongCopyToMyBand

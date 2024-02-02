@@ -260,6 +260,7 @@ func main() {
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SettingsBands), botController.SettingsBands), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SettingsChooseBand), botController.SettingsChooseBand), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SettingsBandMembers), botController.SettingsBandMembers), 1)
+	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SettingsCleanupDatabase), botController.SettingsCleanupDatabase), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SettingsBandAddAdmin), botController.SettingsBandAddAdmin), 1)
 
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.EventCB), botController.EventCB), 1)

@@ -203,6 +203,10 @@ var locales = map[string]map[string]string{
 		"ru": "Добавить админа",
 		"uk": "Додати адміна",
 	},
+	"button.cleanupDatabase": {
+		"ru": "Почистить базу",
+		"uk": "Почистити базу",
+	},
 	"button.continue": {
 		"ru": "Продолжить",
 		"uk": "Продовжити",
@@ -467,6 +471,10 @@ var locales = map[string]map[string]string{
 	"text.memCount": {
 		"ru": "Количество участий",
 		"uk": "Кількість участей",
+	},
+	"text.cleanupDatabase": {
+		"ru": "Чистим базу",
+		"uk": "Чистимо базу",
 	},
 }
 

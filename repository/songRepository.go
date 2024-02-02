@@ -273,11 +273,17 @@ func (r *SongRepository) UpdateMany(songs []*entity.Song) (*mongo.BulkWriteResul
 	return res, err
 }
 
-func (r *SongRepository) DeleteOneByDriveFileID(driveFileID string) error {
+func (r *SongRepository) DeleteOneByDriveFileID(driveFileID string) (int64, error) {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
-	_, err := collection.DeleteOne(context.TODO(), bson.M{"driveFileId": driveFileID})
-	return err
+	result, err := collection.DeleteOne(context.TODO(), bson.M{"driveFileId": driveFileID})
+
+	deletedCount := int64(0)
+	if result != nil {
+		deletedCount = result.DeletedCount
+	}
+
+	return deletedCount, err
 }
 
 func (r *SongRepository) Like(songID primitive.ObjectID, userID int64) error {

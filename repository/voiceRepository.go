@@ -68,6 +68,13 @@ func (r *VoiceRepository) DeleteOneByID(ID primitive.ObjectID) error {
 	return err
 }
 
+func (r *VoiceRepository) DeleteManyByIDs(IDs []primitive.ObjectID) error {
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("voices")
+
+	_, err := collection.DeleteMany(context.TODO(), bson.M{"_id": bson.M{"$in": IDs}})
+	return err
+}
+
 func (r *VoiceRepository) findOne(m bson.M) (*entity.Voice, error) {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("voices")
 

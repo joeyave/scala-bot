@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
@@ -11,6 +12,7 @@ import (
 	"github.com/joeyave/scala-bot/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/exp/slices"
+	"google.golang.org/api/googleapi"
 	"strconv"
 	"strings"
 )
@@ -151,6 +153,72 @@ func (c *BotController) SettingsBandMembers(bot *gotgbot.Bot, ctx *ext.Context) 
 	}
 
 	return c.settingsBandMembers(bot, ctx, bandID)
+}
+
+func (c *BotController) SettingsCleanupDatabase(bot *gotgbot.Bot, ctx *ext.Context) error {
+
+	//user := ctx.Data["user"].(*entity.User)
+
+	//hex := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
+	//bandID, err := primitive.ObjectIDFromHex(hex)
+	//if err != nil {
+	//	return err
+	//}
+
+	songs, err := c.SongService.FindAll()
+	if err != nil {
+		return err
+	}
+
+	builder := strings.Builder{}
+	builder.WriteString(txt.Get("text.cleanupDatabase", ctx.EffectiveUser.LanguageCode))
+
+	msg, err := ctx.EffectiveChat.SendMessage(bot, builder.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	for _, song := range songs {
+		_, err := c.DriveFileService.FindOneByID(song.DriveFileID)
+		if err == nil {
+			continue
+		}
+
+		var gErr *googleapi.Error
+		if errors.As(err, &gErr) && gErr.Code == 404 {
+
+			deleted, _ := c.SongService.DeleteOneByDriveFileIDFromDatabase(song.DriveFileID)
+			if deleted {
+				builder.WriteString(fmt.Sprintf("\nDeleted: <a href=\"%s\">%s</a>", song.PDF.WebViewLink, song.PDF.Name))
+				var voiceIDs []primitive.ObjectID
+				for _, voice := range song.Voices {
+					voiceIDs = append(voiceIDs, voice.ID)
+				}
+				if len(voiceIDs) > 0 {
+					err := c.VoiceService.DeleteManyByIDs(voiceIDs)
+					if err != nil {
+						builder.WriteString(fmt.Sprintf("\nError deleting voices for song %s:%s", song.ID.String(), err.Error()))
+					}
+				}
+			} else {
+				builder.WriteString(fmt.Sprintf("\nCould not delete: <a href=\"%s\">%s</a> | %s", song.PDF.WebViewLink, song.PDF.Name, song.ID.String()))
+			}
+
+			_, _, _ = msg.EditText(bot, builder.String(), &gotgbot.EditMessageTextOpts{
+				ParseMode:             "HTML",
+				DisableWebPagePreview: true,
+			})
+		}
+	}
+
+	builder.WriteString(fmt.Sprintf("\n\nDone!"))
+
+	_, _, _ = msg.EditText(bot, builder.String(), &gotgbot.EditMessageTextOpts{
+		ParseMode:             "HTML",
+		DisableWebPagePreview: true,
+	})
+
+	return nil
 }
 
 func (c *BotController) settingsBandMembers(bot *gotgbot.Bot, ctx *ext.Context, bandID primitive.ObjectID) error {
