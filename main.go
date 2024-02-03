@@ -394,7 +394,12 @@ func main() {
 
 	go func() {
 		// Start receiving updates.
-		err = updater.StartPolling(bot, &ext.PollingOpts{})
+		err = updater.StartPolling(bot, &ext.PollingOpts{
+			GetUpdatesOpts: &gotgbot.GetUpdatesOpts{
+				Timeout: 5,
+				//AllowedUpdates: nil,
+			},
+		})
 		if err != nil {
 			panic("failed to start polling: " + err.Error())
 		}
