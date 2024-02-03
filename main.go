@@ -396,8 +396,10 @@ func main() {
 		// Start receiving updates.
 		err = updater.StartPolling(bot, &ext.PollingOpts{
 			GetUpdatesOpts: &gotgbot.GetUpdatesOpts{
-				Timeout: 5,
-				//AllowedUpdates: nil,
+				Timeout: 10,
+				RequestOpts: &gotgbot.RequestOpts{
+					Timeout: 11 * time.Second,
+				},
 			},
 		})
 		if err != nil {
