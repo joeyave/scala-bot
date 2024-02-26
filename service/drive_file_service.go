@@ -53,7 +53,7 @@ func (s *DriveFileService) FindSomeByFullTextAndFolderID(name string, folderID s
 		` and mimeType = 'application/vnd.google-apps.document'`, name)
 
 	if folderID != "" {
-		q += fmt.Sprintf(` and '%s' in parents`, folderID)
+		q += fmt.Sprintf(` and ('%s' in parents or '%s' in parents)`, folderID, folderID)
 	}
 
 	res, err := s.driveClient.Files.List().
