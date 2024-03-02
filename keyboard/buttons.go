@@ -210,3 +210,44 @@ func GetSongsStateFilterButtons(lang string) []gotgbot.KeyboardButton {
 		{Text: txt.Get("button.like", lang)}, {Text: txt.Get("button.calendar", lang)}, {Text: txt.Get("button.numbers", lang)}, {Text: txt.Get("button.tag", lang)},
 	}
 }
+
+func GetStatsPeriodButtonText(period entity.StatsPeriod, lang string, noPeriodWord bool) string {
+	periodStr := ""
+	switch period {
+	case entity.StatsPeriodLastYear:
+		periodStr = txt.Get("text.period.lastYear", lang)
+	case entity.StatsPeriodLastThreeMonths:
+		periodStr = txt.Get("text.period.lastThreeMonths", lang)
+	case entity.StatsPeriodAllTime:
+		periodStr = txt.Get("text.period.allTime", lang)
+	default:
+		periodStr = txt.Get("text.period.lastHalfYear", lang)
+	}
+
+	if noPeriodWord {
+		return periodStr
+	}
+
+	return txt.Get("text.period", lang, periodStr)
+}
+
+func GetStatsPeriodByButtonText(text string, lang string) entity.StatsPeriod {
+	switch text {
+	case txt.Get("text.period.lastYear", lang):
+		return entity.StatsPeriodLastYear
+	case txt.Get("text.period.lastThreeMonths", lang):
+		return entity.StatsPeriodLastThreeMonths
+	case txt.Get("text.period.allTime", lang):
+		return entity.StatsPeriodAllTime
+	default:
+		return entity.StatsPeriodLastHalfYear
+	}
+}
+
+func GetStatsPeriodButton(period entity.StatsPeriod, lang string) []gotgbot.KeyboardButton {
+
+	text := GetStatsPeriodButtonText(period, lang, false)
+	return []gotgbot.KeyboardButton{
+		{Text: text},
+	}
+}

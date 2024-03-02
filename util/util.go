@@ -53,4 +53,13 @@ func ParseCallbackPayload(data string) string {
 	return strings.Join(parsedData[1:], ":")
 }
 
+// todo
+func ToUpperFirstLetter(input string) string {
+	if input == "" {
+		return ""
+	}
+	//return strings.ToUpper(input[:1]) + input[1:]
+	return input
+}
+
 const CallbackCacheURL = "https://t.me/callbackCache"

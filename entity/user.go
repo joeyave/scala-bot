@@ -10,6 +10,7 @@ import (
 	"google.golang.org/api/drive/v3"
 	"net/url"
 	"sort"
+	"time"
 )
 
 type User struct {
@@ -45,10 +46,33 @@ type State struct {
 	Index int `bson:"index,omitempty"`
 }
 
+type StatsPeriod int
+
+const (
+	StatsPeriodLastHalfYear = iota
+	StatsPeriodLastYear
+	StatsPeriodAllTime
+	StatsPeriodLastThreeMonths
+)
+
+func GetStatsPeriodStartDate(period StatsPeriod, now time.Time) time.Time {
+	switch period {
+	case StatsPeriodLastYear:
+		return now.AddDate(-1, 0, 0)
+	case StatsPeriodAllTime:
+		return time.Date(2000, 0, 0, 0, 0, 0, 0, time.Local)
+	case StatsPeriodLastThreeMonths:
+		return now.AddDate(0, -3, 0)
+	default:
+		return now.AddDate(0, -6, 0)
+	}
+}
+
 type Cache struct {
-	Query     string `bson:"query,omitempty"`
-	Filter    string `bson:"filter,omitempty"`
-	PageIndex int    `bson:"page_index,omitempty"`
+	Query       string      `bson:"query,omitempty"`
+	Filter      string      `bson:"filter,omitempty"`
+	PageIndex   int         `bson:"page_index,omitempty"`
+	StatsPeriod StatsPeriod `bson:"stats_period,omitempty"`
 
 	Buttons []gotgbot.KeyboardButton `bson:"buttons,omitempty"`
 

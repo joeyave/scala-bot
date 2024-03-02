@@ -244,9 +244,17 @@ var locales = map[string]map[string]string{
 		"ru": "Выбери тег:",
 		"uk": "Вибери тег:",
 	},
+	"text.chooseStatsPeriod": {
+		"ru": "Выбери период для статистики:",
+		"uk": "Вибери період для статистики:",
+	},
 	"text.chooseSong": {
 		"ru": "Выбери песню:",
 		"uk": "Вибери пісню:",
+	},
+	"text.startDateToDo": {
+		"ru": "Статистика считается за последние пол года.",
+		"uk": "Статистика рахується за останні пів року.",
 	},
 	"text.chooseSongOrTypeAnotherQuery": {
 		"ru": "Выбери песню по запросу %s или введи другое название:",
@@ -475,6 +483,26 @@ var locales = map[string]map[string]string{
 	"text.cleanupDatabase": {
 		"ru": "Чистим базу",
 		"uk": "Чистимо базу",
+	},
+	"text.period": {
+		"ru": "Период: %s",
+		"uk": "Період: %s",
+	},
+	"text.period.lastHalfYear": {
+		"ru": "за последние пол года",
+		"uk": "за останні пів року",
+	},
+	"text.period.lastYear": {
+		"ru": "за последний год",
+		"uk": "за останній рік",
+	},
+	"text.period.allTime": {
+		"ru": "за все время",
+		"uk": "за весь час",
+	},
+	"text.period.lastThreeMonths": {
+		"ru": "за последние три месяца",
+		"uk": "за останні три місяці",
 	},
 }
 

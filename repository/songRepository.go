@@ -339,12 +339,13 @@ func (r *SongRepository) generateUniqueID() primitive.ObjectID {
 	return ID
 }
 
-func (r *SongRepository) FindAllExtraByPageNumberSortedByEventsNumber(bandID primitive.ObjectID, pageNumber int) ([]*entity.SongWithEvents, error) {
+func (r *SongRepository) FindAllExtraByPageNumberSortedByEventsNumber(bandID primitive.ObjectID, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {
 
 	return r.findWithExtra(
 		bson.M{
 			"bandId": bandID,
 		},
+		eventsStartDate,
 		bson.M{
 			"$addFields": bson.M{
 				"eventsSize": bson.M{"$size": "$events"},
@@ -365,12 +366,13 @@ func (r *SongRepository) FindAllExtraByPageNumberSortedByEventsNumber(bandID pri
 	)
 }
 
-func (r *SongRepository) FindAllExtraByPageNumberSortedByLatestEventDate(bandID primitive.ObjectID, pageNumber int) ([]*entity.SongWithEvents, error) {
+func (r *SongRepository) FindAllExtraByPageNumberSortedByLatestEventDate(bandID primitive.ObjectID, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {
 
 	return r.findWithExtra(
 		bson.M{
 			"bandId": bandID,
 		},
+		eventsStartDate,
 		bson.M{
 			"$sort": bson.D{
 				{"events.0.time", -1},
@@ -386,13 +388,14 @@ func (r *SongRepository) FindAllExtraByPageNumberSortedByLatestEventDate(bandID 
 	)
 }
 
-func (r *SongRepository) FindManyExtraByTag(tag string, bandID primitive.ObjectID, pageNumber int) ([]*entity.SongWithEvents, error) {
+func (r *SongRepository) FindManyExtraByTag(tag string, bandID primitive.ObjectID, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {
 
 	return r.findWithExtra(
 		bson.M{
 			"bandId": bandID,
 			"tags":   tag,
 		},
+		eventsStartDate,
 		bson.M{
 			"$skip": pageNumber * helpers.SongsPageSize,
 		},
@@ -402,17 +405,18 @@ func (r *SongRepository) FindManyExtraByTag(tag string, bandID primitive.ObjectI
 	)
 }
 
-func (r *SongRepository) FindManyExtraByDriveFileIDs(driveFileIDs []string) ([]*entity.SongWithEvents, error) {
+func (r *SongRepository) FindManyExtraByDriveFileIDs(driveFileIDs []string, eventsStartDate time.Time) ([]*entity.SongWithEvents, error) {
 	return r.findWithExtra(
 		bson.M{
 			"driveFileId": bson.M{
 				"$in": driveFileIDs,
 			},
 		},
+		eventsStartDate,
 	)
 }
 
-func (r *SongRepository) FindManyExtraByPageNumberLiked(bandID primitive.ObjectID, userID int64, pageNumber int) ([]*entity.SongWithEvents, error) {
+func (r *SongRepository) FindManyExtraByPageNumberLiked(bandID primitive.ObjectID, userID int64, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {
 	return r.findWithExtra(
 		bson.M{
 			"bandId": bandID,
@@ -420,6 +424,7 @@ func (r *SongRepository) FindManyExtraByPageNumberLiked(bandID primitive.ObjectI
 				"$elemMatch": bson.M{"userId": userID},
 			},
 		},
+		eventsStartDate,
 		bson.M{
 			"$sort": bson.M{
 				"likes.time": -1,
@@ -434,7 +439,7 @@ func (r *SongRepository) FindManyExtraByPageNumberLiked(bandID primitive.ObjectI
 	)
 }
 
-func (r *SongRepository) findWithExtra(m bson.M, opts ...bson.M) ([]*entity.SongWithEvents, error) {
+func (r *SongRepository) findWithExtra(m bson.M, eventsStartDate time.Time, opts ...bson.M) ([]*entity.SongWithEvents, error) {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	pipeline := bson.A{
@@ -495,7 +500,14 @@ func (r *SongRepository) findWithExtra(m bson.M, opts ...bson.M) ([]*entity.Song
 						},
 					},
 					bson.M{
-						"$match": bson.M{"$expr": bson.M{"$in": bson.A{"$$songId", "$songIds"}}},
+						"$match": bson.M{
+							"$expr": bson.M{
+								"$and": bson.A{
+									bson.M{"$gte": bson.A{"$time", eventsStartDate}},
+									bson.M{"$in": bson.A{"$$songId", "$songIds"}},
+								},
+							},
+						},
 					},
 					bson.M{
 						"$lookup": bson.M{

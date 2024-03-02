@@ -43,8 +43,8 @@ func (s *SongService) FindManyByDriveFileIDs(IDs []string) ([]*entity.Song, erro
 	return s.songRepository.FindManyByDriveFileIDs(IDs)
 }
 
-func (s *SongService) FindManyExtraLiked(bandID primitive.ObjectID, userID int64, pageNumber int) ([]*entity.SongWithEvents, error) {
-	return s.songRepository.FindManyExtraByPageNumberLiked(bandID, userID, pageNumber)
+func (s *SongService) FindManyExtraLiked(bandID primitive.ObjectID, userID int64, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {
+	return s.songRepository.FindManyExtraByPageNumberLiked(bandID, userID, eventsStartDate, pageNumber)
 }
 
 func (s *SongService) FindOneByID(ID primitive.ObjectID) (*entity.Song, error) {
@@ -159,16 +159,16 @@ func (s *SongService) Dislike(songID primitive.ObjectID, userID int64) error {
 	return s.songRepository.Dislike(songID, userID)
 }
 
-func (s *SongService) FindAllExtraByPageNumberSortedByEventsNumber(bandID primitive.ObjectID, pageNumber int) ([]*entity.SongWithEvents, error) {
-	return s.songRepository.FindAllExtraByPageNumberSortedByEventsNumber(bandID, pageNumber)
+func (s *SongService) FindAllExtraByPageNumberSortedByEventsNumber(bandID primitive.ObjectID, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {
+	return s.songRepository.FindAllExtraByPageNumberSortedByEventsNumber(bandID, eventsStartDate, pageNumber)
 }
 
-func (s *SongService) FindAllExtraByPageNumberSortedByLatestEventDate(bandID primitive.ObjectID, pageNumber int) ([]*entity.SongWithEvents, error) {
-	return s.songRepository.FindAllExtraByPageNumberSortedByLatestEventDate(bandID, pageNumber)
+func (s *SongService) FindAllExtraByPageNumberSortedByLatestEventDate(bandID primitive.ObjectID, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {
+	return s.songRepository.FindAllExtraByPageNumberSortedByLatestEventDate(bandID, eventsStartDate, pageNumber)
 }
 
-func (s *SongService) FindManyExtraByTag(tag string, bandID primitive.ObjectID, pageNumber int) ([]*entity.SongWithEvents, error) {
-	return s.songRepository.FindManyExtraByTag(tag, bandID, pageNumber)
+func (s *SongService) FindManyExtraByTag(tag string, bandID primitive.ObjectID, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {
+	return s.songRepository.FindManyExtraByTag(tag, bandID, eventsStartDate, pageNumber)
 }
 
 func songHasOutdatedPDF(song *entity.Song, driveFile *drive.File) bool {
