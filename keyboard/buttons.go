@@ -251,3 +251,38 @@ func GetStatsPeriodButton(period entity.StatsPeriod, lang string) []gotgbot.Keyb
 		{Text: text},
 	}
 }
+
+func GetStatsSortingButtonText(sorting entity.StatsSorting, lang string, noSortingWord bool) string {
+	str := ""
+	switch sorting {
+	case entity.StatsSortingAscending:
+		str = txt.Get("text.sorting.ascending", lang)
+	case entity.StatsSortingDescending:
+		str = txt.Get("text.sorting.descending", lang)
+	}
+
+	if noSortingWord {
+		return str
+	}
+
+	return txt.Get("text.sorting", lang, str)
+}
+
+func GetStatsSortingByButtonText(text string, lang string) entity.StatsSorting {
+	switch text {
+	case txt.Get("text.sorting.ascending", lang):
+		return entity.StatsSortingAscending
+	case txt.Get("text.sorting.descending", lang):
+		return entity.StatsSortingDescending
+	default:
+		return entity.StatsSortingDescending
+	}
+}
+
+func GetStatsSortingButton(sorting entity.StatsSorting, lang string) []gotgbot.KeyboardButton {
+
+	text := GetStatsSortingButtonText(sorting, lang, false)
+	return []gotgbot.KeyboardButton{
+		{Text: text},
+	}
+}

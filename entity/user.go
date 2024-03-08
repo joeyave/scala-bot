@@ -55,6 +55,13 @@ const (
 	StatsPeriodLastThreeMonths
 )
 
+type StatsSorting int
+
+const (
+	StatsSortingDescending = iota
+	StatsSortingAscending
+)
+
 func GetStatsPeriodStartDate(period StatsPeriod, now time.Time) time.Time {
 	switch period {
 	case StatsPeriodLastYear:
@@ -69,10 +76,11 @@ func GetStatsPeriodStartDate(period StatsPeriod, now time.Time) time.Time {
 }
 
 type Cache struct {
-	Query       string      `bson:"query,omitempty"`
-	Filter      string      `bson:"filter,omitempty"`
-	PageIndex   int         `bson:"page_index,omitempty"`
-	StatsPeriod StatsPeriod `bson:"stats_period,omitempty"`
+	Query        string       `bson:"query,omitempty"`
+	Filter       string       `bson:"filter,omitempty"`
+	PageIndex    int          `bson:"page_index,omitempty"`
+	StatsPeriod  StatsPeriod  `bson:"stats_period,omitempty"`
+	StatsSorting StatsSorting `bson:"stats_sorting,omitempty"`
 
 	Buttons []gotgbot.KeyboardButton `bson:"buttons,omitempty"`
 

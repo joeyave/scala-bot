@@ -4,11 +4,11 @@ import (
 	"errors"
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/repository"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/sync/errgroup"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
+	"google.golang.org/api/googleapi"
 	"time"
 )
 
@@ -130,7 +130,21 @@ func (s *SongService) UpdateMany(songs []*entity.Song) (*mongo.BulkWriteResult, 
 func (s *SongService) DeleteOneByDriveFileID(driveFileID string) error {
 	err := s.driveRepository.Files.Delete(driveFileID).Do()
 	if err != nil {
-		return err
+		var gErr *googleapi.Error
+		if errors.As(err, &gErr) {
+			isInsufficientFilePermissions := false
+			for _, e := range gErr.Errors {
+				if e.Reason == "insufficientFilePermissions" {
+					isInsufficientFilePermissions = true
+					break
+				}
+			}
+			if !isInsufficientFilePermissions {
+				return err
+			}
+		} else {
+			return err
+		}
 	}
 
 	_, err = s.songRepository.DeleteOneByDriveFileID(driveFileID)
@@ -159,12 +173,12 @@ func (s *SongService) Dislike(songID primitive.ObjectID, userID int64) error {
 	return s.songRepository.Dislike(songID, userID)
 }
 
-func (s *SongService) FindAllExtraByPageNumberSortedByEventsNumber(bandID primitive.ObjectID, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {
-	return s.songRepository.FindAllExtraByPageNumberSortedByEventsNumber(bandID, eventsStartDate, pageNumber)
+func (s *SongService) FindAllExtraByPageNumberSortedByEventsNumber(bandID primitive.ObjectID, eventsStartDate time.Time, isAscending bool, pageNumber int) ([]*entity.SongWithEvents, error) {
+	return s.songRepository.FindAllExtraByPageNumberSortedByEventsNumber(bandID, eventsStartDate, isAscending, pageNumber)
 }
 
-func (s *SongService) FindAllExtraByPageNumberSortedByLatestEventDate(bandID primitive.ObjectID, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {
-	return s.songRepository.FindAllExtraByPageNumberSortedByLatestEventDate(bandID, eventsStartDate, pageNumber)
+func (s *SongService) FindAllExtraByPageNumberSortedByEventDate(bandID primitive.ObjectID, eventsStartDate time.Time, isAscending bool, pageNumber int) ([]*entity.SongWithEvents, error) {
+	return s.songRepository.FindAllExtraByPageNumberSortedByEventDate(bandID, eventsStartDate, isAscending, pageNumber)
 }
 
 func (s *SongService) FindManyExtraByTag(tag string, bandID primitive.ObjectID, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {

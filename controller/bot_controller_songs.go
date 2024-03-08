@@ -297,6 +297,8 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 			{
 
 				statsPeriodStartDate := entity.GetStatsPeriodStartDate(user.Cache.StatsPeriod, time.Now())
+				isAscending := user.Cache.StatsSorting == entity.StatsSortingAscending
+
 				ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				switch ctx.EffectiveMessage.Text {
@@ -318,10 +320,10 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 				case txt.Get("button.like", ctx.EffectiveUser.LanguageCode):
 					songs, err = c.SongService.FindManyExtraLiked(user.BandID, user.ID, statsPeriodStartDate, user.Cache.PageIndex)
 				case txt.Get("button.calendar", ctx.EffectiveUser.LanguageCode):
-					songs, err = c.SongService.FindAllExtraByPageNumberSortedByLatestEventDate(user.BandID, statsPeriodStartDate, user.Cache.PageIndex)
+					songs, err = c.SongService.FindAllExtraByPageNumberSortedByEventDate(user.BandID, statsPeriodStartDate, isAscending, user.Cache.PageIndex)
 					showStatsPeriodButton = true
 				case txt.Get("button.numbers", ctx.EffectiveUser.LanguageCode):
-					songs, err = c.SongService.FindAllExtraByPageNumberSortedByEventsNumber(user.BandID, statsPeriodStartDate, user.Cache.PageIndex)
+					songs, err = c.SongService.FindAllExtraByPageNumberSortedByEventsNumber(user.BandID, statsPeriodStartDate, isAscending, user.Cache.PageIndex)
 					showStatsPeriodButton = true
 				case txt.Get("button.tag", ctx.EffectiveUser.LanguageCode):
 					if keyboard.IsSelectedButton(ctx.EffectiveMessage.Text) {
@@ -350,7 +352,7 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 				}
 				markup.Keyboard = append(markup.Keyboard, filterButtons)
 				if showStatsPeriodButton {
-					markup.Keyboard = append(markup.Keyboard, keyboard.GetStatsPeriodButton(user.Cache.StatsPeriod, ctx.EffectiveUser.LanguageCode))
+					markup.Keyboard = append(markup.Keyboard, append(keyboard.GetStatsPeriodButton(user.Cache.StatsPeriod, ctx.EffectiveUser.LanguageCode), keyboard.GetStatsSortingButton(user.Cache.StatsSorting, ctx.EffectiveUser.LanguageCode)...))
 				}
 
 				for _, song := range songs {
@@ -398,6 +400,9 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 				case keyboard.GetStatsPeriodButtonText(user.Cache.StatsPeriod, ctx.EffectiveUser.LanguageCode, false):
 					user.Cache.PageIndex = 0
 					return c.filterSongs(3)(bot, ctx)
+				case keyboard.GetStatsSortingButtonText(user.Cache.StatsSorting, ctx.EffectiveUser.LanguageCode, false):
+					user.Cache.PageIndex = 0
+					return c.filterSongs(5)(bot, ctx)
 				}
 
 				if keyboard.IsSelectedButton(ctx.EffectiveMessage.Text) {
@@ -458,10 +463,10 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 				ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				periods := []entity.StatsPeriod{
+					entity.StatsPeriodLastThreeMonths,
 					entity.StatsPeriodLastHalfYear,
 					entity.StatsPeriodLastYear,
 					entity.StatsPeriodAllTime,
-					entity.StatsPeriodLastThreeMonths,
 				}
 
 				markup := &gotgbot.ReplyKeyboardMarkup{
@@ -499,6 +504,51 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 			ctx.EffectiveChat.SendAction(bot, "typing", nil)
 			statsPeriod := keyboard.GetStatsPeriodByButtonText(ctx.EffectiveMessage.Text, ctx.EffectiveUser.LanguageCode)
 			user.Cache.StatsPeriod = statsPeriod
+			return c.filterSongs(0)(bot, ctx)
+		case 5:
+			{
+				ctx.EffectiveChat.SendAction(bot, "typing", nil)
+
+				periods := []entity.StatsSorting{
+					entity.StatsSortingAscending,
+					entity.StatsSortingDescending,
+				}
+
+				markup := &gotgbot.ReplyKeyboardMarkup{
+					ResizeKeyboard:        true,
+					InputFieldPlaceholder: txt.Get("text.defaultPlaceholder", ctx.EffectiveUser.LanguageCode),
+				}
+
+				filterButtons := keyboard.GetSongsStateFilterButtons(ctx.EffectiveUser.LanguageCode)
+				for i := range filterButtons {
+					if filterButtons[i].Text == user.Cache.Filter {
+						filterButtons[i] = keyboard.SelectedButton(filterButtons[i].Text)
+						break
+					}
+				}
+				markup.Keyboard = append(markup.Keyboard, filterButtons)
+
+				var kb [][]gotgbot.KeyboardButton
+				for _, period := range periods {
+					kb = append(kb, []gotgbot.KeyboardButton{
+						{Text: util.ToUpperFirstLetter(keyboard.GetStatsSortingButtonText(period, ctx.EffectiveUser.LanguageCode, true))},
+					})
+				}
+
+				markup.Keyboard = append(markup.Keyboard, kb...)
+
+				_, err := ctx.EffectiveChat.SendMessage(bot, txt.Get("text.chooseStatsPeriod", ctx.EffectiveUser.LanguageCode), &gotgbot.SendMessageOpts{ReplyMarkup: markup})
+				if err != nil {
+					return err
+				}
+
+				user.State.Index = 6
+				return nil
+			}
+		case 6:
+			ctx.EffectiveChat.SendAction(bot, "typing", nil)
+			statsSorting := keyboard.GetStatsSortingByButtonText(ctx.EffectiveMessage.Text, ctx.EffectiveUser.LanguageCode)
+			user.Cache.StatsSorting = statsSorting
 			return c.filterSongs(0)(bot, ctx)
 		}
 
