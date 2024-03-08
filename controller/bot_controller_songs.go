@@ -309,8 +309,9 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 				}
 
 				var (
-					songs []*entity.SongWithEvents
-					err   error
+					songs                 []*entity.SongWithEvents
+					err                   error
+					showStatsPeriodButton bool
 				)
 
 				switch user.Cache.Filter {
@@ -318,8 +319,10 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 					songs, err = c.SongService.FindManyExtraLiked(user.BandID, user.ID, statsPeriodStartDate, user.Cache.PageIndex)
 				case txt.Get("button.calendar", ctx.EffectiveUser.LanguageCode):
 					songs, err = c.SongService.FindAllExtraByPageNumberSortedByLatestEventDate(user.BandID, statsPeriodStartDate, user.Cache.PageIndex)
+					showStatsPeriodButton = true
 				case txt.Get("button.numbers", ctx.EffectiveUser.LanguageCode):
 					songs, err = c.SongService.FindAllExtraByPageNumberSortedByEventsNumber(user.BandID, statsPeriodStartDate, user.Cache.PageIndex)
+					showStatsPeriodButton = true
 				case txt.Get("button.tag", ctx.EffectiveUser.LanguageCode):
 					if keyboard.IsSelectedButton(ctx.EffectiveMessage.Text) {
 						return c.GetSongs(0)(bot, ctx)
@@ -346,7 +349,9 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 					}
 				}
 				markup.Keyboard = append(markup.Keyboard, filterButtons)
-				markup.Keyboard = append(markup.Keyboard, keyboard.GetStatsPeriodButton(user.Cache.StatsPeriod, ctx.EffectiveUser.LanguageCode))
+				if showStatsPeriodButton {
+					markup.Keyboard = append(markup.Keyboard, keyboard.GetStatsPeriodButton(user.Cache.StatsPeriod, ctx.EffectiveUser.LanguageCode))
+				}
 
 				for _, song := range songs {
 
