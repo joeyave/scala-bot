@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
@@ -12,6 +13,7 @@ import (
 	"github.com/joeyave/scala-bot/state"
 	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
+	"github.com/rs/zerolog/log"
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 	"io"
 	"os"
@@ -27,6 +29,24 @@ var ffmpegAudioExt = "mp3"
 func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, ctx *ext.Context) error {
 
 	user := ctx.Data["user"].(*entity.User)
+
+	logsChannelID, err := strconv.ParseInt(os.Getenv("BOT_ALERTS_CHANNEL_ID"), 10, 64)
+	if err == nil {
+		if ctx.EffectiveMessage.Audio != nil {
+			b, err := json.Marshal(ctx.EffectiveMessage.Audio)
+			if err == nil {
+				_, err = bot.SendMessage(logsChannelID, fmt.Sprintf("Received audio file.\n<pre>%s</pre>", string(b)), &gotgbot.SendMessageOpts{
+					LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
+						IsDisabled: true,
+					},
+					ParseMode: "HTML",
+				})
+				if err != nil {
+					log.Error().Err(err).Msg("Error!")
+				}
+			}
+		}
+	}
 
 	if user.State.Name == state.SongVoices_CreateVoice {
 		return c.SongVoices_CreateVoice(user.State.Index)(bot, ctx)
