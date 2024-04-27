@@ -7,7 +7,6 @@ import (
 	"github.com/joeyave/chords-transposer/transposer"
 	"github.com/joeyave/scala-bot/helpers"
 	"golang.org/x/sync/errgroup"
-
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
 	"io"
@@ -52,14 +51,17 @@ func (s *DriveFileService) FindSomeByFullTextAndFolderID(name string, folderIDs 
 		` and trashed = false`+
 		` and mimeType = 'application/vnd.google-apps.document'`, name)
 
-	if len(folderIDs) != 0 {
+	var folderIDsCleaned []string
+	for _, folderID := range folderIDs {
+		if folderID != "" {
+			folderIDsCleaned = append(folderIDsCleaned, folderID)
+		}
+	}
+	if len(folderIDsCleaned) != 0 {
 		qBuilder := strings.Builder{}
-		for i, folderID := range folderIDs {
-			if folderID == "" {
-				continue
-			}
+		for i, folderID := range folderIDsCleaned {
 			qBuilder.WriteString(fmt.Sprintf("'%s' in parents", folderID))
-			if i < len(folderIDs)-1 {
+			if i < len(folderIDsCleaned)-1 {
 				qBuilder.WriteString(" or ")
 			}
 		}
@@ -87,15 +89,17 @@ func (s *DriveFileService) FindOneByNameAndFolderID(name string, folderIDs []str
 		` and trashed = false`+
 		` and mimeType = 'application/vnd.google-apps.document'`, name)
 
-	if len(folderIDs) != 0 {
+	var folderIDsCleaned []string
+	for _, folderID := range folderIDs {
+		if folderID != "" {
+			folderIDsCleaned = append(folderIDsCleaned, folderID)
+		}
+	}
+	if len(folderIDsCleaned) != 0 {
 		qBuilder := strings.Builder{}
-		for i, folderID := range folderIDs {
-			if folderID == "" {
-				continue
-			}
-
+		for i, folderID := range folderIDsCleaned {
 			qBuilder.WriteString(fmt.Sprintf("'%s' in parents", folderID))
-			if i < len(folderIDs)-1 {
+			if i < len(folderIDsCleaned)-1 {
 				qBuilder.WriteString(" or ")
 			}
 		}
