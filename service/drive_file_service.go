@@ -55,6 +55,9 @@ func (s *DriveFileService) FindSomeByFullTextAndFolderID(name string, folderIDs 
 	if len(folderIDs) != 0 {
 		qBuilder := strings.Builder{}
 		for i, folderID := range folderIDs {
+			if folderID == "" {
+				continue
+			}
 			qBuilder.WriteString(fmt.Sprintf("'%s' in parents", folderID))
 			if i < len(folderIDs)-1 {
 				qBuilder.WriteString(" or ")
@@ -87,6 +90,10 @@ func (s *DriveFileService) FindOneByNameAndFolderID(name string, folderIDs []str
 	if len(folderIDs) != 0 {
 		qBuilder := strings.Builder{}
 		for i, folderID := range folderIDs {
+			if folderID == "" {
+				continue
+			}
+
 			qBuilder.WriteString(fmt.Sprintf("'%s' in parents", folderID))
 			if i < len(folderIDs)-1 {
 				qBuilder.WriteString(" or ")
@@ -353,8 +360,9 @@ func (s *DriveFileService) FindOrCreateOneFolderByNameAndFolderID(name string, f
 
 	if len(res.Files) == 0 {
 		return s.driveClient.Files.Create(&drive.File{
-			Name:    name,
-			Parents: []string{folderID},
+			Name:     name,
+			MimeType: "application/vnd.google-apps.folder",
+			Parents:  []string{folderID},
 		}).Do()
 	}
 
