@@ -7,6 +7,8 @@ import (
 	"github.com/joeyave/scala-bot/state"
 	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
+	"golang.org/x/exp/slices"
+	"google.golang.org/api/drive/v3"
 	"os"
 )
 
@@ -175,7 +177,7 @@ func SongInitIQ(song *entity.Song, user *entity.User, lang string) [][]gotgbot.I
 	return keyboard
 }
 
-func SongEdit(song *entity.Song, user *entity.User, lang string) [][]gotgbot.InlineKeyboardButton {
+func SongEdit(song *entity.Song, driveFile *drive.File, user *entity.User, lang string) [][]gotgbot.InlineKeyboardButton {
 
 	keyboard := [][]gotgbot.InlineKeyboardButton{
 		//{
@@ -200,7 +202,17 @@ func SongEdit(song *entity.Song, user *entity.User, lang string) [][]gotgbot.Inl
 
 	// todo: allow for Admins
 	if user.ID == 195295372 {
-		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.delete", lang), CallbackData: util.CallbackData(state.SongDeleteConfirm, song.ID.Hex())}})
+		if slices.Contains(driveFile.Parents, song.Band.ArchiveFolderID) {
+			keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
+				{Text: txt.Get("button.unarchiveText", lang), CallbackData: util.CallbackData(state.SongArchive, song.ID.Hex()+":unarchive")},
+				{Text: txt.Get("button.delete", lang), CallbackData: util.CallbackData(state.SongDeleteConfirm, song.ID.Hex())},
+			})
+		} else {
+			keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
+				{Text: txt.Get("button.archiveText", lang), CallbackData: util.CallbackData(state.SongArchive, song.ID.Hex()+":archive")},
+				{Text: txt.Get("button.delete", lang), CallbackData: util.CallbackData(state.SongDeleteConfirm, song.ID.Hex())},
+			})
+		}
 	}
 
 	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.back", lang), CallbackData: util.CallbackData(state.SongCB, song.ID.Hex()+":init")}})

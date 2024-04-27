@@ -279,6 +279,7 @@ func main() {
 
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SongCB), botController.SongCB), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SongLike), botController.SongLike), 1)
+	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SongArchive), botController.SongArchive), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SongVoices), botController.SongVoices), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SongVoicesCreateVoiceAskForAudio), botController.SongVoicesAddVoiceAskForAudio), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SongVoice), botController.SongVoice), 1)
@@ -303,7 +304,7 @@ func main() {
 		//	return nil
 		//}
 
-		driveFiles, _, err := driveFileService.FindSomeByFullTextAndFolderID(ctx.InlineQuery.Query, user.Band.DriveFolderID, "")
+		driveFiles, _, err := driveFileService.FindSomeByFullTextAndFolderID(ctx.InlineQuery.Query, []string{user.Band.DriveFolderID, user.Band.ArchiveFolderID}, "")
 		if err != nil {
 			return err
 		}

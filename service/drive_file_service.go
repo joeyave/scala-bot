@@ -45,15 +45,22 @@ func (s *DriveFileService) FindAllByFolderID(folderID string, nextPageToken stri
 	return res.Files, res.NextPageToken, nil
 }
 
-func (s *DriveFileService) FindSomeByFullTextAndFolderID(name string, folderID string, pageToken string) ([]*drive.File, string, error) {
+func (s *DriveFileService) FindSomeByFullTextAndFolderID(name string, folderIDs []string, pageToken string) ([]*drive.File, string, error) {
 	name = helpers.JsonEscape(name)
 
 	q := fmt.Sprintf(`fullText contains '%s'`+
 		` and trashed = false`+
 		` and mimeType = 'application/vnd.google-apps.document'`, name)
 
-	if folderID != "" {
-		q += fmt.Sprintf(` and ('%s' in parents or '%s' in parents)`, folderID, folderID)
+	if len(folderIDs) != 0 {
+		qBuilder := strings.Builder{}
+		for i, folderID := range folderIDs {
+			qBuilder.WriteString(fmt.Sprintf("'%s' in parents", folderID))
+			if i < len(folderIDs)-1 {
+				qBuilder.WriteString(" or ")
+			}
+		}
+		q += fmt.Sprintf(` and (%s)`, qBuilder.String())
 	}
 
 	res, err := s.driveClient.Files.List().
@@ -70,15 +77,22 @@ func (s *DriveFileService) FindSomeByFullTextAndFolderID(name string, folderID s
 	return res.Files, res.NextPageToken, nil
 }
 
-func (s *DriveFileService) FindOneByNameAndFolderID(name string, folderID string) (*drive.File, error) {
+func (s *DriveFileService) FindOneByNameAndFolderID(name string, folderIDs []string) (*drive.File, error) {
 	name = helpers.JsonEscape(name)
 
 	q := fmt.Sprintf(`name = '%s'`+
 		` and trashed = false`+
 		` and mimeType = 'application/vnd.google-apps.document'`, name)
 
-	if folderID != "" {
-		q += fmt.Sprintf(` and '%s' in parents`, folderID)
+	if len(folderIDs) != 0 {
+		qBuilder := strings.Builder{}
+		for i, folderID := range folderIDs {
+			qBuilder.WriteString(fmt.Sprintf("'%s' in parents", folderID))
+			if i < len(folderIDs)-1 {
+				qBuilder.WriteString(" or ")
+			}
+		}
+		q += fmt.Sprintf(` and (%s)`, qBuilder.String())
 	}
 
 	res, err := s.driveClient.Files.List().
@@ -316,6 +330,51 @@ func (s *DriveFileService) CloneOne(fileToCloneID string, newFile *drive.File) (
 	}
 
 	return newFile, nil
+}
+
+func (s *DriveFileService) FindOrCreateOneFolderByNameAndFolderID(name string, folderID string) (*drive.File, error) {
+	name = helpers.JsonEscape(name)
+
+	q := fmt.Sprintf(`name = '%s'`+
+		` and trashed = false`+
+		` and mimeType = 'application/vnd.google-apps.folder'`, name)
+
+	if folderID != "" {
+		q += fmt.Sprintf(` and '%s' in parents`, folderID)
+	}
+
+	res, err := s.driveClient.Files.List().
+		Q(q).
+		Fields("nextPageToken, files(id, name, modifiedTime, parents)").
+		PageSize(1).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(res.Files) == 0 {
+		return s.driveClient.Files.Create(&drive.File{
+			Name:    name,
+			Parents: []string{folderID},
+		}).Do()
+	}
+
+	return res.Files[0], nil
+}
+
+func (s *DriveFileService) MoveOne(fileID string, newFolderID string) (*drive.File, error) {
+	file, err := s.driveClient.Files.Get(fileID).Fields("parents").Do()
+	if err != nil {
+		return nil, err
+	}
+
+	previousParents := strings.Join(file.Parents, ",")
+
+	newFile, err := s.driveClient.Files.Update(fileID, nil).
+		AddParents(newFolderID).RemoveParents(previousParents).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+	if err != nil {
+		return nil, err
+	}
+	return newFile, err
 }
 
 func (s *DriveFileService) DownloadOneByID(ID string) (*io.Reader, error) {

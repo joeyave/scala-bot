@@ -71,7 +71,7 @@ window.addEventListener('DOMContentLoaded', (e) => {
     let sortableInit = JSON.stringify(sortable.toArray());
 
     new InstantSearch(search, {
-        searchUrl: new URL(`/api/drive-files/search?driveFolderId=${event.band.driveFolderId}`, window.location.origin),
+        searchUrl: new URL(`/api/drive-files/search?driveFolderId=${event.band.driveFolderId}&archiveFolderId=${event.band.archiveFolderId}`, window.location.origin),
         queryParam: "q",
         responseParser: (responseData) => {
             return responseData.results;

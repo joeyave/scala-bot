@@ -169,8 +169,50 @@ func (s *SongService) Like(songID primitive.ObjectID, userID int64) error {
 	return s.songRepository.Like(songID, userID)
 }
 
+const archiveFolderName = "Archive"
+
 func (s *SongService) Dislike(songID primitive.ObjectID, userID int64) error {
 	return s.songRepository.Dislike(songID, userID)
+}
+
+func (s *SongService) Archive(songID primitive.ObjectID) (*drive.File, error) {
+
+	song, err := s.FindOneByID(songID)
+	if err != nil {
+		return nil, err
+	}
+
+	if song.Band.ArchiveFolderID == "" {
+		archiveFolder, err := s.driveFileService.FindOrCreateOneFolderByNameAndFolderID(archiveFolderName, song.Band.DriveFolderID)
+		if err != nil {
+			return nil, err
+		}
+		song.Band.ArchiveFolderID = archiveFolder.Id
+
+		_, _ = s.bandRepository.UpdateOne(*song.Band)
+	}
+
+	driveFile, err := s.driveFileService.MoveOne(song.DriveFileID, song.Band.ArchiveFolderID)
+	if err != nil {
+		return nil, err
+	}
+
+	return driveFile, err
+}
+
+func (s *SongService) Unarchive(songID primitive.ObjectID) (*drive.File, error) {
+
+	song, err := s.FindOneByID(songID)
+	if err != nil {
+		return nil, err
+	}
+
+	driveFile, err := s.driveFileService.MoveOne(song.DriveFileID, song.Band.DriveFolderID)
+	if err != nil {
+		return nil, err
+	}
+
+	return driveFile, err
 }
 
 func (s *SongService) FindAllExtraByPageNumberSortedByEventsNumber(bandID primitive.ObjectID, eventsStartDate time.Time, isAscending bool, pageNumber int) ([]*entity.SongWithEvents, error) {

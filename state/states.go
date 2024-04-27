@@ -50,6 +50,8 @@ const (
 	SongDeleteConfirm
 	SongDelete
 
+	SongArchive
+
 	SettingsCB
 	SettingsBands
 	SettingsChooseBand

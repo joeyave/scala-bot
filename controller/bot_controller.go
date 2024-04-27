@@ -225,9 +225,9 @@ func (c *BotController) search(index int) handlers.Response {
 				)
 				switch user.Cache.Filter {
 				case txt.Get("button.globalSearch", ctx.EffectiveUser.LanguageCode):
-					driveFiles, nextPageToken, err = c.DriveFileService.FindSomeByFullTextAndFolderID(query, "", user.Cache.NextPageToken.GetValue())
+					driveFiles, nextPageToken, err = c.DriveFileService.FindSomeByFullTextAndFolderID(query, []string{}, user.Cache.NextPageToken.GetValue())
 				default:
-					driveFiles, nextPageToken, err = c.DriveFileService.FindSomeByFullTextAndFolderID(query, user.Band.DriveFolderID, user.Cache.NextPageToken.GetValue())
+					driveFiles, nextPageToken, err = c.DriveFileService.FindSomeByFullTextAndFolderID(query, []string{user.Band.DriveFolderID, user.Band.ArchiveFolderID}, user.Cache.NextPageToken.GetValue())
 				}
 				if err != nil {
 					return err
@@ -370,7 +370,7 @@ func (c *BotController) searchSetlist(index int) handlers.Response {
 				currentSongName := songNames[0]
 				user.Cache.SongNames = songNames[1:]
 
-				driveFiles, _, err := c.DriveFileService.FindSomeByFullTextAndFolderID(currentSongName, user.Band.DriveFolderID, "")
+				driveFiles, _, err := c.DriveFileService.FindSomeByFullTextAndFolderID(currentSongName, []string{user.Band.DriveFolderID, user.Band.ArchiveFolderID}, "")
 				if err != nil {
 					return err
 				}
@@ -423,7 +423,7 @@ func (c *BotController) searchSetlist(index int) handlers.Response {
 					return c.searchSetlist(0)(bot, ctx)
 				}
 
-				foundDriveFile, err := c.DriveFileService.FindOneByNameAndFolderID(ctx.EffectiveMessage.Text, user.Band.DriveFolderID)
+				foundDriveFile, err := c.DriveFileService.FindOneByNameAndFolderID(ctx.EffectiveMessage.Text, []string{user.Band.DriveFolderID, user.Band.ArchiveFolderID})
 				if err != nil {
 					user.Cache.SongNames = append([]string{ctx.EffectiveMessage.Text}, user.Cache.SongNames...)
 				} else {

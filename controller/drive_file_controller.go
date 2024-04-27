@@ -13,8 +13,9 @@ type DriveFileController struct {
 func (c *DriveFileController) Search(ctx *gin.Context) {
 	query := ctx.Query("q")
 	folderID := ctx.Query("driveFolderId")
+	archiveFolderID := ctx.Query("archiveFolderId")
 
-	driveFiles, _, err := c.DriveFileService.FindSomeByFullTextAndFolderID(query, folderID, "")
+	driveFiles, _, err := c.DriveFileService.FindSomeByFullTextAndFolderID(query, []string{folderID, archiveFolderID}, "")
 	if err != nil {
 		return
 	}
