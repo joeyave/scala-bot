@@ -46,13 +46,14 @@ window.addEventListener('DOMContentLoaded', (e) => {
 
         filter: ".song-remove",
         onFilter: function (e) {
-            if (Sortable.utils.is(e.target, ".song-remove")) {
-                Telegram.WebApp.HapticFeedback.selectionChanged();
-                e.item.parentNode.removeChild(e.item);
-                // sortableInit = JSON.stringify(sortable.toArray())
-                Telegram.WebApp.MainButton.show()
-                Telegram.WebApp.enableClosingConfirmation()
-            }
+
+            // if (Sortable.utils.is(e.target, ".song-remove")) {
+            Telegram.WebApp.HapticFeedback.selectionChanged();
+            e.item.parentNode.removeChild(e.item);
+            // sortableInit = JSON.stringify(sortable.toArray())
+            Telegram.WebApp.MainButton.show()
+            Telegram.WebApp.enableClosingConfirmation()
+            // }
         },
     });
 
