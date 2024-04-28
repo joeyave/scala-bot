@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="JavaScriptLibraryMappings">
-    <file url="PROJECT" libraries="{Sortable, autosize.js, bootstrap, font-awesome, moment.js, notiflix, tom-select}" />
+    <file url="PROJECT" libraries="{Sortable, autosize.js, bootstrap, font-awesome, moment.js, notiflix, notiflix-3.2.7, textfit, tom-select}" />
   </component>
 </project>

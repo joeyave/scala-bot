@@ -22,22 +22,12 @@ window.addEventListener('DOMContentLoaded', (e) => {
         animation: 100,
         // Element is chosen
         onChoose: function (/**Event*/evt) {
-           Telegram.WebApp.HapticFeedback.impactOccurred("light")
-           // Telegram.WebApp.HapticFeedback.impactOccurred("light")
+            Telegram.WebApp.HapticFeedback.impactOccurred("light")
         },
         onMove: function (evt) {
-            // console.log(evt.willInsertAfter);
             Telegram.WebApp.HapticFeedback.selectionChanged()
         },
         onUpdate: function (/**Event*/e) {
-            // if (currOrder === order) {
-            //     Telegram.WebApp.MainButton.hide()
-            //     console.log("hide")
-            // } else {
-            //     Telegram.WebApp.MainButton.show()
-            //     console.log("show")
-            // }
-
             let hide = []
             Array.from(form.elements).forEach((element) => {
                 hide.push(element.initValue === element.value)
@@ -56,22 +46,24 @@ window.addEventListener('DOMContentLoaded', (e) => {
 
         filter: ".song-remove",
         onFilter: function (e) {
-
             if (Sortable.utils.is(e.target, ".song-remove")) {
                 Telegram.WebApp.HapticFeedback.selectionChanged();
                 e.item.parentNode.removeChild(e.item);
                 // sortableInit = JSON.stringify(sortable.toArray())
                 Telegram.WebApp.MainButton.show()
                 Telegram.WebApp.enableClosingConfirmation()
-                console.log("show")
             }
         },
     });
 
     let sortableInit = JSON.stringify(sortable.toArray());
 
+    var reqUrl = `/api/drive-files/search?driveFolderId=${event.band.driveFolderId}`;
+    if (event.band.archiveFolderId) {
+        reqUrl += `&archiveFolderId=${event.band.archiveFolderId}`
+    }
     new InstantSearch(search, {
-        searchUrl: new URL(`/api/drive-files/search?driveFolderId=${event.band.driveFolderId}&archiveFolderId=${event.band.archiveFolderId}`, window.location.origin),
+        searchUrl: new URL(reqUrl, window.location.origin),
         queryParam: "q",
         responseParser: (responseData) => {
             return responseData.results;

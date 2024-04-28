@@ -60,7 +60,7 @@ func (s *DriveFileService) FindSomeByFullTextAndFolderID(name string, folderIDs 
 	if len(folderIDsCleaned) != 0 {
 		qBuilder := strings.Builder{}
 		for i, folderID := range folderIDsCleaned {
-			qBuilder.WriteString(fmt.Sprintf("'%s' in parents", folderID))
+			qBuilder.WriteString(fmt.Sprintf("'%s' in parents or '%s' in parents", folderID, folderID))
 			if i < len(folderIDsCleaned)-1 {
 				qBuilder.WriteString(" or ")
 			}
@@ -98,7 +98,7 @@ func (s *DriveFileService) FindOneByNameAndFolderID(name string, folderIDs []str
 	if len(folderIDsCleaned) != 0 {
 		qBuilder := strings.Builder{}
 		for i, folderID := range folderIDsCleaned {
-			qBuilder.WriteString(fmt.Sprintf("'%s' in parents", folderID))
+			qBuilder.WriteString(fmt.Sprintf("'%s' in parents or '%s' in parents", folderID, folderID))
 			if i < len(folderIDsCleaned)-1 {
 				qBuilder.WriteString(" or ")
 			}
