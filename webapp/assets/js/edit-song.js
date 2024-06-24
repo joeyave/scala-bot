@@ -153,7 +153,7 @@ window.addEventListener('DOMContentLoaded', (e) => {
             try {
                 originalKey = new Transposer(song.pdf.key).getKey()
             } catch (err) {
-                console.log(err)
+                originalKey = new Transposer(initLyricsDiv.innerHTML).getKey()
             }
 
             let newKey
