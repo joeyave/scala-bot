@@ -322,7 +322,8 @@ func (h *WebAppController) EditSong(ctx *gin.Context) {
 	fmt.Println(time.Since(start).String())
 
 	start = time.Now()
-	lyrics, sectionsNumber := h.DriveFileService.GetTextWithSectionsNumber(song.DriveFileID)
+	htmlLyrics, sectionsNumber := h.DriveFileService.GetHTMLTextWithSectionsNumber(song.DriveFileID)
+	textLyrics, _ := h.DriveFileService.GetLyrics(song.DriveFileID)
 
 	var sectionsSelect []*SelectEntity
 	for i := 0; i < sectionsNumber; i++ {
@@ -337,11 +338,12 @@ func (h *WebAppController) EditSong(ctx *gin.Context) {
 		"ChatID":    chatID,
 		"UserID":    userID,
 
-		"Sections": sectionsSelect,
-		"BPMs":     valuesForSelect(strings.TrimSpace(song.PDF.BPM), bpms, "BPM"),
-		"Times":    valuesForSelect(strings.TrimSpace(song.PDF.Time), times, "Time"),
-		"Tags":     songTags,
-		"Lyrics":   template.HTML(lyrics),
+		"Sections":  sectionsSelect,
+		"BPMs":      valuesForSelect(strings.TrimSpace(song.PDF.BPM), bpms, "BPM"),
+		"Times":     valuesForSelect(strings.TrimSpace(song.PDF.Time), times, "Time"),
+		"Tags":      songTags,
+		"Lyrics":    template.HTML(htmlLyrics),
+		"LyricsStr": textLyrics,
 
 		"Song": song,
 

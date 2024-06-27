@@ -1164,7 +1164,7 @@ func composeCloneWithoutChordsRequests(content []*docs.StructuralElement, index 
 	return requests
 }
 
-func (s *DriveFileService) GetTextWithSectionsNumber(ID string) (string, int) {
+func (s *DriveFileService) GetHTMLTextWithSectionsNumber(ID string) (string, int) {
 
 	doc, err := s.docsRepository.Documents.Get(ID).Do()
 	if err != nil {
@@ -1211,13 +1211,13 @@ func docToHTML(doc *docs.Document) string {
 	return strings.TrimSpace(text)
 }
 
-func (s *DriveFileService) GetTextAsHTML(ID string) io.Reader {
+func (s *DriveFileService) GetLyrics(ID string) (string, error) {
 
 	retrier := retry.NewRetrier(5, 100*time.Millisecond, time.Second)
 
 	var reader io.Reader
 	err := retrier.Run(func() error {
-		res, err := s.driveClient.Files.Export(ID, "text/html").Download()
+		res, err := s.driveClient.Files.Export(ID, "text/plain").Download()
 		if err != nil {
 			return err
 		}
@@ -1227,16 +1227,15 @@ func (s *DriveFileService) GetTextAsHTML(ID string) io.Reader {
 		return nil
 	})
 	if err != nil {
-		return nil
+		return "", err
 	}
 
-	//var html string
-	//b, err := ioutil.ReadAll(reader)
-	//if err == nil {
-	//	html = string(b)
-	//}
+	bytes, err := io.ReadAll(reader)
+	if err != nil {
+		return "", err
+	}
 
-	return reader
+	return string(bytes), nil
 }
 
 var newLinesRegex = regexp.MustCompile(`\n{3,}`)
