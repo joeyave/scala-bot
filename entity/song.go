@@ -23,6 +23,8 @@ type Song struct {
 
 	Likes []*Like  `bson:"likes,omitempty" json:"-"`
 	Tags  []string `bson:"tags" json:"tags"`
+
+	IsArchived bool `bson:"isArchived" json:"isArchived"`
 }
 
 type OldSong struct {

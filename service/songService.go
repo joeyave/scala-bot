@@ -197,6 +197,8 @@ func (s *SongService) Archive(songID primitive.ObjectID) (*drive.File, error) {
 		return nil, err
 	}
 
+	_ = s.songRepository.Archive(songID)
+
 	return driveFile, err
 }
 
@@ -211,6 +213,8 @@ func (s *SongService) Unarchive(songID primitive.ObjectID) (*drive.File, error) 
 	if err != nil {
 		return nil, err
 	}
+
+	_ = s.songRepository.Unarchive(songID)
 
 	return driveFile, err
 }

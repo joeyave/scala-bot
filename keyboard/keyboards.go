@@ -200,8 +200,7 @@ func SongEdit(song *entity.Song, driveFile *drive.File, user *entity.User, lang 
 
 	}
 
-	// todo: allow for Admins
-	if user.ID == 195295372 {
+	if user.IsAdmin() {
 		if slices.Contains(driveFile.Parents, song.Band.ArchiveFolderID) {
 			keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
 				{Text: txt.Get("button.unarchiveText", lang), CallbackData: util.CallbackData(state.SongArchive, song.ID.Hex()+":unarchive")},

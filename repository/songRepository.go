@@ -286,6 +286,40 @@ func (r *SongRepository) DeleteOneByDriveFileID(driveFileID string) (int64, erro
 	return deletedCount, err
 }
 
+func (r *SongRepository) Archive(songID primitive.ObjectID) error {
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
+
+	filter := bson.M{
+		"_id": songID,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"isArchived": true,
+		},
+	}
+
+	_, err := collection.UpdateOne(context.TODO(), filter, update)
+	return err
+}
+
+func (r *SongRepository) Unarchive(songID primitive.ObjectID) error {
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
+
+	filter := bson.M{
+		"_id": songID,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"isArchived": false,
+		},
+	}
+
+	_, err := collection.UpdateOne(context.TODO(), filter, update)
+	return err
+}
+
 func (r *SongRepository) Like(songID primitive.ObjectID, userID int64) error {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
@@ -349,6 +383,10 @@ func (r *SongRepository) FindAllExtraByPageNumberSortedByEventsNumber(bandID pri
 	return r.findWithExtra(
 		bson.M{
 			"bandId": bandID,
+			"$or": []bson.M{
+				{"isArchived": bson.M{"$eq": false}},
+				{"isArchived": bson.M{"$exists": false}},
+			},
 		},
 		eventsStartDate,
 		bson.M{
@@ -381,6 +419,10 @@ func (r *SongRepository) FindAllExtraByPageNumberSortedByEventDate(bandID primit
 	return r.findWithExtra(
 		bson.M{
 			"bandId": bandID,
+			"$or": []bson.M{
+				{"isArchived": bson.M{"$eq": false}},
+				{"isArchived": bson.M{"$exists": false}},
+			},
 		},
 		eventsStartDate,
 		bson.M{
@@ -404,6 +446,10 @@ func (r *SongRepository) FindManyExtraByTag(tag string, bandID primitive.ObjectI
 		bson.M{
 			"bandId": bandID,
 			"tags":   tag,
+			"$or": []bson.M{
+				{"isArchived": bson.M{"$eq": false}},
+				{"isArchived": bson.M{"$exists": false}},
+			},
 		},
 		eventsStartDate,
 		bson.M{
