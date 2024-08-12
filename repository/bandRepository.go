@@ -52,7 +52,12 @@ func (r *BandRepository) FindOneByID(ID primitive.ObjectID) (*entity.Band, error
 }
 
 func (r *BandRepository) FindOneByDriveFolderID(driveFolderID string) (*entity.Band, error) {
-	bands, err := r.find(bson.M{"driveFolderId": driveFolderID})
+	bands, err := r.find(bson.M{
+		"$or": []bson.M{
+			{"driveFolderId": driveFolderID},
+			{"archiveFolderId": driveFolderID},
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
