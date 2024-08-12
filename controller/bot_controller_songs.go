@@ -100,10 +100,7 @@ func (c *BotController) song(bot *gotgbot.Bot, ctx *ext.Context, driveFileID str
 			return nil, err
 		}
 
-		message, err := bot.SendDocument(ctx.EffectiveChat.Id, gotgbot.NamedFile{
-			File:     *reader,
-			FileName: fmt.Sprintf("%s.pdf", driveFile.Name),
-		}, &gotgbot.SendDocumentOpts{
+		message, err := bot.SendDocument(ctx.EffectiveChat.Id, gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", driveFile.Name), *reader), &gotgbot.SendDocumentOpts{
 			Caption:     song.Caption(),
 			ParseMode:   "HTML",
 			ReplyMarkup: markup,
@@ -112,7 +109,7 @@ func (c *BotController) song(bot *gotgbot.Bot, ctx *ext.Context, driveFileID str
 	}
 
 	sendDocumentByFileID := func() (*gotgbot.Message, error) {
-		message, err := bot.SendDocument(ctx.EffectiveChat.Id, song.PDF.TgFileID, &gotgbot.SendDocumentOpts{
+		message, err := bot.SendDocument(ctx.EffectiveChat.Id, gotgbot.InputFileByID(song.PDF.TgFileID), &gotgbot.SendDocumentOpts{
 			Caption:     song.Caption(),
 			ParseMode:   "HTML",
 			ReplyMarkup: markup,
@@ -771,7 +768,7 @@ func (c *BotController) songVoices(bot *gotgbot.Bot, ctx *ext.Context, songID pr
 	}
 
 	_, _, err = bot.EditMessageMedia(&gotgbot.InputMediaDocument{
-		Media:     song.PDF.TgFileID,
+		Media:     gotgbot.InputFileByID(song.PDF.TgFileID),
 		Caption:   caption,
 		ParseMode: "HTML",
 	}, opts)
@@ -954,10 +951,7 @@ func (c *BotController) SongVoice(bot *gotgbot.Bot, ctx *ext.Context) error {
 		}
 
 		msg, _, err := bot.EditMessageMedia(&gotgbot.InputMediaAudio{
-			Media: gotgbot.NamedFile{
-				File:     reader,
-				FileName: voice.Name,
-			},
+			Media:     gotgbot.InputFileByReader(voice.Name, reader),
 			ParseMode: "HTML",
 			Caption:   caption,
 			Performer: song.PDF.Name,
@@ -986,7 +980,7 @@ func (c *BotController) SongVoice(bot *gotgbot.Bot, ctx *ext.Context) error {
 		}
 
 		_, _, err := bot.EditMessageMedia(&gotgbot.InputMediaAudio{
-			Media:     voice.AudioFileID, // todo
+			Media:     gotgbot.InputFileByID(voice.AudioFileID), // todo
 			ParseMode: "HTML",
 			Caption:   caption,
 			Performer: song.PDF.Name,
@@ -1198,10 +1192,7 @@ func (c *BotController) SongStyle(bot *gotgbot.Bot, ctx *ext.Context) error {
 	caption := user.CallbackCache.AddToText(song.Caption())
 
 	_, _, err = ctx.EffectiveMessage.EditMedia(bot, gotgbot.InputMediaDocument{
-		Media: gotgbot.NamedFile{
-			File:     *reader,
-			FileName: fmt.Sprintf("%s.pdf", song.PDF.Name),
-		},
+		Media:     gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", song.PDF.Name), *reader),
 		Caption:   caption,
 		ParseMode: "HTML",
 	}, &gotgbot.EditMessageMediaOpts{
@@ -1254,10 +1245,7 @@ func (c *BotController) SongAddLyricsPage(bot *gotgbot.Bot, ctx *ext.Context) er
 	caption := user.CallbackCache.AddToText(song.Caption())
 
 	_, _, err = ctx.EffectiveMessage.EditMedia(bot, gotgbot.InputMediaDocument{
-		Media: gotgbot.NamedFile{
-			File:     *reader,
-			FileName: fmt.Sprintf("%s.pdf", song.PDF.Name),
-		},
+		Media:     gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", song.PDF.Name), *reader),
 		Caption:   caption,
 		ParseMode: "HTML",
 	}, &gotgbot.EditMessageMediaOpts{

@@ -375,7 +375,7 @@ func (c *BotController) EventSetlistMetronome(bot *gotgbot.Bot, ctx *ext.Context
 
 	for _, song := range event.Songs {
 		audio := &gotgbot.InputMediaAudio{
-			Media:   metronome.GetMetronomeTrackFileID(song.PDF.BPM, song.PDF.Time),
+			Media:   gotgbot.InputFileByID(metronome.GetMetronomeTrackFileID(song.PDF.BPM, song.PDF.Time)),
 			Caption: "↑ " + song.PDF.Name,
 		}
 

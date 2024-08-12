@@ -468,10 +468,7 @@ func (h *WebAppController) EditSongConfirm(ctx *gin.Context) {
 	}
 
 	_, _, err = h.Bot.EditMessageMedia(gotgbot.InputMediaDocument{
-		Media: gotgbot.NamedFile{
-			File:     *reader,
-			FileName: fmt.Sprintf("%s.pdf", song.PDF.Name),
-		},
+		Media:     gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", song.PDF.Name), *reader),
 		Caption:   caption,
 		ParseMode: "HTML",
 	}, &gotgbot.EditMessageMediaOpts{

@@ -550,12 +550,12 @@ func (c *BotController) songsAlbum(bot *gotgbot.Bot, ctx *ext.Context, driveFile
 					}
 
 					album[i] = gotgbot.InputMediaDocument{
-						Media:   gotgbot.NamedFile{File: *reader, FileName: fmt.Sprintf("%s.pdf", song.PDF.Name)},
+						Media:   gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", song.PDF.Name), *reader),
 						Caption: song.Meta(),
 					}
 				} else {
 					album[i] = gotgbot.InputMediaDocument{
-						Media:   song.PDF.TgFileID,
+						Media:   gotgbot.InputFileByID(song.PDF.TgFileID),
 						Caption: song.Meta(),
 					}
 				}

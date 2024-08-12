@@ -250,7 +250,7 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 		opts := &gotgbot.SendVoiceOpts{
 			Duration: user.CallbackCache.AudioDuration,
 		}
-		_, err := bot.SendVoice(ctx.EffectiveChat.Id, newFileBytes, opts)
+		_, err := bot.SendVoice(ctx.EffectiveChat.Id, gotgbot.InputFileByReader(user.CallbackCache.AudioFileName, bytes.NewReader(newFileBytes)), opts)
 		if err != nil {
 			return err
 		}
@@ -258,7 +258,7 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 		opts := &gotgbot.SendAudioOpts{
 			Duration:  user.CallbackCache.AudioDuration,
 			Performer: user.CallbackCache.AudioPerformer,
-			Thumbnail: user.CallbackCache.AudioThumbFileId,
+			//Thumbnail: user.CallbackCache.AudioThumbFileId,
 		}
 		if user.CallbackCache.AudioTitle != "" {
 			opts.Title = fmt.Sprintf("%s (%s)", user.CallbackCache.AudioTitle, s)
@@ -270,10 +270,7 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 			extension = "." + ffmpegAudioExt
 		}
 
-		file := gotgbot.NamedFile{
-			File:     bytes.NewReader(newFileBytes),
-			FileName: fmt.Sprintf("%s (%s)%s", fileName, s, extension),
-		}
+		file := gotgbot.InputFileByReader(fmt.Sprintf("%s (%s)%s", fileName, s, extension), bytes.NewReader(newFileBytes))
 
 		_, err = bot.SendAudio(ctx.EffectiveChat.Id, file, opts)
 		if err != nil {
