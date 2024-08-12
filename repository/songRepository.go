@@ -128,8 +128,11 @@ func (r *SongRepository) FindOneByDriveFileID(driveFileID string) (*entity.Song,
 	return songs[0], nil
 }
 
-func (r *SongRepository) FindOneByName(name string) (*entity.Song, error) {
-	songs, err := r.find(bson.M{"pdf.name": name})
+func (r *SongRepository) FindOneByName(name string, bandID primitive.ObjectID) (*entity.Song, error) {
+	songs, err := r.find(bson.M{
+		"bandId":   bandID,
+		"pdf.name": name,
+	})
 	if err != nil {
 		return nil, err
 	}

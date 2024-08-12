@@ -56,8 +56,8 @@ func (s *SongService) FindOneByDriveFileID(driveFileID string) (*entity.Song, er
 	return s.songRepository.FindOneByDriveFileID(driveFileID)
 }
 
-func (s *SongService) FindOneByName(driveFileID string) (*entity.Song, error) {
-	return s.songRepository.FindOneByName(driveFileID)
+func (s *SongService) FindOneByNameAndBandID(driveFileID string, bandID primitive.ObjectID) (*entity.Song, error) {
+	return s.songRepository.FindOneByName(driveFileID, bandID)
 }
 
 func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entity.Song, *drive.File, error) {

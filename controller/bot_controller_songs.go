@@ -413,7 +413,7 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 
 				songName := keyboard.ParseSongButton(ctx.EffectiveMessage.Text)
 
-				song, err := c.SongService.FindOneByName(strings.TrimSpace(songName))
+				song, err := c.SongService.FindOneByNameAndBandID(strings.TrimSpace(songName), user.BandID)
 				if err != nil {
 					return c.search(0)(bot, ctx)
 				}
