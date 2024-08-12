@@ -157,7 +157,7 @@ func (c *BotController) SettingsBandMembers(bot *gotgbot.Bot, ctx *ext.Context) 
 
 func (c *BotController) SettingsCleanupDatabase(bot *gotgbot.Bot, ctx *ext.Context) error {
 
-	//user := ctx.Data["user"].(*entity.User)
+	user := ctx.Data["user"].(*entity.User)
 
 	//hex := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 	//bandID, err := primitive.ObjectIDFromHex(hex)
@@ -179,10 +179,7 @@ func (c *BotController) SettingsCleanupDatabase(bot *gotgbot.Bot, ctx *ext.Conte
 	}
 
 	for _, song := range songs {
-		_, err := c.DriveFileService.FindOneByID(song.DriveFileID)
-		if err == nil {
-			continue
-		}
+		driveFile, err := c.DriveFileService.FindOneByID(song.DriveFileID)
 
 		var gErr *googleapi.Error
 		if errors.As(err, &gErr) && gErr.Code == 404 {
@@ -203,14 +200,20 @@ func (c *BotController) SettingsCleanupDatabase(bot *gotgbot.Bot, ctx *ext.Conte
 			} else {
 				builder.WriteString(fmt.Sprintf("\nCould not delete: <a href=\"%s\">%s</a> | %s", song.PDF.WebViewLink, song.PDF.Name, song.ID.String()))
 			}
-
-			_, _, _ = msg.EditText(bot, builder.String(), &gotgbot.EditMessageTextOpts{
-				ParseMode: "HTML",
-				LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
-					IsDisabled: true,
-				},
-			})
+		} else if slices.Contains(driveFile.Parents, user.Band.ArchiveFolderID) && !song.IsArchived {
+			_, err := c.SongService.Archive(song.ID)
+			if err != nil {
+				builder.WriteString(fmt.Sprintf("\nCouldn't archive: <a href=\"%s\">%s</a>", song.PDF.WebViewLink, song.PDF.Name))
+			}
+			builder.WriteString(fmt.Sprintf("\nArchived: <a href=\"%s\">%s</a>", song.PDF.WebViewLink, song.PDF.Name))
 		}
+
+		_, _, _ = msg.EditText(bot, builder.String(), &gotgbot.EditMessageTextOpts{
+			ParseMode: "HTML",
+			LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
+				IsDisabled: true,
+			},
+		})
 	}
 
 	builder.WriteString(fmt.Sprintf("\n\nDone!"))

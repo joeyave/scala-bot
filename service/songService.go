@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/repository"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -180,6 +181,10 @@ func (s *SongService) Archive(songID primitive.ObjectID) (*drive.File, error) {
 	song, err := s.FindOneByID(songID)
 	if err != nil {
 		return nil, err
+	}
+
+	if song.Band == nil {
+		return nil, fmt.Errorf("band not found for song %s", songID)
 	}
 
 	if song.Band.ArchiveFolderID == "" {
