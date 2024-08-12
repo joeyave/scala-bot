@@ -84,7 +84,7 @@ func SongButton(song *entity.SongWithEvents, user *entity.User, lang string, opt
 }
 
 // todo: refactor
-var songButtonRegEx = regexp.MustCompile(`\s*\(.*\)\s*(` + txt.Get("button.like", "") + `)?\s*`)
+var songButtonRegEx = regexp.MustCompile(`\s*\([^()]*\)\s*(` + txt.Get("button.like", "") + `)?\s*$`)
 
 func ParseSongButton(text string) string {
 	return songButtonRegEx.ReplaceAllString(text, "")
