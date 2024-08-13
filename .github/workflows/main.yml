@@ -9,7 +9,7 @@ jobs:
     name: Build Job
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: 'Copy source files to server'
         uses: appleboy/scp-action@master
