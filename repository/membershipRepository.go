@@ -172,7 +172,7 @@ func (r *MembershipRepository) find(m bson.M) ([]*entity.Membership, error) {
 
 func (r *MembershipRepository) UpdateOne(membership entity.Membership) (*entity.Membership, error) {
 	if membership.ID.IsZero() {
-		membership.ID = r.generateUniqueID()
+		membership.ID = primitive.NewObjectID()
 	}
 
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("memberships")
@@ -218,18 +218,4 @@ func (r *MembershipRepository) DeleteManyByEventID(eventID primitive.ObjectID) e
 
 	_, err := collection.DeleteMany(context.TODO(), bson.M{"eventId": eventID})
 	return err
-}
-
-func (r *MembershipRepository) generateUniqueID() primitive.ObjectID {
-	ID := primitive.NilObjectID
-
-	for ID.IsZero() {
-		ID = primitive.NewObjectID()
-		_, err := r.FindOneByID(ID)
-		if err == nil {
-			ID = primitive.NilObjectID
-		}
-	}
-
-	return ID
 }

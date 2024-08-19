@@ -199,7 +199,7 @@ func (r *SongRepository) find(m bson.M, opts ...bson.M) ([]*entity.Song, error) 
 
 func (r *SongRepository) UpdateOne(song entity.Song) (*entity.Song, error) {
 	if song.ID.IsZero() {
-		song.ID = r.generateUniqueID()
+		song.ID = primitive.NewObjectID()
 	}
 
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
@@ -251,7 +251,7 @@ func (r *SongRepository) UpdateMany(songs []*entity.Song) (*mongo.BulkWriteResul
 	var models []mongo.WriteModel
 	for _, song := range songs {
 		if song.ID.IsZero() {
-			song.ID = r.generateUniqueID()
+			song.ID = primitive.NewObjectID()
 		}
 
 		upsert := true
@@ -360,20 +360,6 @@ func (r *SongRepository) Dislike(songID primitive.ObjectID, userID int64) error 
 
 	_, err := collection.UpdateOne(context.TODO(), filter, update)
 	return err
-}
-
-func (r *SongRepository) generateUniqueID() primitive.ObjectID {
-	ID := primitive.NilObjectID
-
-	for ID.IsZero() {
-		ID = primitive.NewObjectID()
-		_, err := r.FindOneByID(ID)
-		if err == nil {
-			ID = primitive.NilObjectID
-		}
-	}
-
-	return ID
 }
 
 func (r *SongRepository) FindAllExtraByPageNumberSortedByEventsNumber(bandID primitive.ObjectID, eventsStartDate time.Time, isAscending bool, pageNumber int) ([]*entity.SongWithEvents, error) {

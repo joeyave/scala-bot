@@ -537,7 +537,7 @@ func (r *EventRepository) find(m bson.M, opts ...bson.M) ([]*entity.Event, error
 
 func (r *EventRepository) UpdateOne(event entity.Event) (*entity.Event, error) {
 	if event.ID.IsZero() {
-		event.ID = r.generateUniqueID()
+		event.ID = primitive.NewObjectID()
 	}
 
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("events")
@@ -742,18 +742,4 @@ func (r *EventRepository) GetMostFrequentEventNames(bandID primitive.ObjectID, l
 	}
 
 	return frequencies, nil
-}
-
-func (r *EventRepository) generateUniqueID() primitive.ObjectID {
-	ID := primitive.NilObjectID
-
-	for ID.IsZero() {
-		ID = primitive.NewObjectID()
-		_, err := r.FindOneByID(ID)
-		if err == nil {
-			ID = primitive.NilObjectID
-		}
-	}
-
-	return ID
 }

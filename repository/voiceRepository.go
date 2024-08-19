@@ -31,7 +31,7 @@ func (r *VoiceRepository) FindOneByFileID(fileID string) (*entity.Voice, error) 
 
 func (r *VoiceRepository) UpdateOne(voice entity.Voice) (*entity.Voice, error) {
 	if voice.ID.IsZero() {
-		voice.ID = r.generateUniqueID()
+		voice.ID = primitive.NewObjectID()
 	}
 
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("voices")
@@ -88,16 +88,40 @@ func (r *VoiceRepository) findOne(m bson.M) (*entity.Voice, error) {
 	return voice, err
 }
 
-func (r *VoiceRepository) generateUniqueID() primitive.ObjectID {
-	ID := primitive.NilObjectID
+func (r *VoiceRepository) CloneVoicesForNewSongID(oldSongID, newSongID primitive.ObjectID) error {
 
-	for ID.IsZero() {
-		ID = primitive.NewObjectID()
-		_, err := r.FindOneByID(ID)
-		if err == nil {
-			ID = primitive.NilObjectID
+	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("voices")
+
+	// Find all voices with oldSongID
+	filter := bson.M{"songId": oldSongID}
+	cursor, err := collection.Find(context.TODO(), filter)
+	if err != nil {
+		return err
+	}
+	defer cursor.Close(context.TODO())
+
+	// Clone voices with new newSongID
+	var voices []any
+	for cursor.Next(context.TODO()) {
+		var voice entity.Voice
+		if err := cursor.Decode(&voice); err != nil {
+			return err
+		}
+
+		// Clone the voice and assign newSongID
+		voice.ID = primitive.NewObjectID() // Generate a new ID for the cloned voice
+		voice.SongID = newSongID
+
+		voices = append(voices, voice)
+	}
+
+	if len(voices) > 0 {
+		// Insert all cloned voices into the collection
+		_, err = collection.InsertMany(context.TODO(), voices)
+		if err != nil {
+			return err
 		}
 	}
 
-	return ID
+	return nil
 }

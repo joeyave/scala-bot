@@ -107,7 +107,7 @@ func (r *BandRepository) find(m bson.M) ([]*entity.Band, error) {
 
 func (r *BandRepository) UpdateOne(band entity.Band) (*entity.Band, error) {
 	if band.ID.IsZero() {
-		band.ID = r.generateUniqueID()
+		band.ID = primitive.NewObjectID()
 	}
 
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("bands")
@@ -138,18 +138,4 @@ func (r *BandRepository) UpdateOne(band entity.Band) (*entity.Band, error) {
 	}
 
 	return r.FindOneByID(newBand.ID)
-}
-
-func (r *BandRepository) generateUniqueID() primitive.ObjectID {
-	ID := primitive.NilObjectID
-
-	for ID.IsZero() {
-		ID = primitive.NewObjectID()
-		_, err := r.FindOneByID(ID)
-		if err == nil {
-			ID = primitive.NilObjectID
-		}
-	}
-
-	return ID
 }

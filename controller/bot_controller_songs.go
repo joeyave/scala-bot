@@ -1142,17 +1142,29 @@ func (c *BotController) SongCopyToMyBand(bot *gotgbot.Bot, ctx *ext.Context) err
 		Parents: []string{user.Band.DriveFolderID},
 	}
 
-	copiedSong, err := c.DriveFileService.CloneOne(driveFileID, file)
+	copiedDriveFile, err := c.DriveFileService.CloneOne(driveFileID, file)
 	if err != nil {
 		return err
 	}
 
-	song, _, err := c.SongService.FindOrCreateOneByDriveFileID(copiedSong.Id)
+	copiedSong, _, err := c.SongService.FindOrCreateOneByDriveFileID(copiedDriveFile.Id)
 	if err != nil {
 		return err
 	}
 
-	ctx.CallbackQuery.Data = util.CallbackData(state.SongCB, song.ID.Hex()+":init")
+	origSong, err := c.SongService.FindOneByDriveFileID(driveFileID)
+	if err == nil {
+		_ = c.VoiceService.CloneVoicesForNewSongID(origSong.ID, copiedSong.ID)
+
+		copiedSong.PDF.TgFileID = origSong.PDF.TgFileID
+
+		_, err = c.SongService.UpdateOne(*copiedSong)
+		if err != nil {
+			return err
+		}
+	}
+
+	ctx.CallbackQuery.Data = util.CallbackData(state.SongCB, copiedSong.ID.Hex()+":init")
 	return c.SongCB(bot, ctx)
 }
 

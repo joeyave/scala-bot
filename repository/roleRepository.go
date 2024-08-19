@@ -74,7 +74,7 @@ func (r *RoleRepository) find(m bson.M) ([]*entity.Role, error) {
 
 func (r *RoleRepository) UpdateOne(role entity.Role) (*entity.Role, error) {
 	if role.ID.IsZero() {
-		role.ID = r.generateUniqueID()
+		role.ID = primitive.NewObjectID()
 	}
 
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("roles")
@@ -104,18 +104,4 @@ func (r *RoleRepository) UpdateOne(role entity.Role) (*entity.Role, error) {
 	}
 
 	return r.FindOneByID(newRole.ID)
-}
-
-func (r *RoleRepository) generateUniqueID() primitive.ObjectID {
-	ID := primitive.NilObjectID
-
-	for ID.IsZero() {
-		ID = primitive.NewObjectID()
-		_, err := r.FindOneByID(ID)
-		if err == nil {
-			ID = primitive.NilObjectID
-		}
-	}
-
-	return ID
 }

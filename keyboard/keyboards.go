@@ -125,13 +125,13 @@ func SongInit(song *entity.Song, user *entity.User, chatID int64, messageID int6
 		if liked {
 			keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
 				{Text: txt.Get("button.like", lang), CallbackData: util.CallbackData(state.SongLike, song.ID.Hex()+":dislike")},
-				{Text: txt.Get("button.voices", lang), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())},
+				{Text: txt.Get("button.voices", lang, len(song.Voices)), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())},
 				{Text: txt.Get("button.more", lang), CallbackData: util.CallbackData(state.SongCB, song.ID.Hex()+":edit")},
 			})
 		} else {
 			keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
 				{Text: txt.Get("button.unlike", lang), CallbackData: util.CallbackData(state.SongLike, song.ID.Hex()+":like")},
-				{Text: txt.Get("button.voices", lang), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())},
+				{Text: txt.Get("button.voices", lang, len(song.Voices)), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())},
 				{Text: txt.Get("button.more", lang), CallbackData: util.CallbackData(state.SongCB, song.ID.Hex()+":edit")},
 			})
 		}
@@ -141,7 +141,7 @@ func SongInit(song *entity.Song, user *entity.User, chatID int64, messageID int6
 	} else {
 		keyboard = [][]gotgbot.InlineKeyboardButton{
 			{{Text: txt.Get("button.copyToMyBand", lang), CallbackData: util.CallbackData(state.SongCopyToMyBand, song.DriveFileID)}},
-			//{{Text: txt.Get("button.voices", lang), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())}}, // todo: enable
+			//{{Text: txt.Get("button.voices", lang, len(song.Voices)), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())}}, // todo: enable
 		}
 
 		if user.ID == 195295372 { // todo: remove
@@ -166,11 +166,11 @@ func SongInitIQ(song *entity.Song, user *entity.User, lang string) [][]gotgbot.I
 
 	if liked {
 		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
-			{Text: txt.Get("button.voices", lang), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())},
+			{Text: txt.Get("button.voices", lang, len(song.Voices)), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())},
 		})
 	} else {
 		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
-			{Text: txt.Get("button.voices", lang), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())},
+			{Text: txt.Get("button.voices", lang, len(song.Voices)), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())},
 		})
 	}
 
@@ -191,7 +191,7 @@ func SongEdit(song *entity.Song, driveFile *drive.File, user *entity.User, lang 
 			{Text: txt.Get("button.lyrics", lang), CallbackData: util.CallbackData(state.SongAddLyricsPage, song.DriveFileID)},
 		},
 		//{
-		//	{Text: txt.Get("button.voices", lang), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())},
+		//	{Text: txt.Get("button.voices", lang, len(song.Voices)), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())},
 		//},
 
 		//{

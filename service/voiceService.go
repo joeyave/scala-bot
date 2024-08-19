@@ -35,3 +35,7 @@ func (s *VoiceService) DeleteOne(ID primitive.ObjectID) error {
 func (s *VoiceService) DeleteManyByIDs(IDs []primitive.ObjectID) error {
 	return s.voiceRepository.DeleteManyByIDs(IDs)
 }
+
+func (s *VoiceService) CloneVoicesForNewSongID(oldSongID, newSongID primitive.ObjectID) error {
+	return s.voiceRepository.CloneVoicesForNewSongID(oldSongID, newSongID)
+}
