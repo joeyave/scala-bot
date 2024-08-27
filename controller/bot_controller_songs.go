@@ -18,6 +18,7 @@ import (
 	"google.golang.org/api/drive/v3"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -1032,6 +1033,68 @@ func (c *BotController) SongVoiceDeleteConfirm(bot *gotgbot.Bot, ctx *ext.Contex
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (c *BotController) SongStats(bot *gotgbot.Bot, ctx *ext.Context) error {
+
+	user := ctx.Data["user"].(*entity.User)
+
+	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
+	split := strings.Split(payload, ":")
+
+	songID, err := primitive.ObjectIDFromHex(split[0])
+	if err != nil {
+		return err
+	}
+
+	period := entity.StatsPeriodLastHalfYear
+	if len(split) > 1 {
+		periodInt, err := strconv.Atoi(split[1])
+		if err != nil {
+			return err
+		}
+		period = periodInt
+	}
+
+	// todo: make it changeable from UI.
+	date := entity.GetStatsPeriodStartDate(entity.StatsPeriod(period), time.Now())
+
+	song, err := c.SongService.FindOneWithExtraByID(songID, date)
+	if err != nil {
+		return err
+	}
+
+	markup := gotgbot.InlineKeyboardMarkup{}
+
+	periods := []entity.StatsPeriod{
+		entity.StatsPeriodLastThreeMonths,
+		entity.StatsPeriodLastHalfYear,
+		entity.StatsPeriodLastYear,
+		entity.StatsPeriodAllTime,
+	}
+
+	for _, p := range periods {
+		text := util.ToUpperFirstLetter(keyboard.GetStatsPeriodButtonText(p, ctx.EffectiveUser.LanguageCode, true))
+		if p == entity.StatsPeriod(period) {
+			text = "✅ " + text
+		}
+		markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{
+			{Text: text,
+				CallbackData: util.CallbackData(state.SongStats, songID.Hex()+":"+fmt.Sprintf("%v", p))},
+		})
+	}
+	markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.back", ctx.EffectiveUser.LanguageCode), CallbackData: util.CallbackData(state.SongCB, song.ID.Hex()+":edit")}})
+
+	_, _, err = ctx.EffectiveMessage.EditCaption(bot, &gotgbot.EditMessageCaptionOpts{
+		Caption:     user.CallbackCache.AddToText(song.StatsForCaption(ctx.EffectiveUser.LanguageCode)),
+		ParseMode:   "HTML",
+		ReplyMarkup: markup,
+	})
+	if err != nil && !strings.Contains(err.Error(), "message is not modified") {
+		return err
+	}
+
 	return nil
 }
 

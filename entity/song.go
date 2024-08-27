@@ -2,6 +2,7 @@ package entity
 
 import (
 	"fmt"
+	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
 	"github.com/klauspost/lctime"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -88,4 +89,15 @@ func (s *SongWithEvents) Stats(lang string) string {
 	}
 	t, _ := lctime.StrftimeLoc(util.IetfToIsoLangCode(lang), "%d %b", s.Events[0].Time)
 	return fmt.Sprintf("%v, %d", t, len(s.Events))
+}
+
+func (s *SongWithEvents) StatsForCaption(lang string) string {
+	t := txt.GetTranslator(lang)
+
+	if len(s.Events) == 0 {
+		return txt.Get("text.noStatsCaption", lang)
+	}
+
+	text := txt.Get("text.statsCaption", lang, len(s.Events), t.FmtDateLong(s.Events[0].Time), s.Events[0].Name)
+	return text
 }

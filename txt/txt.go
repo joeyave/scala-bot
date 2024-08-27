@@ -1,6 +1,9 @@
 package txt
 
 import (
+	locales2 "github.com/go-playground/locales"
+	"github.com/go-playground/locales/ru"
+	"github.com/go-playground/locales/uk"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -236,6 +239,14 @@ var locales = map[string]map[string]string{
 		"uk": "Швидко",
 	},
 
+	"text.statsCaption": {
+		"ru": "Всего исполнений: %d\nДата последнего исполнения: %s (%s)",
+		"uk": "Всього виконань: %d\nДата останнього виконання: %s (%s)",
+	},
+	"text.noStatsCaption": {
+		"ru": "За этот период не было исполнений",
+		"uk": "За цей період не було виконань",
+	},
 	"text.title": {
 		"ru": "Название",
 		"uk": "Назва",
@@ -550,7 +561,19 @@ func Get(key, lang string, a ...interface{}) string {
 	return ukPrinter.Sprintf(key, a...)
 }
 
+func GetTranslator(lang string) locales2.Translator {
+	switch lang {
+	case "ru":
+		return ruTranslator
+	}
+	return ukTranslator
+
+}
+
 var ukPrinter = message.NewPrinter(language.Ukrainian)
+var ukTranslator = uk.New()
+
+var ruPrinter = message.NewPrinter(language.Russian)
+var ruTranslator = ru.New()
 
 // var enPrinter = message.NewPrinter(language.English)
-var ruPrinter = message.NewPrinter(language.Russian)

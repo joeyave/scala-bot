@@ -47,6 +47,8 @@ const (
 	SongVoiceDeleteConfirm
 	SongVoiceDelete
 
+	SongStats
+
 	SongDeleteConfirm
 	SongDelete
 

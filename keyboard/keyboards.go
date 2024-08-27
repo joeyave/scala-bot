@@ -214,6 +214,7 @@ func SongEdit(song *entity.Song, driveFile *drive.File, user *entity.User, lang 
 		}
 	}
 
+	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.stats", lang), CallbackData: util.CallbackData(state.SongStats, song.ID.Hex())}})
 	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.back", lang), CallbackData: util.CallbackData(state.SongCB, song.ID.Hex()+":init")}})
 
 	return keyboard

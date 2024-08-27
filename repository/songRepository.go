@@ -362,6 +362,20 @@ func (r *SongRepository) Dislike(songID primitive.ObjectID, userID int64) error 
 	return err
 }
 
+func (r *SongRepository) FindOneWithExtraByID(songID primitive.ObjectID, eventsStartDate time.Time) (*entity.SongWithEvents, error) {
+
+	songs, err := r.findWithExtra(
+		bson.M{
+			"_id": songID,
+		},
+		eventsStartDate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return songs[0], nil
+}
+
 func (r *SongRepository) FindAllExtraByPageNumberSortedByEventsNumber(bandID primitive.ObjectID, eventsStartDate time.Time, isAscending bool, pageNumber int) ([]*entity.SongWithEvents, error) {
 
 	sortingValue := -1

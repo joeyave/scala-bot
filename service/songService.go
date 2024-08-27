@@ -176,6 +176,10 @@ func (s *SongService) Dislike(songID primitive.ObjectID, userID int64) error {
 	return s.songRepository.Dislike(songID, userID)
 }
 
+func (s *SongService) FindOneWithExtraByID(songID primitive.ObjectID, eventsStartDate time.Time) (*entity.SongWithEvents, error) {
+	return s.songRepository.FindOneWithExtraByID(songID, eventsStartDate)
+}
+
 func (s *SongService) Archive(songID primitive.ObjectID) (*drive.File, error) {
 
 	song, err := s.FindOneByID(songID)
