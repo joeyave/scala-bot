@@ -91,13 +91,13 @@ func (s *SongWithEvents) Stats(lang string) string {
 	return fmt.Sprintf("%v, %d", t, len(s.Events))
 }
 
-func (s *SongWithEvents) StatsForCaption(lang string) string {
+func (s *SongWithEvents) StatsForCaption(periodText string, lang string) string {
 	t := txt.GetTranslator(lang)
 
 	if len(s.Events) == 0 {
 		return txt.Get("text.noStatsCaption", lang)
 	}
 
-	text := txt.Get("text.statsCaption", lang, len(s.Events), t.FmtDateLong(s.Events[0].Time), s.Events[0].Name)
+	text := txt.Get("text.statsCaption", lang, len(s.Events), periodText, t.FmtDateLong(s.Events[0].Time), s.Events[0].Name)
 	return text
 }

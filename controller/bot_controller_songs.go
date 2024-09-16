@@ -1087,7 +1087,7 @@ func (c *BotController) SongStats(bot *gotgbot.Bot, ctx *ext.Context) error {
 	markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.back", ctx.EffectiveUser.LanguageCode), CallbackData: util.CallbackData(state.SongCB, song.ID.Hex()+":edit")}})
 
 	_, _, err = ctx.EffectiveMessage.EditCaption(bot, &gotgbot.EditMessageCaptionOpts{
-		Caption:     user.CallbackCache.AddToText(song.StatsForCaption(ctx.EffectiveUser.LanguageCode)),
+		Caption:     user.CallbackCache.AddToText(song.StatsForCaption(keyboard.GetStatsPeriodButtonText(entity.StatsPeriod(period), ctx.EffectiveUser.LanguageCode, true), ctx.EffectiveUser.LanguageCode)),
 		ParseMode:   "HTML",
 		ReplyMarkup: markup,
 	})
