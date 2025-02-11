@@ -18,8 +18,8 @@ var newLinesRegex = regexp.MustCompile(`\s*[\t\r\n]+`)
 
 func SplitTextByNewlines(query string) []string {
 	songNames := strings.Split(newLinesRegex.ReplaceAllString(query, "\n"), "\n")
-	for _, songName := range songNames {
-		songName = strings.TrimSpace(songName)
+	for i := range songNames {
+		songNames[i] = strings.TrimSpace(songNames[i])
 	}
 
 	return songNames

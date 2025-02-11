@@ -184,7 +184,7 @@ func (c *BotController) search(index int) handlers.Response {
 		switch index {
 		case 0:
 			{
-				ctx.EffectiveChat.SendAction(bot, "typing", nil)
+				_, _ = ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				var query string
 
@@ -312,7 +312,7 @@ func (c *BotController) search(index int) handlers.Response {
 					return c.search(0)(bot, ctx)
 				}
 
-				ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
+				_, _ = ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
 
 				driveFileName := keyboard.ParseDriveFileButton(ctx.EffectiveMessage.Text)
 
@@ -354,7 +354,7 @@ func (c *BotController) searchSetlist(index int) handlers.Response {
 		case 0:
 			{
 				if len(user.Cache.SongNames) < 1 {
-					ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
+					_, _ = ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
 
 					err := c.songsAlbum(bot, ctx, user.Cache.DriveFileIDs)
 					if err != nil {
@@ -363,7 +363,7 @@ func (c *BotController) searchSetlist(index int) handlers.Response {
 					return c.Menu(bot, ctx)
 				}
 
-				ctx.EffectiveChat.SendAction(bot, "typing", nil)
+				_, _ = ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				songNames := user.Cache.SongNames
 
@@ -478,7 +478,7 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 	}
 
 	if ctx.CallbackQuery != nil {
-		ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
+		_, _ = ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
 			Text: txt.Get("text.serverError", ctx.EffectiveUser.LanguageCode),
 		})
 		//if err != nil {
@@ -486,9 +486,10 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 		//	return ext.DispatcherActionEndGroups
 		//}
 	} else if ctx.InlineQuery != nil {
-		ctx.InlineQuery.Answer(bot, nil, &gotgbot.AnswerInlineQueryOpts{
+		_, _ = ctx.InlineQuery.Answer(bot, nil, &gotgbot.AnswerInlineQueryOpts{
 			CacheTime: 1,
 		})
+
 	} else if ctx.EffectiveChat != nil {
 		_, err := ctx.EffectiveChat.SendMessage(bot, txt.Get("text.serverError", ctx.EffectiveUser.LanguageCode), nil)
 		if err != nil {
@@ -611,7 +612,10 @@ func (c *BotController) songsAlbum(bot *gotgbot.Bot, ctx *ext.Context, driveFile
 							song.PDF.TgFileID = doc.FileId
 						}
 					}
-					c.SongService.UpdateMany(songs)
+					_, err := c.SongService.UpdateMany(songs)
+					if err != nil {
+						return
+					}
 				}
 			}
 			go updateSongs(msgs, driveFileIDsChunk)
@@ -629,9 +633,9 @@ func (c *BotController) NotifyUsers(bot *gotgbot.Bot) {
 		}
 
 		for _, event := range events {
-			if event.Time.Add(time.Hour*8).Sub(time.Now()).Hours() < 48 {
+			if time.Until(event.Time.Add(time.Hour*8)).Hours() < 48 {
 				for _, membership := range event.Memberships {
-					if membership.Notified == true {
+					if membership.Notified {
 						continue
 					}
 
@@ -650,7 +654,10 @@ func (c *BotController) NotifyUsers(bot *gotgbot.Bot) {
 					}
 
 					membership.Notified = true
-					c.MembershipService.UpdateOne(*membership)
+					_, err := c.MembershipService.UpdateOne(*membership)
+					if err != nil {
+						return
+					}
 				}
 			}
 		}

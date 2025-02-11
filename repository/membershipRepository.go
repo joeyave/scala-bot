@@ -146,8 +146,8 @@ func (r *MembershipRepository) find(m bson.M) ([]*entity.Membership, error) {
 		},
 		bson.M{
 			"$sort": bson.D{
-				{"role._id", 1},
-				{"role.priority", 1},
+				{Key: "role._id", Value: 1},
+				{Key: "role.priority", Value: 1},
 			},
 		},
 	}

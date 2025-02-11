@@ -205,9 +205,6 @@ func (h *WebAppController) EditEventConfirm(ctx *gin.Context) {
 	}
 
 	html := h.EventService.ToHtmlStringByEvent(*updatedEvent, "ru")
-	if err != nil {
-		return
-	}
 
 	user, err := h.UserService.FindOneByID(userID)
 	if err != nil {
@@ -232,6 +229,9 @@ func (h *WebAppController) EditEventConfirm(ctx *gin.Context) {
 		},
 		ReplyMarkup: markup,
 	})
+	if err != nil {
+		return
+	}
 
 	ctx.Status(http.StatusOK)
 }
@@ -422,6 +422,9 @@ func (h *WebAppController) EditSongConfirm(ctx *gin.Context) {
 			return
 		}
 		_, err = h.DriveFileService.TransposeOne(song.DriveFileID, data.Key, section)
+		if err != nil {
+			return
+		}
 
 		if section == 0 {
 			song.PDF.Key = data.Key

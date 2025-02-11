@@ -40,7 +40,7 @@ func (c *BotController) BandCreate_AskForName(bot *gotgbot.Bot, ctx *ext.Context
 		return err
 	}
 
-	ctx.CallbackQuery.Answer(bot, nil)
+	_, _ = ctx.CallbackQuery.Answer(bot, nil)
 
 	return nil
 }
@@ -137,7 +137,7 @@ func (c *BotController) RoleCreate_AskForName(bot *gotgbot.Bot, ctx *ext.Context
 		return err
 	}
 
-	ctx.CallbackQuery.Answer(bot, nil)
+	_, _ = ctx.CallbackQuery.Answer(bot, nil)
 
 	return nil
 }

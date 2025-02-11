@@ -151,7 +151,7 @@ func (c *BotController) GetEvents(index int) handlers.Response {
 					}
 				}
 
-				ctx.EffectiveChat.SendAction(bot, "typing", nil)
+				_, _ = ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				eventName, eventTime, err := keyboard.ParseEventButton(ctx.EffectiveMessage.Text)
 				if err != nil {
@@ -189,7 +189,7 @@ func (c *BotController) filterEvents(index int) handlers.Response {
 		switch index {
 		case 0:
 			{
-				ctx.EffectiveChat.SendAction(bot, "typing", nil)
+				_, _ = ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				// todo: refactor - extract to func
 				if (ctx.EffectiveMessage.Text == txt.Get("button.eventsWithMe", ctx.EffectiveUser.LanguageCode) || ctx.EffectiveMessage.Text == txt.Get("button.archive", ctx.EffectiveUser.LanguageCode) ||
@@ -301,7 +301,7 @@ func (c *BotController) filterEvents(index int) handlers.Response {
 					}
 				}
 
-				ctx.EffectiveChat.SendAction(bot, "typing", nil)
+				_, _ = ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				eventName, eventTime, err := keyboard.ParseEventButton(ctx.EffectiveMessage.Text)
 				if err != nil {
@@ -343,9 +343,12 @@ func (c *BotController) EventSetlistDocs(bot *gotgbot.Bot, ctx *ext.Context) err
 	}
 
 	if len(driveFileIDs) == 0 {
-		ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
+		_, err := ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
 			Text: txt.Get("noSongs", ctx.EffectiveUser.LanguageCode),
 		})
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 
@@ -354,7 +357,8 @@ func (c *BotController) EventSetlistDocs(bot *gotgbot.Bot, ctx *ext.Context) err
 		return err
 	}
 
-	ctx.CallbackQuery.Answer(bot, nil)
+	_, _ = ctx.CallbackQuery.Answer(bot, nil)
+
 	return nil
 }
 
@@ -391,7 +395,7 @@ func (c *BotController) EventSetlistMetronome(bot *gotgbot.Bot, ctx *ext.Context
 		}
 	}
 
-	ctx.CallbackQuery.Answer(bot, nil)
+	_, _ = ctx.CallbackQuery.Answer(bot, nil)
 	return nil
 }
 
@@ -438,8 +442,7 @@ func (c *BotController) EventCB(bot *gotgbot.Bot, ctx *ext.Context) error {
 		ReplyMarkup: markup,
 	})
 
-	ctx.CallbackQuery.Answer(bot, nil)
-
+	_, _ = ctx.CallbackQuery.Answer(bot, nil)
 	return err
 }
 
@@ -484,7 +487,7 @@ func (c *BotController) eventSetlist(bot *gotgbot.Bot, ctx *ext.Context, event *
 		return err
 	}
 
-	ctx.CallbackQuery.Answer(bot, nil)
+	_, _ = ctx.CallbackQuery.Answer(bot, nil)
 	return nil
 }
 
@@ -620,7 +623,7 @@ func (c *BotController) eventMembers(bot *gotgbot.Bot, ctx *ext.Context, event *
 		return err
 	}
 
-	ctx.CallbackQuery.Answer(bot, nil)
+	_, _ = ctx.CallbackQuery.Answer(bot, nil)
 	return nil
 }
 
@@ -756,7 +759,7 @@ func (c *BotController) EventMembersAddMemberChooseRole(bot *gotgbot.Bot, ctx *e
 	if err != nil {
 		return err
 	}
-	ctx.CallbackQuery.Answer(bot, nil)
+	_, _ = ctx.CallbackQuery.Answer(bot, nil)
 	return nil
 }
 
@@ -811,7 +814,7 @@ func (c *BotController) eventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *e
 
 	markup := gotgbot.InlineKeyboardMarkup{}
 
-	if loadMore == false {
+	if !loadMore {
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.loadMore", ctx.EffectiveUser.LanguageCode), CallbackData: util.CallbackData(state.EventMembersAddMemberChooseUser, eventID.Hex()+":"+roleID.Hex()+":more")}})
 	}
 
@@ -833,7 +836,7 @@ func (c *BotController) eventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *e
 			}
 		}
 
-		if (len(u.Events) > 0 && time.Now().Sub(u.Events[0].Time) < 24*364/3*time.Hour) || loadMore == true {
+		if (len(u.Events) > 0 && time.Since(u.Events[0].Time) < 24*364/3*time.Hour) || loadMore {
 			if isMember {
 				text += " ✅"
 				markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: text, CallbackData: util.CallbackData(state.EventMembersDeleteMember, roleID.Hex()+":"+membership.ID.Hex())}})
@@ -866,7 +869,7 @@ func (c *BotController) eventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *e
 		return err
 	}
 
-	ctx.CallbackQuery.Answer(bot, nil)
+	_, _ = ctx.CallbackQuery.Answer(bot, nil)
 	return nil
 }
 
@@ -1027,10 +1030,13 @@ func (c *BotController) notifyAdded(bot *gotgbot.Bot, user *entity.User, members
 		text := fmt.Sprintf("Привет. %s только что добавил тебя как %s в собрание %s!",
 			user.Name, membership.Role.Name, event.Alias("ru"))
 
-		bot.SendMessage(membership.UserID, text, &gotgbot.SendMessageOpts{
+		_, err := bot.SendMessage(membership.UserID, text, &gotgbot.SendMessageOpts{
 			ParseMode:   "HTML",
 			ReplyMarkup: markup,
 		})
+		if err != nil {
+			return
+		}
 	}
 }
 
@@ -1063,9 +1069,12 @@ func (c *BotController) notifyDeleted(bot *gotgbot.Bot, user *entity.User, membe
 		text := fmt.Sprintf("Привет. %s только что удалил тебя как %s из собрания %s ☹️",
 			user.Name, membership.Role.Name, event.Alias("ru"))
 
-		bot.SendMessage(membership.UserID, text, &gotgbot.SendMessageOpts{
+		_, err := bot.SendMessage(membership.UserID, text, &gotgbot.SendMessageOpts{
 			ParseMode:   "HTML",
 			ReplyMarkup: markup,
 		})
+		if err != nil {
+			return
+		}
 	}
 }

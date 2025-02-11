@@ -399,8 +399,8 @@ func (r *SongRepository) FindAllExtraByPageNumberSortedByEventsNumber(bandID pri
 		},
 		bson.M{
 			"$sort": bson.D{
-				{"eventsSize", sortingValue},
-				{"_id", 1},
+				{Key: "eventsSize", Value: sortingValue},
+				{Key: "_id", Value: 1},
 			},
 		},
 		bson.M{
@@ -430,8 +430,8 @@ func (r *SongRepository) FindAllExtraByPageNumberSortedByEventDate(bandID primit
 		eventsStartDate,
 		bson.M{
 			"$sort": bson.D{
-				{"events.0.time", sortingValue},
-				{"_id", 1},
+				{Key: "events.0.time", Value: sortingValue},
+				{Key: "_id", Value: 1},
 			},
 		},
 		bson.M{

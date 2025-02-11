@@ -333,8 +333,8 @@ func (r *EventRepository) find(m bson.M, opts ...bson.M) ([]*entity.Event, error
 					},
 					bson.M{
 						"$sort": bson.D{
-							{"role._id", 1},
-							{"role.priority", 1},
+							{Key: "role._id", Value: 1},
+							{Key: "role.priority", Value: 1},
 						},
 					},
 					bson.M{
@@ -680,6 +680,9 @@ func (r *EventRepository) ChangeSongIDPosition(eventID primitive.ObjectID, songI
 	}
 
 	_, err := collection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
 
 	filter = bson.M{
 		"_id":     eventID,

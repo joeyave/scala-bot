@@ -10,7 +10,6 @@ import (
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
 	"io"
-	"io/ioutil"
 	"regexp"
 	"strings"
 	"time"
@@ -192,7 +191,7 @@ func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key str
 				PendingOwner: true,
 				Type:         "user",
 			}
-			s.driveClient.Permissions.
+			_, _ = s.driveClient.Permissions.
 				Create(newFile.Id, permission).
 				TransferOwnership(false).Do()
 			//if err != nil {
@@ -434,6 +433,9 @@ func (s *DriveFileService) TransposeOne(ID string, toKey string, sectionIndex in
 
 	_, err = s.docsRepository.Documents.BatchUpdate(doc.DocumentId,
 		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
+	if err != nil {
+		return nil, err
+	}
 
 	return s.FindOneByID(ID)
 }
@@ -462,6 +464,9 @@ func (s *DriveFileService) AddLyricsPage(ID string) (*drive.File, error) {
 
 	_, err = s.docsRepository.Documents.BatchUpdate(doc.DocumentId,
 		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
+	if err != nil {
+		return nil, err
+	}
 
 	return s.FindOneByID(ID)
 }
@@ -478,7 +483,7 @@ func (s *DriveFileService) ReplaceAllTextByRegex(ID string, regex *regexp.Regexp
 	}
 
 	var driveFileText string
-	b, err := ioutil.ReadAll(res.Body)
+	b, err := io.ReadAll(res.Body)
 	if err == nil {
 		driveFileText = string(b)
 	}
@@ -675,9 +680,12 @@ func (s *DriveFileService) GetMetadata(ID string) (string, string, string) {
 
 		return nil
 	})
+	if err != nil {
+		return "?", "?", "?"
+	}
 
 	var driveFileText string
-	b, err := ioutil.ReadAll(reader)
+	b, err := io.ReadAll(reader)
 	if err == nil {
 		driveFileText = string(b)
 	}
@@ -998,7 +1006,7 @@ func composeTransposeRequests(content []*docs.StructuralElement, index int64, ke
 					}
 
 					if i == len(content)-1 {
-						re := regexp.MustCompile("\\s*[\\r\\n]$")
+						re := regexp.MustCompile(`\s*[\r\n]$`)
 						element.TextRun.Content = re.ReplaceAllString(element.TextRun.Content, " ")
 					}
 

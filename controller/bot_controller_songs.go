@@ -34,7 +34,7 @@ type CreateSongData struct {
 
 func (c *BotController) CreateSong(bot *gotgbot.Bot, ctx *ext.Context) error {
 
-	ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
+	_, _ = ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
 
 	var data *CreateSongData
 	err := json.Unmarshal([]byte(ctx.EffectiveMessage.WebAppData.Data), &data)
@@ -59,7 +59,7 @@ func (c *BotController) CreateSong(bot *gotgbot.Bot, ctx *ext.Context) error {
 		return err
 	}
 
-	c.SongService.UpdateOne(entity.Song{
+	_, err = c.SongService.UpdateOne(entity.Song{
 		DriveFileID: driveFile.Id,
 		BandID:      user.BandID,
 		PDF: entity.PDF{
@@ -71,6 +71,9 @@ func (c *BotController) CreateSong(bot *gotgbot.Bot, ctx *ext.Context) error {
 		},
 		Tags: data.Tags,
 	})
+	if err != nil {
+		return err
+	}
 
 	err = c.song(bot, ctx, driveFile.Id)
 	if err != nil {
@@ -84,7 +87,7 @@ func (c *BotController) song(bot *gotgbot.Bot, ctx *ext.Context, driveFileID str
 
 	user := ctx.Data["user"].(*entity.User)
 
-	ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
+	_, _ = ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
 
 	song, driveFile, err := c.SongService.FindOrCreateOneByDriveFileID(driveFileID)
 	if err != nil {
@@ -181,7 +184,7 @@ func (c *BotController) GetSongs(index int) handlers.Response {
 		switch index {
 		case 0:
 			{
-				ctx.EffectiveChat.SendAction(bot, "typing", nil)
+				_, _ = ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				if ctx.EffectiveMessage.Text == txt.Get("button.prev", ctx.EffectiveUser.LanguageCode) && user.Cache.NextPageToken.GetPrevValue() != "" {
 					user.Cache.NextPageToken = user.Cache.NextPageToken.Prev.Prev
@@ -253,7 +256,7 @@ func (c *BotController) GetSongs(index int) handlers.Response {
 					return c.filterSongs(0)(bot, ctx)
 				}
 
-				ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
+				_, _ = ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
 
 				driveFileName := keyboard.ParseDriveFileButton(ctx.EffectiveMessage.Text)
 
@@ -297,7 +300,7 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 				statsPeriodStartDate := entity.GetStatsPeriodStartDate(user.Cache.StatsPeriod, time.Now())
 				isAscending := user.Cache.StatsSorting == entity.StatsSortingAscending
 
-				ctx.EffectiveChat.SendAction(bot, "typing", nil)
+				_, _ = ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				switch ctx.EffectiveMessage.Text {
 				case txt.Get("button.like", ctx.EffectiveUser.LanguageCode), txt.Get("button.numbers", ctx.EffectiveUser.LanguageCode), txt.Get("button.calendar", ctx.EffectiveUser.LanguageCode):
@@ -407,7 +410,7 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 					return c.GetSongs(0)(bot, ctx)
 				}
 
-				ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
+				_, _ = ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
 
 				songName := keyboard.ParseSongButton(ctx.EffectiveMessage.Text)
 
@@ -420,7 +423,7 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 			}
 		case 2:
 			{
-				ctx.EffectiveChat.SendAction(bot, "typing", nil)
+				_, _ = ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				tags, err := c.SongService.GetTags(user.BandID)
 				if err != nil {
@@ -458,7 +461,7 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 			}
 		case 3:
 			{
-				ctx.EffectiveChat.SendAction(bot, "typing", nil)
+				_, _ = ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				periods := []entity.StatsPeriod{
 					entity.StatsPeriodLastThreeMonths,
@@ -499,13 +502,13 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 				return nil
 			}
 		case 4:
-			ctx.EffectiveChat.SendAction(bot, "typing", nil)
+			_, _ = ctx.EffectiveChat.SendAction(bot, "typing", nil)
 			statsPeriod := keyboard.GetStatsPeriodByButtonText(ctx.EffectiveMessage.Text, ctx.EffectiveUser.LanguageCode)
 			user.Cache.StatsPeriod = statsPeriod
 			return c.filterSongs(0)(bot, ctx)
 		case 5:
 			{
-				ctx.EffectiveChat.SendAction(bot, "typing", nil)
+				_, _ = ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				periods := []entity.StatsSorting{
 					entity.StatsSortingAscending,
@@ -544,7 +547,7 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 				return nil
 			}
 		case 6:
-			ctx.EffectiveChat.SendAction(bot, "typing", nil)
+			_, _ = ctx.EffectiveChat.SendAction(bot, "typing", nil)
 			statsSorting := keyboard.GetStatsSortingByButtonText(ctx.EffectiveMessage.Text, ctx.EffectiveUser.LanguageCode)
 			user.Cache.StatsSorting = statsSorting
 			return c.filterSongs(0)(bot, ctx)
@@ -609,7 +612,7 @@ func (c *BotController) SongCB(bot *gotgbot.Bot, ctx *ext.Context) error {
 		return err
 	}
 
-	ctx.CallbackQuery.Answer(bot, nil)
+	_, _ = ctx.CallbackQuery.Answer(bot, nil)
 
 	return err
 }
@@ -654,7 +657,7 @@ func (c *BotController) SongLike(bot *gotgbot.Bot, ctx *ext.Context) error {
 		return err
 	}
 
-	ctx.CallbackQuery.Answer(bot, nil)
+	_, _ = ctx.CallbackQuery.Answer(bot, nil)
 	return nil
 }
 
@@ -699,7 +702,7 @@ func (c *BotController) SongArchive(bot *gotgbot.Bot, ctx *ext.Context) error {
 		return err
 	}
 
-	ctx.CallbackQuery.Answer(bot, nil)
+	_, _ = ctx.CallbackQuery.Answer(bot, nil)
 	return nil
 }
 
@@ -835,7 +838,7 @@ func (c *BotController) SongVoices_CreateVoice(index int) handlers.Response {
 		switch index {
 		case 0:
 			{
-				ctx.EffectiveChat.SendAction(bot, "typing", nil)
+				_, _ = ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 				fileID := ""
 				if ctx.EffectiveMessage.Voice != nil {
@@ -992,7 +995,7 @@ func (c *BotController) SongVoice(bot *gotgbot.Bot, ctx *ext.Context) error {
 		}
 	}
 
-	ctx.CallbackQuery.Answer(bot, nil)
+	_, _ = ctx.CallbackQuery.Answer(bot, nil)
 	return nil
 }
 
@@ -1277,7 +1280,7 @@ func (c *BotController) SongStyle(bot *gotgbot.Bot, ctx *ext.Context) error {
 		return err
 	}
 
-	ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
+	_, _ = ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
 		Text: txt.Get("text.styled", ctx.EffectiveUser.LanguageCode),
 	})
 
@@ -1330,7 +1333,7 @@ func (c *BotController) SongAddLyricsPage(bot *gotgbot.Bot, ctx *ext.Context) er
 		return err
 	}
 
-	ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
+	_, _ = ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
 		Text: txt.Get("text.addedLyricsPage", ctx.EffectiveUser.LanguageCode),
 	})
 

@@ -548,7 +548,7 @@ var locales = map[string]map[string]string{
 func init() {
 	for key, langToMsgMap := range locales {
 		for lang, msg := range langToMsgMap {
-			message.SetString(language.Make(lang), key, msg)
+			_ = message.SetString(language.Make(lang), key, msg)
 		}
 	}
 }

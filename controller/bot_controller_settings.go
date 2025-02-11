@@ -100,7 +100,7 @@ func (c *BotController) SettingsCB(bot *gotgbot.Bot, ctx *ext.Context) error {
 		return err
 	}
 
-	ctx.CallbackQuery.Answer(bot, nil)
+	_, _ = ctx.CallbackQuery.Answer(bot, nil)
 
 	return nil
 }
@@ -137,7 +137,7 @@ func (c *BotController) SettingsBands(bot *gotgbot.Bot, ctx *ext.Context) error 
 		return err
 	}
 
-	ctx.CallbackQuery.Answer(bot, nil)
+	_, _ = ctx.CallbackQuery.Answer(bot, nil)
 
 	return nil
 }
@@ -216,7 +216,7 @@ func (c *BotController) SettingsCleanupDatabase(bot *gotgbot.Bot, ctx *ext.Conte
 		})
 	}
 
-	builder.WriteString(fmt.Sprintf("\n\nDone!"))
+	builder.WriteString("\n\nDone!")
 
 	_, _, _ = msg.EditText(bot, builder.String(), &gotgbot.EditMessageTextOpts{
 		ParseMode: "HTML",
@@ -261,7 +261,7 @@ func (c *BotController) settingsBandMembers(bot *gotgbot.Bot, ctx *ext.Context, 
 		return err
 	}
 
-	ctx.CallbackQuery.Answer(bot, nil)
+	_, _ = ctx.CallbackQuery.Answer(bot, nil)
 
 	return nil
 }

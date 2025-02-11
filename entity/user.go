@@ -131,7 +131,7 @@ var encoder = schema.NewEncoder()
 
 func (c *CallbackCache) AddToText(text string) string {
 	values := url.Values{}
-	encoder.Encode(c, values)
+	_ = encoder.Encode(c, values)
 	u, _ := url.Parse(util.CallbackCacheURL)
 	u.RawQuery = values.Encode()
 	//return fmt.Sprintf("%s\n\n<a href=\"%s\">cache</a>", text, u.String())

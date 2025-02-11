@@ -56,37 +56,39 @@ func main() {
 	}
 
 	_, err = bot.SetMyCommands([]gotgbot.BotCommand{
-		{Command: "/schedule", Description: txt.Get("button.schedule", "uk")},
-		{Command: "/songs", Description: txt.Get("button.songs", "uk")},
-		{Command: "/menu", Description: txt.Get("button.menu", "uk")},
-	}, &gotgbot.SetMyCommandsOpts{LanguageCode: "uk"})
+		{Command: "/schedule", Description: txt.Get("button.schedule", "ru")},
+		{Command: "/songs", Description: txt.Get("button.songs", "ru")},
+		{Command: "/menu", Description: txt.Get("button.menu", "ru")},
+	}, &gotgbot.SetMyCommandsOpts{Scope: gotgbot.BotCommandScopeDefault{}, LanguageCode: "ru"})
+	if err != nil {
+		log.Fatal().Err(err).Msg("Error setting commands")
+	}
 
 	_, err = bot.SetMyCommands([]gotgbot.BotCommand{
 		{Command: "/schedule", Description: txt.Get("button.schedule", "")},
 		{Command: "/songs", Description: txt.Get("button.songs", "")},
 		{Command: "/menu", Description: txt.Get("button.menu", "")},
 	}, nil)
-
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error setting commands")
 	}
 
-	mongoClient, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("BOT_MONGODB_URI")))
-	if err != nil {
-		log.Fatal().Err(err).Msg("Error creating mongo client")
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	err = mongoClient.Connect(ctx)
+	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("BOT_MONGODB_URI")))
 	if err != nil {
-		log.Fatal().Err(err)
+		log.Fatal().Err(err).Msg("Error connecting to MongoDB")
 	}
-	defer mongoClient.Disconnect(ctx)
+	defer func() {
+		if err := mongoClient.Disconnect(ctx); err != nil {
+			log.Fatal().Err(err).Msg("Error disconnecting from MongoDB")
+		}
+	}()
+
 	err = mongoClient.Ping(ctx, readpref.Primary())
 	if err != nil {
-		log.Fatal().Err(err).Msg("error pinging mongo")
+		log.Fatal().Err(err).Msg("Error pinging MongoDB")
 	}
 
 	driveRepository, err := drive.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("BOT_GOOGLEAPIS_KEY"))))
@@ -236,7 +238,7 @@ func main() {
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(func(msg *gotgbot.Message) bool {
 		return msg.Text == txt.Get("button.stats", msg.From.LanguageCode)
 	}, func(bot *gotgbot.Bot, ctx *ext.Context) error {
-		ctx.EffectiveChat.SendMessage(bot, txt.Get("text.noStats", ctx.EffectiveUser.LanguageCode), nil)
+		_, _ = ctx.EffectiveChat.SendMessage(bot, txt.Get("text.noStats", ctx.EffectiveUser.LanguageCode), nil)
 		return nil
 	}), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(func(msg *gotgbot.Message) bool {
