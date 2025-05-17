@@ -29,6 +29,9 @@ import (
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
 	"html/template"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -162,9 +165,6 @@ func main() {
 	driveFileController := controller.DriveFileController{
 		DriveFileService: driveFileService,
 		SongService:      songService,
-	}
-	userController := controller.UserController{
-		UserService: userService,
 	}
 
 	// Create updater and dispatcher.
@@ -394,7 +394,39 @@ func main() {
 	router.GET("/api/drive-files/search", driveFileController.Search)
 	router.GET("/api/songs/find-by-drive-file-id", driveFileController.FindByDriveFileID)
 
-	router.GET("/api/users-with-events", userController.UsersWithEvents)
+	router.GET("/api/users-with-events", webAppController.UsersWithEvents)
+	router.GET("/api/songs/:id", webAppController.GetSongData)
+
+	// Check if we're in development mode
+	if os.Getenv("ENV") == "dev" {
+		// Create a reverse proxy to the Vite dev server
+		proxy, err := createProxy("http://localhost:5173")
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to create reverse proxy")
+		}
+
+		// Forward requests with the /webapp-react prefix to the Vite dev server
+		router.Any("/webapp-react/*path", func(c *gin.Context) {
+			proxy.ServeHTTP(c.Writer, c.Request)
+		})
+	} else {
+		// In production, serve the built static files (keep your current path)
+		router.Static("/webapp-react", "./webapp-react/dist")
+	}
+
+	router.NoRoute(func(c *gin.Context) {
+		if strings.HasPrefix(c.Request.URL.Path, "/webapp-react") {
+			// Different paths for dev and prod
+			if os.Getenv("ENV") == "dev" {
+				// This is handled by the proxy in development
+				c.Next()
+			} else {
+				c.File("./webapp-react/dist/index.html")
+			}
+		} else {
+			c.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
+		}
+	})
 
 	go func() {
 		// Start receiving updates.
@@ -419,4 +451,12 @@ func main() {
 	if err != nil {
 		panic("error starting Gin: " + err.Error())
 	}
+}
+
+func createProxy(target string) (*httputil.ReverseProxy, error) {
+	url, err := url.Parse(target)
+	if err != nil {
+		return nil, err
+	}
+	return httputil.NewSingleHostReverseProxy(url), nil
 }

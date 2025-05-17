@@ -136,6 +136,7 @@ func SongInit(song *entity.Song, user *entity.User, chatID int64, messageID int6
 			})
 		}
 
+		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.edit", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/webapp-react/songs/%s/edit?userId=%d&messageId=%d&chatId=%d&lang=%s", os.Getenv("BOT_DOMAIN"), song.ID.Hex(), user.ID, messageID, chatID, lang)}}})
 		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.edit", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/songs/%s/edit?userId=%d&messageId=%d&chatId=%d&lang=%s", os.Getenv("BOT_DOMAIN"), song.ID.Hex(), user.ID, messageID, chatID, lang)}}})
 
 	} else {
@@ -180,9 +181,6 @@ func SongInitIQ(song *entity.Song, user *entity.User, lang string) [][]gotgbot.I
 func SongEdit(song *entity.Song, driveFile *drive.File, user *entity.User, lang string) [][]gotgbot.InlineKeyboardButton {
 
 	keyboard := [][]gotgbot.InlineKeyboardButton{
-		//{
-		//	{Text: txt.Get("button.edit", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/songs/%s/edit?userId=%d&messageId=%d&chatId=%d", os.Getenv("BOT_DOMAIN"), song.ID.Hex(), user.ID, messageID, chatID)}},
-		//},
 		{
 			{Text: txt.Get("button.docLink", lang), Url: song.PDF.WebViewLink},
 		},
@@ -190,14 +188,6 @@ func SongEdit(song *entity.Song, driveFile *drive.File, user *entity.User, lang 
 			{Text: txt.Get("button.style", lang), CallbackData: util.CallbackData(state.SongStyle, song.DriveFileID)},
 			{Text: txt.Get("button.lyrics", lang), CallbackData: util.CallbackData(state.SongAddLyricsPage, song.DriveFileID)},
 		},
-		//{
-		//	{Text: txt.Get("button.voices", lang, len(song.Voices)), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())},
-		//},
-
-		//{
-		//	{Text: txt.Get("button.delete", lang), CallbackData: util.CallbackData(state.SongDeleteConfirm, song.ID.Hex())},
-		//},
-
 	}
 
 	if user.IsAdmin() {
