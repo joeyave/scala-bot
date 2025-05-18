@@ -219,7 +219,7 @@ window.addEventListener('DOMContentLoaded', (e) => {
 
                 console.log(newTag.value)
 
-                await fetch(`/web-app/songs/${song.id}/edit/confirm?queryId=${Telegram.WebApp.initDataUnsafe.query_id}&messageId=${messageId}&chatId=${chatId}&userId=${userId}`, {
+                await fetch(`/web-app/songs/${song.id}/edit/confirm?messageId=${messageId}&chatId=${chatId}&userId=${userId}`, {
                     method: "POST",
                     headers: {'Content-Type': 'application/json'},
                     body: data,

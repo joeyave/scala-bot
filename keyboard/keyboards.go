@@ -136,7 +136,7 @@ func SongInit(song *entity.Song, user *entity.User, chatID int64, messageID int6
 			})
 		}
 
-		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.edit", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/webapp-react/songs/%s/edit?userId=%d&messageId=%d&chatId=%d&lang=%s", os.Getenv("BOT_DOMAIN"), song.ID.Hex(), user.ID, messageID, chatID, lang)}}})
+		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.edit", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/webapp-react/#/songs/%s/edit?userId=%d&messageId=%d&chatId=%d&lang=%s", os.Getenv("BOT_DOMAIN"), song.ID.Hex(), user.ID, messageID, chatID, lang)}}})
 		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.edit", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/songs/%s/edit?userId=%d&messageId=%d&chatId=%d&lang=%s", os.Getenv("BOT_DOMAIN"), song.ID.Hex(), user.ID, messageID, chatID, lang)}}})
 
 	} else {

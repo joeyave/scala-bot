@@ -1,22 +1,29 @@
-import { Placeholder, AppRoot } from '@telegram-apps/telegram-ui';
-import { retrieveLaunchParams, isColorDark, isRGB } from '@telegram-apps/sdk-react';
-import { useMemo } from 'react';
+import {
+  isColorDark,
+  isRGB,
+  retrieveLaunchParams,
+} from "@telegram-apps/sdk-react";
+import { AppRoot, Placeholder } from "@telegram-apps/telegram-ui";
+import { useMemo } from "react";
 
 export function EnvUnsupported() {
   const [platform, isDark] = useMemo(() => {
     try {
       const lp = retrieveLaunchParams();
       const { bg_color: bgColor } = lp.tgWebAppThemeParams;
-      return [lp.tgWebAppPlatform, bgColor && isRGB(bgColor) ? isColorDark(bgColor) : false];
+      return [
+        lp.tgWebAppPlatform,
+        bgColor && isRGB(bgColor) ? isColorDark(bgColor) : false,
+      ];
     } catch {
-      return ['android', false];
+      return ["android", false];
     }
   }, []);
 
   return (
     <AppRoot
-      appearance={isDark ? 'dark' : 'light'}
-      platform={['macos', 'ios'].includes(platform) ? 'ios' : 'base'}
+      appearance={isDark ? "dark" : "light"}
+      platform={["macos", "ios"].includes(platform) ? "ios" : "base"}
     >
       <Placeholder
         header="Oops"
@@ -25,7 +32,7 @@ export function EnvUnsupported() {
         <img
           alt="Telegram sticker"
           src="https://xelene.me/telegram.gif"
-          style={{ display: 'block', width: '144px', height: '144px' }}
+          style={{ display: "block", width: "144px", height: "144px" }}
         />
       </Placeholder>
     </AppRoot>
