@@ -5,21 +5,5 @@
     <content url="file://$MODULE_DIR$" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="bootstrap" level="application" />
-    <orderEntry type="library" name="font-awesome" level="application" />
-    <orderEntry type="library" name="tom-select" level="application" />
-    <orderEntry type="library" name="Sortable" level="application" />
-    <orderEntry type="library" name="autosize.js" level="application" />
-    <orderEntry type="library" name="notiflix" level="application" />
-    <orderEntry type="library" name="moment.js" level="application" />
-    <orderEntry type="library" name="font-awesome" level="application" />
-    <orderEntry type="library" name="bootstrap" level="application" />
-    <orderEntry type="library" name="textfit" level="application" />
-    <orderEntry type="library" name="tom-select" level="application" />
-    <orderEntry type="library" name="Sortable" level="application" />
-    <orderEntry type="library" name="autosize.js" level="application" />
-    <orderEntry type="library" name="notiflix-3.2.7" level="application" />
-    <orderEntry type="library" name="notiflix" level="application" />
-    <orderEntry type="library" name="moment.js" level="application" />
   </component>
 </module>

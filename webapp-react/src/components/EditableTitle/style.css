@@ -1,0 +1,10 @@
+.editable-title__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.editable-title__row > *:first-child {
+    flex: 1;
+    margin-right: 8px;
+}

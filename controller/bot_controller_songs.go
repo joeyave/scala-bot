@@ -217,6 +217,7 @@ func (c *BotController) GetSongs(index int) handlers.Response {
 				}
 
 				markup.Keyboard = append(markup.Keyboard, keyboard.GetSongsStateFilterButtons(ctx.EffectiveUser.LanguageCode))
+				markup.Keyboard = append(markup.Keyboard, []gotgbot.KeyboardButton{{Text: txt.Get("button.createDoc", ctx.EffectiveUser.LanguageCode), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/webapp-react/#/songs/create?userId=%d&lang=%s", os.Getenv("BOT_DOMAIN"), user.ID, ctx.EffectiveUser.LanguageCode)}}})
 				markup.Keyboard = append(markup.Keyboard, []gotgbot.KeyboardButton{{Text: txt.Get("button.createDoc", ctx.EffectiveUser.LanguageCode), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/songs/create?userId=%d&lang=%s", os.Getenv("BOT_DOMAIN"), user.ID, ctx.EffectiveUser.LanguageCode)}}})
 
 				likedSongs, likedSongErr := c.SongService.FindManyLiked(user.BandID, user.ID)

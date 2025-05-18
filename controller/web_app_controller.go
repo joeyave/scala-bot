@@ -366,37 +366,49 @@ var timeRegex = regexp.MustCompile(`(?i)time:(.*?);`)
 
 func (h *WebAppController) EditSongConfirm(ctx *gin.Context) {
 
-	hex := ctx.Param("id")
-	songID, err := primitive.ObjectIDFromHex(hex)
+	songIDStr := ctx.Param("id")
+	songID, err := primitive.ObjectIDFromHex(songIDStr)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
 	userIDStr := ctx.Query("userId")
 	userID, err := strconv.ParseInt(userIDStr, 10, 64)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
 	messageIDStr := ctx.Query("messageId")
 	messageID, err := strconv.ParseInt(messageIDStr, 10, 64)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 	chatIDStr := ctx.Query("chatId")
 	chatID, err := strconv.ParseInt(chatIDStr, 10, 64)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
 	var data *EditSongData
 	err = ctx.ShouldBindJSON(&data)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
 	song, err := h.SongService.FindOneByID(songID)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
@@ -405,29 +417,39 @@ func (h *WebAppController) EditSongConfirm(ctx *gin.Context) {
 	if song.PDF.Name != data.Name {
 		err := h.DriveFileService.Rename(song.DriveFileID, data.Name)
 		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			log.Error().Err(err).Msgf("Error:")
 			return
 		}
 		song.PDF.Name = data.Name
 	}
 
-	// todo
 	if song.PDF.Key != data.Key {
-		//_, err := h.DriveFileService.ReplaceAllTextByRegex(song.DriveFileID, keyRegex, fmt.Sprintf("KEY: %s;", data.Key))
-		//if err != nil {
-		//	return
-		//}
-
-		section, err := strconv.Atoi(data.TransposeSection)
-		if err != nil {
-			return
-		}
-		_, err = h.DriveFileService.TransposeOne(song.DriveFileID, data.Key, section)
-		if err != nil {
-			return
-		}
-
-		if section == 0 {
+		if data.TransposeSection != "" {
+			section, err := strconv.Atoi(data.TransposeSection)
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				log.Error().Err(err).Msgf("Error:")
+				return
+			}
+			_, err = h.DriveFileService.TransposeOne(song.DriveFileID, data.Key, section)
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				log.Error().Err(err).Msgf("Error:")
+				return
+			}
+			if section == 0 {
+				song.PDF.Key = data.Key
+			}
+		} else {
 			song.PDF.Key = data.Key
+
+			_, err = h.DriveFileService.TransposeHeader(song.DriveFileID, data.Key, 0)
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				log.Error().Err(err).Msgf("Error:")
+				return
+			}
 		}
 	}
 
@@ -446,14 +468,16 @@ func (h *WebAppController) EditSongConfirm(ctx *gin.Context) {
 
 	song, err = h.SongService.UpdateOne(*song)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
-
 	user, err := h.UserService.FindOneByID(userID)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
-
 	user.CallbackCache = entity.CallbackCache{
 		ChatID:    chatID,
 		MessageID: messageID,
@@ -463,9 +487,10 @@ func (h *WebAppController) EditSongConfirm(ctx *gin.Context) {
 
 	reader, err := h.DriveFileService.DownloadOneByID(song.DriveFileID)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
-
 	markup := gotgbot.InlineKeyboardMarkup{
 		InlineKeyboard: keyboard.SongInit(song, user, chatID, messageID, "ru"),
 	}
@@ -480,7 +505,8 @@ func (h *WebAppController) EditSongConfirm(ctx *gin.Context) {
 		ReplyMarkup: markup,
 	})
 	if err != nil {
-		log.Error().Err(err).Msg("error")
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
@@ -611,25 +637,58 @@ func (h *WebAppController) UsersWithEvents(ctx *gin.Context) {
 
 // API Songs.
 
+type Song struct {
+	*entity.Song
+	LyricsHTML     string `json:"lyricsHtml"`
+	SectionsNumber int    `json:"sectionsNumber"`
+}
+
 func (h *WebAppController) GetSongData(ctx *gin.Context) {
+
 	songIDFromQ := ctx.Param("id")
 	songID, err := primitive.ObjectIDFromHex(songIDFromQ)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid song ID"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	songEntity, err := h.SongService.FindOneByID(songID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	songLyricsHTML, sectionsNumber := h.DriveFileService.GetHTMLTextWithSectionsNumber(songEntity.DriveFileID)
 
 	userIDFromQ := ctx.Query("userId")
 	userID, err := strconv.ParseInt(userIDFromQ, 10, 64)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// todo
+	user, err := h.UserService.FindOneByID(userID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	allTags, err := h.SongService.GetTags(user.BandID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	song := Song{
+		Song:           songEntity,
+		LyricsHTML:     songLyricsHTML,
+		SectionsNumber: sectionsNumber,
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"song": songID,
-		"user": userID,
+		"data": gin.H{
+			"song":     song,
+			"bandTags": allTags,
+		},
 	})
 }

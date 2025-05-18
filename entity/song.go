@@ -60,7 +60,7 @@ type PDF struct {
 	BPM  string `bson:"bpm,omitempty" json:"bpm,omitempty"`
 	Time string `bson:"time,omitempty" json:"time,omitempty"`
 
-	WebViewLink string `bson:"webViewLink,omitempty" json:"web_view_link,omitempty"`
+	WebViewLink string `bson:"webViewLink,omitempty" json:"webViewLink,omitempty"`
 }
 
 func (s *Song) Meta() string {

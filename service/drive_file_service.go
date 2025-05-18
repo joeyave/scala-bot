@@ -440,6 +440,29 @@ func (s *DriveFileService) TransposeOne(ID string, toKey string, sectionIndex in
 	return s.FindOneByID(ID)
 }
 
+func (s *DriveFileService) TransposeHeader(ID string, toKey string, sectionIndex int) (*drive.File, error) {
+	doc, err := s.docsRepository.Documents.Get(ID).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	sections := s.getSections(doc)
+
+	if len(sections) <= sectionIndex || sectionIndex < 0 {
+		return nil, fmt.Errorf("section index %d is out of bounds", sectionIndex)
+	}
+
+	requests, _ := s.transposeHeader(doc, sections, sectionIndex, toKey)
+
+	_, err = s.docsRepository.Documents.BatchUpdate(doc.DocumentId,
+		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return s.FindOneByID(ID)
+}
+
 func (s *DriveFileService) AddLyricsPage(ID string) (*drive.File, error) {
 	doc, err := s.docsRepository.Documents.Get(ID).Do()
 	if err != nil {
@@ -681,7 +704,7 @@ func (s *DriveFileService) GetMetadata(ID string) (string, string, string) {
 		return nil
 	})
 	if err != nil {
-		return "?", "?", "?"
+		return "", "", ""
 	}
 
 	var driveFileText string
