@@ -986,21 +986,21 @@ func composeTransposeRequests(content []*docs.StructuralElement, index int64, ke
 					}
 
 					transposedText, err := transposer.TransposeToKey(element.TextRun.Content, key, toKey)
-					modText := ""
+					//modText := ""
 					if err == nil {
-						if addMod {
-							fromKey, err := transposer.ParseKey(key)
-							if err == nil {
-								toKey, err := transposer.ParseKey(toKey)
-								if err == nil {
-									if string(transposedText[len(transposedText)-1]) != " " {
-										modText += " "
-									}
-									modText += fmt.Sprintf("(mod %d)", toKey.SemitonesTo(fromKey))
-									transposedText += modText
-								}
-							}
-						}
+						//if addMod {
+						//	fromKey, err := transposer.ParseKey(key)
+						//	if err == nil {
+						//		toKey, err := transposer.ParseKey(toKey)
+						//		if err == nil {
+						//			if string(transposedText[len(transposedText)-1]) != " " {
+						//				modText += " "
+						//			}
+						//			modText += fmt.Sprintf("(mod %d)", toKey.SemitonesTo(fromKey))
+						//			transposedText += modText
+						//		}
+						//	}
+						//}
 
 						element.TextRun.Content = transposedText
 					}
@@ -1041,8 +1041,9 @@ func composeTransposeRequests(content []*docs.StructuralElement, index int64, ke
 								Fields: "*",
 								Range: &docs.Range{
 									StartIndex: index,
-									EndIndex:   index + int64(len([]rune(element.TextRun.Content))-len([]rune(modText))),
-									SegmentId:  segmentId,
+									EndIndex:   index + int64(len([]rune(element.TextRun.Content))),
+									//EndIndex:   index + int64(len([]rune(element.TextRun.Content))-len([]rune(modText))),
+									SegmentId: segmentId,
 									ForceSendFields: func() []string {
 										if index == 0 {
 											return []string{"StartIndex"}
