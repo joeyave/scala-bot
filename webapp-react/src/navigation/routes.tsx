@@ -24,11 +24,9 @@ export const routes: Route[] = [
     title: "Launch Params",
   },
 
-  { path: "/songs/:id/edit", Component: SongPage, title: "Song" },
+  { path: "/songs/:id/edit", Component: SongPage },
   {
     path: "/songs/:id/edit/confirm",
     Component: SongConfirmationPage,
-    title: "Song confirm",
   },
-  { path: "/songs/:id/create", Component: SongPage, title: "Song" },
 ];

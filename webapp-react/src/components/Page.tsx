@@ -4,7 +4,7 @@ import {
   showBackButton,
 } from "@telegram-apps/sdk-react";
 import { type PropsWithChildren, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 export function Page({
   children,

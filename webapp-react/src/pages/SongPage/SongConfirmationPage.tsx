@@ -15,7 +15,7 @@ import {
   Text,
 } from "@telegram-apps/telegram-ui";
 import { FC, useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router";
 
 import { SongForm } from "@/pages/SongPage/util/types.ts";
 import { Location } from "react-router";
@@ -99,14 +99,14 @@ export const SongConfirmationPage: FC = () => {
 
     mainButton.onClick(handleMainButtonClickSync);
 
-    const handleBackButtonClick = () => {
-      navigate(`/songs/${songId}`);
-    };
-    backButton.onClick(handleBackButtonClick);
+    // const handleBackButtonClick = () => {
+    //   navigate(`/songs/${songId}`);
+    // };
+    // backButton.onClick(handleBackButtonClick);
 
     return () => {
       mainButton.offClick(handleMainButtonClickSync);
-      backButton.offClick(handleBackButtonClick);
+      // backButton.offClick(handleBackButtonClick);
     };
   }, [
     chatId,

@@ -40,13 +40,14 @@ import { Button, List, Section, Text } from "@telegram-apps/telegram-ui";
 import { MultiselectOption } from "@telegram-apps/telegram-ui/dist/components/Form/Multiselect/types";
 import { FC, useEffect, useState } from "react";
 import { FileEarmarkTextFill } from "react-bootstrap-icons";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import "./SongPage.css";
 
 const [, e] = bem("song-page");
 
 export const SongPage: FC = () => {
-  const { id: songId } = useParams<{ id: string }>();
+  const params = useParams();
+  const songId = params.id;
   const [searchParams] = useSearchParams();
   const messageId = searchParams.get("messageId");
   const chatId = searchParams.get("chatId");
@@ -199,7 +200,7 @@ export const SongPage: FC = () => {
           sectionsNumber: songData?.song?.sectionsNumber || 1,
         };
 
-        navigate(`/songs/${songId}/edit/confirm`, {
+        await navigate(`/songs/${songId}/edit/confirm`, {
           state: stateData,
         });
       } else {
