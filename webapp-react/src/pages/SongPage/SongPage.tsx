@@ -27,7 +27,7 @@ import {
   isTimeSignatureValid,
 } from "@/pages/SongPage/util/formValidation.ts";
 import { transposeAllText } from "@/pages/SongPage/util/transpose.ts";
-import { SongFormValues, SongStateData } from "@/pages/SongPage/util/types.ts";
+import { SongForm, SongStateData } from "@/pages/SongPage/util/types.ts";
 import { PageError } from "@/pages/UtilPages/PageError.tsx";
 import { PageLoading } from "@/pages/UtilPages/PageLoading.tsx";
 import {
@@ -59,7 +59,7 @@ export const SongPage: FC = () => {
   const [error, setError] = useState<Error | null>(null);
 
   // Form data state using the new interface
-  const [formData, setFormData] = useState<SongFormValues>({
+  const [formData, setFormData] = useState<SongForm>({
     name: "",
     key: "",
     bpm: "",
@@ -68,7 +68,7 @@ export const SongPage: FC = () => {
   });
 
   // State to track initial values
-  const [initialFormData, setInitialFormData] = useState<SongFormValues>({
+  const [initialFormData, setInitialFormData] = useState<SongForm>({
     name: "",
     key: "",
     bpm: "",
@@ -103,7 +103,7 @@ export const SongPage: FC = () => {
           setSongData(data);
 
           // Initialize form data with formatted values from API.
-          const initFormData: SongFormValues = {
+          const initFormData: SongForm = {
             name: formatTitle(data.song.pdf.name),
             key: formatKey(data.song.pdf.key),
             bpm: formatBpm(data.song.pdf.bpm),
@@ -117,6 +117,7 @@ export const SongPage: FC = () => {
 
           setInitialFormData(initFormData);
           setFormData(initFormData);
+          setTransposedLyricsHtml(data.song.lyricsHtml);
         } catch (err) {
           setError(typedErr(err));
         }
@@ -149,18 +150,19 @@ export const SongPage: FC = () => {
     // };
   }, [formData, initialFormData, transpositionError]);
 
-  // Update the effect that handles key changes and transpose lyrics
-  useEffect(() => {
-    // Reset the transposition error state when the key changes
-    setTranspositionError(false);
+  const handleKeyChange = (newKey: string) => {
+    setFormData((prev: SongForm) => ({ ...prev, key: newKey }));
 
-    // Only run the transpose when we have API data and keys don't match
-    if (songData?.song?.lyricsHtml && formData.key !== initialFormData.key) {
+    if (!songData?.song?.lyricsHtml) {
+      return;
+    }
+
+    if (newKey != initialFormData.key) {
       try {
         const transposedHtml = transposeAllText(
           songData.song.lyricsHtml,
           initialFormData.key,
-          formData.key,
+          newKey,
         );
 
         setTransposedLyricsHtml(transposedHtml);
@@ -170,11 +172,12 @@ export const SongPage: FC = () => {
         setTranspositionError(true);
         setTransposedLyricsHtml(songData.song.lyricsHtml);
       }
-    } else if (songData?.song?.lyricsHtml) {
-      // If keys match, use the original lyrics
+    } else {
+      setTranspositionError(false);
       setTransposedLyricsHtml(songData.song.lyricsHtml);
     }
-  }, [formData.key, initialFormData.key, songData?.song?.lyricsHtml]);
+    return;
+  };
 
   useEffect(() => {
     if (!songId || !userId || !chatId || !messageId) {
@@ -235,7 +238,16 @@ export const SongPage: FC = () => {
       mainButton.setParams({ isLoaderVisible: false });
       mainButton.offClick(handleMainButtonClickSync);
     };
-  }, [songId, userId, messageId, chatId, formData, navigate, initialFormData, songData?.song?.sectionsNumber]);
+  }, [
+    songId,
+    userId,
+    messageId,
+    chatId,
+    formData,
+    navigate,
+    initialFormData,
+    songData?.song?.sectionsNumber,
+  ]);
 
   // Show loading state
   if (loading) {
@@ -294,12 +306,7 @@ export const SongPage: FC = () => {
           <KeyInput
             value={initialFormData.key} // Using init key here to add custom value as option.
             status={transpositionError ? "error" : undefined}
-            onChange={(val) => {
-              setFormData((prev) => ({
-                ...prev,
-                key: val,
-              }));
-            }}
+            onChange={handleKeyChange}
           />
           <BPMInput
             value={formData.bpm}

@@ -17,7 +17,7 @@ import {
 import { FC, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import { SongFormValues } from "@/pages/SongPage/util/types.ts";
+import { SongForm } from "@/pages/SongPage/util/types.ts";
 import { Location } from "react-router";
 
 export interface LocationWithState extends Location {
@@ -26,8 +26,8 @@ export interface LocationWithState extends Location {
     userId: string;
     chatId: string;
     messageId: string;
-    formData: SongFormValues;
-    initialFormData: SongFormValues;
+    formData: SongForm;
+    initialFormData: SongForm;
     sectionsNumber: number;
   };
 }

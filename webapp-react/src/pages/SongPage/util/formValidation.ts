@@ -1,5 +1,5 @@
 import { arraysEqualMultiset } from "@/helpers/multiselect.ts";
-import { SongFormValues } from "@/pages/SongPage/util/types.ts";
+import { SongForm } from "@/pages/SongPage/util/types.ts";
 
 export const isNameValid = (name: string): boolean => {
   return !!name.trim() && !/^\s|\s$/.test(name);
@@ -17,8 +17,8 @@ export const isTimeSignatureValid = (time: string): boolean => {
 };
 
 export function isFormChanged(
-  formData: SongFormValues,
-  initialFormData: SongFormValues,
+  formData: SongForm,
+  initialFormData: SongForm,
 ): boolean {
   // Compare primitive fields
   for (const key in formData) {
@@ -42,7 +42,7 @@ export function isFormChanged(
 }
 
 export function isFormValid(
-  formData: SongFormValues,
+  formData: SongForm,
   transpositionError: boolean,
 ): boolean {
   return (
