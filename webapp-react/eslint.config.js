@@ -1,6 +1,7 @@
 // @ts-check
 
 import eslint from "@eslint/js";
+import query from "@tanstack/eslint-plugin-query";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
 import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
@@ -16,6 +17,7 @@ export default tseslint.config({
     react.configs.flat.recommended,
     react.configs.flat["jsx-runtime"],
     reactHooks.configs["recommended-latest"],
+    query.configs["flat/recommended"],
     eslintConfigPrettier,
   ],
   languageOptions: {

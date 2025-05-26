@@ -8,13 +8,13 @@ import { EnvUnsupported } from "@/components/EnvUnsupported.tsx";
 import { Root } from "@/components/Root.tsx";
 import { init } from "@/init.ts";
 
-import "./index.css";
-
-// Mock the environment in case, we are outside Telegram.
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
-import "./mockEnv.ts";
+import "./index.css";
+import "./mockEnv.ts"; // Mock the environment in case, we are outside Telegram.
 
 const root = ReactDOM.createRoot(document.getElementById("root")!);
+const queryClient = new QueryClient();
 
 try {
   const launchParams = retrieveLaunchParams();
@@ -31,7 +31,9 @@ try {
   }).then(() => {
     root.render(
       <StrictMode>
-        <Root />
+        <QueryClientProvider client={queryClient}>
+          <Root />
+        </QueryClientProvider>
       </StrictMode>,
     );
   });

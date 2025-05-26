@@ -1,4 +1,4 @@
-export interface RespDataGetSong {
+export interface RespSongData {
   song: Song;
   bandTags: string[];
 }
@@ -11,9 +11,6 @@ interface Song {
   pdf: Pdf;
   tags: string[];
   isArchived: boolean;
-
-  lyricsHtml: string;
-  sectionsNumber: number;
 }
 
 interface Band {
@@ -32,4 +29,9 @@ interface Pdf {
   bpm: string;
   time: string;
   webViewLink: string;
+}
+
+export interface RespSongLyrics {
+  lyricsHtml: string;
+  sectionsNumber: number;
 }

@@ -10,6 +10,7 @@ import (
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
 	"io"
+	"net/http"
 	"regexp"
 	"strings"
 	"time"
@@ -388,10 +389,10 @@ func (s *DriveFileService) MoveOne(fileID string, newFolderID string) (*drive.Fi
 	return newFile, err
 }
 
-func (s *DriveFileService) DownloadOneByID(ID string) (*io.Reader, error) {
+func (s *DriveFileService) DownloadOneByID(ID string) (io.ReadCloser, error) {
 	retrier := retry.NewRetrier(5, 100*time.Millisecond, time.Second)
 
-	var reader io.Reader
+	var reader io.ReadCloser
 	err := retrier.Run(func() error {
 		res, err := s.driveClient.Files.Export(ID, "application/pdf").Download()
 		if err != nil {
@@ -403,7 +404,23 @@ func (s *DriveFileService) DownloadOneByID(ID string) (*io.Reader, error) {
 		return nil
 	})
 
-	return &reader, err
+	return reader, err
+}
+
+func (s *DriveFileService) DownloadOneByIDWithResp(ID string) (*http.Response, error) {
+	retrier := retry.NewRetrier(5, 100*time.Millisecond, time.Second)
+
+	var reader *http.Response
+	err := retrier.Run(func() error {
+		res, err := s.driveClient.Files.Export(ID, "application/pdf").Download()
+		if err != nil {
+			return err
+		}
+		reader = res
+		return nil
+	})
+
+	return reader, err
 }
 
 func (s *DriveFileService) TransposeOne(ID string, toKey string, sectionIndex int) (*drive.File, error) {

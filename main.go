@@ -388,14 +388,15 @@ func main() {
 	router.GET("/web-app/events/:id/edit", webAppController.EditEvent)
 	router.POST("/web-app/events/:id/edit/confirm", webAppController.EditEventConfirm)
 
-	router.GET("/web-app/songs/:id/edit", webAppController.EditSong)
-	router.POST("/web-app/songs/:id/edit/confirm", webAppController.EditSongConfirm)
-
 	router.GET("/api/drive-files/search", driveFileController.Search)
 	router.GET("/api/songs/find-by-drive-file-id", driveFileController.FindByDriveFileID)
 
 	router.GET("/api/users-with-events", webAppController.UsersWithEvents)
-	router.GET("/api/songs/:id", webAppController.GetSongData)
+
+	router.GET("/api/songs/:id", webAppController.SongData)
+	router.GET("/api/songs/:id/lyrics", webAppController.SongLyrics)
+	router.POST("/api/songs/:id/edit", webAppController.SongEdit)
+	router.GET("/api/songs/:id/download", webAppController.SongDownload)
 
 	// Check if we're in development mode
 	if os.Getenv("ENV") == "dev" {

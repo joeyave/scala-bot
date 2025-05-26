@@ -45,12 +45,20 @@ export async function doReqWebappApi<T>(
         data: respBody?.data ?? null,
         err: null,
       };
-    } else {
+    }
+
+    if (contentType?.includes("application/pdf")) {
+      const blob = await resp.blob();
       return {
-        data: null,
+        data: blob as T,
         err: null,
       };
     }
+
+    return {
+      data: null,
+      err: null,
+    };
   } catch (err) {
     return {
       data: null,

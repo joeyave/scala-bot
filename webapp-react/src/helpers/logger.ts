@@ -75,11 +75,20 @@ export class Logger {
     headers?: unknown,
     body?: unknown,
   ): void {
+    let bodyLog: unknown = body;
+    if (typeof body === "string") {
+      try {
+        bodyLog = JSON.parse(body);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (err) {
+        // ignore
+      }
+    }
     this.debug(`API Request [${requestId}]`, {
       url,
       method,
       headers,
-      body,
+      bodyLog,
       timestamp: new Date().toISOString(),
     });
   }
@@ -91,11 +100,21 @@ export class Logger {
     duration: number,
     body?: unknown,
   ): void {
+    let bodyLog: unknown = body;
+    if (typeof body === "string") {
+      try {
+        bodyLog = JSON.parse(body);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (err) {
+        // ignore
+      }
+    }
+
     this.debug(`API Response [${requestId}]`, {
       status,
       statusText,
       duration: `${duration.toFixed(2)}ms`,
-      body,
+      bodyLog,
       timestamp: new Date().toISOString(),
     });
   }

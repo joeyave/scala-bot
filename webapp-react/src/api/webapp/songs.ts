@@ -1,24 +1,40 @@
 import { doReqWebappApi } from "@/api/webapp/doReq.ts";
 import { ReqBodyUpdateSong, ReqQueryParamsUpdateSong } from "./typesReq.ts";
-import { RespDataGetSong } from "@/api/webapp/typesResp.ts";
+import { RespSongData, RespSongLyrics } from "@/api/webapp/typesResp.ts"; // type Resp<T> = {
 
-type Resp<T> = {
-  data: T | null;
-  err: Error | null;
-};
-
-export async function getSong(
+export async function getSongData(
   songId: string,
   userId: string,
-): Promise<Resp<RespDataGetSong>> {
-  const { data, err } = await doReqWebappApi<RespDataGetSong>(
+): Promise<RespSongData | null> {
+  const { data, err } = await doReqWebappApi<RespSongData>(
     `/api/songs/${songId}`,
     "GET",
     { userId },
     { Accept: "application/json" },
   );
 
-  return { data, err };
+  if (err) {
+    throw err;
+  }
+
+  return data;
+}
+
+export async function getSongLyrics(
+  songId: string,
+): Promise<RespSongLyrics | null> {
+  const { data, err } = await doReqWebappApi<RespSongLyrics>(
+    `/api/songs/${songId}/lyrics`,
+    "GET",
+    undefined,
+    { Accept: "application/json" },
+  );
+
+  if (err) {
+    throw err;
+  }
+
+  return data;
 }
 
 export async function updateSong(
@@ -27,12 +43,32 @@ export async function updateSong(
   body: ReqBodyUpdateSong,
 ) {
   const { err } = await doReqWebappApi(
-    `/web-app/songs/${songId}/edit/confirm`,
+    `/api/songs/${songId}/edit`,
     "POST",
     queryParams,
     { Accept: "application/json" },
     body,
   );
 
-  return err;
+  if (err) {
+    throw err;
+  }
+
+  return;
+}
+
+export async function downloadSongPdf(
+    songId: string,
+): Promise<Blob | null> {
+  const { data, err } = await doReqWebappApi<Blob>(
+      `/api/songs/${songId}/download`,
+      "GET",
+      { Accept: "application/json" },
+  );
+
+  if (err) {
+    throw err;
+  }
+
+  return data;
 }

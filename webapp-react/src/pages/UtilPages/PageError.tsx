@@ -1,36 +1,35 @@
 import { Page } from "@/components/Page.tsx";
-import { bem } from "@/css/bem.ts";
 import { publicUrl } from "@/helpers/publicUrl.ts";
 import { Placeholder } from "@telegram-apps/telegram-ui";
-import React from "react";
 
 import { logger } from "@/helpers/logger.ts";
-import "./style.css";
 
-const [, e] = bem("page-error");
-
-interface SongPageErrorProps {
-  error: Error;
-}
-
-export const PageError: React.FC<SongPageErrorProps> = ({
-  error = new Error("Unknown error"),
-}) => {
-  logger.warn("Showing error page", {
-    error: error.message,
-  });
+export function PlaceholderGeneralError({ error }: { error: unknown }) {
+  logger.error("Rendering general error page.", { error });
 
   return (
-    <Page back={false}>
-      <div className={e("centered-content")}>
-        <Placeholder header="Oops" description="Something went wrong">
-          <img
-            alt="Telegram sticker"
-            src={publicUrl("error.png")}
-            style={{ display: "block", width: "144px", height: "144px" }}
-          />
-        </Placeholder>
-      </div>
+    <div className="flex h-screen items-center justify-center">
+      <Placeholder header="Oops" description="Something went wrong">
+        <img
+          alt="Telegram sticker"
+          src={publicUrl("error.png")}
+          style={{ display: "block", width: "144px", height: "144px" }}
+        />
+      </Placeholder>
+    </div>
+  );
+}
+
+export function PageError({
+  error,
+  back = false,
+}: {
+  error: unknown;
+  back?: boolean;
+}) {
+  return (
+    <Page back={back}>
+      <PlaceholderGeneralError error={error} />
     </Page>
   );
-};
+}

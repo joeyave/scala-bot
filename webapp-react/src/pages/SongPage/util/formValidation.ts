@@ -22,12 +22,12 @@ export function isFormChanged(
 ): boolean {
   // Compare primitive fields
   for (const key in formData) {
-    if (key === "tags") {
-      // Special comparison for tags array.
+    if (Array.isArray(formData[key as keyof typeof formData])) {
+      // Comparing arrays. We should add a specific comparison for arrays of objects providing func to compare those objects.
       return !arraysEqualMultiset(
-        formData.tags,
-        initialFormData.tags,
-        (a, b) => a.value === b.value,
+        formData[key as keyof typeof formData] as Array<unknown>,
+        initialFormData[key as keyof typeof initialFormData] as Array<unknown>,
+        (a, b) => a === b,
       );
     }
 
@@ -50,5 +50,5 @@ export function isFormValid(
     isBpmValid(formData.bpm) &&
     isTimeSignatureValid(formData.time) &&
     !transpositionError
-  ); // Add this condition
+  );
 }

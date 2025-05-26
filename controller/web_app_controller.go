@@ -7,14 +7,11 @@ import (
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/keyboard"
 	"github.com/joeyave/scala-bot/service"
-	"github.com/joeyave/scala-bot/txt"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"html/template"
 	"net/http"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -270,101 +267,215 @@ func (h *WebAppController) CreateSong(ctx *gin.Context) {
 	})
 }
 
-func (h *WebAppController) EditSong(ctx *gin.Context) {
+var times = []string{"4/4", "3/4", "6/8", "2/2"}
+var bpms []string
 
-	fmt.Println(ctx.Request.RequestURI)
-	hex := ctx.Param("id")
-	songID, err := primitive.ObjectIDFromHex(hex)
+func init() {
+	for i := 60; i < 180; i++ {
+		bpms = append(bpms, strconv.Itoa(i))
+	}
+}
+
+type SelectEntity struct {
+	Name       string
+	Value      string
+	IsSelected bool
+}
+
+func valuesForSelect(songVal string, values []string, name string) []*SelectEntity {
+	keysForSelect := []*SelectEntity{
+		{
+			Name:       name,
+			Value:      "?",
+			IsSelected: false,
+		},
+	}
+
+	somethingWasSelected := false
+	for _, key := range values {
+		if key == songVal {
+			somethingWasSelected = true
+		}
+		keysForSelect = append(keysForSelect, &SelectEntity{Name: key, Value: key, IsSelected: key == songVal})
+	}
+
+	if !somethingWasSelected && songVal == "" || songVal == "?" {
+		keysForSelect[0].IsSelected = true
+	} else if !somethingWasSelected {
+		keysForSelect = append(keysForSelect, &SelectEntity{Name: songVal, Value: songVal, IsSelected: true})
+	}
+
+	return keysForSelect
+}
+
+// API Users.
+
+type User struct {
+	ID     int64    `json:"id"`
+	Name   string   `json:"name"`
+	Events []*Event `json:"events"`
+}
+
+type Event struct {
+	ID      primitive.ObjectID `json:"id"`
+	Date    string             `json:"date"`
+	Weekday time.Weekday       `json:"weekday"`
+	Name    string             `json:"name"`
+	Roles   []*Role            `json:"roles"`
+}
+
+type Role struct {
+	ID   primitive.ObjectID `json:"id"`
+	Name string             `json:"name"`
+}
+
+func (h *WebAppController) UsersWithEvents(ctx *gin.Context) {
+
+	fmt.Println(ctx.Request.URL)
+
+	hex := ctx.Query("bandId")
+	bandID, err := primitive.ObjectIDFromHex(hex)
+	if err != nil {
+		ctx.JSON(500, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	from := ctx.Query("from")
+	fromDate, err := time.Parse("02.01.2006", from)
+	if err != nil {
+		fromDate = time.Date(time.Now().Year(), time.January, 1, 0, 0, 0, 0, time.Local)
+	}
+
+	users, err := h.UserService.FindManyExtraByBandID(bandID, fromDate, time.Now())
 	if err != nil {
 		return
 	}
 
-	userIDStr := ctx.Query("userId")
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	var viewUsers []*User
+	for _, user := range users {
+		viewUser := &User{
+			ID:   user.ID,
+			Name: user.Name,
+		}
+
+		for _, event := range user.Events {
+			viewEvent := &Event{
+				ID:      event.ID,
+				Date:    event.Time.Format("2006-01-02"),
+				Weekday: event.Time.Weekday(),
+				Name:    event.Name,
+			}
+
+			for _, membership := range event.Memberships {
+				if membership.UserID == user.ID {
+					viewRole := &Role{
+						ID:   membership.Role.ID,
+						Name: membership.Role.Name,
+					}
+					viewEvent.Roles = append(viewEvent.Roles, viewRole)
+					break
+				}
+			}
+
+			viewUser.Events = append(viewUser.Events, viewEvent)
+		}
+
+		viewUsers = append(viewUsers, viewUser)
+	}
+
+	ctx.JSON(200, gin.H{
+		"users": viewUsers,
+	})
+}
+
+// API Songs.
+
+type Song struct {
+	LyricsHTML     string `json:"lyricsHtml"`
+	SectionsNumber int    `json:"sectionsNumber"`
+}
+
+func (h *WebAppController) SongData(ctx *gin.Context) {
+
+	songIDFromQ := ctx.Param("id")
+	songID, err := primitive.ObjectIDFromHex(songIDFromQ)
 	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	lang := ctx.Query("lang")
+	songEntity, err := h.SongService.FindOneByID(songID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	userIDFromQ := ctx.Query("userId")
+	userID, err := strconv.ParseInt(userIDFromQ, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
 	user, err := h.UserService.FindOneByID(userID)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	messageID := ctx.Query("messageId")
-	chatID := ctx.Query("chatId")
-
-	start := time.Now()
-	song, err := h.SongService.FindOneByID(songID)
-	if err != nil {
-		return
-	}
-	fmt.Println(time.Since(start).String())
-
-	start = time.Now()
 	allTags, err := h.SongService.GetTags(user.BandID)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	var songTags []*SelectEntity
-	for _, tag := range allTags {
-		isSelected := false
-		for _, songTag := range song.Tags {
-			if songTag == tag {
-				isSelected = true
-				break
-			}
-		}
-		songTags = append(songTags, &SelectEntity{Name: tag, IsSelected: isSelected})
+	ctx.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"song":     songEntity,
+			"bandTags": allTags,
+		},
+	})
+}
+
+func (h *WebAppController) SongLyrics(ctx *gin.Context) {
+
+	songIDFromQ := ctx.Param("id")
+	songID, err := primitive.ObjectIDFromHex(songIDFromQ)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
-	fmt.Println(time.Since(start).String())
 
-	start = time.Now()
-	htmlLyrics, sectionsNumber := h.DriveFileService.GetHTMLTextWithSectionsNumber(song.DriveFileID)
-	textLyrics, _ := h.DriveFileService.GetLyrics(song.DriveFileID)
-
-	var sectionsSelect []*SelectEntity
-	for i := 0; i < sectionsNumber; i++ {
-		sectionsSelect = append(sectionsSelect, &SelectEntity{Name: txt.Get("text.section", lang, i+1), Value: fmt.Sprint(i)})
+	song, err := h.SongService.FindOneByID(songID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
-	fmt.Println(time.Since(start).String())
 
-	ctx.HTML(http.StatusOK, "song.go.html", gin.H{
-		"Action": "edit",
+	songLyricsHTML, sectionsNumber := h.DriveFileService.GetHTMLTextWithSectionsNumber(song.DriveFileID)
 
-		"MessageID": messageID,
-		"ChatID":    chatID,
-		"UserID":    userID,
-
-		"Sections":  sectionsSelect,
-		"BPMs":      valuesForSelect(strings.TrimSpace(song.PDF.BPM), bpms, "BPM"),
-		"Times":     valuesForSelect(strings.TrimSpace(song.PDF.Time), times, "Time"),
-		"Tags":      songTags,
-		"Lyrics":    template.HTML(htmlLyrics),
-		"LyricsStr": textLyrics,
-
-		"Song": song,
-
-		"Lang": ctx.Query("lang"),
+	ctx.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"lyricsHtml":     songLyricsHTML,
+			"sectionsNumber": sectionsNumber,
+		},
 	})
 }
 
 type EditSongData struct {
-	TransposeSection string   `json:"transposeSection"`
 	Name             string   `json:"name"`
 	Key              string   `json:"key"`
 	BPM              string   `json:"bpm"`
 	Time             string   `json:"time"`
 	Tags             []string `json:"tags"`
+	TransposeSection string   `json:"transposeSection"`
 }
 
 var keyRegex = regexp.MustCompile(`(?i)key:(.*?);`)
 var bpmRegex = regexp.MustCompile(`(?i)bpm:(.*?);`)
 var timeRegex = regexp.MustCompile(`(?i)time:(.*?);`)
 
-func (h *WebAppController) EditSongConfirm(ctx *gin.Context) {
+func (h *WebAppController) SongEdit(ctx *gin.Context) {
 
 	songIDStr := ctx.Param("id")
 	songID, err := primitive.ObjectIDFromHex(songIDStr)
@@ -491,12 +602,15 @@ func (h *WebAppController) EditSongConfirm(ctx *gin.Context) {
 		log.Error().Err(err).Msgf("Error:")
 		return
 	}
+
+	defer reader.Close()
+
 	markup := gotgbot.InlineKeyboardMarkup{
 		InlineKeyboard: keyboard.SongInit(song, user, chatID, messageID, "ru"),
 	}
 
 	_, _, err = h.Bot.EditMessageMedia(gotgbot.InputMediaDocument{
-		Media:     gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", song.PDF.Name), *reader),
+		Media:     gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", song.PDF.Name), reader),
 		Caption:   caption,
 		ParseMode: "HTML",
 	}, &gotgbot.EditMessageMediaOpts{
@@ -510,185 +624,47 @@ func (h *WebAppController) EditSongConfirm(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusOK)
+	ctx.JSON(http.StatusOK, gin.H{})
 }
 
-var keys = []string{"C", "C#", "Db", "D", "D#", "Eb", "E", "F", "F#", "Gb", "G", "G#", "Ab", "A", "A#", "Bb", "B"}
-var times = []string{"4/4", "3/4", "6/8", "2/2"}
-var bpms []string
+func (h *WebAppController) SongDownload(ctx *gin.Context) {
 
-func init() {
-	for i := 60; i < 180; i++ {
-		bpms = append(bpms, strconv.Itoa(i))
+	songIDStr := ctx.Param("id")
+	songID, err := primitive.ObjectIDFromHex(songIDStr)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
 	}
-}
 
-type SelectEntity struct {
-	Name       string
-	Value      string
-	IsSelected bool
-}
+	song, err := h.SongService.FindOneByID(songID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
 
-func valuesForSelect(songVal string, values []string, name string) []*SelectEntity {
-	keysForSelect := []*SelectEntity{
-		{
-			Name:       name,
-			Value:      "?",
-			IsSelected: false,
+	resp, err := h.DriveFileService.DownloadOneByIDWithResp(song.DriveFileID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+
+	defer resp.Body.Close()
+
+	contentType := resp.Header.Get("Content-Type")
+	if contentType == "" {
+		contentType = "application/pdf"
+	}
+
+	ctx.DataFromReader(
+		http.StatusOK,
+		resp.ContentLength,
+		contentType,
+		resp.Body,
+		map[string]string{
+			"Content-Disposition": `inline"`,
 		},
-	}
-
-	somethingWasSelected := false
-	for _, key := range values {
-		if key == songVal {
-			somethingWasSelected = true
-		}
-		keysForSelect = append(keysForSelect, &SelectEntity{Name: key, Value: key, IsSelected: key == songVal})
-	}
-
-	if !somethingWasSelected && songVal == "" || songVal == "?" {
-		keysForSelect[0].IsSelected = true
-	} else if !somethingWasSelected {
-		keysForSelect = append(keysForSelect, &SelectEntity{Name: songVal, Value: songVal, IsSelected: true})
-	}
-
-	return keysForSelect
-}
-
-// API Users.
-
-type User struct {
-	ID     int64    `json:"id"`
-	Name   string   `json:"name"`
-	Events []*Event `json:"events"`
-}
-
-type Event struct {
-	ID      primitive.ObjectID `json:"id"`
-	Date    string             `json:"date"`
-	Weekday time.Weekday       `json:"weekday"`
-	Name    string             `json:"name"`
-	Roles   []*Role            `json:"roles"`
-}
-
-type Role struct {
-	ID   primitive.ObjectID `json:"id"`
-	Name string             `json:"name"`
-}
-
-func (h *WebAppController) UsersWithEvents(ctx *gin.Context) {
-
-	fmt.Println(ctx.Request.URL)
-
-	hex := ctx.Query("bandId")
-	bandID, err := primitive.ObjectIDFromHex(hex)
-	if err != nil {
-		ctx.JSON(500, gin.H{"status": "error", "message": err.Error()})
-		return
-	}
-
-	from := ctx.Query("from")
-	fromDate, err := time.Parse("02.01.2006", from)
-	if err != nil {
-		fromDate = time.Date(time.Now().Year(), time.January, 1, 0, 0, 0, 0, time.Local)
-	}
-
-	users, err := h.UserService.FindManyExtraByBandID(bandID, fromDate, time.Now())
-	if err != nil {
-		return
-	}
-
-	var viewUsers []*User
-	for _, user := range users {
-		viewUser := &User{
-			ID:   user.ID,
-			Name: user.Name,
-		}
-
-		for _, event := range user.Events {
-			viewEvent := &Event{
-				ID:      event.ID,
-				Date:    event.Time.Format("2006-01-02"),
-				Weekday: event.Time.Weekday(),
-				Name:    event.Name,
-			}
-
-			for _, membership := range event.Memberships {
-				if membership.UserID == user.ID {
-					viewRole := &Role{
-						ID:   membership.Role.ID,
-						Name: membership.Role.Name,
-					}
-					viewEvent.Roles = append(viewEvent.Roles, viewRole)
-					break
-				}
-			}
-
-			viewUser.Events = append(viewUser.Events, viewEvent)
-		}
-
-		viewUsers = append(viewUsers, viewUser)
-	}
-
-	ctx.JSON(200, gin.H{
-		"users": viewUsers,
-	})
-}
-
-// API Songs.
-
-type Song struct {
-	*entity.Song
-	LyricsHTML     string `json:"lyricsHtml"`
-	SectionsNumber int    `json:"sectionsNumber"`
-}
-
-func (h *WebAppController) GetSongData(ctx *gin.Context) {
-
-	songIDFromQ := ctx.Param("id")
-	songID, err := primitive.ObjectIDFromHex(songIDFromQ)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	songEntity, err := h.SongService.FindOneByID(songID)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	songLyricsHTML, sectionsNumber := h.DriveFileService.GetHTMLTextWithSectionsNumber(songEntity.DriveFileID)
-
-	userIDFromQ := ctx.Query("userId")
-	userID, err := strconv.ParseInt(userIDFromQ, 10, 64)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	user, err := h.UserService.FindOneByID(userID)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	allTags, err := h.SongService.GetTags(user.BandID)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	song := Song{
-		Song:           songEntity,
-		LyricsHTML:     songLyricsHTML,
-		SectionsNumber: sectionsNumber,
-	}
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"data": gin.H{
-			"song":     song,
-			"bandTags": allTags,
-		},
-	})
+	)
 }

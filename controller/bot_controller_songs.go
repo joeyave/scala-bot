@@ -99,12 +99,14 @@ func (c *BotController) song(bot *gotgbot.Bot, ctx *ext.Context, driveFileID str
 	}
 
 	sendDocumentByReader := func() (*gotgbot.Message, error) {
-		reader, err := c.DriveFileService.DownloadOneByID(driveFile.Id)
+		reader, err := c.DriveFileService.DownloadOneByID(driveFile.Id) // todo: close reader.
 		if err != nil {
 			return nil, err
 		}
 
-		message, err := bot.SendDocument(ctx.EffectiveChat.Id, gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", driveFile.Name), *reader), &gotgbot.SendDocumentOpts{
+		defer reader.Close()
+
+		message, err := bot.SendDocument(ctx.EffectiveChat.Id, gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", driveFile.Name), reader), &gotgbot.SendDocumentOpts{
 			Caption:     song.Caption(),
 			ParseMode:   "HTML",
 			ReplyMarkup: markup,
@@ -217,7 +219,6 @@ func (c *BotController) GetSongs(index int) handlers.Response {
 				}
 
 				markup.Keyboard = append(markup.Keyboard, keyboard.GetSongsStateFilterButtons(ctx.EffectiveUser.LanguageCode))
-				markup.Keyboard = append(markup.Keyboard, []gotgbot.KeyboardButton{{Text: txt.Get("button.createDoc", ctx.EffectiveUser.LanguageCode), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/webapp-react/#/songs/create?userId=%d&lang=%s", os.Getenv("BOT_DOMAIN"), user.ID, ctx.EffectiveUser.LanguageCode)}}})
 				markup.Keyboard = append(markup.Keyboard, []gotgbot.KeyboardButton{{Text: txt.Get("button.createDoc", ctx.EffectiveUser.LanguageCode), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/songs/create?userId=%d&lang=%s", os.Getenv("BOT_DOMAIN"), user.ID, ctx.EffectiveUser.LanguageCode)}}})
 
 				likedSongs, likedSongErr := c.SongService.FindManyLiked(user.BandID, user.ID)
@@ -1258,10 +1259,12 @@ func (c *BotController) SongStyle(bot *gotgbot.Bot, ctx *ext.Context) error {
 		return err
 	}
 
-	reader, err := c.DriveFileService.DownloadOneByID(song.DriveFileID)
+	reader, err := c.DriveFileService.DownloadOneByID(song.DriveFileID) // todo: close reader.
 	if err != nil {
 		return err
 	}
+
+	defer reader.Close()
 
 	markup := gotgbot.InlineKeyboardMarkup{
 		InlineKeyboard: keyboard.SongEdit(song, driveFile, user, ctx.EffectiveUser.LanguageCode),
@@ -1270,7 +1273,7 @@ func (c *BotController) SongStyle(bot *gotgbot.Bot, ctx *ext.Context) error {
 	caption := user.CallbackCache.AddToText(song.Caption())
 
 	_, _, err = ctx.EffectiveMessage.EditMedia(bot, gotgbot.InputMediaDocument{
-		Media:     gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", song.PDF.Name), *reader),
+		Media:     gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", song.PDF.Name), reader),
 		Caption:   caption,
 		ParseMode: "HTML",
 	}, &gotgbot.EditMessageMediaOpts{
@@ -1311,10 +1314,12 @@ func (c *BotController) SongAddLyricsPage(bot *gotgbot.Bot, ctx *ext.Context) er
 		return err
 	}
 
-	reader, err := c.DriveFileService.DownloadOneByID(song.DriveFileID)
+	reader, err := c.DriveFileService.DownloadOneByID(song.DriveFileID) // todo: close reader.
 	if err != nil {
 		return err
 	}
+
+	defer reader.Close()
 
 	markup := gotgbot.InlineKeyboardMarkup{
 		InlineKeyboard: keyboard.SongEdit(song, driveFile, user, ctx.EffectiveUser.LanguageCode),
@@ -1323,7 +1328,7 @@ func (c *BotController) SongAddLyricsPage(bot *gotgbot.Bot, ctx *ext.Context) er
 	caption := user.CallbackCache.AddToText(song.Caption())
 
 	_, _, err = ctx.EffectiveMessage.EditMedia(bot, gotgbot.InputMediaDocument{
-		Media:     gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", song.PDF.Name), *reader),
+		Media:     gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", song.PDF.Name), reader),
 		Caption:   caption,
 		ParseMode: "HTML",
 	}, &gotgbot.EditMessageMediaOpts{

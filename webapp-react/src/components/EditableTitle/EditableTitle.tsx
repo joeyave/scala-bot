@@ -1,14 +1,9 @@
 // EditableTitle.tsx
 import Icon28Check from "@/assets/icons/check_28.svg";
-import { AutosizeTextarea } from "@/components/AutosizeTextarea/AutosizeTextarea.tsx";
-import { IconButton, Title } from "@telegram-apps/telegram-ui";
-import { Icon28Edit } from "@telegram-apps/telegram-ui/dist/icons/28/edit";
-import React, { useEffect, useState } from "react";
-
-import { bem } from "@/css/bem.ts";
-import "./style.css";
-
-const [, e] = bem("editable-title");
+import {AutosizeTextarea} from "@/components/AutosizeTextarea/AutosizeTextarea.tsx";
+import {IconButton, Title} from "@telegram-apps/telegram-ui";
+import {Icon28Edit} from "@telegram-apps/telegram-ui/dist/icons/28/edit";
+import React, {useEffect, useState} from "react";
 
 interface EditableTitleProps {
   value: string;
@@ -60,33 +55,35 @@ export const EditableTitle: React.FC<EditableTitleProps> = ({
   };
 
   return (
-    <div className={e("row")}>
-      {isEditing ? (
-        <AutosizeTextarea
-          value={input}
-          onChange={handleInput}
-          onBlur={() => {
-            if (status != "error") {
-              setIsEditing(false);
-            }
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
+    <div className="flex content-between items-center">
+      <div className="mr-2 flex-1">
+        {isEditing ? (
+          <AutosizeTextarea
+            value={input}
+            onChange={handleInput}
+            onBlur={() => {
               if (status != "error") {
                 setIsEditing(false);
               }
-            }
-          }}
-          autoFocus
-          maxHeight={maxHeight}
-          status={status}
-        />
-      ) : (
-        <Title level={titleLevel} weight={titleWeight}>
-          {input}
-        </Title>
-      )}
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (status != "error") {
+                  setIsEditing(false);
+                }
+              }
+            }}
+            autoFocus
+            maxHeight={maxHeight}
+            status={status}
+          />
+        ) : (
+          <Title level={titleLevel} weight={titleWeight}>
+            {input}
+          </Title>
+        )}
+      </div>
       <IconButton
         mode="plain"
         size="s"

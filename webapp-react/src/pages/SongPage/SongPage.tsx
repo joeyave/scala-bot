@@ -1,9 +1,5 @@
-import { getSong, updateSong } from "@/api/webapp/songs.ts";
-import {
-  ReqBodyUpdateSong,
-  ReqQueryParamsUpdateSong,
-} from "@/api/webapp/typesReq.ts";
-import { RespDataGetSong } from "@/api/webapp/typesResp.ts";
+import { getSongData, getSongLyrics, updateSong } from "@/api/webapp/songs.ts";
+import { ReqBodyUpdateSong } from "@/api/webapp/typesReq.ts";
 import { BPMInput, formatBpm } from "@/components/BPMInput/BPMInput.tsx";
 import {
   EditableTitle,
@@ -16,9 +12,8 @@ import {
   formatTimeSignature,
   TimeSignatureInput,
 } from "@/components/TimeSignatureInput/TimeSignatureInput.tsx";
-import { bem } from "@/css/bem.ts";
 import { logger } from "@/helpers/logger";
-import { typedErr } from "@/helpers/util.ts";
+import { setMainButton } from "@/helpers/mainButton.ts";
 import {
   isBpmValid,
   isFormChanged,
@@ -27,9 +22,10 @@ import {
   isTimeSignatureValid,
 } from "@/pages/SongPage/util/formValidation.ts";
 import { transposeAllText } from "@/pages/SongPage/util/transpose.ts";
-import { SongForm, SongStateData } from "@/pages/SongPage/util/types.ts";
+import { SongForm, StateSongData } from "@/pages/SongPage/util/types.ts";
 import { PageError } from "@/pages/UtilPages/PageError.tsx";
 import { PageLoading } from "@/pages/UtilPages/PageLoading.tsx";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   mainButton,
   miniApp,
@@ -38,37 +34,58 @@ import {
 } from "@telegram-apps/sdk-react";
 import { Button, List, Section, Text } from "@telegram-apps/telegram-ui";
 import { MultiselectOption } from "@telegram-apps/telegram-ui/dist/components/Form/Multiselect/types";
-import { FC, useEffect, useState } from "react";
+import { Notify } from "notiflix";
+import { FC, useCallback, useEffect, useState } from "react";
 import { FileEarmarkTextFill } from "react-bootstrap-icons";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import "./SongPage.css";
 
-const [, e] = bem("song-page");
+interface SongMutationData {
+  songId: string;
+  name: string;
+  key: string;
+  bpm: string;
+  time: string;
+  tags: string[];
+  transposeSection?: string;
+  messageId: string;
+  chatId: string;
+  userId: string;
+}
+
+export function useSongMutation() {
+  const { mutateAsync: mutateSong } = useMutation({
+    mutationFn: async (d: SongMutationData) => {
+      const queryParams = {
+        messageId: d.messageId,
+        chatId: d.chatId,
+        userId: d.userId,
+      };
+
+      const body: ReqBodyUpdateSong = {
+        name: d.name,
+        key: d.key || "?", // todo: refactor, remove question marks.
+        bpm: d.bpm || "?",
+        time: d.time || "?",
+        tags: d.tags,
+        transposeSection: d.transposeSection,
+      };
+
+      return await updateSong(d.songId, queryParams, body);
+    },
+  });
+  return mutateSong;
+}
 
 export const SongPage: FC = () => {
-  const params = useParams();
-  const songId = params.id;
-  const [searchParams] = useSearchParams();
-  const messageId = searchParams.get("messageId");
-  const chatId = searchParams.get("chatId");
-  const userId = searchParams.get("userId");
+  const { songId, messageId, chatId, userId } = useInitParams();
+
+  if (!songId || !messageId || !chatId || !userId) {
+    throw new Error("Failed to get song page: invalid request params.");
+  }
 
   const navigate = useNavigate();
 
-  const [songData, setSongData] = useState<RespDataGetSong | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  // Form data state using the new interface
-  const [formData, setFormData] = useState<SongForm>({
-    name: "",
-    key: "",
-    bpm: "",
-    time: "",
-    tags: [],
-  });
-
-  // State to track initial values
+  // State to track initial values.
   const [initialFormData, setInitialFormData] = useState<SongForm>({
     name: "",
     key: "",
@@ -77,10 +94,16 @@ export const SongPage: FC = () => {
     tags: [],
   });
 
-  // Add a new state for transposed lyrics
-  const [transposedLyricsHtml, setTransposedLyricsHtml] = useState<string>("");
+  // Form data state.
+  const [formData, setFormData] = useState<SongForm>({
+    name: "",
+    key: "",
+    bpm: "",
+    time: "",
+    tags: [],
+  });
 
-  // Add a state to track transposition errors
+  const [transposedLyricsHtml, setTransposedLyricsHtml] = useState<string>("");
   const [transpositionError, setTranspositionError] = useState<boolean>(false);
 
   useEffect(() => {
@@ -88,80 +111,92 @@ export const SongPage: FC = () => {
     postEvent("web_app_setup_swipe_behavior", { allow_vertical_swipe: false });
   }, []);
 
-  useEffect(() => {
-    const fetchSong = async () => {
+  const querySongDataRes = useQuery({
+    queryKey: ["songData", songId, userId],
+    queryFn: async () => {
       if (!songId || !userId) {
-        setError(new Error("Failed to get song data: invalid request params."));
-        return;
+        throw new Error("Failed to get song data: invalid request params.");
       }
-
-      const { data, err } = await getSong(songId, userId);
-
-      if (err || !data?.song?.lyricsHtml) {
-        setError(err || new Error("Song data is empty."));
-      } else if (data) {
-        try {
-          setSongData(data);
-
-          // Initialize form data with formatted values from API.
-          const initFormData: SongForm = {
-            name: formatTitle(data.song.pdf.name),
-            key: formatKey(data.song.pdf.key),
-            bpm: formatBpm(data.song.pdf.bpm),
-            time: formatTimeSignature(data.song.pdf.time),
-            tags:
-              data.song.tags?.map((tag) => ({
-                value: tag,
-                label: tag,
-              })) || [],
-          };
-
-          setInitialFormData(initFormData);
-          setFormData(initFormData);
-          setTransposedLyricsHtml(data.song.lyricsHtml);
-        } catch (err) {
-          setError(typedErr(err));
-        }
+      const data = await getSongData(songId, userId);
+      if (!data?.song) {
+        throw new Error("Song data is empty.");
       }
+      return data;
+    },
+  });
 
-      setLoading(false);
+  const querySongLyricsRes = useQuery({
+    queryKey: ["songLyrics", songId],
+    queryFn: async () => {
+      if (!songId) {
+        throw new Error("Failed to get song data: invalid request params.");
+      }
+      const data = await getSongLyrics(songId);
+      if (!data) {
+        throw new Error("Song lyrics is empty.");
+      }
+      return data;
+    },
+  });
+
+  const mutateSong = useSongMutation();
+
+  // Set form data after fetches completed or updated.
+  useEffect(() => {
+    if (!querySongDataRes.isSuccess) {
+      return;
+    }
+
+    const songData = querySongDataRes.data;
+
+    // Initialize form data with formatted values from API.
+    const initFormData: SongForm = {
+      name: formatTitle(songData.song.pdf.name),
+      key: formatKey(songData.song.pdf.key),
+      bpm: formatBpm(songData.song.pdf.bpm),
+      time: formatTimeSignature(songData.song.pdf.time),
+      tags: songData.song.tags || [],
     };
 
-    void fetchSong();
-  }, [songId, userId]);
+    setInitialFormData(initFormData);
+    setFormData(initFormData);
 
-  // todo: improve, make more generic.
-  // Effect to handle button visibility based on form changes
+    if (querySongLyricsRes.isSuccess) {
+      setTransposedLyricsHtml(querySongLyricsRes.data.lyricsHtml);
+    }
+  }, [
+    querySongDataRes.data,
+    querySongDataRes.isSuccess,
+    querySongLyricsRes.data,
+    querySongLyricsRes.isSuccess,
+  ]);
+
+  // Effect to handle button visibility based on form changes.
   useEffect(() => {
     const changed = isFormChanged(formData, initialFormData);
     const valid = isFormValid(formData, transpositionError);
 
-    // Update button visibility
-    mainButton.setParams({
-      isVisible: changed,
-      isEnabled: changed && valid,
-      text: "Save",
+    setMainButton({
+      visible: changed,
+      text: formData.key === initialFormData.key ? "Save Changes" : "Transpose",
+      enabled: changed && valid,
+      loader: false,
     });
-
-    // return () => {
-    //     mainButton.setParams({
-    //         isVisible: false,
-    //         isEnabled: true,
-    //     });
-    // };
   }, [formData, initialFormData, transpositionError]);
 
   const handleKeyChange = (newKey: string) => {
     setFormData((prev: SongForm) => ({ ...prev, key: newKey }));
 
-    if (!songData?.song?.lyricsHtml) {
+    if (!querySongLyricsRes.isSuccess) {
       return;
     }
+
+    const songLyrics = querySongLyricsRes.data;
 
     if (newKey != initialFormData.key) {
       try {
         const transposedHtml = transposeAllText(
-          songData.song.lyricsHtml,
+          songLyrics.lyricsHtml,
           initialFormData.key,
           newKey,
         );
@@ -171,63 +206,82 @@ export const SongPage: FC = () => {
         logger.error("Error transposing lyrics", { error: err });
 
         setTranspositionError(true);
-        setTransposedLyricsHtml(songData.song.lyricsHtml);
+        setTransposedLyricsHtml(songLyrics.lyricsHtml);
       }
     } else {
       setTranspositionError(false);
-      setTransposedLyricsHtml(songData.song.lyricsHtml);
+      setTransposedLyricsHtml(songLyrics.lyricsHtml);
     }
     return;
   };
 
+  const handleMainButtonClick = useCallback(async () => {
+    logger.debug("updating main button handler function");
+
+    setMainButton({ loader: true });
+
+    if (formData.key !== initialFormData.key) {
+      const stateData: StateSongData = {
+        formData,
+        initialFormData,
+        sectionsNumber: querySongLyricsRes.data?.sectionsNumber || 1,
+      };
+
+      await navigate(
+        {
+          pathname: `/songs/${songId}/edit/confirm`,
+          search: `?${new URLSearchParams({ messageId, chatId, userId }).toString()}`,
+        },
+        { state: stateData },
+      );
+      return;
+    }
+    await mutateSong(
+      {
+        songId: songId,
+        name: formData.name,
+        key: formData.key,
+        bpm: formData.bpm,
+        time: formData.time,
+        tags: formData.tags,
+        transposeSection: undefined,
+        messageId: messageId,
+        chatId: chatId,
+        userId: userId,
+      },
+      {
+        onSuccess: () => {
+          miniApp.close();
+        },
+        onError: (err) => {
+          logger.error("Failed to save song", { error: err });
+          setMainButton({ visible: true, enabled: true, loader: false });
+          Notify.failure("Failed to save song. Please try again later.");
+        },
+      },
+    );
+  }, [
+    formData,
+    initialFormData,
+    mutateSong,
+    navigate,
+    querySongLyricsRes.data?.sectionsNumber,
+    messageId,
+    chatId,
+    songId,
+    userId,
+  ]);
+
   useEffect(() => {
-    if (!songId || !userId || !chatId || !messageId) {
-      setError(new Error("Failed to update song: invalid request params."));
+    if (!querySongDataRes.isSuccess) {
       return;
     }
 
-    const handleMainButtonClick = async () => {
-      mainButton.setParams({ isLoaderVisible: true });
+    logger.debug("updating main button handler");
 
-      if (formData.key !== initialFormData.key) {
-        const stateData: SongStateData = {
-          songId,
-          userId,
-          chatId,
-          messageId,
-          formData,
-          initialFormData,
-          sectionsNumber: songData?.song?.sectionsNumber || 1,
-        };
-
-        await navigate(`/songs/${songId}/edit/confirm`, {
-          state: stateData,
-        });
-      } else {
-        const queryParams: ReqQueryParamsUpdateSong = {
-          messageId: messageId,
-          chatId: chatId,
-          userId: userId,
-        };
-        // Prepare the form data to send
-        const body: ReqBodyUpdateSong = {
-          name: formData.name,
-          key: formData.key || "?", // todo: refactor, remove question marks.
-          bpm: formData.bpm || "?",
-          time: formData.time || "?",
-          tags: formData.tags.map((tag) => String(tag.value)),
-        };
-
-        const err = await updateSong(songId, queryParams, body);
-        if (err) {
-          logger.error("Failed to save song", { error: err });
-          setError(err);
-          mainButton.setParams({ isVisible: false });
-        } else {
-          miniApp.close();
-        }
-      }
-    };
+    if (!querySongLyricsRes.isSuccess && formData.key !== initialFormData.key) {
+      setMainButton({ enabled: false });
+    }
 
     const handleMainButtonClickSync = () => {
       void handleMainButtonClick();
@@ -236,41 +290,36 @@ export const SongPage: FC = () => {
     mainButton.onClick(handleMainButtonClickSync);
 
     return () => {
-      mainButton.setParams({ isLoaderVisible: false });
+      logger.debug("removing old main button handler");
+      setMainButton({ enabled: true, loader: false });
       mainButton.offClick(handleMainButtonClickSync);
     };
   }, [
-    songId,
-    userId,
-    messageId,
-    chatId,
-    formData,
-    navigate,
-    initialFormData,
-    songData?.song?.sectionsNumber,
+    initialFormData.key,
+    formData.key,
+    handleMainButtonClick,
+    querySongDataRes.isSuccess,
+    querySongLyricsRes.isSuccess,
   ]);
 
-  // Show loading state
-  if (loading) {
+  // todo: test.
+  if (querySongDataRes.isPending || !querySongDataRes.isFetchedAfterMount) {
     return <PageLoading></PageLoading>;
   }
 
-  // Show error state
-  if (error || !songData) {
-    return (
-      <PageError error={error || new Error("Empty api response")}></PageError>
-    );
+  if (querySongDataRes.isError) {
+    return <PageError error={querySongDataRes.error}></PageError>;
   }
 
   // Log successful rendering
   logger.info("Rendering song page", { songId, userId });
+  logger.debug("Form data", { initialFormData, formData });
 
   return (
     <Page back={false}>
       <List
-        className={e("body")}
-        // todo: check how to use safeAreaInset properly.
         style={{
+          // todo: check how to use safeAreaInset properly.
           marginTop: viewport.safeAreaInsetTop(),
           marginBottom: viewport.safeAreaInsetBottom(),
         }}
@@ -288,55 +337,64 @@ export const SongPage: FC = () => {
 
         <TagsInput
           options={
-            songData.bandTags.map((tag) => ({
+            querySongDataRes.data.bandTags.map((tag) => ({
               value: tag,
               label: tag,
             })) || []
           }
-          value={formData.tags}
+          value={formData.tags.map((tag) => {
+            return { value: tag, label: tag } as MultiselectOption;
+          })}
           onChange={(newOptions: MultiselectOption[]) => {
             // Update form data
             setFormData((prev) => ({
               ...prev,
-              tags: newOptions,
+              tags: newOptions.map((option) => option.value) as string[],
             }));
           }}
         />
 
-        <div className={e("inputs-row")}>
-          <KeyInput
-            value={initialFormData.key} // Using init key here to add custom value as option.
-            status={transpositionError ? "error" : undefined}
-            onChange={handleKeyChange}
-          />
-          <BPMInput
-            value={formData.bpm}
-            status={
-              !isBpmValid(formData.bpm) && formData.bpm.length > 0
-                ? "error"
-                : undefined
-            }
-            onChange={(val) => {
-              setFormData((prev) => ({
-                ...prev,
-                bpm: val,
-              }));
-            }}
-          />
-          <TimeSignatureInput
-            value={formData.time}
-            status={
-              !isTimeSignatureValid(formData.time) && formData.time.length > 0
-                ? "error"
-                : undefined
-            }
-            onChange={(val) => {
-              setFormData((prev) => ({
-                ...prev,
-                time: val,
-              }));
-            }}
-          ></TimeSignatureInput>
+        <div className="flex flex-row items-center gap-2">
+          <div className="flex-1">
+            <KeyInput
+              value={formData.key || initialFormData.key} // Using an init key here to add custom value as an option.
+              status={transpositionError ? "error" : undefined}
+              onChange={handleKeyChange}
+            />
+          </div>
+          <div className="flex-1">
+            <BPMInput
+              value={formData.bpm}
+              status={
+                !isBpmValid(formData.bpm) && formData.bpm.length > 0
+                  ? "error"
+                  : undefined
+              }
+              onChange={(val) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  bpm: val,
+                }));
+              }}
+            />
+          </div>
+          <div className="flex-1">
+            <TimeSignatureInput
+              className=""
+              value={formData.time}
+              status={
+                !isTimeSignatureValid(formData.time) && formData.time.length > 0
+                  ? "error"
+                  : undefined
+              }
+              onChange={(val) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  time: val,
+                }));
+              }}
+            ></TimeSignatureInput>
+          </div>
         </div>
 
         {/*<InlineButtons mode="gray">*/}
@@ -356,7 +414,7 @@ export const SongPage: FC = () => {
           before={<FileEarmarkTextFill size={"1.2em"} />}
           stretched={true}
           Component="a"
-          href={songData.song.pdf.webViewLink}
+          href={querySongDataRes.data.song.pdf.webViewLink}
           mode="bezeled"
           size="m"
           target="_blank"
@@ -364,17 +422,38 @@ export const SongPage: FC = () => {
           Google Doc
         </Button>
 
-        <Section>
+        <Section className={"sect"}>
           <Text>
-            <div
-              className={e("lyrics")}
-              dangerouslySetInnerHTML={{
-                __html: transposedLyricsHtml || songData.song.lyricsHtml,
-              }}
-            />
+            <div className="p-4 font-mono text-base/6 whitespace-pre-wrap">
+              {
+                // todo: make more readable.
+                querySongLyricsRes.isLoading ||
+                !querySongLyricsRes.isFetchedAfterMount ? ( // todo: test.
+                  <>Loading lyrics...</>
+                ) : querySongLyricsRes.isError ? (
+                  <>Error loading lyrics...</>
+                ) : transpositionError ? (
+                  <>Error transposing lyrics...</>
+                ) : (
+                  <div
+                    // className={e("lyrics")}
+                    dangerouslySetInnerHTML={{ __html: transposedLyricsHtml }}
+                  />
+                )
+              }
+            </div>
           </Text>
         </Section>
       </List>
     </Page>
   );
 };
+
+export function useInitParams() {
+  const { songId } = useParams();
+  const [searchParams] = useSearchParams();
+  const messageId = searchParams.get("messageId");
+  const chatId = searchParams.get("chatId");
+  const userId = searchParams.get("userId");
+  return { songId, messageId, chatId, userId };
+}

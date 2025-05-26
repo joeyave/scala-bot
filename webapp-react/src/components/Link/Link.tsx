@@ -2,7 +2,7 @@ import { openLink } from "@telegram-apps/sdk-react";
 import { type FC, type MouseEventHandler, useCallback } from "react";
 import { Link as RouterLink, type LinkProps } from "react-router";
 
-import { classNames } from "@/css/classnames.ts";
+import { classNames } from "@/helpers/css/classnames.ts";
 
 import "./Link.css";
 

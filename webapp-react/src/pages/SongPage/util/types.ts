@@ -1,18 +1,12 @@
-import { MultiselectOption } from "@telegram-apps/telegram-ui/dist/components/Form/Multiselect/types";
-
 export interface SongForm {
   name: string;
   key: string;
   bpm: string;
   time: string;
-  tags: MultiselectOption[];
+  tags: string[];
 }
 
-export interface SongStateData {
-  songId: string;
-  userId: string;
-  chatId: string;
-  messageId: string;
+export interface StateSongData {
   formData: SongForm;
   initialFormData: SongForm;
   sectionsNumber: number;

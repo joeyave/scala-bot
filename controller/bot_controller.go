@@ -545,13 +545,13 @@ func (c *BotController) songsAlbum(bot *gotgbot.Bot, ctx *ext.Context, driveFile
 				}
 
 				if song.PDF.TgFileID == "" || downloadAll {
-					reader, err := c.DriveFileService.DownloadOneByID(fileID)
+					reader, err := c.DriveFileService.DownloadOneByID(fileID) // todo: close reader.
 					if err != nil {
 						return err
 					}
 
 					album[i] = gotgbot.InputMediaDocument{
-						Media:   gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", song.PDF.Name), *reader),
+						Media:   gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", song.PDF.Name), reader),
 						Caption: song.Meta(),
 					}
 				} else {
