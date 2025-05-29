@@ -5,6 +5,10 @@
     --font-roboto-mono: "Roboto Mono", monospace;
 }
 
+html {
+    overscroll-behavior-y: none;
+}
+
 body {
     background: var(--tg-theme-secondary-bg-color, white);
     padding: 0;

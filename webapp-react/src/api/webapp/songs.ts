@@ -1,6 +1,6 @@
 import { doReqWebappApi } from "@/api/webapp/doReq.ts";
-import { ReqBodyUpdateSong, ReqQueryParamsUpdateSong } from "./typesReq.ts";
 import { RespSongData, RespSongLyrics } from "@/api/webapp/typesResp.ts"; // type Resp<T> = {
+import { ReqBodyUpdateSong, ReqQueryParamsUpdateSong } from "./typesReq.ts";
 
 export async function getSongData(
   songId: string,
@@ -57,13 +57,11 @@ export async function updateSong(
   return;
 }
 
-export async function downloadSongPdf(
-    songId: string,
-): Promise<Blob | null> {
+export async function downloadSongPdf(songId: string): Promise<Blob | null> {
   const { data, err } = await doReqWebappApi<Blob>(
-      `/api/songs/${songId}/download`,
-      "GET",
-      { Accept: "application/json" },
+    `/api/songs/${songId}/download`,
+    "GET",
+    { Accept: "application/json" },
   );
 
   if (err) {

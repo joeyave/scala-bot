@@ -30,6 +30,7 @@ import {
   mainButton,
   miniApp,
   postEvent,
+  themeParams,
   viewport,
 } from "@telegram-apps/sdk-react";
 import { Button, List, Section, Text } from "@telegram-apps/telegram-ui";
@@ -82,6 +83,8 @@ export const SongPage: FC = () => {
   if (!songId || !messageId || !chatId || !userId) {
     throw new Error("Failed to get song page: invalid request params.");
   }
+
+  console.log(themeParams.backgroundColor());
 
   const navigate = useNavigate();
 

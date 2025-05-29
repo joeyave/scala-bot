@@ -1,16 +1,16 @@
 import {
-  bindThemeParamsCssVars,
   bindViewportCssVars,
   emitEvent,
   init as initSDK,
+  miniApp,
   mockTelegramEnv,
   mountBackButton,
   mountMainButton,
-  mountMiniApp,
   mountViewport,
   restoreInitData,
   retrieveLaunchParams,
   setDebug,
+  themeParams,
   type ThemeParams,
   themeParamsState,
 } from "@telegram-apps/sdk-react";
@@ -69,12 +69,16 @@ export async function init(options: {
   // Mount all components used in the project.
   mountBackButton.ifAvailable();
   mountMainButton.ifAvailable();
+
+  miniApp.mountSync.ifAvailable();
+  miniApp.bindCssVars.ifAvailable();
+  miniApp.ready();
+  themeParams.mountSync.ifAvailable();
+  themeParams.bindCssVars.ifAvailable();
+
   restoreInitData();
+
   await Promise.all([
-    mountMiniApp.isAvailable() &&
-      mountMiniApp().then(() => {
-        bindThemeParamsCssVars();
-      }),
     mountViewport.isAvailable() &&
       mountViewport().then(() => {
         bindViewportCssVars();

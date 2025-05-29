@@ -1,9 +1,9 @@
 // EditableTitle.tsx
 import Icon28Check from "@/assets/icons/check_28.svg";
-import {AutosizeTextarea} from "@/components/AutosizeTextarea/AutosizeTextarea.tsx";
-import {IconButton, Title} from "@telegram-apps/telegram-ui";
-import {Icon28Edit} from "@telegram-apps/telegram-ui/dist/icons/28/edit";
-import React, {useEffect, useState} from "react";
+import { AutosizeTextarea } from "@/components/AutosizeTextarea/AutosizeTextarea.tsx";
+import { IconButton, Title } from "@telegram-apps/telegram-ui";
+import { Icon28Edit } from "@telegram-apps/telegram-ui/dist/icons/28/edit";
+import React, { useEffect, useState } from "react";
 
 interface EditableTitleProps {
   value: string;
