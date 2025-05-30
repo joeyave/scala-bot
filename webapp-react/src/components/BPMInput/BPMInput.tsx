@@ -1,6 +1,7 @@
 // BPMInput.tsx
 import { Input, InputProps } from "@telegram-apps/telegram-ui";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export function formatBpm(input: string): string {
   // Clean and format the input
@@ -19,9 +20,11 @@ interface BpmInputProps extends Omit<InputProps, "onChange"> {
 export const BPMInput: React.FC<BpmInputProps> = ({
   value = "",
   onChange,
-  placeholder = "BPM",
+  placeholder,
   ...restProps
 }) => {
+  const { t } = useTranslation();
+  placeholder = placeholder ?? t("bpmPlaceholder");
   const [input, setInput] = useState(() => formatBpm(value));
 
   // Update internal state when external value changes

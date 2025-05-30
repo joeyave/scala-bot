@@ -20,6 +20,7 @@ import {
 } from "@telegram-apps/telegram-ui";
 import { Notify } from "notiflix";
 import { FC, useCallback, useEffect, useRef, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { Document as DocumentPDF, Page as PagePDF, pdfjs } from "react-pdf";
 import { useLocation } from "react-router";
 
@@ -34,6 +35,8 @@ export const SongConfirmationPage: FC = () => {
   if (!songId || !messageId || !chatId || !userId) {
     throw new Error("Failed to get song page: invalid request params.");
   }
+
+  const { t } = useTranslation();
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { state } = useLocation();
@@ -109,7 +112,7 @@ export const SongConfirmationPage: FC = () => {
           });
 
           logger.error("Failed to save song", { error: err });
-          Notify.failure("Failed to save song. Please try again later.");
+          Notify.failure(t("saveError"));
           mainButton.setParams({ isLoaderVisible: false });
           backButton.show();
         },
@@ -128,13 +131,14 @@ export const SongConfirmationPage: FC = () => {
     chatId,
     userId,
     queryClient,
+    t,
   ]);
 
   useEffect(() => {
     mainButton.setParams({
       isVisible: true,
       isEnabled: true,
-      text: "Save Changes",
+      text: t("save"),
     });
 
     const handleMainButtonClickSync = () => {
@@ -146,7 +150,7 @@ export const SongConfirmationPage: FC = () => {
     return () => {
       mainButton.offClick(handleMainButtonClickSync);
     };
-  }, [handleMainButtonClick]);
+  }, [handleMainButtonClick, t]);
 
   function calcPdfWidth(width: number) {
     return width - 83 + 15 - 32;
@@ -181,26 +185,34 @@ export const SongConfirmationPage: FC = () => {
         <div className="flex-none">
           <List>
             <Headline>
-              You are changing the key from {st.initialFormData.key} to{" "}
-              {st.formData.key}. Where should page with new key be placed?
-            </Headline>
+              <Trans
+                i18nKey="changeKeyTitle"
+                values={{
+                  from: st.initialFormData.key,
+                  to: st.formData.key,
+                }}
+                components={{
+                  strong: <strong />,
+                }}
+              />
+            </Headline>{" "}
             <Select
               onChange={(e) => {
                 setSectionNumber(e.target.value);
               }}
             >
               <option key={"-1"} value={"-1"}>
-                At the end of the doc
+                {t("atEnd")}
               </option>
               {Array(st.sectionsNumber)
                 .fill(null)
                 .map((_, i) => (
                   <option key={String(i)} value={String(i)}>
-                    Instead of {i + 1} page
+                    {t("insteadOfPage", { number: i + 1 })}
                   </option>
                 ))}
               <option key={""} value={""}>
-                Only first header
+                {t("onlyFirstHeader")}
               </option>
             </Select>
           </List>
@@ -235,8 +247,8 @@ export const SongConfirmationPage: FC = () => {
                         style={{
                           width: pdfWidth,
                         }}
-                        header="Loading PDF"
-                        description="Wait for a second"
+                        header={t("loadingPdf")}
+                        description={t("waitMsg")}
                       >
                         <Spinner size="l" />
                       </Placeholder>
@@ -246,9 +258,9 @@ export const SongConfirmationPage: FC = () => {
                         style={{
                           width: pdfWidth,
                         }}
-                        header="Error loading PDF"
+                        header={t("errorLoadingPdf")}
                         description=""
-                      ></Placeholder>
+                      />
                     }
                     file={`${window.location.origin}/api/songs/${songId}/download`}
                     onLoadSuccess={onDocumentLoadSuccess}

@@ -1,7 +1,9 @@
+import {initI18n} from "@/i18n.ts";
 import {
   bindViewportCssVars,
   emitEvent,
   init as initSDK,
+  initDataUser,
   miniApp,
   mockTelegramEnv,
   mountBackButton,
@@ -77,6 +79,11 @@ export async function init(options: {
   themeParams.bindCssVars.ifAvailable();
 
   restoreInitData();
+
+  const lang = initDataUser()?.language_code || "uk";
+  console.log("lang", lang);
+
+  await initI18n(lang);
 
   await Promise.all([
     mountViewport.isAvailable() &&

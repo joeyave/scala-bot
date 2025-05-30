@@ -11,7 +11,7 @@ import { init } from "@/init.ts";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import "./index.css";
-import "./mockEnv.ts"; // Mock the environment in case, we are outside Telegram.
+import "./mockEnv.ts";
 
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 const queryClient = new QueryClient();

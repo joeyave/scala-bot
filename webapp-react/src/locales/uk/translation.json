@@ -1,0 +1,21 @@
+{
+  "changeKeyTitle": "Ви змінюєте тональність з <strong>{{from}}</strong> на <strong>{{to}}</strong>. Де в Google документі розмістити секцію з новою тональністю?",
+  "atEnd": "В кінці документа",
+  "insteadOfPage": "Замість секції {{number}}",
+  "onlyFirstHeader": "Тільки в першому залоговці (де KEY:..)",
+  "loadingPdf": "Завантаження PDF",
+  "waitMsg": "Зачекайте трохи",
+  "errorLoadingPdf": "Помилка завантаження PDF",
+  "saveError": "Не вдалося зберегти пісню. Спробуйте пізніше.",
+  "save": "Зберегти",
+  "transpose": "Транспонувати",
+  "googleDoc": "Google Документ",
+  "loadingLyrics": "Завантаження тексту пісні...",
+  "errorLoadingLyrics": "Помилка завантаження тексту пісні :(",
+  "errorTransposingLyrics": "Помилка транспонування :(",
+  "bpmPlaceholder": "Темп",
+  "timeSignaturePlaceholder": "Розмір",
+  "tagPlaceholder": "Виберіть або введіть тег",
+  "tagCreatable": "Створити новий тег"
+
+}

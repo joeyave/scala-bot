@@ -111,7 +111,11 @@ export const KeyInput: React.FC<KeyInputProps> = ({
 
   return (
     <Select value={input} onChange={handleInput} {...restProps}>
-      {!allValidKeys.includes(value) && <option value={value}>{value}</option>}
+      {!allValidKeys.includes(value) && (
+        <option key={value} value={value}>
+          {value}
+        </option>
+      )}
 
       {keyGroups.map((group) => (
         <optgroup key={group.id} label={group.label}>

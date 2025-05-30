@@ -1,6 +1,7 @@
 // TimeSignatureInput.tsx
 import { Input, InputProps } from "@telegram-apps/telegram-ui";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const COMMON_SIGNATURES = ["4/4", "3/4", "6/8", "2/4"];
 
@@ -37,9 +38,11 @@ interface TimeSignatureInputProps extends Omit<InputProps, "onChange"> {
 export const TimeSignatureInput: React.FC<TimeSignatureInputProps> = ({
   value = "",
   onChange,
-  placeholder = "Time",
+  placeholder,
   ...restProps
 }) => {
+  const { t } = useTranslation();
+  placeholder = placeholder ?? t("timeSignaturePlaceholder");
   const [input, setInput] = useState(() => formatTimeSignature(value));
 
   // Update internal state when external value changes

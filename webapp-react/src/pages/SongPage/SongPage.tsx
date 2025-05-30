@@ -38,6 +38,7 @@ import { MultiselectOption } from "@telegram-apps/telegram-ui/dist/components/Fo
 import { Notify } from "notiflix";
 import { FC, useCallback, useEffect, useState } from "react";
 import { FileEarmarkTextFill } from "react-bootstrap-icons";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 
 interface SongMutationData {
@@ -78,6 +79,8 @@ export function useSongMutation() {
 }
 
 export const SongPage: FC = () => {
+  const { t } = useTranslation();
+
   const { songId, messageId, chatId, userId } = useInitParams();
 
   if (!songId || !messageId || !chatId || !userId) {
@@ -181,11 +184,11 @@ export const SongPage: FC = () => {
 
     setMainButton({
       visible: changed,
-      text: formData.key === initialFormData.key ? "Save Changes" : "Transpose",
+      text: formData.key === initialFormData.key ? t("save") : t("transpose"),
       enabled: changed && valid,
       loader: false,
     });
-  }, [formData, initialFormData, transpositionError]);
+  }, [formData, initialFormData, transpositionError, t]);
 
   const handleKeyChange = (newKey: string) => {
     setFormData((prev: SongForm) => ({ ...prev, key: newKey }));
@@ -259,7 +262,7 @@ export const SongPage: FC = () => {
         onError: (err) => {
           logger.error("Failed to save song", { error: err });
           setMainButton({ visible: true, enabled: true, loader: false });
-          Notify.failure("Failed to save song. Please try again later.");
+          Notify.failure(t("saveError"));
         },
       },
     );
@@ -273,6 +276,7 @@ export const SongPage: FC = () => {
     chatId,
     songId,
     userId,
+    t,
   ]);
 
   useEffect(() => {
@@ -422,7 +426,7 @@ export const SongPage: FC = () => {
           size="m"
           target="_blank"
         >
-          Google Doc
+          {t("googleDoc")}
         </Button>
 
         <Section className={"sect"}>
@@ -432,11 +436,11 @@ export const SongPage: FC = () => {
                 // todo: make more readable.
                 querySongLyricsRes.isLoading ||
                 !querySongLyricsRes.isFetchedAfterMount ? ( // todo: test.
-                  <>Loading lyrics...</>
+                  <>{t("loadingLyrics")}</>
                 ) : querySongLyricsRes.isError ? (
-                  <>Error loading lyrics...</>
+                  <>{t("errorLoadingLyrics")}</>
                 ) : transpositionError ? (
-                  <>Error transposing lyrics...</>
+                  <>{t("errorTransposingLyrics")}</>
                 ) : (
                   <div
                     // className={e("lyrics")}

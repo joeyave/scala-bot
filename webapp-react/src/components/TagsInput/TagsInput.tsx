@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { arraysEqualMultiset } from "@/helpers/multiselect.ts";
 import { Multiselect } from "@telegram-apps/telegram-ui";
 import { MultiselectOption } from "@telegram-apps/telegram-ui/dist/components/Form/Multiselect/types";
@@ -6,8 +7,8 @@ export function TagsInput({
   options,
   value,
   onChange,
-  placeholder = "Select or type new tag",
-  creatable = "Create new tag",
+  placeholder,
+  creatable,
 }: {
   options: MultiselectOption[];
   value: MultiselectOption[];
@@ -15,6 +16,11 @@ export function TagsInput({
   placeholder?: string;
   creatable?: string | boolean;
 }) {
+  const { t } = useTranslation();
+
+  // Provide default values using translation if not supplied
+  placeholder = placeholder ?? t("tagPlaceholder");
+  creatable = creatable ?? t("tagCreatable");
   const handleChange = (newOptions: MultiselectOption[]) => {
     // Removing unselected items if exactly the same items were selected again.
     const areEqual = arraysEqualMultiset(value, newOptions, (a, b) => {
