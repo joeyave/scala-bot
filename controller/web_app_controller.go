@@ -471,7 +471,6 @@ type EditSongData struct {
 	TransposeSection string   `json:"transposeSection"`
 }
 
-var keyRegex = regexp.MustCompile(`(?i)key:(.*?);`)
 var bpmRegex = regexp.MustCompile(`(?i)bpm:(.*?);`)
 var timeRegex = regexp.MustCompile(`(?i)time:(.*?);`)
 

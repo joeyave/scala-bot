@@ -873,14 +873,7 @@ func (s *DriveFileService) transposeHeader(doc *docs.Document, sections []docs.S
 		}
 	}
 
-	addMod := true
-	if sectionIndex == 0 {
-		addMod = false
-	}
-
-	transposeRequests, key := composeTransposeRequests(doc.Headers[doc.DocumentStyle.DefaultHeaderId].Content,
-		0, "", toKey, doc.Headers[sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId].HeaderId,
-		addMod)
+	transposeRequests, key := composeTransposeRequests(doc.Headers[doc.DocumentStyle.DefaultHeaderId].Content, 0, "", toKey, doc.Headers[sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId].HeaderId, true)
 	requests = append(requests, transposeRequests...)
 
 	return requests, key
@@ -1011,7 +1004,10 @@ func (s *DriveFileService) removeChords(doc *docs.Document, sections []docs.Stru
 	return requests
 }
 
-func composeTransposeRequests(content []*docs.StructuralElement, index int64, key string, toKey string, segmentId string, addMod bool) ([]*docs.Request, string) {
+var keyRegex = regexp.MustCompile(`(?i)key:(.*?);`)
+
+func composeTransposeRequests(content []*docs.StructuralElement, index int64, key string, toKey string, segmentId string, replaceKeyOnErr bool) ([]*docs.Request, string) {
+
 	requests := make([]*docs.Request, 0)
 
 	for i, item := range content {
@@ -1026,23 +1022,17 @@ func composeTransposeRequests(content []*docs.StructuralElement, index int64, ke
 					}
 
 					transposedText, err := transposer.TransposeToKey(element.TextRun.Content, key, toKey)
-					//modText := ""
 					if err == nil {
-						//if addMod {
-						//	fromKey, err := transposer.ParseKey(key)
-						//	if err == nil {
-						//		toKey, err := transposer.ParseKey(toKey)
-						//		if err == nil {
-						//			if string(transposedText[len(transposedText)-1]) != " " {
-						//				modText += " "
-						//			}
-						//			modText += fmt.Sprintf("(mod %d)", toKey.SemitonesTo(fromKey))
-						//			transposedText += modText
-						//		}
-						//	}
-						//}
-
 						element.TextRun.Content = transposedText
+					} else if replaceKeyOnErr && keyRegex.FindString(element.TextRun.Content) != "" {
+						element.TextRun.Content = keyRegex.ReplaceAllStringFunc(element.TextRun.Content, func(match string) string {
+							// match == "KEY:oldValue;"  or  "key:another;"
+							idx := keyRegex.FindStringSubmatchIndex(match)
+							// idx = [ fullStart, fullEnd, groupStart, groupEnd ]
+							prefix := match[:idx[2]] // up through the ':'
+							suffix := match[idx[3]:] // from ';' onward
+							return fmt.Sprintf("%s %s%s", strings.TrimSpace(prefix), strings.TrimSpace(toKey), strings.TrimSpace(suffix))
+						})
 					}
 
 					if i == len(content)-1 {
@@ -1082,8 +1072,7 @@ func composeTransposeRequests(content []*docs.StructuralElement, index int64, ke
 								Range: &docs.Range{
 									StartIndex: index,
 									EndIndex:   index + int64(len([]rune(element.TextRun.Content))),
-									//EndIndex:   index + int64(len([]rune(element.TextRun.Content))-len([]rune(modText))),
-									SegmentId: segmentId,
+									SegmentId:  segmentId,
 									ForceSendFields: func() []string {
 										if index == 0 {
 											return []string{"StartIndex"}
