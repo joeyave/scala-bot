@@ -1,3 +1,12 @@
+# ─── Stage 1: Build React frontend ─────────────────────────────────────
+FROM node:20 AS frontend
+WORKDIR /app/webapp-react
+COPY webapp-react/package*.json ./
+RUN npm ci --omit=dev
+COPY webapp-react/ ./
+RUN npm run build
+
+# ─── Stage 2: Build Go app ─────────────────────────────────────────────
 FROM ubuntu:24.10
 
 RUN apt-get update -y && apt-get install -y \
@@ -64,5 +73,7 @@ COPY ./ ./
 #ENV GODEBUG=tls13=0
 
 RUN go build -buildvcs=false -o /scala-bot
+
+COPY --from=frontend /app/webapp-react/dist ./webapp-react/dist
 
 CMD [ "/scala-bot" ]
