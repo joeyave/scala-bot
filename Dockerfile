@@ -2,7 +2,7 @@
 FROM node:20 AS frontend
 WORKDIR /app/webapp-react
 COPY webapp-react/package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 COPY webapp-react/ ./
 RUN npm run build
 
