@@ -29,7 +29,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url,
 ).toString();
 
-export const SongConfirmationPage: FC = () => {
+const SongConfirmationPage: FC = () => {
   const { songId, messageId, chatId, userId } = useInitParams();
 
   if (!songId || !messageId || !chatId || !userId) {
@@ -290,3 +290,5 @@ export const SongConfirmationPage: FC = () => {
     </Page>
   );
 };
+
+export default SongConfirmationPage;

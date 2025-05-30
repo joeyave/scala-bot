@@ -24,8 +24,7 @@ import {
 import { transposeAllText } from "@/pages/SongPage/util/transpose.ts";
 import { SongForm, StateSongData } from "@/pages/SongPage/util/types.ts";
 import { PageError } from "@/pages/UtilPages/PageError.tsx";
-import { PageLoading } from "@/pages/UtilPages/PageLoading.tsx";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import {
   mainButton,
   miniApp,
@@ -78,7 +77,7 @@ export function useSongMutation() {
   return mutateSong;
 }
 
-export const SongPage: FC = () => {
+const SongPage: FC = () => {
   const { t } = useTranslation();
 
   const { songId, messageId, chatId, userId } = useInitParams();
@@ -117,7 +116,7 @@ export const SongPage: FC = () => {
     postEvent("web_app_setup_swipe_behavior", { allow_vertical_swipe: false });
   }, []);
 
-  const querySongDataRes = useQuery({
+  const querySongDataRes = useSuspenseQuery({
     queryKey: ["songData", songId, userId],
     queryFn: async () => {
       if (!songId || !userId) {
@@ -309,11 +308,6 @@ export const SongPage: FC = () => {
     querySongLyricsRes.isSuccess,
   ]);
 
-  // todo: test.
-  if (querySongDataRes.isPending || !querySongDataRes.isFetchedAfterMount) {
-    return <PageLoading></PageLoading>;
-  }
-
   if (querySongDataRes.isError) {
     return <PageError error={querySongDataRes.error}></PageError>;
   }
@@ -455,6 +449,8 @@ export const SongPage: FC = () => {
     </Page>
   );
 };
+
+export default SongPage;
 
 export function useInitParams() {
   const { songId } = useParams();

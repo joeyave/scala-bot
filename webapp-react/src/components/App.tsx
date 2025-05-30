@@ -1,9 +1,10 @@
 import { ErrorBoundary } from "@/components/ErrorBoundary.tsx";
 import { routes } from "@/navigation/routes.tsx";
 import { PlaceholderGeneralError } from "@/pages/UtilPages/PageError.tsx";
+import { PageLoading } from "@/pages/UtilPages/PageLoading.tsx";
 import { isMiniAppDark, postEvent, useSignal } from "@telegram-apps/sdk-react";
 import { AppRoot } from "@telegram-apps/telegram-ui";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { HashRouter, Navigate, Route, Routes } from "react-router";
 
 export function App() {
@@ -25,12 +26,14 @@ export function App() {
         )}
       >
         <HashRouter>
-          <Routes>
-            {routes.map((route) => (
-              <Route key={route.path} {...route} />
-            ))}
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
+          <Suspense fallback={<PageLoading />}>
+            <Routes>
+              {routes.map((route) => (
+                <Route key={route.path} {...route} />
+              ))}
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </Suspense>
         </HashRouter>
       </ErrorBoundary>
     </AppRoot>

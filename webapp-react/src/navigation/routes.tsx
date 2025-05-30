@@ -1,11 +1,14 @@
-import type { ComponentType, JSX } from "react";
+import { ComponentType, JSX, lazy } from "react";
 
 import { IndexPage } from "@/pages/IndexPage/IndexPage";
 import { InitDataPage } from "@/pages/InitDataPage.tsx";
 import { LaunchParamsPage } from "@/pages/LaunchParamsPage.tsx";
-import { SongConfirmationPage } from "@/pages/SongPage/SongConfirmationPage.tsx";
-import { SongPage } from "@/pages/SongPage/SongPage.tsx";
 import { ThemeParamsPage } from "@/pages/ThemeParamsPage.tsx";
+
+const SongPage = lazy(() => import("@/pages/SongPage/SongPage"));
+const SongConfirmationPage = lazy(
+  () => import("@/pages/SongPage/SongConfirmationPage"),
+);
 
 interface Route {
   path: string;
