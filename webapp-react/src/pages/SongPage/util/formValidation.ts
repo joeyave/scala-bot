@@ -1,4 +1,3 @@
-import { arraysEqualMultiset } from "@/helpers/multiselect.ts";
 import { SongForm } from "@/pages/SongPage/util/types.ts";
 
 export const isNameValid = (name: string): boolean => {
@@ -20,25 +19,27 @@ export function isFormChanged(
   formData: SongForm,
   initialFormData: SongForm,
 ): boolean {
-  // Compare primitive fields
-  for (const key in formData) {
-    if (Array.isArray(formData[key as keyof typeof formData])) {
-      // Comparing arrays. We should add a specific comparison for arrays of objects providing func to compare those objects.
-      return !arraysEqualMultiset(
-        formData[key as keyof typeof formData] as Array<unknown>,
-        initialFormData[key as keyof typeof initialFormData] as Array<unknown>,
-        (a, b) => a === b,
-      );
-    }
+  // Normalize object by sorting any array values
+  const normalize = (data: SongForm): Record<string, unknown> => {
+    return Object.entries(data).reduce(
+      (acc, [key, value]) => {
+        if (Array.isArray(value)) {
+          // Sort array to ignore order differences
+          acc[key] = [...value].sort();
+        } else {
+          acc[key] = value;
+        }
+        return acc;
+      },
+      {} as Record<string, unknown>,
+    );
+  };
 
-    if (
-      formData[key as keyof typeof formData] !==
-      initialFormData[key as keyof typeof initialFormData]
-    ) {
-      return true;
-    }
-  }
-  return false;
+  const normalizedForm = normalize(formData);
+  const normalizedInitial = normalize(initialFormData);
+
+  // Compare via JSON stringification
+  return JSON.stringify(normalizedForm) !== JSON.stringify(normalizedInitial);
 }
 
 export function isFormValid(

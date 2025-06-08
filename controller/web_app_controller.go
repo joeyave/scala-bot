@@ -27,48 +27,6 @@ type WebAppController struct {
 	RoleService       *service.RoleService
 }
 
-// case helpers.Members:
-//
-//	users, err := h.userService.FindManyExtraByBandID(user.BandID)
-//	if err != nil {
-//		return err
-//	}
-//
-//	usersStr := ""
-//	event, err := h.eventService.FindOneOldestByBandID(user.BandID)
-//	if err == nil {
-//		usersStr = fmt.Sprintf("Статистика ведется с %s", lctime.Strftime("%d %B, %Y", event.Time))
-//	}
-//
-//	for _, user := range users {
-//		if user.User == nil || user.User.Name == "" {
-//			continue
-//		}
-//
-//		usersStr = fmt.Sprintf("%s\n\n<b><a href=\"tg://user?id=%d\">%s</a></b>\nВсего участий: %d", usersStr, user.User.ID, user.User.Name, len(user.Events))
-//
-//		if len(user.Events) > 0 {
-//			usersStr = fmt.Sprintf("%s\nИз них:", usersStr)
-//		}
-//
-//		mp := map[entities.Role]int{}
-//
-//		for _, event := range user.Events {
-//			for _, membership := range event.Memberships {
-//				if membership.UserID == user.User.ID {
-//					mp[*membership.Role]++
-//					break
-//				}
-//			}
-//		}
-//
-//		for role, num := range mp {
-//			usersStr = fmt.Sprintf("%s\n - %s: %d", usersStr, role.Name, num)
-//		}
-//	}
-//
-//	return c.Send(usersStr, telebot.ModeHTML)
-
 func (h *WebAppController) Statistics(ctx *gin.Context) {
 
 	fmt.Println(ctx.Request.URL.String())
@@ -233,81 +191,6 @@ func (h *WebAppController) EditEventConfirm(ctx *gin.Context) {
 	ctx.Status(http.StatusOK)
 }
 
-func (h *WebAppController) CreateSong(ctx *gin.Context) {
-
-	fmt.Println(ctx.Request.URL.String())
-	hex := ctx.Query("userId")
-	userID, err := strconv.ParseInt(hex, 10, 64)
-	if err != nil {
-		return
-	}
-
-	user, err := h.UserService.FindOneByID(userID)
-	if err != nil {
-		return
-	}
-
-	allTags, err := h.SongService.GetTags(user.BandID)
-	if err != nil {
-		return
-	}
-
-	var songTags []*SelectEntity
-	for _, tag := range allTags {
-		songTags = append(songTags, &SelectEntity{Name: tag, IsSelected: false})
-	}
-
-	ctx.HTML(http.StatusOK, "song.go.html", gin.H{
-		"Action": "create",
-		"BPMs":   valuesForSelect("?", bpms, "BPM"),
-		"Times":  valuesForSelect("?", times, "Time"),
-		"Tags":   songTags,
-
-		"Lang": ctx.Query("lang"),
-	})
-}
-
-var times = []string{"4/4", "3/4", "6/8", "2/2"}
-var bpms []string
-
-func init() {
-	for i := 60; i < 180; i++ {
-		bpms = append(bpms, strconv.Itoa(i))
-	}
-}
-
-type SelectEntity struct {
-	Name       string
-	Value      string
-	IsSelected bool
-}
-
-func valuesForSelect(songVal string, values []string, name string) []*SelectEntity {
-	keysForSelect := []*SelectEntity{
-		{
-			Name:       name,
-			Value:      "?",
-			IsSelected: false,
-		},
-	}
-
-	somethingWasSelected := false
-	for _, key := range values {
-		if key == songVal {
-			somethingWasSelected = true
-		}
-		keysForSelect = append(keysForSelect, &SelectEntity{Name: key, Value: key, IsSelected: key == songVal})
-	}
-
-	if !somethingWasSelected && songVal == "" || songVal == "?" {
-		keysForSelect[0].IsSelected = true
-	} else if !somethingWasSelected {
-		keysForSelect = append(keysForSelect, &SelectEntity{Name: songVal, Value: songVal, IsSelected: true})
-	}
-
-	return keysForSelect
-}
-
 // API Users.
 
 type User struct {
@@ -389,11 +272,6 @@ func (h *WebAppController) UsersWithEvents(ctx *gin.Context) {
 }
 
 // API Songs.
-
-type Song struct {
-	LyricsHTML     string `json:"lyricsHtml"`
-	SectionsNumber int    `json:"sectionsNumber"`
-}
 
 func (h *WebAppController) SongData(ctx *gin.Context) {
 
@@ -666,4 +544,24 @@ func (h *WebAppController) SongDownload(ctx *gin.Context) {
 			"Content-Disposition": `inline"`,
 		},
 	)
+}
+
+// API tags.
+
+func (h *WebAppController) Tags(ctx *gin.Context) {
+
+	bandIdFromQ := ctx.Query("bandId")
+	bandID, err := primitive.ObjectIDFromHex(bandIdFromQ)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	allTags, err := h.SongService.GetTags(bandID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": gin.H{"tags": allTags}})
 }

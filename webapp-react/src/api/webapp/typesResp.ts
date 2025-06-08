@@ -35,3 +35,7 @@ export interface RespSongLyrics {
   lyricsHtml: string;
   sectionsNumber: number;
 }
+
+export interface RespTags {
+  tags: string[];
+}

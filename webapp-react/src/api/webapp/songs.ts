@@ -1,5 +1,5 @@
 import { doReqWebappApi } from "@/api/webapp/doReq.ts";
-import { RespSongData, RespSongLyrics } from "@/api/webapp/typesResp.ts"; // type Resp<T> = {
+import { RespSongData, RespSongLyrics } from "@/api/webapp/typesResp.ts";
 import { ReqBodyUpdateSong, ReqQueryParamsUpdateSong } from "./typesReq.ts";
 
 export async function getSongData(

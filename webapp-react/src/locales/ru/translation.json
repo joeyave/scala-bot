@@ -3,6 +3,7 @@
   "atEnd": "В конце документа",
   "insteadOfPage": "Вместо секции {{number}}",
   "onlyFirstHeader": "Только в первом заголовке (где KEY:..)",
+  "loading": "Загрузка",
   "loadingPdf": "Загрузка PDF",
   "waitMsg": "Подождите немного",
   "errorLoadingPdf": "Ошибка загрузки PDF",
@@ -13,8 +14,11 @@
   "loadingLyrics": "Загрузка текста песни...",
   "errorLoadingLyrics": "Ошибка при загрузке текста песни :(",
   "errorTransposingLyrics": "Ошибка при транспонировании :(",
+  "namePlaceholder": "Название",
+  "keyPlaceholder": "Тональность",
   "bpmPlaceholder": "Темп",
   "timeSignaturePlaceholder": "Размер",
   "tagPlaceholder": "Выберите или введите тег",
+  "lyricsPlaceholder": "Слова",
   "tagCreatable": "Создать новый тег"
 }

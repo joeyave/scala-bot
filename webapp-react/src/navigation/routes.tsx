@@ -6,6 +6,7 @@ import { LaunchParamsPage } from "@/pages/LaunchParamsPage.tsx";
 import { ThemeParamsPage } from "@/pages/ThemeParamsPage.tsx";
 
 const SongPage = lazy(() => import("@/pages/SongPage/SongPage"));
+const CreateSongPage = lazy(() => import("@/pages/SongPage/CreateSongPage"));
 const SongConfirmationPage = lazy(
   () => import("@/pages/SongPage/SongConfirmationPage"),
 );
@@ -27,6 +28,10 @@ export const routes: Route[] = [
     title: "Launch Params",
   },
 
+  {
+    path: "/songs/create",
+    Component: CreateSongPage,
+  },
   { path: "/songs/:songId/edit", Component: SongPage },
   {
     path: "/songs/:songId/edit/confirm",

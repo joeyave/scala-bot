@@ -383,7 +383,6 @@ func main() {
 	router.GET("/web-app/statistics", webAppController.Statistics)
 
 	router.GET("/web-app/events/create", webAppController.CreateEvent)
-	router.GET("/web-app/songs/create", webAppController.CreateSong)
 
 	router.GET("/web-app/events/:id/edit", webAppController.EditEvent)
 	router.POST("/web-app/events/:id/edit/confirm", webAppController.EditEventConfirm)
@@ -397,6 +396,8 @@ func main() {
 	router.GET("/api/songs/:id/lyrics", webAppController.SongLyrics)
 	router.POST("/api/songs/:id/edit", webAppController.SongEdit)
 	router.GET("/api/songs/:id/download", webAppController.SongDownload)
+
+	router.GET("/api/tags", webAppController.Tags)
 
 	// Check if we're in development mode
 	if os.Getenv("ENV") == "dev" {

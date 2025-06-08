@@ -3,6 +3,7 @@
   "atEnd": "В кінці документа",
   "insteadOfPage": "Замість секції {{number}}",
   "onlyFirstHeader": "Тільки в першому залоговці (де KEY:..)",
+  "loading": "Загрузка",
   "loadingPdf": "Завантаження PDF",
   "waitMsg": "Зачекайте трохи",
   "errorLoadingPdf": "Помилка завантаження PDF",
@@ -13,9 +14,11 @@
   "loadingLyrics": "Завантаження тексту пісні...",
   "errorLoadingLyrics": "Помилка завантаження тексту пісні :(",
   "errorTransposingLyrics": "Помилка транспонування :(",
+  "namePlaceholder": "Назва",
+  "keyPlaceholder": "Тональність",
   "bpmPlaceholder": "Темп",
   "timeSignaturePlaceholder": "Розмір",
   "tagPlaceholder": "Виберіть або введіть тег",
+  "lyricsPlaceholder": "Слова",
   "tagCreatable": "Створити новий тег"
-
 }
