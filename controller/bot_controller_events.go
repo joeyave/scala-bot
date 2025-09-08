@@ -4,6 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers"
@@ -16,10 +21,6 @@ import (
 	"github.com/joeyave/scala-bot/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 )
 
 func (c *BotController) event(bot *gotgbot.Bot, ctx *ext.Context, event *entity.Event) error {
@@ -780,10 +781,7 @@ func (c *BotController) EventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *e
 		return err
 	}
 
-	loadMore := false
-	if len(split) > 2 && split[2] == "more" {
-		loadMore = true
-	}
+	loadMore := len(split) > 2 && split[2] == "more"
 
 	err = c.eventMembersAddMemberChooseUser(bot, ctx, eventID, roleID, loadMore)
 	if err != nil {
@@ -821,7 +819,7 @@ func (c *BotController) eventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *e
 	for _, u := range usersWithEvents {
 		var text string
 		if len(u.Events) == 0 {
-			text = u.User.Name
+			text = u.Name
 		} else {
 			text = u.NameWithStats()
 		}
@@ -829,7 +827,7 @@ func (c *BotController) eventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *e
 		isMember := false
 		var membership *entity.Membership
 		for _, eventMembership := range event.Memberships {
-			if eventMembership.RoleID == roleID && eventMembership.UserID == u.User.ID {
+			if eventMembership.RoleID == roleID && eventMembership.UserID == u.ID {
 				isMember = true
 				membership = eventMembership
 				break

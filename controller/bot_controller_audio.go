@@ -5,6 +5,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 	"github.com/joeyave/scala-bot/controller/mysemaphore"
@@ -13,13 +21,6 @@ import (
 	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
 	ffmpeg "github.com/u2takey/ffmpeg-go"
-	"io"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var ffmpegAudioExt = "mp3"
@@ -308,13 +309,13 @@ func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQ
 	if err != nil {
 		return false, nil, err
 	}
-	defer originalFileBytes.Close()
+	defer originalFileBytes.Close() //nolint:errcheck
 
 	inputTmpFile, err := os.CreateTemp("", "input_audio_*")
 	if err != nil {
 		return false, nil, err
 	}
-	defer os.Remove(inputTmpFile.Name())
+	defer os.Remove(inputTmpFile.Name()) //nolint:errcheck
 
 	converted := false
 	if mimeType == "audio/mp4" {
@@ -349,7 +350,7 @@ func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQ
 	if err != nil {
 		return false, nil, err
 	}
-	defer os.Remove(outTmpFile.Name())
+	defer os.Remove(outTmpFile.Name()) //nolint:errcheck
 
 	if err := outTmpFile.Close(); err != nil {
 		return false, nil, err

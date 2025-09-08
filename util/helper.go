@@ -2,9 +2,10 @@ package util
 
 import (
 	"fmt"
-	"github.com/PaulSonOfLars/gotgbot/v2"
 	"io"
 	"net/http"
+
+	"github.com/PaulSonOfLars/gotgbot/v2"
 )
 
 func File(bot *gotgbot.Bot, file *gotgbot.File) (io.ReadCloser, error) {
@@ -22,7 +23,7 @@ func File(bot *gotgbot.Bot, file *gotgbot.File) (io.ReadCloser, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
+		resp.Body.Close() //nolint:errcheck
 		return nil, fmt.Errorf("telebot: expected status 200 but got %s", resp.Status)
 	}
 

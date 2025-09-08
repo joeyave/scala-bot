@@ -2,13 +2,15 @@ package repository
 
 import (
 	"context"
+
 	"github.com/joeyave/scala-bot/entity"
+
+	"os"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"os"
 )
 
 type VoiceRepository struct {
@@ -98,7 +100,7 @@ func (r *VoiceRepository) CloneVoicesForNewSongID(oldSongID, newSongID primitive
 	if err != nil {
 		return err
 	}
-	defer cursor.Close(context.TODO())
+	defer cursor.Close(context.TODO()) //nolint:errcheck
 
 	// Clone voices with new newSongID
 	var voices []any

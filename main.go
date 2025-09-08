@@ -4,6 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html/template"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"os"
+	"strings"
+	"time"
+	_ "time/tzdata" // This is mandatory for AWS containers.
+
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers"
@@ -28,14 +37,6 @@ import (
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
-	"html/template"
-	"net/http"
-	"net/http/httputil"
-	"net/url"
-	"os"
-	"strings"
-	"time"
-	_ "time/tzdata" // This is mandatory for AWS containers.
 )
 
 func main() {
@@ -443,7 +444,7 @@ func main() {
 		if err != nil {
 			panic("failed to start polling: " + err.Error())
 		}
-		fmt.Printf("%s has been started...\n", bot.User.Username)
+		fmt.Printf("%s has been started...\n", bot.Username)
 
 		// Idle, to keep updates coming in, and avoid bot stopping.
 		updater.Idle()

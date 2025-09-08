@@ -2,11 +2,12 @@ package migrations
 
 import (
 	"context"
+	"os"
+	"time"
+
 	"github.com/joeyave/scala-bot/entity"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"os"
-	"time"
 )
 
 func MigrateLikes(client *mongo.Client) error {
@@ -17,7 +18,7 @@ func MigrateLikes(client *mongo.Client) error {
 	if err != nil {
 		return err
 	}
-	defer cursor.Close(context.TODO())
+	defer cursor.Close(context.TODO()) //nolint:errcheck
 
 	// 2. Iterate through each document and update the "Likes" field.
 	for cursor.Next(context.TODO()) {

@@ -2,15 +2,16 @@ package entity
 
 import (
 	"fmt"
+	"net/url"
+	"sort"
+	"time"
+
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/gorilla/schema"
 	"github.com/joeyave/scala-bot/util"
 	"github.com/klauspost/lctime"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/api/drive/v3"
-	"net/url"
-	"sort"
-	"time"
 )
 
 type User struct {
@@ -164,11 +165,11 @@ type UserWithEvents struct {
 }
 
 func (u *UserWithEvents) NameWithStats() string {
-	return fmt.Sprintf("%s (%v, %d)", u.User.Name, lctime.Strftime("%d %b", u.Events[0].Time), len(u.Events))
+	return fmt.Sprintf("%s (%v, %d)", u.Name, lctime.Strftime("%d %b", u.Events[0].Time), len(u.Events))
 }
 
 func (u *UserWithEvents) String(lang string) string {
-	str := fmt.Sprintf("<b><a href=\"tg://user?id=%d\">%s</a></b>\nВсего участий: %d", u.User.ID, u.User.Name, len(u.Events))
+	str := fmt.Sprintf("<b><a href=\"tg://user?id=%d\">%s</a></b>\nВсего участий: %d", u.ID, u.Name, len(u.Events))
 
 	if len(u.Events) > 0 {
 		str = fmt.Sprintf("%s\nИз них:", str)
@@ -178,7 +179,7 @@ func (u *UserWithEvents) String(lang string) string {
 
 	for _, event := range u.Events {
 		for _, membership := range event.Memberships {
-			if membership.UserID == u.User.ID {
+			if membership.UserID == u.ID {
 				mp[*membership.Role] = append(mp[*membership.Role], event)
 				break
 			}

@@ -4,6 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers"
@@ -16,11 +22,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/exp/slices"
 	"google.golang.org/api/drive/v3"
-	"net/url"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type CreateSongData struct {
@@ -104,7 +105,7 @@ func (c *BotController) song(bot *gotgbot.Bot, ctx *ext.Context, driveFileID str
 			return nil, err
 		}
 
-		defer reader.Close()
+		defer reader.Close() //nolint:errcheck
 
 		message, err := bot.SendDocument(ctx.EffectiveChat.Id, gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", driveFile.Name), reader), &gotgbot.SendDocumentOpts{
 			Caption:     song.Caption(),
@@ -1264,7 +1265,7 @@ func (c *BotController) SongStyle(bot *gotgbot.Bot, ctx *ext.Context) error {
 		return err
 	}
 
-	defer reader.Close()
+	defer reader.Close() //nolint:errcheck
 
 	markup := gotgbot.InlineKeyboardMarkup{
 		InlineKeyboard: keyboard.SongEdit(song, driveFile, user, ctx.EffectiveUser.LanguageCode),
@@ -1319,7 +1320,7 @@ func (c *BotController) SongAddLyricsPage(bot *gotgbot.Bot, ctx *ext.Context) er
 		return err
 	}
 
-	defer reader.Close()
+	defer reader.Close() //nolint:errcheck
 
 	markup := gotgbot.InlineKeyboardMarkup{
 		InlineKeyboard: keyboard.SongEdit(song, driveFile, user, ctx.EffectiveUser.LanguageCode),

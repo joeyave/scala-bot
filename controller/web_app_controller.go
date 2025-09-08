@@ -2,6 +2,11 @@ package controller
 
 import (
 	"fmt"
+	"net/http"
+	"regexp"
+	"strconv"
+	"time"
+
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/joeyave/scala-bot/entity"
@@ -9,10 +14,6 @@ import (
 	"github.com/joeyave/scala-bot/service"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"net/http"
-	"regexp"
-	"strconv"
-	"time"
 )
 
 type WebAppController struct {
@@ -480,7 +481,7 @@ func (h *WebAppController) SongEdit(ctx *gin.Context) {
 		return
 	}
 
-	defer reader.Close()
+	defer reader.Close() //nolint:errcheck
 
 	markup := gotgbot.InlineKeyboardMarkup{
 		InlineKeyboard: keyboard.SongInit(song, user, chatID, messageID, "ru"),
@@ -528,7 +529,7 @@ func (h *WebAppController) SongDownload(ctx *gin.Context) {
 		return
 	}
 
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	contentType := resp.Header.Get("Content-Type")
 	if contentType == "" {

@@ -2,16 +2,17 @@ package keyboard
 
 import (
 	"fmt"
+	"regexp"
+	"sort"
+	"strings"
+	"time"
+
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
 	"github.com/klauspost/lctime"
 	"google.golang.org/api/drive/v3"
-	"regexp"
-	"sort"
-	"strings"
-	"time"
 )
 
 func EventButton(event *entity.Event, user *entity.User, lang string, showMemberships bool) []gotgbot.KeyboardButton {
@@ -71,7 +72,7 @@ func SongButton(song *entity.SongWithEvents, user *entity.User, lang string, opt
 			text += fmt.Sprintf(" (%s)", song.Stats(lang))
 		}
 		if opts.ShowLike {
-			for _, like := range song.Song.Likes {
+			for _, like := range song.Likes {
 				if user.ID == like.UserID {
 					text += fmt.Sprintf(" %s", txt.Get("button.like", ""))
 					break
