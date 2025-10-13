@@ -48,7 +48,7 @@ export const EditableTitle: React.FC<EditableTitleProps> = ({
     setInput(formatted);
   }, [value]);
 
-  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const formatted = formatTitle(e.target.value);
     setInput(formatted);
     onChange?.(formatted);
