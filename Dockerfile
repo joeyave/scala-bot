@@ -7,7 +7,7 @@ COPY webapp-react/ ./
 RUN npm run build
 
 # ─── Stage 2: Build Go app ─────────────────────────────────────────────
-FROM ubuntu:latest
+FROM ubuntu:24.04
 
 RUN apt-get update -y && apt-get install -y \
     ca-certificates \
