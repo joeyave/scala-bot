@@ -3,17 +3,18 @@ package service
 import (
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"regexp"
+	"strings"
+	"time"
+
 	"github.com/flowchartsman/retry"
 	"github.com/joeyave/chords-transposer/transposer"
 	"github.com/joeyave/scala-bot/helpers"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
-	"io"
-	"net/http"
-	"regexp"
-	"strings"
-	"time"
 )
 
 type DriveFileService struct {
@@ -1407,6 +1408,10 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string) [
 
 			// requests = append(requests, changeStyleByRegex(regexp.MustCompile(`\p{L}+(\s\d*)?:`), *element, style, strings.ToUpper, segmentID)...)
 			requests = append(requests, changeStyleByRegex(regexp.MustCompile(`^[\d\s]*\p{L}+(\s\d*)?:`), *element, style, strings.ToUpper, segmentID)...)
+
+			style = *element.TextRun.TextStyle
+			style.Bold = true
+			requests = append(requests, changeStyleByRegex(regexp.MustCompile(`\[[^]]*]`), *element, style, nil, segmentID)...)
 		}
 	}
 
