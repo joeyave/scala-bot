@@ -1,8 +1,4 @@
-import {
-  mainButton,
-  themeParamsButtonColor,
-  themeParamsHintColor,
-} from "@telegram-apps/sdk-react";
+import { mainButton, themeParams } from "@tma.js/sdk-react";
 
 export function setMainButton({
   visible,
@@ -19,9 +15,9 @@ export function setMainButton({
     text: text,
     isVisible: visible,
     isEnabled: enabled,
-    backgroundColor: enabled
-      ? themeParamsButtonColor()
-      : themeParamsHintColor(),
+    bgColor: enabled
+      ? themeParams.bgColor()
+      : themeParams.hintColor(),
     isLoaderVisible: loader,
   });
 }

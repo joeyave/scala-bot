@@ -1,21 +1,18 @@
-import {initI18n} from "@/i18n.ts";
+import { initI18n } from "@/i18n.ts";
 import {
-  bindViewportCssVars,
+  backButton,
   emitEvent,
   init as initSDK,
-  initDataUser,
+  initData,
+  mainButton,
   miniApp,
   mockTelegramEnv,
-  mountBackButton,
-  mountMainButton,
-  mountViewport,
-  restoreInitData,
   retrieveLaunchParams,
   setDebug,
   themeParams,
   type ThemeParams,
-  themeParamsState,
-} from "@telegram-apps/sdk-react";
+  viewport,
+} from "@tma.js/sdk-react";
 
 /**
  * Initializes the application and configures its dependencies.
@@ -25,7 +22,7 @@ export async function init(options: {
   eruda: boolean;
   mockForMacOS: boolean;
 }): Promise<void> {
-  // Set @telegram-apps/sdk-react debug mode and initialize it.
+  // Set @tma.js/sdk-react debug mode and initialize it.
   setDebug(options.debug);
   initSDK();
 
@@ -43,10 +40,10 @@ export async function init(options: {
     let firstThemeSent = false;
     mockTelegramEnv({
       onEvent(event, next) {
-        if (event[0] === "web_app_request_theme") {
+        if (event.name === "web_app_request_theme") {
           let tp: ThemeParams = {};
           if (firstThemeSent) {
-            tp = themeParamsState();
+            tp = themeParams.state();
           } else {
             firstThemeSent = true;
             tp ||= retrieveLaunchParams().tgWebAppThemeParams;
@@ -54,7 +51,7 @@ export async function init(options: {
           return emitEvent("theme_changed", { theme_params: tp });
         }
 
-        if (event[0] === "web_app_request_safe_area") {
+        if (event.name === "web_app_request_safe_area") {
           return emitEvent("safe_area_changed", {
             left: 0,
             top: 0,
@@ -69,26 +66,27 @@ export async function init(options: {
   }
 
   // Mount all components used in the project.
-  mountBackButton.ifAvailable();
-  mountMainButton.ifAvailable();
+  backButton.mount.ifAvailable();
+  mainButton.mount.ifAvailable();
+  initData.restore();
 
-  miniApp.mountSync.ifAvailable();
+  if (miniApp.mount.isAvailable()) {
+    themeParams.mount();
+    miniApp.mount();
+    themeParams.bindCssVars();
+  }
   miniApp.bindCssVars.ifAvailable();
   miniApp.ready();
-  themeParams.mountSync.ifAvailable();
-  themeParams.bindCssVars.ifAvailable();
 
-  restoreInitData();
 
-  const lang = initDataUser()?.language_code || "uk";
+  const lang = initData.user()?.language_code || "uk";
   console.log("lang", lang);
 
   await initI18n(lang);
 
-  await Promise.all([
-    mountViewport.isAvailable() &&
-      mountViewport().then(() => {
-        bindViewportCssVars();
-      }),
-  ]);
+  if (viewport.mount.isAvailable()) {
+    viewport.mount().then(() => {
+      viewport.bindCssVars();
+    });
+  }
 }

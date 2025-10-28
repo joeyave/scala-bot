@@ -2,14 +2,14 @@ import { ErrorBoundary } from "@/components/ErrorBoundary.tsx";
 import { routes } from "@/navigation/routes.tsx";
 import { PlaceholderGeneralError } from "@/pages/UtilPages/PageError.tsx";
 import { PageLoading } from "@/pages/UtilPages/PageLoading.tsx";
-import { isMiniAppDark, postEvent, useSignal } from "@telegram-apps/sdk-react";
+import { miniApp, postEvent, useSignal } from "@tma.js/sdk-react";
 import { AppRoot } from "@telegram-apps/telegram-ui";
 import { Suspense, useEffect } from "react";
 import { HashRouter, Navigate, Route, Routes } from "react-router";
 
 export function App() {
   // const lp = useMemo(() => retrieveLaunchParams(), []);
-  const isDark = useSignal(isMiniAppDark);
+  const isDark = useSignal(miniApp.isDark);
   useEffect(() => {
     postEvent("web_app_request_theme");
   }, []);

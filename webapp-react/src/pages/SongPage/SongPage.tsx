@@ -29,9 +29,8 @@ import {
   mainButton,
   miniApp,
   postEvent,
-  themeParams,
   viewport,
-} from "@telegram-apps/sdk-react";
+} from "@tma.js/sdk-react";
 import { Button, List, Section, Text } from "@telegram-apps/telegram-ui";
 import { MultiselectOption } from "@telegram-apps/telegram-ui/dist/components/Form/Multiselect/types";
 import { Notify } from "notiflix";
@@ -85,8 +84,6 @@ const SongPage: FC = () => {
   if (!songId || !messageId || !chatId || !userId) {
     throw new Error("Failed to get song page: invalid request params.");
   }
-
-  console.log(themeParams.backgroundColor());
 
   const navigate = useNavigate();
 

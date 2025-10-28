@@ -1,8 +1,6 @@
 import {
-  hideBackButton,
-  onBackButtonClick,
-  showBackButton,
-} from "@telegram-apps/sdk-react";
+  backButton,
+} from "@tma.js/sdk-react";
 import { type PropsWithChildren, useEffect } from "react";
 import { useNavigate } from "react-router";
 
@@ -19,12 +17,12 @@ export function Page({
 
   useEffect(() => {
     if (back) {
-      showBackButton();
-      return onBackButtonClick(() => {
+      backButton.show();
+      return backButton.onClick(() => {
         navigate(-1);
       });
     }
-    hideBackButton();
+    backButton.hide();
   }, [back]);
 
   return <>{children}</>;

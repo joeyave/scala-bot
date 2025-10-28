@@ -9,8 +9,7 @@ import {
   miniApp,
   themeParams,
   viewport,
-  viewportWidth,
-} from "@telegram-apps/sdk-react";
+} from "@tma.js/sdk-react";
 import {
   Headline,
   List,
@@ -156,7 +155,7 @@ const SongConfirmationPage: FC = () => {
     return width - 83 + 15 - 32;
   }
 
-  const [pdfWidth, setPdfWidth] = useState(calcPdfWidth(viewportWidth()));
+  const [pdfWidth, setPdfWidth] = useState(calcPdfWidth(viewport.width()));
   const initWidth = useRef<number>(pdfWidth);
   useEffect(() => {
     const set = function (newWidth: number) {
@@ -227,7 +226,7 @@ const SongConfirmationPage: FC = () => {
             <div // rounded corners.
               className="min-h-0 w-fit flex-1 rounded-lg"
               style={{
-                backgroundColor: themeParams.sectionBackgroundColor(),
+                backgroundColor: themeParams.sectionBgColor(),
               }}
             >
               <div // inner padding.
@@ -274,7 +273,7 @@ const SongConfirmationPage: FC = () => {
                           key={pageNumber}
                           className={index < numPages - 1 ? "pb-2" : undefined}
                           width={pdfWidth}
-                          canvasBackground={themeParams.secondaryBackgroundColor()}
+                          canvasBackground={themeParams.secondaryBgColor()}
                           renderTextLayer={false}
                           renderAnnotationLayer={false}
                           pageNumber={pageNumber}

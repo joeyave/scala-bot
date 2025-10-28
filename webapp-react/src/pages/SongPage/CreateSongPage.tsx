@@ -13,7 +13,7 @@ import {
 } from "@/pages/SongPage/util/formValidation.ts";
 import { SongForm } from "@/pages/SongPage/util/types.ts";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { mainButton, miniApp, postEvent, viewport } from "@telegram-apps/sdk-react";
+import { mainButton, miniApp, postEvent, viewport } from "@tma.js/sdk-react";
 import { List, Textarea } from "@telegram-apps/telegram-ui";
 import { MultiselectOption } from "@telegram-apps/telegram-ui/dist/components/Form/Multiselect/types";
 import { FC, useCallback, useEffect, useRef, useState } from "react";
