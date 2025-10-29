@@ -25,7 +25,7 @@ if (import.meta.env.DEV) {
     mockTelegramEnv({
       onEvent(e) {
         // Here you can write your own handlers for all known Telegram MIni Apps methods.
-        if ( e.name === "web_app_request_theme") {
+        if (e.name === "web_app_request_theme") {
           return emitEvent("theme_changed", { theme_params: themeParams });
         }
         if (e.name === "web_app_request_viewport") {

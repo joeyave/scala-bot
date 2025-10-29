@@ -3,14 +3,16 @@ package repository
 import (
 	"context"
 	"fmt"
+
 	"github.com/joeyave/scala-bot/entity"
+
+	"os"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"os"
-	"time"
 )
 
 type UserRepository struct {
@@ -177,21 +179,21 @@ func (r *UserRepository) UpdateOne(user entity.User) (*entity.User, error) {
 func (r *UserRepository) FindManyExtraByBandIDAndRoleID(bandID primitive.ObjectID, roleID primitive.ObjectID, from time.Time) ([]*entity.UserWithEvents, error) {
 	pipeline := bson.A{
 		bson.M{
-    "$match": bson.M{
-        "$or": []bson.M{
-            {
-                "bandIDs": bson.M{
-                    "$elemMatch": bson.M{
-                        "$eq": bandID,
-                    },
-                },
-            },
-            {
-                "bandId": bandID,
-            },
-        },
-    },
-},
+			"$match": bson.M{
+				"$or": []bson.M{
+					{
+						"bandIDs": bson.M{
+							"$elemMatch": bson.M{
+								"$eq": bandID,
+							},
+						},
+					},
+					{
+						"bandId": bandID,
+					},
+				},
+			},
+		},
 		bson.M{
 			"$lookup": bson.M{
 				"from": "bands",

@@ -2,12 +2,13 @@ package entity
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
 	"github.com/klauspost/lctime"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"strings"
-	"time"
 )
 
 type Song struct {

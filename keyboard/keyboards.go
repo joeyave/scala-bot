@@ -2,6 +2,8 @@ package keyboard
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/state"
@@ -9,7 +11,6 @@ import (
 	"github.com/joeyave/scala-bot/util"
 	"golang.org/x/exp/slices"
 	"google.golang.org/api/drive/v3"
-	"os"
 )
 
 func Menu(user *entity.User, bands []*entity.Band, lang string) [][]gotgbot.KeyboardButton {

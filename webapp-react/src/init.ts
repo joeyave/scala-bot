@@ -11,7 +11,7 @@ import {
   setDebug,
   themeParams,
   type ThemeParams,
-  viewport,
+  viewport
 } from "@tma.js/sdk-react";
 
 /**
@@ -77,7 +77,6 @@ export async function init(options: {
   }
   miniApp.bindCssVars.ifAvailable();
   miniApp.ready();
-
 
   const lang = initData.user()?.language_code || "uk";
   console.log("lang", lang);

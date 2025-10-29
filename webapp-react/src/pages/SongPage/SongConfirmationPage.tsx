@@ -4,19 +4,19 @@ import { useInitParams, useSongMutation } from "@/pages/SongPage/SongPage.tsx";
 import { StateSongData } from "@/pages/SongPage/util/types.ts";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  backButton,
-  mainButton,
-  miniApp,
-  themeParams,
-  viewport,
-} from "@tma.js/sdk-react";
-import {
   Headline,
   List,
   Placeholder,
   Select,
   Spinner,
 } from "@telegram-apps/telegram-ui";
+import {
+  backButton,
+  mainButton,
+  miniApp,
+  themeParams,
+  viewport,
+} from "@tma.js/sdk-react";
 import { Notify } from "notiflix";
 import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";

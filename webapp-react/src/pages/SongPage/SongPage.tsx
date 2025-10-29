@@ -25,14 +25,9 @@ import { transposeAllText } from "@/pages/SongPage/util/transpose.ts";
 import { SongForm, StateSongData } from "@/pages/SongPage/util/types.ts";
 import { PageError } from "@/pages/UtilPages/PageError.tsx";
 import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import {
-  mainButton,
-  miniApp,
-  postEvent,
-  viewport,
-} from "@tma.js/sdk-react";
 import { Button, List, Section, Text } from "@telegram-apps/telegram-ui";
 import { MultiselectOption } from "@telegram-apps/telegram-ui/dist/components/Form/Multiselect/types";
+import { mainButton, miniApp, postEvent, viewport } from "@tma.js/sdk-react";
 import { Notify } from "notiflix";
 import { FC, useCallback, useEffect, useState } from "react";
 import { FileEarmarkTextFill } from "react-bootstrap-icons";

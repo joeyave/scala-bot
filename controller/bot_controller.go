@@ -3,6 +3,12 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers"
@@ -20,11 +26,6 @@ import (
 	"golang.org/x/exp/slices"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/drive/v3"
-	"net/url"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type BotController struct {

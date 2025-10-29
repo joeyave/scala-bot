@@ -1,8 +1,4 @@
-import {
-  isColorDark,
-  isRGB,
-  retrieveLaunchParams,
-} from "@tma.js/sdk-react";
+import { isColorDark, isRGB, retrieveLaunchParams } from "@tma.js/sdk-react";
 import { AppRoot, Placeholder } from "@telegram-apps/telegram-ui";
 import { useMemo } from "react";
 

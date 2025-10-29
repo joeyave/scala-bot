@@ -3,13 +3,14 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/repository"
 	"github.com/joeyave/scala-bot/txt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"strings"
-	"sync"
-	"time"
 )
 
 type EventService struct {

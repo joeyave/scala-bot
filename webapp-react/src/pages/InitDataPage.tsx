@@ -1,5 +1,5 @@
-import { initData, type User, useSignal } from "@tma.js/sdk-react";
 import { List, Placeholder } from "@telegram-apps/telegram-ui";
+import { initData, type User, useSignal } from "@tma.js/sdk-react";
 import { type FC, useMemo } from "react";
 
 import {
@@ -15,7 +15,6 @@ function getUserRows(user: User): DisplayDataRow[] {
 export const InitDataPage: FC = () => {
   const initDataRaw = useSignal(initData.raw);
   const initDataState = useSignal(initData.state);
-
 
   const initDataRows = useMemo<DisplayDataRow[] | undefined>(() => {
     if (!initDataState || !initDataRaw) {

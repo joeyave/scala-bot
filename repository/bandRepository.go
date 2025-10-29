@@ -3,12 +3,13 @@ package repository
 import (
 	"context"
 	"fmt"
+	"os"
+
 	"github.com/joeyave/scala-bot/entity"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"os"
 )
 
 type BandRepository struct {

@@ -2,8 +2,8 @@ import { ErrorBoundary } from "@/components/ErrorBoundary.tsx";
 import { routes } from "@/navigation/routes.tsx";
 import { PlaceholderGeneralError } from "@/pages/UtilPages/PageError.tsx";
 import { PageLoading } from "@/pages/UtilPages/PageLoading.tsx";
-import { miniApp, postEvent, useSignal } from "@tma.js/sdk-react";
 import { AppRoot } from "@telegram-apps/telegram-ui";
+import { miniApp, postEvent, useSignal } from "@tma.js/sdk-react";
 import { Suspense, useEffect } from "react";
 import { HashRouter, Navigate, Route, Routes } from "react-router";
 

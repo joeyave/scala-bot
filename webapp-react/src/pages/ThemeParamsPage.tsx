@@ -1,5 +1,5 @@
-import { themeParams, useSignal } from "@tma.js/sdk-react";
 import { List } from "@telegram-apps/telegram-ui";
+import { themeParams, useSignal } from "@tma.js/sdk-react";
 import type { FC } from "react";
 
 import { DisplayData } from "@/components/DisplayData/DisplayData.tsx";
