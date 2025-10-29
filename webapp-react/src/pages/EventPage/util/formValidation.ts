@@ -1,7 +1,7 @@
 import { EventForm } from "@/pages/EventPage/util/types.ts";
 
 export const isNameValid = (name: string): boolean => {
-  return !!name.trim() && !/^\s|\s$/.test(name);
+  return !!name.trim();
 };
 
 export const isDateValid = (date: string): boolean => {

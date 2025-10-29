@@ -99,7 +99,7 @@ const CreateSongPage: FC = () => {
     return () => {
       logger.debug("removing old main button handler");
 
-      setMainButton({ enabled: true, loader: false });
+      // setMainButton({ enabled: true, loader: false });
       mainButton.offClick(handleMainButtonClick);
     };
   }, [handleMainButtonClick]);

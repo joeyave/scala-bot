@@ -39,3 +39,7 @@ export interface RespSongLyrics {
 export interface RespTags {
   tags: string[];
 }
+
+export interface RespEventFreqNames {
+  names: string[];
+}

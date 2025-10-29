@@ -400,6 +400,8 @@ func main() {
 
 	router.GET("/api/tags", webAppController.Tags)
 
+	router.GET("/api/events/frequent-names", webAppController.FrequentEventNames)
+
 	// Check if we're in development mode
 	if os.Getenv("ENV") == "dev" {
 		// Create a reverse proxy to the Vite dev server

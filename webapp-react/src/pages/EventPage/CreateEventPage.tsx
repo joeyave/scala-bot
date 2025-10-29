@@ -1,13 +1,15 @@
 import { Page } from "@/components/Page.tsx";
 import { logger } from "@/helpers/logger";
 import { setMainButton } from "@/helpers/mainButton.ts";
-import { isDateValid, isFormChanged, isFormValid, isNameValid } from "@/pages/EventPage/util/formValidation.ts";
+import { isFormChanged, isFormValid } from "@/pages/EventPage/util/formValidation.ts";
 import { EventForm } from "@/pages/EventPage/util/types.ts";
-import { Input, List, Textarea } from "@telegram-apps/telegram-ui";
+import { Input, List } from "@telegram-apps/telegram-ui";
 import { mainButton, miniApp, postEvent, viewport } from "@tma.js/sdk-react";
 import { FC, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { getEventFreqNames } from "@/api/webapp/events.ts";
 
 const CreateEventPage: FC = () => {
   const { t } = useTranslation();
@@ -19,11 +21,24 @@ const CreateEventPage: FC = () => {
     throw new Error("Failed to get event page: invalid request params.");
   }
 
-  // Form data state.
-  const [formData, setFormData] = useState<EventForm>({
-    name: "",
-    date: ""
+  const queryFreqNamesRes = useSuspenseQuery({
+    queryKey: ["freqNames", bandId],
+    queryFn: async () => {
+      const data = await getEventFreqNames(bandId);
+      if (!data) {
+        throw new Error("Failed to get event freq names");
+      }
+      return data;
+    }
   });
+
+  // Form data state.
+  const [initFormData] = useState<EventForm>({
+    name: "",
+    date: new Date().toISOString().split("T")[0]
+  });
+
+  const [formData, setFormData] = useState<EventForm>(initFormData);
 
   useEffect(() => {
     postEvent("web_app_expand");
@@ -31,10 +46,6 @@ const CreateEventPage: FC = () => {
   }, []);
 
   useEffect(() => {
-    const initFormData: EventForm = {
-      name: "",
-      date: ""
-    };
     const changed = isFormChanged(formData, initFormData);
     const valid = isFormValid(formData);
 
@@ -46,7 +57,7 @@ const CreateEventPage: FC = () => {
       enabled: changed && valid,
       loader: false
     });
-  }, [formData, t]);
+  }, [formData, initFormData, t]);
 
   const handleMainButtonClick = useCallback(() => {
     logger.debug("updating main button handler function");
@@ -55,7 +66,8 @@ const CreateEventPage: FC = () => {
 
     postEvent("web_app_data_send", {
       data: JSON.stringify({
-        name: formData.name
+        name: formData.name,
+        time: new Date(formData.date)
       })
     });
     miniApp.close();
@@ -69,7 +81,7 @@ const CreateEventPage: FC = () => {
     return () => {
       logger.debug("removing old main button handler");
 
-      setMainButton({ enabled: true, loader: false });
+      // setMainButton({ enabled: true, loader: false });
       mainButton.offClick(handleMainButtonClick);
     };
   }, [handleMainButtonClick]);
@@ -90,20 +102,31 @@ const CreateEventPage: FC = () => {
       >
         <div className="flex-none">
           <List>
-            <Textarea
+            <Input
+              list="suggestions"
               placeholder={t("namePlaceholder")}
-              status={!isNameValid(formData.name) ? "error" : undefined}
+              // status={!isNameValid(formData.name) ? "error" : undefined}
               onChange={(value) => {
                 setFormData((prev) => ({
                   ...prev,
                   name: value.target.value
                 }));
               }}
-            ></Textarea>
+            ></Input>
+
+            <datalist id="suggestions">
+              {
+                queryFreqNamesRes.data?.names.map((name: string, index: number) => (
+                    <option key={index} value={name}></option>
+                  )
+                ) || []
+              }
+            </datalist>
 
             <Input
               type="date"
-              status={!isDateValid(formData.date) ? "error" : undefined}
+              value={formData.date}
+              // status={!isDateValid(formData.date) ? "error" : undefined}
               onChange={(val) => {
                 setFormData((prev) => ({
                   ...prev,

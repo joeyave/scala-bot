@@ -566,3 +566,25 @@ func (h *WebAppController) Tags(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"data": gin.H{"tags": allTags}})
 }
+
+func (h *WebAppController) FrequentEventNames(ctx *gin.Context) {
+	bandIdFromQ := ctx.Query("bandId")
+	bandID, err := primitive.ObjectIDFromHex(bandIdFromQ)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	namesWithFreq, err := h.EventService.GetMostFrequentEventNames(bandID, 5)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var names []string
+	for _, n := range namesWithFreq {
+		names = append(names, n.Name)
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": gin.H{"names": names}})
+}
