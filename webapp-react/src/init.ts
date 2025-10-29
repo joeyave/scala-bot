@@ -2,6 +2,7 @@ import { initI18n } from "@/i18n.ts";
 import {
   backButton,
   emitEvent,
+  hapticFeedback,
   init as initSDK,
   initData,
   mainButton,

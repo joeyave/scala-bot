@@ -566,3 +566,167 @@ func (h *WebAppController) Tags(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"data": gin.H{"tags": allTags}})
 }
+
+func (h *WebAppController) EventData(ctx *gin.Context) {
+
+	eventIDFromCtx := ctx.Param("id")
+	eventID, err := primitive.ObjectIDFromHex(eventIDFromCtx)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	eventEntity, err := h.EventService.FindOneByID(eventID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"event": eventEntity,
+		},
+	})
+}
+
+func (h *WebAppController) FrequentEventNames(ctx *gin.Context) {
+	bandIdFromQ := ctx.Query("bandId")
+	bandID, err := primitive.ObjectIDFromHex(bandIdFromQ)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	namesWithFreq, err := h.EventService.GetMostFrequentEventNames(bandID, 5)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var names []string
+	for _, n := range namesWithFreq {
+		names = append(names, n.Name)
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": gin.H{"names": names}})
+}
+
+type EditEventData struct {
+	Name    string   `json:"name"`
+	Date    string   `json:"date"`
+	SongIDs []string `json:"songIds"`
+	Notes   string   `json:"notes"`
+}
+
+func (h *WebAppController) EventEdit(ctx *gin.Context) {
+
+	eventIDStr := ctx.Param("id")
+	eventID, err := primitive.ObjectIDFromHex(eventIDStr)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+
+	userIDStr := ctx.Query("userId")
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+
+	messageIDStr := ctx.Query("messageId")
+	messageID, err := strconv.ParseInt(messageIDStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+
+	chatIDStr := ctx.Query("chatId")
+	chatID, err := strconv.ParseInt(chatIDStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+
+	var data *EditEventData
+	err = ctx.ShouldBindJSON(&data)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+
+	event, err := h.EventService.FindOneByID(eventID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+
+	event.Name = data.Name
+	date, err := time.Parse(time.RFC3339, data.Date)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+	event.Time = date
+
+	var songIDs []primitive.ObjectID
+	for _, id := range data.SongIDs {
+		idFromHex, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			log.Error().Err(err).Msgf("Error:")
+			return
+		}
+		songIDs = append(songIDs, idFromHex)
+	}
+	event.SongIDs = songIDs
+
+	event.Notes = &data.Notes
+
+	updatedEvent, err := h.EventService.UpdateOne(*event)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+
+	html := h.EventService.ToHtmlStringByEvent(*updatedEvent, "ru")
+
+	user, err := h.UserService.FindOneByID(userID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+
+	markup := gotgbot.InlineKeyboardMarkup{}
+	markup.InlineKeyboard = keyboard.EventEdit(event, user, chatID, messageID, "ru")
+
+	user.CallbackCache = entity.CallbackCache{
+		MessageID: messageID,
+		ChatID:    chatID,
+	}
+	text := user.CallbackCache.AddToText(html)
+
+	_, _, err = h.Bot.EditMessageText(text, &gotgbot.EditMessageTextOpts{
+		ChatId:    chatID,
+		MessageId: messageID,
+		ParseMode: "HTML",
+		LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
+			IsDisabled: true,
+		},
+		ReplyMarkup: markup,
+	})
+	if err != nil {
+		return
+	}
+
+	ctx.Status(http.StatusOK)
+}

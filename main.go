@@ -390,6 +390,8 @@ func main() {
 
 	router.GET("/api/drive-files/search", driveFileController.Search)
 	router.GET("/api/songs/find-by-drive-file-id", driveFileController.FindByDriveFileID)
+	router.GET("/api/v2/drive-files/search", driveFileController.SearchV2)
+	router.GET("/api/v2/songs/find-by-drive-file-id", driveFileController.FindByDriveFileIDV2)
 
 	router.GET("/api/users-with-events", webAppController.UsersWithEvents)
 
@@ -399,6 +401,10 @@ func main() {
 	router.GET("/api/songs/:id/download", webAppController.SongDownload)
 
 	router.GET("/api/tags", webAppController.Tags)
+
+	router.GET("/api/events/:id", webAppController.EventData)
+	router.GET("/api/events/frequent-names", webAppController.FrequentEventNames)
+	router.POST("/api/events/:id/edit", webAppController.EventEdit)
 
 	// Check if we're in development mode
 	if os.Getenv("ENV") == "dev" {

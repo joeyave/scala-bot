@@ -92,6 +92,8 @@ window.addEventListener('DOMContentLoaded', (e) => {
 
                     let data = await resp.json()
 
+                    console.log(JSON.stringify(data));
+
                     let spans = document.getElementById("songs").getElementsByTagName("span")
 
                     let exists = false

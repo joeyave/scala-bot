@@ -63,7 +63,6 @@ const CreateSongPage: FC = () => {
       isBpmValid(formData.bpm) &&
       isTimeSignatureValid(formData.time);
 
-    logger.debug("effect changed", { changed, valid });
 
     setMainButton({
       visible: changed,
@@ -74,7 +73,6 @@ const CreateSongPage: FC = () => {
   }, [formData.name, formData.bpm, formData.time, t]);
 
   const handleMainButtonClick = useCallback(() => {
-    logger.debug("updating main button handler function");
 
     setMainButton({ loader: true });
 
@@ -92,21 +90,14 @@ const CreateSongPage: FC = () => {
   }, [formData]);
 
   useEffect(() => {
-    logger.debug("updating main button handler");
-
     mainButton.onClick(handleMainButtonClick);
 
     return () => {
-      logger.debug("removing old main button handler");
 
-      setMainButton({ enabled: true, loader: false });
+      // setMainButton({ enabled: true, loader: false });
       mainButton.offClick(handleMainButtonClick);
     };
   }, [handleMainButtonClick]);
-
-  // Log successful rendering
-  logger.info("Rendering song creation page");
-  logger.debug("Form data", { formData });
 
   return (
     <Page back={false}>

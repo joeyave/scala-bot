@@ -3,6 +3,10 @@ export interface RespSongData {
   bandTags: string[];
 }
 
+export interface RespSong {
+  song: Song;
+}
+
 interface Song {
   id: string;
   driveFileId: string;
@@ -18,6 +22,7 @@ interface Band {
   name: string;
   driveFolderId: string;
   archiveFolderId: string;
+  roles?: Role[];
 }
 
 interface Pdf {
@@ -38,4 +43,43 @@ export interface RespSongLyrics {
 
 export interface RespTags {
   tags: string[];
+}
+
+export interface RespEventFreqNames {
+  names: string[];
+}
+
+export interface RespEventData {
+  event: Event;
+}
+
+export interface Event {
+  id: string;
+  time: string;
+  name: string;
+  // memberships: any[] // todo
+  bandId: string;
+  band: Band;
+  songIds: string[];
+  songs: Song[];
+  notes: string;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  band_id: string;
+  priority?: number;
+}
+
+export interface RespSearchDriveFiles {
+  driveFiles: DriveFile[];
+}
+
+export interface DriveFile {
+  id: string;
+  name: string;
+  modifiedTime: string;
+  parents: string[];
+  webViewLink: string;
 }

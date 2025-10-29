@@ -161,7 +161,7 @@ func (s *EventService) ToHtmlStringByEvent(event entity.Event, lang string) stri
 		fmt.Fprintf(&b, "\n%s", strings.Join(songNames, "\n"))
 	}
 
-	if event.Notes != "" {
+	if event.Notes != nil && *event.Notes != "" {
 		fmt.Fprintf(&b, "\n\n%s", event.NotesString(lang))
 	}
 

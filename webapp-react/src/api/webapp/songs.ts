@@ -1,5 +1,9 @@
 import { doReqWebappApi } from "@/api/webapp/doReq.ts";
-import { RespSongData, RespSongLyrics } from "@/api/webapp/typesResp.ts";
+import {
+  RespSong,
+  RespSongData,
+  RespSongLyrics,
+} from "@/api/webapp/typesResp.ts";
 import { ReqBodyUpdateSong, ReqQueryParamsUpdateSong } from "./typesReq.ts";
 
 export async function getSongData(
@@ -10,6 +14,23 @@ export async function getSongData(
     `/api/songs/${songId}`,
     "GET",
     { userId },
+    { Accept: "application/json" },
+  );
+
+  if (err) {
+    throw err;
+  }
+
+  return data;
+}
+
+export async function getSongByDriveFileId(
+  driveFileId: string,
+): Promise<RespSong | null> {
+  const { data, err } = await doReqWebappApi<RespSong>(
+    `/api/v2/songs/find-by-drive-file-id`,
+    "GET",
+    { driveFileId: driveFileId },
     { Accept: "application/json" },
   );
 

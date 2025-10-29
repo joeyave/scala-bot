@@ -120,7 +120,7 @@ func (c *BotController) GetEvents(index int) handlers.Response {
 
 				user.Cache.Buttons = keyboard.GetEventsStateFilterButtons(events, ctx.EffectiveUser.LanguageCode)
 				markup.Keyboard = append(markup.Keyboard, user.Cache.Buttons)
-				markup.Keyboard = append(markup.Keyboard, []gotgbot.KeyboardButton{{Text: txt.Get("button.createEvent", ctx.EffectiveUser.LanguageCode), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/events/create?bandId=%s&lang=%s", os.Getenv("BOT_DOMAIN"), user.Band.ID.Hex(), ctx.EffectiveUser.LanguageCode)}}})
+				markup.Keyboard = append(markup.Keyboard, []gotgbot.KeyboardButton{{Text: txt.Get("button.createEvent", ctx.EffectiveUser.LanguageCode), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/webapp-react/#/events/create?bandId=%s&driveFolderId=%s&archiveFolderId=%s", os.Getenv("BOT_DOMAIN"), user.Band.ID.Hex(), user.Band.DriveFolderID, user.Band.ArchiveFolderID)}}})
 
 				for _, event := range events {
 					markup.Keyboard = append(markup.Keyboard, keyboard.EventButton(event, user, ctx.EffectiveUser.LanguageCode, false))
@@ -245,7 +245,7 @@ func (c *BotController) filterEvents(index int) handlers.Response {
 				}
 
 				markup.Keyboard = append(markup.Keyboard, buttons)
-				markup.Keyboard = append(markup.Keyboard, []gotgbot.KeyboardButton{{Text: txt.Get("button.createEvent", ctx.EffectiveUser.LanguageCode), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/events/create?bandId=%s&lang=%s", os.Getenv("BOT_DOMAIN"), user.Band.ID.Hex(), ctx.EffectiveUser.LanguageCode)}}})
+				markup.Keyboard = append(markup.Keyboard, []gotgbot.KeyboardButton{{Text: txt.Get("button.createEvent", ctx.EffectiveUser.LanguageCode), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/webapp-react/#/events/create?bandId=%s&driveFolderId=%s&archiveFolderId=%s", os.Getenv("BOT_DOMAIN"), user.Band.ID.Hex(), user.Band.DriveFolderID, user.Band.ArchiveFolderID)}}})
 
 				for _, event := range events {
 					if user.Cache.Filter == txt.Get("button.eventsWithMe", ctx.EffectiveUser.LanguageCode) {

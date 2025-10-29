@@ -15,7 +15,17 @@ body {
     margin: 0;
 }
 
+.root {
+    isolation: isolate;
+}
+
 /*todo*/
 .chord {
     color: var(--tg-theme-link-color);
+}
+
+input[type="date"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }

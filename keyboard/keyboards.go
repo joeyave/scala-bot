@@ -95,7 +95,7 @@ func EventEdit(event *entity.Event, user *entity.User, chatID, messageID int64, 
 
 	keyboard := [][]gotgbot.InlineKeyboardButton{
 		{
-			{Text: txt.Get("button.setlist", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/events/%s/edit?messageId=%d&chatId=%d&userId=%d&lang=%s", os.Getenv("BOT_DOMAIN"), event.ID.Hex(), messageID, chatID, user.ID, lang)}},
+			{Text: txt.Get("button.setlist", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/webapp-react/#/events/%s/edit?messageId=%d&chatId=%d&userId=%d&lang=%s", os.Getenv("BOT_DOMAIN"), event.ID.Hex(), messageID, chatID, user.ID, lang)}},
 			{Text: txt.Get("button.members", lang), CallbackData: util.CallbackData(state.EventMembers, event.ID.Hex())},
 		},
 		{

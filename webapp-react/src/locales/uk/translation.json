@@ -8,6 +8,7 @@
   "waitMsg": "Зачекайте трохи",
   "errorLoadingPdf": "Помилка завантаження PDF",
   "saveError": "Не вдалося зберегти пісню. Спробуйте пізніше.",
+  "saveErrorEvent": "Не вдалося зберегти захід. Спробуйте пізніше.",
   "save": "Зберегти",
   "transpose": "Транспонувати",
   "googleDoc": "Google Документ",
@@ -20,5 +21,19 @@
   "timeSignaturePlaceholder": "Розмір",
   "tagPlaceholder": "Виберіть або введіть тег",
   "lyricsPlaceholder": "Слова",
-  "tagCreatable": "Створити новий тег"
+  "tagCreatable": "Створити новий тег",
+  "setlist": "Список",
+  "setlistFooter": "Затисніть та перетягніть пісні, щоб змінити їх порядок.",
+  "notes": "Нотатки",
+  "notesPlaceholder": "Додайте нотатки",
+  "nameOrLyricsPlaceholder": "Введіть назву або слова пісні",
+  "errorFetchingSongs": "Не вдалося завантажити пісні. Спробуйте ще раз пізніше.",
+  "addingSong": "Додаємо пісню...",
+  "searching": "Виконується пошук...",
+  "nothingFound": "За запитом «{{query}}» нічого не знайдено",
+  "resultsFound": "Знайдено {{count}} результатів",
+  "resultFound": "Знайдено {{count}} результат",
+  "songExistsInSetlist": "Пісня вже є у списку",
+  "songAddedToSetlist": "Пісня додана до списку!",
+  "errorAddingSong": "Помилка при додаванні пісні до списку"
 }

@@ -16,10 +16,12 @@ export default tseslint.config({
     // tseslint.configs.recommended,
     react.configs.flat.recommended,
     react.configs.flat["jsx-runtime"],
-    reactHooks.configs["recommended-latest"],
     query.configs["flat/recommended"],
     eslintConfigPrettier,
   ],
+  plugins: {
+    "react-hooks": reactHooks,
+  },
   languageOptions: {
     parserOptions: {
       ecmaVersion: "latest",
@@ -28,7 +30,7 @@ export default tseslint.config({
         jsx: true,
       },
       project: "./tsconfig.json",
-      tsconfigRootDir: "./",
+      tsconfigRootDir: import.meta.dirname,
     },
     globals: {
       ...globals.browser,

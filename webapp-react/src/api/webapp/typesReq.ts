@@ -12,3 +12,16 @@ export interface ReqBodyUpdateSong {
   tags?: string[];
   transposeSection?: string;
 }
+
+export interface ReqQueryParamsUpdateEvent {
+  messageId: string;
+  chatId: string;
+  userId: string;
+}
+
+export interface ReqBodyUpdateEvent {
+  name?: string;
+  date?: string;
+  songIds?: string[];
+  notes?: string;
+}

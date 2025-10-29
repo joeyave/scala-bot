@@ -1,0 +1,5 @@
+.sortable-list__container {
+    width: 100%;
+    -webkit-user-select: none; /* Safari */
+    user-select: none; /* Standard syntax */
+}

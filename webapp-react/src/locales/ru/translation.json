@@ -8,6 +8,7 @@
   "waitMsg": "Подождите немного",
   "errorLoadingPdf": "Ошибка загрузки PDF",
   "saveError": "Не удалось сохранить песню. Пожалуйста, попробуйте позже.",
+  "saveErrorEvent": "Не удалось сохранить собрание. Пожалуйста, попробуйте позже.",
   "save": "Сохранить",
   "transpose": "Транспонировать",
   "googleDoc": "Google Документ",
@@ -20,5 +21,19 @@
   "timeSignaturePlaceholder": "Размер",
   "tagPlaceholder": "Выберите или введите тег",
   "lyricsPlaceholder": "Слова",
-  "tagCreatable": "Создать новый тег"
+  "tagCreatable": "Создать новый тег",
+  "setlist": "Список",
+  "setlistFooter": "Зажмите и перетащите песни, чтобы изменить их порядок.",
+  "notes": "Заметки",
+  "notesPlaceholder": "Добавьте заметки",
+  "nameOrLyricsPlaceholder": "Введите название или слова песни",
+  "errorFetchingSongs": "Не удалось загрузить песни. Пожалуйста, попробуйте ещё раз позже.",
+  "addingSong": "Добавляем песню...",
+  "searching": "Выполняется поиск...",
+  "nothingFound": "По запросу «{{query}}» ничего не найдено",
+  "resultsFound": "Найдено {{count}} результатов",
+  "resultFound": "Найден {{count}} результат",
+  "songExistsInSetlist": "Песня уже есть в списке",
+  "songAddedToSetlist": "Песня добавлена в список!",
+  "errorAddingSong": "Ошибка при добавлении песни в список"
 }

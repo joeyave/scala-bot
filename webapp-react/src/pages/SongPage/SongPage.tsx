@@ -213,7 +213,6 @@ const SongPage: FC = () => {
   };
 
   const handleMainButtonClick = useCallback(async () => {
-    logger.debug("updating main button handler function");
 
     setMainButton({ loader: true });
 
@@ -275,8 +274,6 @@ const SongPage: FC = () => {
       return;
     }
 
-    logger.debug("updating main button handler");
-
     if (!querySongLyricsRes.isSuccess && formData.key !== initialFormData.key) {
       setMainButton({ enabled: false });
     }
@@ -288,7 +285,6 @@ const SongPage: FC = () => {
     mainButton.onClick(handleMainButtonClickSync);
 
     return () => {
-      logger.debug("removing old main button handler");
       setMainButton({ enabled: true, loader: false });
       mainButton.offClick(handleMainButtonClickSync);
     };
@@ -303,10 +299,6 @@ const SongPage: FC = () => {
   if (querySongDataRes.isError) {
     return <PageError error={querySongDataRes.error}></PageError>;
   }
-
-  // Log successful rendering
-  logger.info("Rendering song page", { songId, userId });
-  logger.debug("Form data", { initialFormData, formData });
 
   return (
     <Page back={false}>

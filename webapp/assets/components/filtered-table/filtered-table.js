@@ -16,7 +16,6 @@ class FilteredTable {
 
         this.addListeners()
 
-        console.log(this.data)
         this.populateResults(this.data)
     }
 
@@ -40,7 +39,6 @@ class FilteredTable {
 
         results = results.filter(r => r.events && r.events.length > 0).sort((r1, r2) => r1.events.length < r2.events.length);
 
-        // console.log(results)
         // Update list of results under the search bar
         for (const result of results) {
             this.elements.body.appendChild(

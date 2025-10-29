@@ -24,7 +24,7 @@ type Event struct {
 	SongIDs []primitive.ObjectID `bson:"songIds" json:"songIds"`
 	Songs   []*Song              `bson:"songs,omitempty" json:"songs"`
 
-	Notes string `bson:"notes" json:"notes"`
+	Notes *string `bson:"notes" json:"notes"`
 }
 
 func (e *Event) Alias(lang string) string {
@@ -54,7 +54,7 @@ func (e *Event) RolesString() string {
 }
 
 func (e *Event) NotesString(lang string) string {
-	return fmt.Sprintf("<b>%s:</b>\n%s", txt.Get("button.notes", lang), e.Notes)
+	return fmt.Sprintf("<b>%s:</b>\n%s", txt.Get("button.notes", lang), *e.Notes)
 }
 
 type EventNameFrequencies struct {
