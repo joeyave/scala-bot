@@ -19,3 +19,20 @@ body {
 .chord {
     color: var(--tg-theme-link-color);
 }
+
+.sortable-chosen.sortable-ghost {
+    opacity: 0;
+}
+
+.sortable-fallback {
+    opacity: 1 !important;
+}
+
+.sortable-ghost, .sortable-chosen {
+    filter: brightness(90%);
+}
+
+html.dark .sortable-ghost, html.dark .sortable-chosen {
+    background-color: var(--tg-theme-bg-color);
+    filter: brightness(85%);
+}

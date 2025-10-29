@@ -1,15 +1,33 @@
+import { getEventFreqNames } from "@/api/webapp/events.ts";
 import { Page } from "@/components/Page.tsx";
+import { SortableList } from "@/components/SortableList/SortableList.tsx";
 import { logger } from "@/helpers/logger";
 import { setMainButton } from "@/helpers/mainButton.ts";
-import { isFormChanged, isFormValid } from "@/pages/EventPage/util/formValidation.ts";
+import {
+  isFormChanged,
+  isFormValid,
+} from "@/pages/EventPage/util/formValidation.ts";
 import { EventForm } from "@/pages/EventPage/util/types.ts";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Input, List } from "@telegram-apps/telegram-ui";
 import { mainButton, miniApp, postEvent, viewport } from "@tma.js/sdk-react";
 import { FC, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { getEventFreqNames } from "@/api/webapp/events.ts";
 
 const CreateEventPage: FC = () => {
   const { t } = useTranslation();
@@ -29,16 +47,25 @@ const CreateEventPage: FC = () => {
         throw new Error("Failed to get event freq names");
       }
       return data;
-    }
+    },
   });
 
   // Form data state.
   const [initFormData] = useState<EventForm>({
     name: "",
-    date: new Date().toISOString().split("T")[0]
+    date: new Date().toISOString().split("T")[0],
   });
 
   const [formData, setFormData] = useState<EventForm>(initFormData);
+
+  const [items, setItems] = useState([1, 2, 3]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   useEffect(() => {
     postEvent("web_app_expand");
@@ -55,7 +82,7 @@ const CreateEventPage: FC = () => {
       visible: changed,
       text: t("save"),
       enabled: changed && valid,
-      loader: false
+      loader: false,
     });
   }, [formData, initFormData, t]);
 
@@ -67,8 +94,8 @@ const CreateEventPage: FC = () => {
     postEvent("web_app_data_send", {
       data: JSON.stringify({
         name: formData.name,
-        time: new Date(formData.date)
-      })
+        time: new Date(formData.date),
+      }),
     });
     miniApp.close();
   }, [formData]);
@@ -97,7 +124,7 @@ const CreateEventPage: FC = () => {
         style={{
           // todo: check how to use safeAreaInset properly.
           marginTop: viewport.safeAreaInsetTop(),
-          marginBottom: viewport.safeAreaInsetBottom()
+          marginBottom: viewport.safeAreaInsetBottom(),
         }}
       >
         <div className="flex-none">
@@ -109,18 +136,17 @@ const CreateEventPage: FC = () => {
               onChange={(value) => {
                 setFormData((prev) => ({
                   ...prev,
-                  name: value.target.value
+                  name: value.target.value,
                 }));
               }}
             ></Input>
 
             <datalist id="suggestions">
-              {
-                queryFreqNamesRes.data?.names.map((name: string, index: number) => (
-                    <option key={index} value={name}></option>
-                  )
-                ) || []
-              }
+              {queryFreqNamesRes.data?.names.map(
+                (name: string, index: number) => (
+                  <option key={index} value={name}></option>
+                ),
+              ) || []}
             </datalist>
 
             <Input
@@ -130,15 +156,46 @@ const CreateEventPage: FC = () => {
               onChange={(val) => {
                 setFormData((prev) => ({
                   ...prev,
-                  date: val.target.value
+                  date: val.target.value,
                 }));
               }}
             />
+
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={items}
+                strategy={verticalListSortingStrategy}
+              >
+                <SortableList
+                  items={items}
+                  onRemove={(id) =>
+                    setItems((prev) => prev.filter((x) => x !== id))
+                  }
+                ></SortableList>
+              </SortableContext>
+            </DndContext>
           </List>
         </div>
       </div>
     </Page>
   );
+
+  function handleDragEnd(event) {
+    const { active, over } = event;
+
+    if (active.id !== over.id) {
+      setItems((items) => {
+        const oldIndex = items.indexOf(active.id);
+        const newIndex = items.indexOf(over.id);
+
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  }
 };
 
 export default CreateEventPage;

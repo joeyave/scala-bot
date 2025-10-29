@@ -1,0 +1,24 @@
+.sortable-list__container {
+    width: 100%;
+    -webkit-user-select: none; /* Safari */
+    user-select: none; /* Standard syntax */
+}
+
+.sortable-list__item {
+    cursor: move;
+    background-color: var(--tg-theme-section-bg-color);
+    display: flex;
+    margin-bottom: 4px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sortable-list__item-icon {
+    color: var(--tg-theme-text-color);
+    cursor: pointer;
+    display: inline-block;
+    position: relative;
+    z-index: 9999;
+}
