@@ -1,10 +1,11 @@
 package service
 
 import (
+	"time"
+
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/repository"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"time"
 )
 
 type UserService struct {

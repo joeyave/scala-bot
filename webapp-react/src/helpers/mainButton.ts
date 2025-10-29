@@ -15,9 +15,7 @@ export function setMainButton({
     text: text,
     isVisible: visible,
     isEnabled: enabled,
-    bgColor: enabled
-      ? themeParams.bgColor()
-      : themeParams.hintColor(),
+    bgColor: enabled ? themeParams.bgColor() : themeParams.hintColor(),
     isLoaderVisible: loader,
   });
 }

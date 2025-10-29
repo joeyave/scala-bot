@@ -2,15 +2,17 @@ package repository
 
 import (
 	"context"
+
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/helpers"
+
+	"os"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"os"
-	"time"
 )
 
 type EventRepository struct {

@@ -3,6 +3,9 @@ package controller
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 	"github.com/joeyave/scala-bot/entity"
@@ -13,8 +16,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/exp/slices"
 	"google.golang.org/api/googleapi"
-	"strconv"
-	"strings"
 )
 
 func (c *BotController) SettingsChooseBand(bot *gotgbot.Bot, ctx *ext.Context) error {

@@ -1,5 +1,5 @@
-import { isRGB } from "@tma.js/sdk-react";
 import { Cell, Checkbox, Section } from "@telegram-apps/telegram-ui";
+import { isRGB } from "@tma.js/sdk-react";
 import type { FC, ReactNode } from "react";
 
 import { Link } from "@/components/Link/Link.tsx";

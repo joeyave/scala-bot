@@ -3,16 +3,18 @@ package repository
 import (
 	"context"
 	"fmt"
-	"github.com/joeyave/scala-bot/entity"
-	"github.com/joeyave/scala-bot/helpers"
 	"sort"
 	"time"
+
+	"github.com/joeyave/scala-bot/entity"
+	"github.com/joeyave/scala-bot/helpers"
+
+	"os"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"os"
 )
 
 type SongRepository struct {

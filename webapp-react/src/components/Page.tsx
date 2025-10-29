@@ -1,6 +1,4 @@
-import {
-  backButton,
-} from "@tma.js/sdk-react";
+import { backButton } from "@tma.js/sdk-react";
 import { type PropsWithChildren, useEffect } from "react";
 import { useNavigate } from "react-router";
 

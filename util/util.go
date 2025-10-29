@@ -2,11 +2,12 @@ package util
 
 import (
 	"fmt"
-	"github.com/PaulSonOfLars/gotgbot/v2"
-	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers/filters"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/PaulSonOfLars/gotgbot/v2"
+	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers/filters"
 )
 
 func CleanUpText(text string) string {

@@ -2,6 +2,10 @@ package controller
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers"
@@ -9,9 +13,6 @@ import (
 	"github.com/joeyave/scala-bot/state"
 	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
-	"regexp"
-	"strconv"
-	"strings"
 )
 
 func (c *BotController) BandCreate_AskForName(bot *gotgbot.Bot, ctx *ext.Context) error {
