@@ -16,7 +16,7 @@ export function setMainButton({
     isVisible: visible,
     isEnabled: enabled,
     bgColor: enabled
-      ? themeParams.bgColor()
+      ? themeParams.buttonColor()
       : themeParams.hintColor(),
     isLoaderVisible: loader,
   });
