@@ -142,11 +142,19 @@ export default function Search({
               className="box-border flex max-h-[min(var(--available-height),23rem)] w-[var(--anchor-width)] max-w-[var(--available-width)] scroll-pt-2 scroll-pb-2 flex-col overflow-y-auto overscroll-contain rounded-[12px] bg-[var(--tg-theme-bg-color)] text-[var(--tgui--text_color)] shadow-[0_32px_64px_0_rgba(0,0,0,0.04),_0_0_2px_1px_rgba(0,0,0,0.02)]"
               aria-busy={isLoading || undefined}
             >
-              <Autocomplete.Status
-                className={`flex items-center gap-2 pt-5 pr-8 pl-4 pb-${searchResults.length === 0 ? "5" : "2"} text-sm text-[var(--tg-theme-hint-color)]`}
-              >
-                {status}
-              </Autocomplete.Status>
+              {searchResults.length === 0 ? (
+                <Autocomplete.Status
+                  className={`flex items-center gap-2 pt-5 pr-8 pb-5 pl-4 text-sm text-[var(--tg-theme-hint-color)]`}
+                >
+                  {status}
+                </Autocomplete.Status>
+              ) : (
+                <Autocomplete.Status
+                  className={`flex items-center gap-2 pt-5 pr-8 pb-2 pl-4 text-sm text-[var(--tg-theme-hint-color)]`}
+                >
+                  {status}
+                </Autocomplete.Status>
+              )}
               <Autocomplete.List>
                 {(driveFile: DriveFile) => (
                   <div>
