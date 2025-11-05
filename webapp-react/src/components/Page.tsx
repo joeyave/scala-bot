@@ -17,11 +17,11 @@ export function Page({
     if (back) {
       backButton.show();
       return backButton.onClick(() => {
-        navigate(-1);
+        void navigate(-1);
       });
     }
     backButton.hide();
-  }, [back]);
+  }, [back, navigate]);
 
   return <>{children}</>;
 }

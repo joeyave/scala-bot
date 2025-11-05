@@ -25,6 +25,7 @@ export function isFormChanged(
       (acc, [key, value]) => {
         if (Array.isArray(value)) {
           // Sort array to ignore order differences
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           acc[key] = [...value].sort();
         } else {
           acc[key] = value;

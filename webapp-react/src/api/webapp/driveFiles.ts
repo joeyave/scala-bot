@@ -4,7 +4,7 @@ import { DriveFile, RespSearchDriveFiles } from "@/api/webapp/typesResp.ts";
 export async function searchDriveFiles(
   query: string,
   driveFolderId?: string,
-  archiveFolderId?: string,
+  archiveFolderId?: string | null,
 ): Promise<DriveFile[]> {
   const { data, err } = await doReqWebappApi<RespSearchDriveFiles>(
     `/api/v2/drive-files/search`,

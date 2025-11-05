@@ -4,7 +4,6 @@ import { KeyInput } from "@/components/KeyInput/KeyInput.tsx";
 import { Page } from "@/components/Page.tsx";
 import { TagsInput } from "@/components/TagsInput/TagsInput.tsx";
 import { TimeSignatureInput } from "@/components/TimeSignatureInput/TimeSignatureInput.tsx";
-import { logger } from "@/helpers/logger";
 import { setMainButton } from "@/helpers/mainButton.ts";
 import {
   isBpmValid,
@@ -63,7 +62,6 @@ const CreateSongPage: FC = () => {
       isBpmValid(formData.bpm) &&
       isTimeSignatureValid(formData.time);
 
-
     setMainButton({
       visible: changed,
       text: t("save"),
@@ -73,7 +71,6 @@ const CreateSongPage: FC = () => {
   }, [formData.name, formData.bpm, formData.time, t]);
 
   const handleMainButtonClick = useCallback(() => {
-
     setMainButton({ loader: true });
 
     postEvent("web_app_data_send", {
@@ -93,7 +90,6 @@ const CreateSongPage: FC = () => {
     mainButton.onClick(handleMainButtonClick);
 
     return () => {
-
       // setMainButton({ enabled: true, loader: false });
       mainButton.offClick(handleMainButtonClick);
     };

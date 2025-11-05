@@ -37,6 +37,7 @@ try {
       </StrictMode>,
     );
   });
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 } catch (e) {
   root.render(<EnvUnsupported />);
 }

@@ -2,7 +2,6 @@ import { initI18n } from "@/i18n.ts";
 import {
   backButton,
   emitEvent,
-  hapticFeedback,
   init as initSDK,
   initData,
   mainButton,
@@ -85,7 +84,7 @@ export async function init(options: {
   await initI18n(lang);
 
   if (viewport.mount.isAvailable()) {
-    viewport.mount().then(() => {
+    await viewport.mount().then(() => {
       viewport.bindCssVars();
     });
   }
