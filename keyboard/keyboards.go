@@ -38,9 +38,9 @@ func Settings(user *entity.User, lang string) [][]gotgbot.InlineKeyboardButton {
 	keyboard := [][]gotgbot.InlineKeyboardButton{
 		{{Text: txt.Get("button.changeBand", lang), CallbackData: util.CallbackData(state.SettingsBands, "")}},
 	}
-	if user.IsAdmin() {
-		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.addAdmin", lang), CallbackData: util.CallbackData(state.SettingsBandMembers, user.BandID.Hex())}})
-	}
+	//if user.IsAdmin() {
+	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.addAdmin", lang), CallbackData: util.CallbackData(state.SettingsBandMembers, user.BandID.Hex())}})
+	//}
 
 	if user.ID == 195295372 {
 		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.cleanupDatabase", lang), CallbackData: util.CallbackData(state.SettingsCleanupDatabase, user.BandID.Hex())}})
@@ -81,12 +81,12 @@ func EventInit(event *entity.Event, user *entity.User, lang string) [][]gotgbot.
 		},
 	}
 
-	if user.IsAdmin() || user.IsEventMember(event) {
-		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
-			//{Text: txt.Get("button.edit", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/events/%s/edit", os.Getenv("BOT_DOMAIN"), event.ID.Hex())}},
-			{Text: txt.Get("button.edit", lang), CallbackData: util.CallbackData(state.EventCB, event.ID.Hex()+":edit")},
-		})
-	}
+	//if user.IsAdmin() || user.IsEventMember(event) {
+	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
+		//{Text: txt.Get("button.edit", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/events/%s/edit", os.Getenv("BOT_DOMAIN"), event.ID.Hex())}},
+		{Text: txt.Get("button.edit", lang), CallbackData: util.CallbackData(state.EventCB, event.ID.Hex()+":edit")},
+	})
+	//}
 
 	return keyboard
 }
@@ -190,18 +190,18 @@ func SongEdit(song *entity.Song, driveFile *drive.File, user *entity.User, lang 
 		},
 	}
 
-	if user.IsAdmin() {
-		if slices.Contains(driveFile.Parents, song.Band.ArchiveFolderID) {
-			keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
-				{Text: txt.Get("button.unarchiveText", lang), CallbackData: util.CallbackData(state.SongArchive, song.ID.Hex()+":unarchive")},
-				{Text: txt.Get("button.delete", lang), CallbackData: util.CallbackData(state.SongDeleteConfirm, song.ID.Hex())},
-			})
-		} else {
-			keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
-				{Text: txt.Get("button.archiveText", lang), CallbackData: util.CallbackData(state.SongArchive, song.ID.Hex()+":archive")},
-				{Text: txt.Get("button.delete", lang), CallbackData: util.CallbackData(state.SongDeleteConfirm, song.ID.Hex())},
-			})
-		}
+	//if user.IsAdmin() {
+	if slices.Contains(driveFile.Parents, song.Band.ArchiveFolderID) {
+		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
+			{Text: txt.Get("button.unarchiveText", lang), CallbackData: util.CallbackData(state.SongArchive, song.ID.Hex()+":unarchive")},
+			{Text: txt.Get("button.delete", lang), CallbackData: util.CallbackData(state.SongDeleteConfirm, song.ID.Hex())},
+		})
+		//} else {
+		//	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
+		//		{Text: txt.Get("button.archiveText", lang), CallbackData: util.CallbackData(state.SongArchive, song.ID.Hex()+":archive")},
+		//		{Text: txt.Get("button.delete", lang), CallbackData: util.CallbackData(state.SongDeleteConfirm, song.ID.Hex())},
+		//	})
+		//}
 	}
 
 	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.stats", lang), CallbackData: util.CallbackData(state.SongStats, song.ID.Hex())}})
