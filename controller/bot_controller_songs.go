@@ -50,12 +50,12 @@ func (c *BotController) CreateSong(bot *gotgbot.Bot, ctx *ext.Context) error {
 		Parents:  []string{user.Band.DriveFolderID},
 		MimeType: "application/vnd.google-apps.document",
 	}
-	driveFile, err := c.DriveFileService.CreateOne(file, data.Lyrics, data.Key, data.BPM, data.Time)
+	driveFile, err := c.DriveFileService.CreateOne(file, data.Lyrics, data.Key, data.BPM, data.Time, ctx.EffectiveUser.LanguageCode)
 	if err != nil {
 		return err
 	}
 
-	driveFile, err = c.DriveFileService.StyleOne(driveFile.Id)
+	driveFile, err = c.DriveFileService.StyleOne(driveFile.Id, ctx.EffectiveUser.LanguageCode)
 	if err != nil {
 		return err
 	}
@@ -1242,7 +1242,7 @@ func (c *BotController) SongStyle(bot *gotgbot.Bot, ctx *ext.Context) error {
 
 	driveFileID := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 
-	driveFile, err := c.DriveFileService.StyleOne(driveFileID)
+	driveFile, err := c.DriveFileService.StyleOne(driveFileID, ctx.EffectiveUser.LanguageCode)
 	if err != nil {
 		return err
 	}

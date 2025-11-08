@@ -99,7 +99,7 @@ func (c *BotController) BandCreate(index int) handlers.Response {
 				user.BandID = band.ID
 				user.BandIDs = append(user.BandIDs, band.ID)
 
-				text := fmt.Sprintf("Ты добавлен в группу \"%s\" как администратор.", band.Name)
+				text := txt.Get("text.addedToBandAsAdmin", ctx.EffectiveUser.LanguageCode, band.Name)
 				_, err = ctx.EffectiveChat.SendMessage(bot, text, nil)
 				if err != nil {
 					return err
@@ -197,7 +197,7 @@ func (c *BotController) RoleCreate(bot *gotgbot.Bot, ctx *ext.Context) error {
 		return err
 	}
 
-	_, _, err = ctx.EffectiveMessage.EditText(bot, fmt.Sprintf("Добавлена новая роль: %s.", role.Name), nil)
+	_, _, err = ctx.EffectiveMessage.EditText(bot, txt.Get("text.roleAdded", ctx.EffectiveUser.LanguageCode, role.Name), nil)
 	if err != nil {
 		return err
 	}

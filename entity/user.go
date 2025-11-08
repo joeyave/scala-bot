@@ -3,7 +3,6 @@ package entity
 import (
 	"fmt"
 	"net/url"
-	"sort"
 	"time"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
@@ -169,54 +168,54 @@ func (u *UserWithEvents) NameWithStats() string {
 	return fmt.Sprintf("%s (%v, %d)", u.Name, lctime.Strftime("%d %b", u.Events[0].Time), len(u.Events))
 }
 
-func (u *UserWithEvents) String(lang string) string {
-	str := fmt.Sprintf("<b><a href=\"tg://user?id=%d\">%s</a></b>\nВсего участий: %d", u.ID, u.Name, len(u.Events))
-
-	if len(u.Events) > 0 {
-		str = fmt.Sprintf("%s\nИз них:", str)
-	}
-
-	mp := map[Role][]*Event{}
-
-	for _, event := range u.Events {
-		for _, membership := range event.Memberships {
-			if membership.UserID == u.ID {
-				mp[*membership.Role] = append(mp[*membership.Role], event)
-				break
-			}
-		}
-	}
-
-	keys := make([]Role, 0, len(mp))
-	for k := range mp {
-		keys = append(keys, k)
-	}
-	sort.Slice(keys, func(i, j int) bool {
-		return keys[i].Name < keys[j].Name
-	})
-	keys = append(keys[1:], keys[0])
-
-	for _, role := range keys {
-		mp2 := map[int][]*Event{}
-		for _, event := range mp[role] {
-			mp2[int(event.Time.Weekday())] = append(mp2[int(event.Time.Weekday())], event)
-		}
-		str = fmt.Sprintf("%s\n - %s: %d", str, role.Name, len(mp[role]))
-
-		keys := make([]int, 0, len(mp2))
-		for k := range mp2 {
-			keys = append(keys, k)
-		}
-		sort.Ints(keys)
-		keys = append(keys[1:], keys[0])
-
-		str = fmt.Sprintf("%s (", str)
-		for _, k := range keys {
-			t, _ := lctime.StrftimeLoc(util.IetfToIsoLangCode(lang), "%a", mp2[k][0].Time)
-			str = fmt.Sprintf("%s%s %d, ", str, t, len(mp2[k]))
-		}
-		str = fmt.Sprintf("%s)", str[:len(str)-2])
-	}
-
-	return str
-}
+//func (u *UserWithEvents) String(lang string) string {
+//	str := fmt.Sprintf("<b><a href=\"tg://user?id=%d\">%s</a></b>\nВсего участий: %d", u.ID, u.Name, len(u.Events))
+//
+//	if len(u.Events) > 0 {
+//		str = fmt.Sprintf("%s\nИз них:", str)
+//	}
+//
+//	mp := map[Role][]*Event{}
+//
+//	for _, event := range u.Events {
+//		for _, membership := range event.Memberships {
+//			if membership.UserID == u.ID {
+//				mp[*membership.Role] = append(mp[*membership.Role], event)
+//				break
+//			}
+//		}
+//	}
+//
+//	keys := make([]Role, 0, len(mp))
+//	for k := range mp {
+//		keys = append(keys, k)
+//	}
+//	sort.Slice(keys, func(i, j int) bool {
+//		return keys[i].Name < keys[j].Name
+//	})
+//	keys = append(keys[1:], keys[0])
+//
+//	for _, role := range keys {
+//		mp2 := map[int][]*Event{}
+//		for _, event := range mp[role] {
+//			mp2[int(event.Time.Weekday())] = append(mp2[int(event.Time.Weekday())], event)
+//		}
+//		str = fmt.Sprintf("%s\n - %s: %d", str, role.Name, len(mp[role]))
+//
+//		keys := make([]int, 0, len(mp2))
+//		for k := range mp2 {
+//			keys = append(keys, k)
+//		}
+//		sort.Ints(keys)
+//		keys = append(keys[1:], keys[0])
+//
+//		str = fmt.Sprintf("%s (", str)
+//		for _, k := range keys {
+//			t, _ := lctime.StrftimeLoc(util.IetfToIsoLangCode(lang), "%a", mp2[k][0].Time)
+//			str = fmt.Sprintf("%s%s %d, ", str, t, len(mp2[k]))
+//		}
+//		str = fmt.Sprintf("%s)", str[:len(str)-2])
+//	}
+//
+//	return str
+//}

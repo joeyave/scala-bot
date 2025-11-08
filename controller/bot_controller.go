@@ -216,7 +216,7 @@ func (c *BotController) search(index int) handlers.Response {
 					query = songNames[0]
 					user.Cache.Query = query
 				} else {
-					_, err := ctx.EffectiveChat.SendMessage(bot, "Из запроса удаляются все числа, дефисы и скобки вместе с тем, что в них.", nil)
+					_, err := ctx.EffectiveChat.SendMessage(bot, txt.Get("text.cleanQueryInfo", ctx.EffectiveUser.LanguageCode), nil)
 					return err
 				}
 
@@ -648,7 +648,7 @@ func (c *BotController) NotifyUsers(bot *gotgbot.Bot) {
 						}}},
 					}
 
-					text := fmt.Sprintf(txt.Get("text.upcomingEventNotification", membership.User.LanguageCode), event.Alias(membership.User.LanguageCode))
+					text := txt.Get("text.upcomingEventNotification", membership.User.LanguageCode, event.Alias(membership.User.LanguageCode))
 
 					_, err = bot.SendMessage(membership.UserID, text, &gotgbot.SendMessageOpts{
 						ParseMode:   "HTML",

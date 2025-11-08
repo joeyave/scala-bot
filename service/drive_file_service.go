@@ -12,6 +12,7 @@ import (
 	"github.com/flowchartsman/retry"
 	"github.com/joeyave/chords-transposer/transposer"
 	"github.com/joeyave/scala-bot/helpers"
+	"github.com/joeyave/scala-bot/txt"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
@@ -158,7 +159,7 @@ func (s *DriveFileService) FindManyByIDs(IDs []string) ([]*drive.File, error) {
 	return driveFiles, err
 }
 
-func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key string, BPM string, time string) (*drive.File, error) {
+func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key string, BPM string, time, lang string) (*drive.File, error) {
 	newFile, err := s.driveClient.Files.
 		Create(newFile).
 		Fields("id, name, modifiedTime, webViewLink, parents").
@@ -250,7 +251,7 @@ func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key str
 		_, _ = s.docsRepository.Documents.BatchUpdate(newFile.Id,
 			&docs.BatchUpdateDocumentRequest{
 				Requests: []*docs.Request{
-					getDefaultHeaderRequest(res.Replies[0].CreateHeader.HeaderId, newFile.Name, key, BPM, time),
+					getDefaultHeaderRequest(res.Replies[0].CreateHeader.HeaderId, newFile.Name, key, BPM, time, lang),
 				},
 			}).Do()
 	}
@@ -551,7 +552,7 @@ func (s *DriveFileService) ReplaceAllTextByRegex(ID string, regex *regexp.Regexp
 	return replaceAllTextResp.Replies[0].ReplaceAllText.OccurrencesChanged, err
 }
 
-func (s *DriveFileService) StyleOne(ID string) (*drive.File, error) {
+func (s *DriveFileService) StyleOne(ID, lang string) (*drive.File, error) {
 	requests := make([]*docs.Request, 0)
 
 	doc, err := s.docsRepository.Documents.Get(ID).Do()
@@ -574,7 +575,7 @@ func (s *DriveFileService) StyleOne(ID string) (*drive.File, error) {
 			doc.DocumentStyle.DefaultHeaderId = res.Replies[0].CreateHeader.HeaderId
 			_, _ = s.docsRepository.Documents.BatchUpdate(ID, &docs.BatchUpdateDocumentRequest{
 				Requests: []*docs.Request{
-					getDefaultHeaderRequest(doc.DocumentStyle.DefaultHeaderId, doc.Title, "", "", ""),
+					getDefaultHeaderRequest(doc.DocumentStyle.DefaultHeaderId, doc.Title, "", "", "", lang),
 				},
 			}).Do()
 		}
@@ -1470,10 +1471,11 @@ func changeStyleByRegex(re *regexp.Regexp, element docs.ParagraphElement, style 
 	return requests
 }
 
-func getDefaultHeaderRequest(headerID string, name string, key string, BPM string, time string) *docs.Request {
+func getDefaultHeaderRequest(headerID, name, key, BPM, time, lang string) *docs.Request {
 
 	if name == "" {
-		name = "Название - Исполнитель"
+		// TODO: replace "uk" with user language if available in context
+		name = txt.Get("text.defaultDocTitle", lang)
 	}
 
 	if key == "" {
@@ -1488,7 +1490,7 @@ func getDefaultHeaderRequest(headerID string, name string, key string, BPM strin
 		time = "?"
 	}
 
-	text := fmt.Sprintf("%s\nKEY: %s; BPM: %s; TIME: %s;\nструктура\n",
+	text := fmt.Sprintf("%s\nKEY: %s; BPM: %s; TIME: %s;\n",
 		name, key, BPM, time)
 
 	return &docs.Request{

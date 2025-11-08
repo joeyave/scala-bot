@@ -1028,12 +1028,8 @@ func (c *BotController) notifyAdded(bot *gotgbot.Bot, user *entity.User, members
 			}}},
 		}
 
-		text := fmt.Sprintf(
-			txt.Get("text.memberAddedNotification", membership.User.LanguageCode),
-			user.Name,
-			membership.Role.Name,
-			event.Alias(membership.User.LanguageCode),
-		)
+		text := txt.Get("text.memberAddedNotification", membership.User.LanguageCode,
+			user.Name, membership.Role.Name, event.Alias(membership.User.LanguageCode))
 
 		_, err := bot.SendMessage(membership.UserID, text, &gotgbot.SendMessageOpts{
 			ParseMode:   "HTML",
@@ -1068,11 +1064,14 @@ func (c *BotController) notifyDeleted(bot *gotgbot.Bot, user *entity.User, membe
 	if event.Time.After(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())) {
 
 		markup := gotgbot.InlineKeyboardMarkup{
-			InlineKeyboard: [][]gotgbot.InlineKeyboardButton{{{Text: "ℹ️ Подробнее", CallbackData: util.CallbackData(state.EventCB, event.ID.Hex()+":init")}}},
+			InlineKeyboard: [][]gotgbot.InlineKeyboardButton{{{
+				Text:         txt.Get("button.moreInfo", membership.User.LanguageCode),
+				CallbackData: util.CallbackData(state.EventCB, event.ID.Hex()+":init"),
+			}}},
 		}
 
-		text := fmt.Sprintf("Привет. %s только что удалил тебя как %s из собрания %s ☹️",
-			user.Name, membership.Role.Name, event.Alias("ru"))
+		text := txt.Get("text.memberRemovedNotification", membership.User.LanguageCode,
+			user.Name, membership.Role.Name, event.Alias(membership.User.LanguageCode))
 
 		_, err := bot.SendMessage(membership.UserID, text, &gotgbot.SendMessageOpts{
 			ParseMode:   "HTML",
