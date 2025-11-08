@@ -31,6 +31,34 @@ services:
       rollback_config:
         parallelism: 0
         order: stop-first
+  app2:
+    image: ${DOCKERHUB_USERNAME}/scala-bot-image:latest
+    ports:
+      - "8081:8080"
+    environment:
+      ENV: ${ENV}
+      BOT_TOKEN: ${BOT_TOKEN_2}
+      BOT_MONGODB_URI: ${BOT_MONGODB_URI}
+      BOT_MONGODB_NAME: ${BOT_MONGODB_NAME}
+      BOT_FILES_CHANNEL_ID: ${BOT_FILES_CHANNEL_ID}
+      BOT_GOOGLEAPIS_KEY: ${BOT_GOOGLEAPIS_KEY}
+      BOT_DOMAIN: ${BOT_DOMAIN}
+      BOT_ALERTS_CHANNEL_ID: ${BOT_ALERTS_CHANNEL_ID}
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 1
+        order: start-first
+        failure_action: rollback
+        delay: 10s
+      rollback_config:
+        parallelism: 0
+        order: stop-first
 
 #    healthcheck:
 #      test: [ "CMD", "curl", "-f", "http://localhost:8080 || exit 1" ]
