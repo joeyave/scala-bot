@@ -443,13 +443,13 @@ func (h *WebAppController) SongEdit(ctx *gin.Context) {
 	}
 
 	if song.PDF.BPM != data.BPM {
-		h.DriveFileService.ReplaceAllTextByRegex(song.DriveFileID, bpmRegex, fmt.Sprintf("BPM: %s;", data.BPM))
 		song.PDF.BPM = data.BPM
+		_, _ = h.DriveFileService.ReplaceAllTextByRegex(song.DriveFileID, bpmRegex, fmt.Sprintf("BPM: %s;", data.BPM))
 	}
 
 	if song.PDF.Time != data.Time {
-		h.DriveFileService.ReplaceAllTextByRegex(song.DriveFileID, timeRegex, fmt.Sprintf("TIME: %s;", data.Time))
 		song.PDF.Time = data.Time
+		_, _ = h.DriveFileService.ReplaceAllTextByRegex(song.DriveFileID, timeRegex, fmt.Sprintf("TIME: %s;", data.Time))
 	}
 
 	fakeTime, _ := time.Parse("2006", "2006")
