@@ -78,6 +78,7 @@ func (c *BotController) RegisterUser(bot *gotgbot.Bot, ctx *ext.Context) error {
 	user = ctx.Data["user"].(*entity.User)
 
 	user.Name = strings.TrimSpace(fmt.Sprintf("%s %s", ctx.EffectiveUser.FirstName, ctx.EffectiveUser.LastName))
+	user.LanguageCode = ctx.EffectiveUser.LanguageCode
 
 	// todo
 	//if user.BandID == primitive.NilObjectID && user.State.Name != helpers.ChooseBandState && user.State.Name != helpers.CreateBandState {
@@ -641,10 +642,13 @@ func (c *BotController) NotifyUsers(bot *gotgbot.Bot) {
 					}
 
 					markup := gotgbot.InlineKeyboardMarkup{
-						InlineKeyboard: [][]gotgbot.InlineKeyboardButton{{{Text: "ℹ️ Подробнее", CallbackData: util.CallbackData(state.EventCB, event.ID.Hex()+":init")}}},
+						InlineKeyboard: [][]gotgbot.InlineKeyboardButton{{{
+							Text:         txt.Get("button.moreInfo", membership.User.LanguageCode),
+							CallbackData: util.CallbackData(state.EventCB, event.ID.Hex()+":init"),
+						}}},
 					}
 
-					text := fmt.Sprintf("Привет. Ты учавствуешь в собрании через несколько дней (%s)!", event.Alias("ru"))
+					text := fmt.Sprintf(txt.Get("text.upcomingEventNotification", membership.User.LanguageCode), event.Alias(membership.User.LanguageCode))
 
 					_, err = bot.SendMessage(membership.UserID, text, &gotgbot.SendMessageOpts{
 						ParseMode:   "HTML",
