@@ -40,12 +40,12 @@ export async function getEventData(
 }
 
 export async function updateEvent(
-  songId: string,
+  eventId: string,
   queryParams: ReqQueryParamsUpdateEvent,
   body: ReqBodyUpdateEvent,
 ) {
   const { err } = await doReqWebappApi(
-    `/api/events/${songId}/edit`,
+    `/api/events/${eventId}/edit`,
     "POST",
     queryParams,
     { Accept: "application/json" },

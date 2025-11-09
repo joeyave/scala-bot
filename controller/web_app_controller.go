@@ -35,11 +35,15 @@ func (h *WebAppController) Statistics(ctx *gin.Context) {
 	hex := ctx.Query("bandId")
 	bandID, err := primitive.ObjectIDFromHex(hex)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
 	band, err := h.BandService.FindOneByID(bandID)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
@@ -59,11 +63,15 @@ func (h *WebAppController) CreateEvent(ctx *gin.Context) {
 	hex := ctx.Query("bandId")
 	bandID, err := primitive.ObjectIDFromHex(hex)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
 	band, err := h.BandService.FindOneByID(bandID)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
@@ -74,6 +82,8 @@ func (h *WebAppController) CreateEvent(ctx *gin.Context) {
 	}
 	eventNames, err := h.EventService.GetMostFrequentEventNames(bandID, 4)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
@@ -92,6 +102,8 @@ func (h *WebAppController) EditEvent(ctx *gin.Context) {
 	hex := ctx.Param("id")
 	eventID, err := primitive.ObjectIDFromHex(hex)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
@@ -101,11 +113,15 @@ func (h *WebAppController) EditEvent(ctx *gin.Context) {
 
 	event, err := h.EventService.FindOneByID(eventID)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
 	eventNames, err := h.EventService.GetMostFrequentEventNames(event.BandID, 4)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
@@ -129,34 +145,46 @@ func (h *WebAppController) EditEventConfirm(ctx *gin.Context) {
 	hex := ctx.Param("id")
 	eventID, err := primitive.ObjectIDFromHex(hex)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
 	messageIDStr := ctx.Query("messageId")
 	messageID, err := strconv.ParseInt(messageIDStr, 10, 64)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 	chatIDStr := ctx.Query("chatId")
 	chatID, err := strconv.ParseInt(chatIDStr, 10, 64)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 	userIDStr := ctx.Query("userId")
 	userID, err := strconv.ParseInt(userIDStr, 10, 64)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
 	var event *entity.Event
 	err = ctx.ShouldBindJSON(&event)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 	event.ID = eventID
 
 	updatedEvent, err := h.EventService.UpdateOne(*event)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
@@ -164,6 +192,8 @@ func (h *WebAppController) EditEventConfirm(ctx *gin.Context) {
 
 	user, err := h.UserService.FindOneByID(userID)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
@@ -186,6 +216,8 @@ func (h *WebAppController) EditEventConfirm(ctx *gin.Context) {
 		ReplyMarkup: markup,
 	})
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
@@ -232,6 +264,8 @@ func (h *WebAppController) UsersWithEvents(ctx *gin.Context) {
 
 	users, err := h.UserService.FindManyExtraByBandID(bandID, fromDate, time.Now())
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
@@ -697,8 +731,6 @@ func (h *WebAppController) EventEdit(ctx *gin.Context) {
 		return
 	}
 
-	html := h.EventService.ToHtmlStringByEvent(*updatedEvent, "ru")
-
 	user, err := h.UserService.FindOneByID(userID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -707,7 +739,9 @@ func (h *WebAppController) EventEdit(ctx *gin.Context) {
 	}
 
 	markup := gotgbot.InlineKeyboardMarkup{}
-	markup.InlineKeyboard = keyboard.EventEdit(event, user, chatID, messageID, "ru")
+	markup.InlineKeyboard = keyboard.EventEdit(event, user, chatID, messageID, user.LanguageCode)
+
+	html := h.EventService.ToHtmlStringByEvent(*updatedEvent, user.LanguageCode)
 
 	user.CallbackCache = entity.CallbackCache{
 		MessageID: messageID,
@@ -725,6 +759,8 @@ func (h *WebAppController) EventEdit(ctx *gin.Context) {
 		ReplyMarkup: markup,
 	})
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
 		return
 	}
 
