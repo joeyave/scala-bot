@@ -3,6 +3,11 @@ import React, { ChangeEvent, useEffect, useState } from "react";
 
 const keyGroups = [
   {
+    id: "nashville",
+    label: "Nashville Number System",
+    options: [{ value: "NNS", label: "Numbers" }],
+  },
+  {
     id: "major",
     label: "Major",
     options: [

@@ -9,7 +9,7 @@ require (
 	github.com/go-playground/locales v0.14.1
 	github.com/gorilla/schema v1.4.1
 	github.com/hbollon/go-edlib v1.7.0
-	github.com/joeyave/chords-transposer v0.0.12
+	github.com/joeyave/chords-transposer v0.0.19-0.20251111152350-89eaef068ceb
 	github.com/klauspost/lctime v0.1.0
 	github.com/rs/zerolog v1.34.0
 	github.com/u2takey/ffmpeg-go v0.5.0
@@ -72,12 +72,10 @@ require (
 	go.uber.org/mock v0.6.0 // indirect
 	golang.org/x/arch v0.23.0 // indirect
 	golang.org/x/crypto v0.43.0 // indirect
-	golang.org/x/mod v0.29.0 // indirect
 	golang.org/x/net v0.46.0 // indirect
 	golang.org/x/oauth2 v0.33.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/tools v0.38.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20251103181224-f26f9409b101 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251110190251-83f479183930 // indirect
 	google.golang.org/grpc v1.76.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

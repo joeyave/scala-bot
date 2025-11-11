@@ -30,6 +30,8 @@ func NewDriveFileService(driveRepository *drive.Service, docsRepository *docs.Se
 	}
 }
 
+var newLinesRegex = regexp.MustCompile(`\n{3,}`)
+
 func (s *DriveFileService) FindAllByFolderID(folderID string, nextPageToken string) ([]*drive.File, string, error) {
 
 	q := fmt.Sprintf(`trashed = false and mimeType = 'application/vnd.google-apps.document' and '%s' in parents`, folderID)
@@ -425,70 +427,13 @@ func (s *DriveFileService) DownloadOneByIDWithResp(ID string) (*http.Response, e
 	return reader, err
 }
 
-func (s *DriveFileService) TransposeOne(ID string, toKey string, sectionIndex int) (*drive.File, error) {
-	doc, err := s.docsRepository.Documents.Get(ID).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	sections := s.getSections(doc)
-
-	if len(sections) <= sectionIndex || sectionIndex < 0 {
-		sections, err = s.appendSectionByID(ID)
-		if err != nil {
-			return nil, err
-		}
-
-		doc, err = s.docsRepository.Documents.Get(ID).Do()
-		if err != nil {
-			return nil, err
-		}
-
-		sectionIndex = len(sections) - 1
-	}
-
-	requests, key := s.transposeHeader(doc, sections, sectionIndex, toKey)
-	requests = append(requests, s.transposeBody(doc, sections, sectionIndex, key, toKey)...)
-
-	_, err = s.docsRepository.Documents.BatchUpdate(doc.DocumentId,
-		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return s.FindOneByID(ID)
-}
-
-func (s *DriveFileService) TransposeHeader(ID string, toKey string, sectionIndex int) (*drive.File, error) {
-	doc, err := s.docsRepository.Documents.Get(ID).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	sections := s.getSections(doc)
-
-	if len(sections) <= sectionIndex || sectionIndex < 0 {
-		return nil, fmt.Errorf("section index %d is out of bounds", sectionIndex)
-	}
-
-	requests, _ := s.transposeHeader(doc, sections, sectionIndex, toKey)
-
-	_, err = s.docsRepository.Documents.BatchUpdate(doc.DocumentId,
-		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return s.FindOneByID(ID)
-}
-
 func (s *DriveFileService) AddLyricsPage(ID string) (*drive.File, error) {
 	doc, err := s.docsRepository.Documents.Get(ID).Do()
 	if err != nil {
 		return nil, err
 	}
 
-	sections := s.getSections(doc)
+	sections := getSections(doc)
 
 	if len(sections) == 1 {
 		sections, err = s.appendSectionByID(ID)
@@ -502,7 +447,7 @@ func (s *DriveFileService) AddLyricsPage(ID string) (*drive.File, error) {
 		}
 	}
 
-	requests := s.removeChords(doc, sections, 1)
+	requests := removeChords(doc, sections, 1)
 
 	_, err = s.docsRepository.Documents.BatchUpdate(doc.DocumentId,
 		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
@@ -552,160 +497,13 @@ func (s *DriveFileService) ReplaceAllTextByRegex(ID string, regex *regexp.Regexp
 	return replaceAllTextResp.Replies[0].ReplaceAllText.OccurrencesChanged, err
 }
 
-func (s *DriveFileService) StyleOne(ID, lang string) (*drive.File, error) {
-	requests := make([]*docs.Request, 0)
-
-	doc, err := s.docsRepository.Documents.Get(ID).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	if doc.DocumentStyle.DefaultHeaderId == "" {
-		res, err := s.docsRepository.Documents.BatchUpdate(ID, &docs.BatchUpdateDocumentRequest{
-			Requests: []*docs.Request{
-				{
-					CreateHeader: &docs.CreateHeaderRequest{
-						Type: "DEFAULT",
-					},
-				},
-			},
-		}).Do()
-
-		if err == nil && res.Replies[0].CreateHeader.HeaderId != "" {
-			doc.DocumentStyle.DefaultHeaderId = res.Replies[0].CreateHeader.HeaderId
-			_, _ = s.docsRepository.Documents.BatchUpdate(ID, &docs.BatchUpdateDocumentRequest{
-				Requests: []*docs.Request{
-					getDefaultHeaderRequest(doc.DocumentStyle.DefaultHeaderId, doc.Title, "", "", "", lang),
-				},
-			}).Do()
-		}
-	}
-
-	doc, err = s.docsRepository.Documents.Get(ID).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, header := range doc.Headers {
-		for j, paragraph := range header.Content {
-			if paragraph.Paragraph == nil {
-				continue
-			}
-
-			style := *paragraph.Paragraph.ParagraphStyle
-
-			if j == 0 || j == 2 {
-				paragraph.Paragraph.ParagraphStyle.Alignment = "CENTER"
-			}
-			if j == 1 {
-				paragraph.Paragraph.ParagraphStyle.Alignment = "END"
-			}
-
-			requests = append(requests, &docs.Request{
-				UpdateParagraphStyle: &docs.UpdateParagraphStyleRequest{
-					Fields:         "alignment",
-					ParagraphStyle: &style,
-					Range: &docs.Range{
-						StartIndex:      paragraph.StartIndex,
-						EndIndex:        paragraph.EndIndex,
-						SegmentId:       header.HeaderId,
-						ForceSendFields: []string{"StartIndex"},
-					},
-				},
-			})
-
-			for _, element := range paragraph.Paragraph.Elements {
-
-				element.TextRun.TextStyle.WeightedFontFamily = &docs.WeightedFontFamily{
-					FontFamily: "Roboto Mono",
-				}
-
-				if j == 0 {
-					element.TextRun.TextStyle.Bold = true
-					element.TextRun.TextStyle.FontSize = &docs.Dimension{
-						Magnitude: 20,
-						Unit:      "PT",
-					}
-				}
-				if j == 1 {
-					element.TextRun.TextStyle.Bold = true
-					element.TextRun.TextStyle.FontSize = &docs.Dimension{
-						Magnitude: 14,
-						Unit:      "PT",
-					}
-				}
-				if j == 2 {
-					element.TextRun.TextStyle.Bold = true
-					element.TextRun.TextStyle.FontSize = &docs.Dimension{
-						Magnitude: 11,
-						Unit:      "PT",
-					}
-				}
-
-				requests = append(requests, &docs.Request{
-					UpdateTextStyle: &docs.UpdateTextStyleRequest{
-						Fields: "*",
-						Range: &docs.Range{
-							StartIndex:      element.StartIndex,
-							EndIndex:        element.EndIndex,
-							SegmentId:       header.HeaderId,
-							ForceSendFields: []string{"StartIndex"},
-						},
-						TextStyle: element.TextRun.TextStyle,
-					},
-				})
-			}
-		}
-
-		requests = append(requests, composeStyleRequests(header.Content, header.HeaderId)...)
-	}
-
-	requests = append(requests, composeStyleRequests(doc.Body.Content, "")...)
-
-	requests = append(requests, &docs.Request{
-		UpdateDocumentStyle: &docs.UpdateDocumentStyleRequest{
-			DocumentStyle: &docs.DocumentStyle{
-				MarginBottom: &docs.Dimension{
-					Magnitude: 14,
-					Unit:      "PT",
-				},
-				MarginHeader: &docs.Dimension{
-					Magnitude: 18,
-					Unit:      "PT",
-				},
-				MarginLeft: &docs.Dimension{
-					Magnitude: 30,
-					Unit:      "PT",
-				},
-				MarginRight: &docs.Dimension{
-					Magnitude: 30,
-					Unit:      "PT",
-				},
-				MarginTop: &docs.Dimension{
-					Magnitude: 14,
-					Unit:      "PT",
-				},
-				UseFirstPageHeaderFooter: false,
-			},
-			Fields: "marginBottom, marginLeft, marginRight, marginTop, marginHeader",
-		},
-	})
-
-	_, err = s.docsRepository.Documents.BatchUpdate(ID, &docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return s.FindOneByID(ID)
-}
-
 func (s *DriveFileService) GetSectionsNumber(ID string) (int, error) {
 	doc, err := s.docsRepository.Documents.Get(ID).Do()
 	if err != nil {
 		return 0, err
 	}
 
-	return len(s.getSections(doc)), nil
+	return len(getSections(doc)), nil
 }
 
 func (s *DriveFileService) GetMetadata(ID string) (string, string, string) {
@@ -765,28 +563,41 @@ func (s *DriveFileService) GetMetadata(ID string) (string, string, string) {
 	return key, BPM, time
 }
 
-//
-// Helper functions. -----------------------------------
-//
+func (s *DriveFileService) GetHTMLTextWithSectionsNumber(ID string) (string, int) {
 
-func (s *DriveFileService) getSections(doc *docs.Document) []docs.StructuralElement {
-	sections := make([]docs.StructuralElement, 0)
-
-	for i, section := range doc.Body.Content {
-		if section.SectionBreak != nil &&
-			section.SectionBreak.SectionStyle != nil &&
-			section.SectionBreak.SectionStyle.SectionType == "NEXT_PAGE" ||
-			i == 0 {
-			if i == 0 {
-				section.StartIndex = 0
-				section.SectionBreak.SectionStyle.DefaultHeaderId = doc.DocumentStyle.DefaultHeaderId
-			}
-
-			sections = append(sections, *section)
-		}
+	doc, err := s.docsRepository.Documents.Get(ID).Do()
+	if err != nil {
+		return "", 0
 	}
 
-	return sections
+	return docToHTML(doc), len(getSections(doc))
+}
+
+func (s *DriveFileService) GetLyrics(ID string) (string, error) {
+
+	retrier := retry.NewRetrier(5, 100*time.Millisecond, time.Second)
+
+	var reader io.Reader
+	err := retrier.Run(func() error {
+		res, err := s.driveClient.Files.Export(ID, "text/plain").Download()
+		if err != nil {
+			return err
+		}
+
+		reader = res.Body
+
+		return nil
+	})
+	if err != nil {
+		return "", err
+	}
+
+	bytes, err := io.ReadAll(reader)
+	if err != nil {
+		return "", err
+	}
+
+	return string(bytes), nil
 }
 
 func (s *DriveFileService) appendSectionByID(ID string) ([]docs.StructuralElement, error) {
@@ -813,7 +624,7 @@ func (s *DriveFileService) appendSectionByID(ID string) ([]docs.StructuralElemen
 		return nil, err
 	}
 
-	sections := s.getSections(doc)
+	sections := getSections(doc)
 
 	requests = &docs.BatchUpdateDocumentRequest{
 		Requests: []*docs.Request{
@@ -838,95 +649,47 @@ func (s *DriveFileService) appendSectionByID(ID string) ([]docs.StructuralElemen
 	if err != nil {
 		return nil, err
 	}
-	return s.getSections(doc), nil
+	return getSections(doc), nil
 }
 
-func (s *DriveFileService) transposeHeader(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int, toKey string) ([]*docs.Request, string) {
-	if doc.DocumentStyle.DefaultHeaderId == "" {
-		return nil, ""
-	}
+func docToHTML(doc *docs.Document) string {
+	var sb strings.Builder
 
-	requests := make([]*docs.Request, 0)
-
-	// Create header if section doesn't have it.
-	if sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId == "" {
-		requests = append(requests, &docs.Request{
-			CreateHeader: &docs.CreateHeaderRequest{
-				SectionBreakLocation: &docs.Location{
-					SegmentId: "",
-					Index:     sections[sectionIndex].StartIndex,
-				},
-				Type: "DEFAULT",
-			},
-		})
-	} else {
-		header := doc.Headers[sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId]
-		if header.Content[len(header.Content)-1].EndIndex-1 > 0 {
-			requests = append(requests, &docs.Request{
-				DeleteContentRange: &docs.DeleteContentRangeRequest{
-					Range: &docs.Range{
-						StartIndex:      0,
-						EndIndex:        header.Content[len(header.Content)-1].EndIndex - 1,
-						SegmentId:       header.HeaderId,
-						ForceSendFields: []string{"StartIndex"},
-					},
-				},
-			})
+	for _, item := range doc.Body.Content {
+		if item.SectionBreak != nil && item.SectionBreak.SectionStyle != nil && item.SectionBreak.SectionStyle.SectionType == "NEXT_PAGE" {
+			break
 		}
-	}
 
-	transposeRequests, key := composeTransposeRequests(doc.Headers[doc.DocumentStyle.DefaultHeaderId].Content, 0, "", toKey, doc.Headers[sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId].HeaderId, true)
-	requests = append(requests, transposeRequests...)
+		if item.Paragraph != nil && item.Paragraph.Elements != nil {
+			for _, element := range item.Paragraph.Elements {
+				if element.TextRun != nil && element.TextRun.Content != "" {
+					style := element.TextRun.TextStyle
+					text := element.TextRun.Content
 
-	return requests, key
-}
+					if style != nil {
+						if style.Bold {
+							text = fmt.Sprintf("<b>%s</b>", text)
+						}
+						if style.Italic {
+							text = fmt.Sprintf("<i>%s</i>", text)
+						}
+						if style.ForegroundColor != nil && style.ForegroundColor.Color != nil && style.ForegroundColor.Color.RgbColor != nil {
+							text = fmt.Sprintf(`<span class="chord">%s</span>`, text)
+							//text = fmt.Sprintf(`<span class="chord" style="color: rgb(%d%%, %d%%, %d%%)">%s</span>`, int(style.ForegroundColor.Color.RgbColor.Red*100), int(style.ForegroundColor.Color.RgbColor.Green*100), int(style.ForegroundColor.Color.RgbColor.Blue*100), text)
+						}
+					}
 
-func (s *DriveFileService) transposeBody(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int, key string, toKey string) []*docs.Request {
-	requests := make([]*docs.Request, 0)
-
-	sectionToInsertStartIndex := sections[sectionIndex].StartIndex + 1
-	var sectionToInsertEndIndex int64
-
-	if len(sections) > sectionIndex+1 {
-		sectionToInsertEndIndex = sections[sectionIndex+1].StartIndex - 1
-	} else {
-		sectionToInsertEndIndex = doc.Body.Content[len(doc.Body.Content)-1].EndIndex - 1
-	}
-
-	var content []*docs.StructuralElement
-	if len(sections) > 1 {
-		index := len(doc.Body.Content)
-		for i := range doc.Body.Content {
-			if doc.Body.Content[i].StartIndex == sections[1].StartIndex {
-				index = i
-				break
+					sb.WriteString(text)
+				}
 			}
 		}
-		content = doc.Body.Content[:index]
-	} else {
-		content = doc.Body.Content
 	}
 
-	if sectionToInsertEndIndex-sectionToInsertStartIndex > 0 {
-		requests = append(requests, &docs.Request{
-			DeleteContentRange: &docs.DeleteContentRangeRequest{
-				Range: &docs.Range{
-					StartIndex:      sectionToInsertStartIndex,
-					EndIndex:        sectionToInsertEndIndex,
-					SegmentId:       "",
-					ForceSendFields: []string{"StartIndex"},
-				},
-			},
-		})
-	}
-
-	transposeRequests, _ := composeTransposeRequests(content, sectionToInsertStartIndex, key, toKey, "", false)
-	requests = append(requests, transposeRequests...)
-
-	return requests
+	text := newLinesRegex.ReplaceAllString(sb.String(), "\n\n")
+	return strings.TrimSpace(text)
 }
 
-func (s *DriveFileService) removeChords(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int) []*docs.Request {
+func removeChords(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int) []*docs.Request {
 	requests := make([]*docs.Request, 0)
 
 	sectionToInsertStartIndex := sections[sectionIndex].StartIndex + 1
@@ -1004,115 +767,6 @@ func (s *DriveFileService) removeChords(doc *docs.Document, sections []docs.Stru
 	requests = append(requests, headerCloneRequests...)
 
 	return requests
-}
-
-var keyRegex = regexp.MustCompile(`(?i)key:(.*?);`)
-
-func composeTransposeRequests(content []*docs.StructuralElement, index int64, key string, toKey string, segmentId string, replaceKeyOnErr bool) ([]*docs.Request, string) {
-
-	requests := make([]*docs.Request, 0)
-
-	for i, item := range content {
-		if item.Paragraph != nil && item.Paragraph.Elements != nil {
-			for _, element := range item.Paragraph.Elements {
-				if element.TextRun != nil && element.TextRun.Content != "" {
-					if key == "" {
-						guessedKey, err := transposer.GuessKeyFromText(element.TextRun.Content)
-						if err == nil {
-							key = guessedKey.String()
-						}
-					}
-
-					transposedText, err := transposer.TransposeToKey(element.TextRun.Content, key, toKey)
-					if err == nil {
-						element.TextRun.Content = transposedText
-					} else if replaceKeyOnErr && keyRegex.FindString(element.TextRun.Content) != "" {
-						element.TextRun.Content = keyRegex.ReplaceAllStringFunc(element.TextRun.Content, func(match string) string {
-							// match == "KEY:oldValue;"  or  "key:another;"
-							idx := keyRegex.FindStringSubmatchIndex(match)
-							// idx = [ fullStart, fullEnd, groupStart, groupEnd ]
-							prefix := match[:idx[2]] // up through the ':'
-							suffix := match[idx[3]:] // from ';' onward
-							return fmt.Sprintf("%s %s%s", strings.TrimSpace(prefix), strings.TrimSpace(toKey), strings.TrimSpace(suffix))
-						})
-					}
-
-					if i == len(content)-1 {
-						re := regexp.MustCompile(`\s*[\r\n]$`)
-						element.TextRun.Content = re.ReplaceAllString(element.TextRun.Content, " ")
-					}
-
-					if len([]rune(element.TextRun.Content)) == 0 {
-						continue
-					}
-
-					if element.TextRun.TextStyle.ForegroundColor == nil {
-						element.TextRun.TextStyle.ForegroundColor = &docs.OptionalColor{
-							Color: &docs.Color{
-								RgbColor: &docs.RgbColor{
-									Blue:  0,
-									Green: 0,
-									Red:   0,
-								},
-							},
-						}
-					}
-
-					requests = append(requests,
-						&docs.Request{
-							InsertText: &docs.InsertTextRequest{
-								Location: &docs.Location{
-									Index:     index,
-									SegmentId: segmentId,
-								},
-								Text: element.TextRun.Content,
-							},
-						},
-						&docs.Request{
-							UpdateTextStyle: &docs.UpdateTextStyleRequest{
-								Fields: "*",
-								Range: &docs.Range{
-									StartIndex: index,
-									EndIndex:   index + int64(len([]rune(element.TextRun.Content))),
-									SegmentId:  segmentId,
-									ForceSendFields: func() []string {
-										if index == 0 {
-											return []string{"StartIndex"}
-										} else {
-											return nil
-										}
-									}(),
-								},
-								TextStyle: element.TextRun.TextStyle,
-							},
-						},
-						&docs.Request{
-							UpdateParagraphStyle: &docs.UpdateParagraphStyleRequest{
-								Fields:         "alignment, lineSpacing, direction, spaceAbove, spaceBelow",
-								ParagraphStyle: item.Paragraph.ParagraphStyle,
-								Range: &docs.Range{
-									StartIndex: index,
-									EndIndex:   index + int64(len([]rune(element.TextRun.Content))),
-									SegmentId:  segmentId,
-									ForceSendFields: func() []string {
-										if index == 0 {
-											return []string{"StartIndex"}
-										} else {
-											return nil
-										}
-									}(),
-								},
-							},
-						},
-					)
-
-					index += int64(len([]rune(element.TextRun.Content)))
-				}
-			}
-		}
-	}
-
-	return requests, key
 }
 
 func composeCloneWithoutChordsRequests(content []*docs.StructuralElement, index int64, segmentID string) []*docs.Request {
@@ -1204,271 +858,24 @@ func composeCloneWithoutChordsRequests(content []*docs.StructuralElement, index 
 	return requests
 }
 
-func (s *DriveFileService) GetHTMLTextWithSectionsNumber(ID string) (string, int) {
+func getSections(doc *docs.Document) []docs.StructuralElement {
+	sections := make([]docs.StructuralElement, 0)
 
-	doc, err := s.docsRepository.Documents.Get(ID).Do()
-	if err != nil {
-		return "", 0
-	}
-
-	return docToHTML(doc), len(s.getSections(doc))
-}
-
-func docToHTML(doc *docs.Document) string {
-	var sb strings.Builder
-
-	for _, item := range doc.Body.Content {
-		if item.SectionBreak != nil && item.SectionBreak.SectionStyle != nil && item.SectionBreak.SectionStyle.SectionType == "NEXT_PAGE" {
-			break
-		}
-
-		if item.Paragraph != nil && item.Paragraph.Elements != nil {
-			for _, element := range item.Paragraph.Elements {
-				if element.TextRun != nil && element.TextRun.Content != "" {
-					style := element.TextRun.TextStyle
-					text := element.TextRun.Content
-
-					if style != nil {
-						if style.Bold {
-							text = fmt.Sprintf("<b>%s</b>", text)
-						}
-						if style.Italic {
-							text = fmt.Sprintf("<i>%s</i>", text)
-						}
-						if style.ForegroundColor != nil && style.ForegroundColor.Color != nil && style.ForegroundColor.Color.RgbColor != nil {
-							text = fmt.Sprintf(`<span class="chord">%s</span>`, text)
-							//text = fmt.Sprintf(`<span class="chord" style="color: rgb(%d%%, %d%%, %d%%)">%s</span>`, int(style.ForegroundColor.Color.RgbColor.Red*100), int(style.ForegroundColor.Color.RgbColor.Green*100), int(style.ForegroundColor.Color.RgbColor.Blue*100), text)
-						}
-					}
-
-					sb.WriteString(text)
-				}
+	for i, section := range doc.Body.Content {
+		if section.SectionBreak != nil &&
+			section.SectionBreak.SectionStyle != nil &&
+			section.SectionBreak.SectionStyle.SectionType == "NEXT_PAGE" ||
+			i == 0 {
+			if i == 0 {
+				section.StartIndex = 0
+				section.SectionBreak.SectionStyle.DefaultHeaderId = doc.DocumentStyle.DefaultHeaderId
 			}
+
+			sections = append(sections, *section)
 		}
 	}
 
-	text := newLinesRegex.ReplaceAllString(sb.String(), "\n\n")
-	return strings.TrimSpace(text)
-}
-
-func (s *DriveFileService) GetLyrics(ID string) (string, error) {
-
-	retrier := retry.NewRetrier(5, 100*time.Millisecond, time.Second)
-
-	var reader io.Reader
-	err := retrier.Run(func() error {
-		res, err := s.driveClient.Files.Export(ID, "text/plain").Download()
-		if err != nil {
-			return err
-		}
-
-		reader = res.Body
-
-		return nil
-	})
-	if err != nil {
-		return "", err
-	}
-
-	bytes, err := io.ReadAll(reader)
-	if err != nil {
-		return "", err
-	}
-
-	return string(bytes), nil
-}
-
-var newLinesRegex = regexp.MustCompile(`\n{3,}`)
-
-func composeStyleRequests(content []*docs.StructuralElement, segmentID string) []*docs.Request {
-	requests := make([]*docs.Request, 0)
-	// makeBoldAndRedRegex := regexp.MustCompile(`(x|х)\d+`)
-	// sectionNamesRegex := regexp.MustCompile(`\p{L}+(\s\d*)?:|\|`)
-
-	for _, paragraph := range content {
-		if paragraph.Paragraph == nil {
-			continue
-		}
-
-		style := *paragraph.Paragraph.ParagraphStyle
-
-		style.SpaceAbove = &docs.Dimension{
-			Magnitude:       0,
-			Unit:            "PT",
-			ForceSendFields: []string{"Magnitude"},
-		}
-		style.SpaceBelow = &docs.Dimension{
-			Magnitude:       0,
-			Unit:            "PT",
-			ForceSendFields: []string{"Magnitude"},
-		}
-		style.LineSpacing = 90
-
-		requests = append(requests, &docs.Request{
-			UpdateParagraphStyle: &docs.UpdateParagraphStyleRequest{
-				Fields:         "alignment, lineSpacing, direction, spaceAbove, spaceBelow",
-				ParagraphStyle: &style,
-				Range: &docs.Range{
-					EndIndex:        paragraph.EndIndex,
-					SegmentId:       segmentID,
-					StartIndex:      paragraph.StartIndex,
-					ForceSendFields: []string{"StartIndex"},
-				},
-			},
-		})
-
-		for _, element := range paragraph.Paragraph.Elements {
-			if element.TextRun == nil {
-				continue
-			}
-
-			element.TextRun.TextStyle.WeightedFontFamily = &docs.WeightedFontFamily{
-				FontFamily: "Roboto Mono",
-			}
-
-			requests = append(requests, &docs.Request{
-				UpdateTextStyle: &docs.UpdateTextStyleRequest{
-					Fields: "*",
-					Range: &docs.Range{
-						StartIndex:      element.StartIndex,
-						EndIndex:        element.EndIndex,
-						SegmentId:       segmentID,
-						ForceSendFields: []string{"StartIndex"},
-					},
-					TextStyle: element.TextRun.TextStyle,
-				},
-			})
-
-			tokens := transposer.Tokenize(element.TextRun.Content)
-			for _, line := range tokens {
-				for _, token := range line {
-					if token.Chord != nil {
-						style := *element.TextRun.TextStyle
-
-						style.Bold = true
-						style.ForegroundColor = &docs.OptionalColor{
-							Color: &docs.Color{
-								RgbColor: &docs.RgbColor{
-									Blue:            0,
-									Green:           0,
-									Red:             0.8,
-									ForceSendFields: []string{"blue", "green"},
-								},
-							},
-						}
-
-						requests = append(requests, &docs.Request{
-							UpdateTextStyle: &docs.UpdateTextStyleRequest{
-								Fields: "*",
-								Range: &docs.Range{
-									StartIndex:      element.StartIndex + token.Offset,
-									EndIndex:        element.StartIndex + token.Offset + int64(len([]rune(token.Chord.String()))),
-									SegmentId:       segmentID,
-									ForceSendFields: []string{"StartIndex"},
-								},
-								TextStyle: &style,
-							},
-						})
-					}
-				}
-			}
-
-			style := *element.TextRun.TextStyle
-
-			style.Bold = true
-			style.ForegroundColor = &docs.OptionalColor{
-				Color: &docs.Color{
-					RgbColor: &docs.RgbColor{Blue: 0, Green: 0, Red: 0, ForceSendFields: []string{"blue", "green", "red"}},
-				},
-			}
-
-			requests = append(requests, changeStyleByRegex(regexp.MustCompile(`[|]`), *element, style, nil, segmentID)...)
-
-			style = *element.TextRun.TextStyle
-
-			style.Bold = true
-			style.ForegroundColor = &docs.OptionalColor{
-				Color: &docs.Color{
-					RgbColor: &docs.RgbColor{Blue: 0, Green: 0, Red: 0.8, ForceSendFields: []string{"blue", "green"}},
-				},
-			}
-
-			requests = append(requests, changeStyleByRegex(regexp.MustCompile(`(x|х)\d+`), *element, style, nil, segmentID)...)
-
-			style = *element.TextRun.TextStyle
-
-			style.Bold = true
-			style.ForegroundColor = &docs.OptionalColor{
-				Color: &docs.Color{
-					RgbColor: &docs.RgbColor{Blue: 0, Green: 0, Red: 0, ForceSendFields: []string{"blue", "green", "red"}},
-				},
-			}
-			style.Underline = false
-			style.Italic = false
-			style.Strikethrough = false
-
-			// requests = append(requests, changeStyleByRegex(regexp.MustCompile(`\p{L}+(\s\d*)?:`), *element, style, strings.ToUpper, segmentID)...)
-			requests = append(requests, changeStyleByRegex(regexp.MustCompile(`^[\d\s]*\p{L}+(\s\d*)?:`), *element, style, strings.ToUpper, segmentID)...)
-
-			style = *element.TextRun.TextStyle
-			style.Bold = true
-			requests = append(requests, changeStyleByRegex(regexp.MustCompile(`\[[^]]*]`), *element, style, nil, segmentID)...)
-		}
-	}
-
-	return requests
-}
-
-func changeStyleByRegex(re *regexp.Regexp, element docs.ParagraphElement, style docs.TextStyle, textFunc func(string) string, segmentID string) []*docs.Request {
-	requests := make([]*docs.Request, 0)
-
-	matches := re.FindAllStringIndex(element.TextRun.Content, -1)
-	if matches == nil {
-		return requests
-	}
-
-	for _, match := range matches {
-		requests = append(requests,
-			&docs.Request{
-				UpdateTextStyle: &docs.UpdateTextStyleRequest{
-					Fields: "*",
-					Range: &docs.Range{
-						StartIndex:      element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
-						EndIndex:        element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[1]]))),
-						SegmentId:       segmentID,
-						ForceSendFields: []string{"StartIndex"},
-					},
-					TextStyle: &style,
-				},
-			},
-		)
-
-		if textFunc != nil {
-			requests = append(requests,
-				&docs.Request{
-					DeleteContentRange: &docs.DeleteContentRangeRequest{
-						Range: &docs.Range{
-							StartIndex:      element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
-							EndIndex:        element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[1]]))),
-							SegmentId:       segmentID,
-							ForceSendFields: []string{"StartIndex"},
-						},
-					},
-				},
-				&docs.Request{
-					InsertText: &docs.InsertTextRequest{
-						Location: &docs.Location{
-							Index:           element.StartIndex + int64(len([]rune(element.TextRun.Content[:match[0]]))),
-							SegmentId:       segmentID,
-							ForceSendFields: []string{"StartIndex"},
-						},
-						Text: textFunc(element.TextRun.Content[match[0]:match[1]]),
-					},
-				})
-		}
-	}
-
-	return requests
+	return sections
 }
 
 func getDefaultHeaderRequest(headerID, name, key, BPM, time, lang string) *docs.Request {

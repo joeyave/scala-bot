@@ -201,18 +201,27 @@ const SongConfirmationPage: FC = () => {
               }}
             >
               <option key={"-1"} value={"-1"}>
+                {" "}
                 {t("atEnd")}
               </option>
               {Array(st.sectionsNumber)
                 .fill(null)
-                .map((_, i) => (
-                  <option key={String(i)} value={String(i)}>
-                    {t("insteadOfPage", { number: i + 1 })}
-                  </option>
-                ))}
-              <option key={""} value={""}>
-                {t("onlyFirstHeader")}
-              </option>
+                .map((_, i) => {
+                  if (i == 0 && st.formData.key == "NNS") {
+                    return;
+                  }
+                  return (
+                    <option key={String(i)} value={String(i)}>
+                      {t("insteadOfPage", { number: i + 1 })}
+                    </option>
+                  );
+                })}
+
+              {st.formData.key != "NNS" ? (
+                <option key={""} value={""}>
+                  {t("onlyFirstHeader")}
+                </option>
+              ) : null}
             </Select>
           </List>
         </div>

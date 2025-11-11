@@ -190,7 +190,7 @@ const SongPage: FC = () => {
 
     const songLyrics = querySongLyricsRes.data;
 
-    if (newKey != initialFormData.key) {
+    if (newKey != initialFormData.key && newKey != "NNS") {
       try {
         const transposedHtml = transposeAllText(
           songLyrics.lyricsHtml,
@@ -213,7 +213,6 @@ const SongPage: FC = () => {
   };
 
   const handleMainButtonClick = useCallback(async () => {
-
     setMainButton({ loader: true });
 
     if (formData.key !== initialFormData.key) {
