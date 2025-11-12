@@ -41,6 +41,9 @@ const (
 	fontSizeHeaderTitle    float64 = 20
 	fontSizeHeaderMetadata float64 = 14
 	fontSizeHeaderLastPara float64 = 11
+
+	chordRatioThresholdHeader float64 = 0
+	chordRatioThresholdBody   float64 = 0 // todo: find a better value.
 )
 
 var rgbColorChord = newRgbColor(0.8, 0, 0)
@@ -148,10 +151,10 @@ func (s *DriveFileService) StyleOne(ID, lang string) (*drive.File, error) {
 	}
 
 	for _, header := range doc.Headers {
-		requests = append(requests, composeStyleRequests(header.Content, header.HeaderId, true, 0)...)
+		requests = append(requests, composeStyleRequests(header.Content, header.HeaderId, true, chordRatioThresholdHeader)...)
 	}
 
-	requests = append(requests, composeStyleRequests(doc.Body.Content, "", false, 0)...)
+	requests = append(requests, composeStyleRequests(doc.Body.Content, "", false, chordRatioThresholdBody)...)
 
 	docStyle := &docs.DocumentStyle{
 		MarginBottom: &docs.Dimension{
@@ -192,25 +195,26 @@ func (s *DriveFileService) StyleOne(ID, lang string) (*drive.File, error) {
 // =========================================================================
 
 func transposeHeader(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int, toKey string) ([]*docs.Request, string) {
-	if doc.DocumentStyle.DefaultHeaderId == "" {
+	docHeaderID := doc.DocumentStyle.DefaultHeaderId
+	if docHeaderID == "" {
 		return nil, ""
 	}
 
 	requests := make([]*docs.Request, 0)
 
 	section := sections[sectionIndex]
-	defaultHeaderID := section.SectionBreak.SectionStyle.DefaultHeaderId
+	sectionHeaderID := section.SectionBreak.SectionStyle.DefaultHeaderId
 
-	var targetSegmentID string // Will hold the ID of the header to write to
+	var targetHeaderID string // Will hold the ID of the header to write to
 
 	// Create header if section doesn't have it.
-	if defaultHeaderID == "" {
+	if sectionHeaderID == "" {
 		location := newLocation(section.StartIndex, "")
 		requests = append(requests, newCreateHeaderRequest(headerTypeDefault, location))
-		// NOTE: targetSegmentID will be "", which may cause transpose to write to the body.
+		// NOTE: targetHeaderID will be "", which may cause transpose to write to the body.
 	} else {
-		header := doc.Headers[defaultHeaderID]
-		targetSegmentID = header.HeaderId // Set the segment ID for transpose
+		header := doc.Headers[sectionHeaderID]
+		targetHeaderID = header.HeaderId // Set the segment ID for transpose
 
 		// Clear existing content from the section header
 		lastHeaderContent := header.Content[len(header.Content)-1]
@@ -219,12 +223,12 @@ func transposeHeader(doc *docs.Document, sections []docs.StructuralElement, sect
 		}
 	}
 	transposeRequests, key := composeTransposeRequests(
-		doc.Headers[doc.DocumentStyle.DefaultHeaderId].Content,
+		doc.Headers[docHeaderID].Content,
 		0,
 		"",
 		toKey,
-		targetSegmentID, // Use the extracted variable
-		0,
+		targetHeaderID,
+		chordRatioThresholdHeader,
 	)
 	requests = append(requests, transposeRequests...)
 
@@ -256,7 +260,7 @@ func transposeBody(doc *docs.Document, sections []docs.StructuralElement, sectio
 		key,
 		toKey,
 		"",
-		0,
+		chordRatioThresholdBody,
 	)
 	requests = append(requests, transposeRequests...)
 
@@ -317,7 +321,7 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string, i
 
 		paragraphStyleFields := "lineSpacing,spaceAbove,spaceBelow"
 		if isHeader {
-			paragraphStyleFields = "alignment," + paragraphStyleFields
+			paragraphStyleFields += ",alignment"
 		}
 		requests = append(requests, newUpdateParagraphStyleRequest(&paragraphStyle, paragraphStyleFields, paragraph.StartIndex, paragraph.EndIndex, segmentID))
 
@@ -601,13 +605,13 @@ func newBaseTextStyleRequests(paragraph *docs.Paragraph, isHeader bool, paragrap
 }
 
 // shouldTransposeParagraph decides if a paragraph should be transposed based on its chord ratio.
-func shouldTransposeParagraph(fullText string, threshold float64) bool {
-	if threshold <= 0 {
+func shouldTransposeParagraph(fullText string, chordRatioThreshold float64) bool {
+	if chordRatioThreshold <= 0 {
 		return true // No heuristic, default to transposing
 	}
 
 	lines := transposer.Tokenize(fullText, true, false, &transposer.TransposeOpts{
-		ChordRatioThreshold: threshold,
+		ChordRatioThreshold: chordRatioThreshold,
 	})
 	for _, line := range lines {
 		for _, token := range line {
