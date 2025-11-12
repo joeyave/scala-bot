@@ -10,34 +10,6 @@ type DriveFileController struct {
 	SongService      *service.SongService
 }
 
-func (c *DriveFileController) Search(ctx *gin.Context) {
-	query := ctx.Query("q")
-	folderID := ctx.Query("driveFolderId")
-	archiveFolderID := ctx.Query("archiveFolderId")
-
-	driveFiles, _, err := c.DriveFileService.FindSomeByFullTextAndFolderID(query, []string{folderID, archiveFolderID}, "")
-	if err != nil {
-		return
-	}
-
-	ctx.JSON(200, gin.H{
-		"results": driveFiles,
-	})
-}
-
-func (c *DriveFileController) FindByDriveFileID(ctx *gin.Context) {
-	driveFileID := ctx.Query("driveFileId")
-
-	song, _, err := c.SongService.FindOrCreateOneByDriveFileID(driveFileID)
-	if err != nil {
-		return
-	}
-
-	ctx.JSON(200, gin.H{
-		"song": song,
-	})
-}
-
 func (c *DriveFileController) SearchV2(ctx *gin.Context) {
 	query := ctx.Query("q")
 	folderID := ctx.Query("driveFolderId")

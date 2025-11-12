@@ -83,7 +83,6 @@ func EventInit(event *entity.Event, user *entity.User, lang string) [][]gotgbot.
 
 	//if user.IsAdmin() || user.IsEventMember(event) {
 	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
-		//{Text: txt.Get("button.edit", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/events/%s/edit", os.Getenv("BOT_DOMAIN"), event.ID.Hex())}},
 		{Text: txt.Get("button.edit", lang), CallbackData: util.CallbackData(state.EventCB, event.ID.Hex()+":edit")},
 	})
 	//}

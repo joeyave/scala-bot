@@ -383,13 +383,6 @@ func main() {
 
 	router.GET("/web-app/statistics", webAppController.Statistics)
 
-	router.GET("/web-app/events/create", webAppController.CreateEvent)
-
-	router.GET("/web-app/events/:id/edit", webAppController.EditEvent)
-	router.POST("/web-app/events/:id/edit/confirm", webAppController.EditEventConfirm)
-
-	router.GET("/api/drive-files/search", driveFileController.Search)
-	router.GET("/api/songs/find-by-drive-file-id", driveFileController.FindByDriveFileID)
 	router.GET("/api/v2/drive-files/search", driveFileController.SearchV2)
 	router.GET("/api/v2/songs/find-by-drive-file-id", driveFileController.FindByDriveFileIDV2)
 

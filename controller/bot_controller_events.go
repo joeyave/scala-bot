@@ -453,7 +453,6 @@ func (c *BotController) eventSetlist(bot *gotgbot.Bot, ctx *ext.Context, event *
 
 	markup := gotgbot.InlineKeyboardMarkup{}
 
-	//markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.changeSongsOrder", ctx.EffectiveUser.LanguageCode), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/events/%s/edit?messageId=%d&chatId=%d", os.Getenv("BOT_DOMAIN"), event.ID.Hex(), user.CallbackCache.MessageID, user.CallbackCache.ChatID)}}})
 	for _, song := range songs {
 		isDeleted := true
 		for _, eventSong := range event.Songs {
