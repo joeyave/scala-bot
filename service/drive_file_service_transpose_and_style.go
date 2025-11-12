@@ -10,6 +10,10 @@ import (
 	"google.golang.org/api/drive/v3"
 )
 
+// =========================================================================
+// Constants & Package-Level Variables
+// =========================================================================
+
 var (
 	newLineRe    = regexp.MustCompile(`\s*[\r\n]$`)
 	barlineRe    = regexp.MustCompile(`[|]`)
@@ -41,6 +45,10 @@ const (
 
 var rgbColorChord = newRgbColor(0.8, 0, 0)
 var rgbColorBlack = newRgbColor(0, 0, 0)
+
+// =========================================================================
+// Public Service Methods (DriveFileService)
+// =========================================================================
 
 // getDoc is a helper to fetch a document by its ID.
 func (s *DriveFileService) getDoc(ID string) (*docs.Document, error) {
@@ -179,6 +187,10 @@ func (s *DriveFileService) StyleOne(ID, lang string) (*drive.File, error) {
 	return s.FindOneByID(ID)
 }
 
+// =========================================================================
+// Core Logic - Transposition
+// =========================================================================
+
 func transposeHeader(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int, toKey string) ([]*docs.Request, string) {
 	if doc.DocumentStyle.DefaultHeaderId == "" {
 		return nil, ""
@@ -256,7 +268,7 @@ func composeTransposeRequests(content []*docs.StructuralElement, index int64, ke
 	paragraphs, idxs := getParagraphs(content)
 
 	for i, paragraph := range paragraphs {
-		fullText := idxs[i].full
+		fullText := idxs[i].fullText
 
 		// Decide if this paragraph should be treated as chords
 		shouldTranspose := shouldTransposeParagraph(fullText, chordRatioThreshold)
@@ -277,6 +289,10 @@ func composeTransposeRequests(content []*docs.StructuralElement, index int64, ke
 
 	return allRequests, key
 }
+
+// =========================================================================
+// Core Logic - Styling
+// =========================================================================
 
 func composeStyleRequests(content []*docs.StructuralElement, segmentID string, isHeader bool, chordRatioThreshold float64) []*docs.Request {
 	requests := make([]*docs.Request, 0)
@@ -308,32 +324,42 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string, i
 		// 2) Ensure all runs use Roboto Mono
 		requests = append(requests, newBaseTextStyleRequests(paragraph.Paragraph, isHeader, i, segmentID)...)
 
+		// Build the index ONCE for this paragraph
+		ip, ok := newIndexedParagraph(paragraph.Paragraph)
+		if !ok {
+			continue
+		}
+
 		// 3) Style chords across the whole paragraph (paragraph-level heuristic)
-		requests = append(requests, changeStyleForChordsAcross(paragraph.Paragraph, segmentID, chordRatioThreshold)...)
+		requests = append(requests, changeStyleForChordsAcross(ip, segmentID, chordRatioThreshold)...)
 
 		// [|] -> bold, black
 		textStyle := docs.TextStyle{
 			Bold:            true,
 			ForegroundColor: newOptionalColor(rgbColorBlack),
 		}
-		requests = append(requests, changeStyleByRegexAcross(barlineRe, paragraph.Paragraph, textStyle, "bold,foregroundColor", nil, segmentID)...)
+		requests = append(requests, changeStyleByRegexAcross(ip, barlineRe, textStyle, "bold,foregroundColor", nil, segmentID)...)
 
 		// [ ... ] -> bold
 		textStyle = docs.TextStyle{
 			Bold: true,
 		}
-		requests = append(requests, changeStyleByRegexAcross(bracketedRe, paragraph.Paragraph, textStyle, "bold", nil, segmentID)...)
+		requests = append(requests, changeStyleByRegexAcross(ip, bracketedRe, textStyle, "bold", nil, segmentID)...)
 
 		// (x|х)\d+ -> bold, red-ish
 		textStyle = docs.TextStyle{
 			Bold:            true,
 			ForegroundColor: newOptionalColor(rgbColorChord),
 		}
-		requests = append(requests, changeStyleByRegexAcross(repetitionRe, paragraph.Paragraph, textStyle, "bold,foregroundColor", nil, segmentID)...)
+		requests = append(requests, changeStyleByRegexAcross(ip, repetitionRe, textStyle, "bold,foregroundColor", nil, segmentID)...)
 	}
 
 	return requests
 }
+
+// =========================================================================
+// Paragraph / TextRun Utilities
+// =========================================================================
 
 type paraSlice struct {
 	el *docs.ParagraphElement
@@ -342,15 +368,17 @@ type paraSlice struct {
 	end   int64
 }
 
-type paraIndex struct {
-	full   string
-	slices []paraSlice
+// indexedParagraph holds a "flat" view of a paragraph for easy manipulation
+type indexedParagraph struct {
+	para     *docs.Paragraph
+	fullText string
+	slices   []paraSlice
 }
 
-// buildParaIndex concatenates all TextRun contents and builds rune-based element slices.
-func buildParaIndex(paragraph *docs.Paragraph) (paraIndex, bool) {
+// newIndexedParagraph builds the index.
+func newIndexedParagraph(paragraph *docs.Paragraph) (*indexedParagraph, bool) {
 	if paragraph == nil || paragraph.Elements == nil {
-		return paraIndex{}, false
+		return nil, false
 	}
 	var builder strings.Builder
 	slices := make([]paraSlice, 0, len(paragraph.Elements))
@@ -369,17 +397,21 @@ func buildParaIndex(paragraph *docs.Paragraph) (paraIndex, bool) {
 	}
 	full := builder.String()
 	if full == "" {
-		return paraIndex{}, false
+		return nil, false
 	}
-	return paraIndex{full: full, slices: slices}, true
+	return &indexedParagraph{
+		para:     paragraph,
+		fullText: full,
+		slices:   slices,
+	}, true
 }
 
 // toDocRange converts paragraph-relative rune offsets to absolute doc range.
-func toDocRange(paraIndex paraIndex, runeStart, runeEnd int64) (int64, int64, bool) {
+func (ip *indexedParagraph) toDocRange(runeStart, runeEnd int64) (int64, int64, bool) {
 	var first *docs.ParagraphElement
 	var last *docs.ParagraphElement
 	var firstElementOffset, lastElementOffset int64
-	for _, slice := range paraIndex.slices {
+	for _, slice := range ip.slices {
 		if runeStart < slice.end && runeEnd > slice.start {
 			if first == nil {
 				first = slice.el
@@ -393,6 +425,11 @@ func toDocRange(paraIndex paraIndex, runeStart, runeEnd int64) (int64, int64, bo
 		return 0, 0, false
 	}
 	return first.StartIndex + firstElementOffset, last.StartIndex + lastElementOffset, true
+}
+
+// byteToRune converts a byte index (from Go regex) into a rune count prefix.
+func (ip *indexedParagraph) byteToRune(byteIdx int) int64 {
+	return int64(len([]rune(ip.fullText[:byteIdx])))
 }
 
 // styleRange builds a single UpdateTextStyle request for [docStart, docEnd).
@@ -409,47 +446,33 @@ func replaceRange(docStart, docEnd int64, text, segmentID string) []*docs.Reques
 	}
 }
 
-// byteToRune converts a byte index (from Go regex) into a rune count prefix.
-func byteToRune(full string, byteIdx int) int64 {
-	return int64(len([]rune(full[:byteIdx])))
-}
-
 // changeStyleByRegexAcross applies style (and optional textFunc transforms) for matches
 // that may span multiple ParagraphElements inside the given paragraph.
-func changeStyleByRegexAcross(regex *regexp.Regexp, paragraph *docs.Paragraph, style docs.TextStyle, fields string, textFunc func(string) string, segmentID string) []*docs.Request {
+func changeStyleByRegexAcross(ip *indexedParagraph, regex *regexp.Regexp, style docs.TextStyle, fields string, textFunc func(string) string, segmentID string) []*docs.Request {
 
 	requests := make([]*docs.Request, 0)
-	if paragraph == nil || paragraph.Elements == nil {
-		return requests
-	}
-
-	// Build paragraph index once
-	idx, ok := buildParaIndex(paragraph)
-	if !ok {
-		return requests
-	}
 
 	// Find matches on concatenated text (regex gives byte offsets)
-	matches := regex.FindAllStringIndex(idx.full, -1)
+	matches := regex.FindAllStringIndex(ip.fullText, -1)
 	if matches == nil {
 		return requests
 	}
 
 	for _, match := range matches {
-		runeStart := byteToRune(idx.full, match[0])
-		runeEnd := byteToRune(idx.full, match[1])
+		runeStart := ip.byteToRune(match[0])
+		runeEnd := ip.byteToRune(match[1])
 		if runeStart == runeEnd {
 			continue
 		}
 
-		docStart, docEnd, ok := toDocRange(idx, runeStart, runeEnd)
+		docStart, docEnd, ok := ip.toDocRange(runeStart, runeEnd)
 		if !ok {
 			continue
 		}
 
 		// Optional replacement before styling
 		if textFunc != nil {
-			originalText := idx.full[match[0]:match[1]]
+			originalText := ip.fullText[match[0]:match[1]]
 			replacementText := textFunc(originalText)
 			requests = append(requests, replaceRange(docStart, docEnd, replacementText, segmentID)...)
 			// Adjust end to new length
@@ -466,19 +489,11 @@ func changeStyleByRegexAcross(regex *regexp.Regexp, paragraph *docs.Paragraph, s
 // using a paragraph-level heuristic to avoid false positives (e.g., verse numbers).
 // If the ratio of chord tokens to total tokens is below chordRatioThreshold,
 // no styling is applied for this paragraph.
-func changeStyleForChordsAcross(paragraph *docs.Paragraph, segmentID string, chordRatioThreshold float64) []*docs.Request {
+func changeStyleForChordsAcross(ip *indexedParagraph, segmentID string, chordRatioThreshold float64) []*docs.Request {
 	requests := make([]*docs.Request, 0)
-	if paragraph == nil || paragraph.Elements == nil {
-		return requests
-	}
-
-	idx, ok := buildParaIndex(paragraph)
-	if !ok {
-		return requests
-	}
 
 	// Tokenize the full paragraph (heuristic is inside Tokenize via ChordRatioThreshold)
-	lines := transposer.Tokenize(idx.full, true, false, &transposer.TransposeOpts{
+	lines := transposer.Tokenize(ip.fullText, true, false, &transposer.TransposeOpts{
 		ChordRatioThreshold: chordRatioThreshold,
 	})
 
@@ -498,7 +513,7 @@ func changeStyleForChordsAcross(paragraph *docs.Paragraph, segmentID string, cho
 			if runeStart == runeEnd {
 				continue
 			}
-			docStart, docEnd, ok := toDocRange(idx, runeStart, runeEnd)
+			docStart, docEnd, ok := ip.toDocRange(runeStart, runeEnd)
 			if !ok {
 				continue
 			}
@@ -526,22 +541,22 @@ func getContentForFirstSection(doc *docs.Document, sections []docs.StructuralEle
 	return doc.Body.Content
 }
 
-// getParagraphs filters content for valid paragraphs and builds a paraIndex for each.
-func getParagraphs(content []*docs.StructuralElement) ([]*docs.Paragraph, []paraIndex) {
+// getParagraphs filters content for valid paragraphs and builds an indexedParagraph for each.
+func getParagraphs(content []*docs.StructuralElement) ([]*docs.Paragraph, []*indexedParagraph) {
 	var paragraphs []*docs.Paragraph
-	var idxs []paraIndex
+	var ips []*indexedParagraph
 	for _, item := range content {
 		if item.Paragraph == nil || item.Paragraph.Elements == nil {
 			continue
 		}
-		idx, ok := buildParaIndex(item.Paragraph)
+		ip, ok := newIndexedParagraph(item.Paragraph)
 		if !ok {
 			continue
 		}
 		paragraphs = append(paragraphs, item.Paragraph)
-		idxs = append(idxs, idx)
+		ips = append(ips, ip)
 	}
-	return paragraphs, idxs
+	return paragraphs, ips
 }
 
 // newBaseTextStyleRequests applies the base font (Roboto Mono), weight, and header-specific font sizes.
@@ -668,6 +683,10 @@ func newTransposeRequestsForParagraph(paragraph *docs.Paragraph, isLastParagraph
 
 	return requests, index
 }
+
+// =========================================================================
+// Google Docs Request Builders
+// =========================================================================
 
 // newRgbColor creates a new RgbColor struct with specified force fields.
 func newRgbColor(r, g, b float64) *docs.RgbColor {
