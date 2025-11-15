@@ -403,7 +403,7 @@ var locales = map[string]map[string]string{
 	},
 	"text.songDeleted": {
 		"ru": "Песня удалена.",
-		"uk": "Песня видалена.",
+		"uk": "Пісня видалена.",
 	},
 	"text.styled": {
 		"ru": "Стилизация закончена.",
