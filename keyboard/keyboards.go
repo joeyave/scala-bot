@@ -195,13 +195,13 @@ func SongEdit(song *entity.Song, driveFile *drive.File, user *entity.User, lang 
 			{Text: txt.Get("button.unarchiveText", lang), CallbackData: util.CallbackData(state.SongArchive, song.ID.Hex()+":unarchive")},
 			{Text: txt.Get("button.delete", lang), CallbackData: util.CallbackData(state.SongDeleteConfirm, song.ID.Hex())},
 		})
-		//} else {
-		//	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
-		//		{Text: txt.Get("button.archiveText", lang), CallbackData: util.CallbackData(state.SongArchive, song.ID.Hex()+":archive")},
-		//		{Text: txt.Get("button.delete", lang), CallbackData: util.CallbackData(state.SongDeleteConfirm, song.ID.Hex())},
-		//	})
-		//}
-	}
+		} else {
+		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
+				{Text: txt.Get("button.archiveText", lang), CallbackData: util.CallbackData(state.SongArchive, song.ID.Hex()+":archive")},
+				{Text: txt.Get("button.delete", lang), CallbackData: util.CallbackData(state.SongDeleteConfirm, song.ID.Hex())},
+			})
+		}
+//	}
 
 	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.stats", lang), CallbackData: util.CallbackData(state.SongStats, song.ID.Hex())}})
 	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.back", lang), CallbackData: util.CallbackData(state.SongCB, song.ID.Hex()+":init")}})
