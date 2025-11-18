@@ -351,7 +351,12 @@ func (c *BotController) EventSetlistDocs(bot *gotgbot.Bot, ctx *ext.Context) err
 		return nil
 	}
 
-	err = c.songsAlbum(bot, ctx, event.Songs)
+	songs, _, err := c.SongService.FindOrCreateManyByDriveFileIDs(driveFileIDs)
+	if err != nil {
+		return err
+	}
+
+	err = c.songsAlbum(bot, ctx, songs)
 	if err != nil {
 		return err
 	}

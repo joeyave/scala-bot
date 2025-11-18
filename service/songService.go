@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/flowchartsman/retry"
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/repository"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -63,34 +64,32 @@ func (s *SongService) FindOneByNameAndBandID(driveFileID string, bandID primitiv
 
 func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entity.Song, *drive.File, error) {
 	// 1. Fetch Drive file with limited retries
-	var (
-		driveFile *drive.File
-		err       error
-	)
+	var driveFile *drive.File
 
-	const maxAttempts = 5
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		driveFile, err = s.driveRepository.Files.Get(driveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
-		if err == nil {
-			break
+	retrier := retry.NewRetrier(5, 50*time.Millisecond, time.Second/2)
+
+	err := retrier.Run(func() error {
+		f, err := s.driveRepository.Files.Get(driveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+		if err != nil {
+			return err
 		}
 
-		if attempt == maxAttempts {
-			return nil, nil, fmt.Errorf("error getting drive file %s: %w", driveFileID, err)
-		}
-
-		// simple linear backoff, you can tune it or remove it
-		time.Sleep(time.Duration(attempt) * 100 * time.Millisecond)
-	}
+		driveFile = f
+		return nil
+	})
 
 	// 2. Try to find existing song
 	song, err := s.songRepository.FindOneByDriveFileID(driveFileID)
+	needsSave := false
+
 	if err != nil && !errors.Is(err, repository.ErrNotFound) {
 		return nil, nil, err
 	}
 
 	// 3. Create new song if not found
 	if errors.Is(err, repository.ErrNotFound) {
+		needsSave = true
+
 		song = &entity.Song{
 			DriveFileID: driveFile.Id,
 		}
@@ -113,8 +112,12 @@ func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entity.
 	}
 
 	// 4. Update PDF metadata if outdated or incomplete
-	if songHasOutdatedPDF(song, driveFile) ||
-		song.PDF.Name == "" || song.PDF.Key == "" || song.PDF.BPM == "" || song.PDF.Time == "" || song.PDF.WebViewLink == "" {
+	pdfNeedsUpdate := songHasOutdatedPDF(song, driveFile) ||
+		song.PDF.Name == "" || song.PDF.Key == "" || song.PDF.BPM == "" || song.PDF.Time == "" || song.PDF.WebViewLink == ""
+
+	if pdfNeedsUpdate {
+		needsSave = true
+
 		song.PDF.Name = driveFile.Name
 		song.PDF.Key, song.PDF.BPM, song.PDF.Time = s.driveFileService.GetMetadata(driveFile.Id)
 		song.PDF.TgFileID = ""
@@ -123,9 +126,11 @@ func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entity.
 	}
 
 	// 5. Persist song
-	song, err = s.songRepository.UpdateOne(*song)
-	if err != nil {
-		return nil, nil, err
+	if needsSave {
+		song, err = s.songRepository.UpdateOne(*song)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	return song, driveFile, nil
@@ -277,7 +282,8 @@ func (s *SongService) FindManyExtraByTag(tag string, bandID primitive.ObjectID, 
 }
 
 func songHasOutdatedPDF(song *entity.Song, driveFile *drive.File) bool {
-	if song.PDF.ModifiedTime == "" || driveFile == nil {
+	if song == nil || driveFile == nil ||
+		song.PDF.ModifiedTime == "" || driveFile.ModifiedTime == "" {
 		return true
 	}
 

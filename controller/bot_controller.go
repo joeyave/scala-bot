@@ -546,7 +546,7 @@ func (c *BotController) buildSongsMediaGroup(songs []*entity.Song, downloadAll b
 		i, song := i, song // Important! See https://golang.org/doc/faq#closures_and_goroutines.
 		g.Go(func() error {
 			if song.PDF.TgFileID == "" || downloadAll {
-				reader, err := c.DriveFileService.DownloadOneByID(song.DriveFileID) // todo: close reader.
+				reader, err := c.DriveFileService.DownloadOneByID(song.DriveFileID)
 				if err != nil {
 					return err
 				}
