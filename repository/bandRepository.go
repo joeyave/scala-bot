@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/joeyave/scala-bot/entity"
@@ -100,7 +99,7 @@ func (r *BandRepository) find(m bson.M) ([]*entity.Band, error) {
 	}
 
 	if len(bands) == 0 {
-		return nil, fmt.Errorf("not found")
+		return nil, ErrNotFound
 	}
 
 	return bands, nil

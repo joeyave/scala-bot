@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/joeyave/scala-bot/entity"
 
@@ -138,7 +137,7 @@ func (r *UserRepository) find(m bson.M, opts ...bson.M) ([]*entity.User, error) 
 	}
 
 	if len(users) == 0 {
-		return nil, fmt.Errorf("not found")
+		return nil, ErrNotFound
 	}
 
 	return users, nil
@@ -424,7 +423,7 @@ func (r *UserRepository) findWithExtra(pipeline bson.A) ([]*entity.UserWithEvent
 	}
 
 	if len(users) == 0 {
-		return nil, fmt.Errorf("not found")
+		return nil, ErrNotFound
 	}
 
 	return users, nil

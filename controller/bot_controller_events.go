@@ -351,7 +351,7 @@ func (c *BotController) EventSetlistDocs(bot *gotgbot.Bot, ctx *ext.Context) err
 		return nil
 	}
 
-	err = c.songsAlbum(bot, ctx, driveFileIDs)
+	err = c.songsAlbum(bot, ctx, event.Songs)
 	if err != nil {
 		return err
 	}

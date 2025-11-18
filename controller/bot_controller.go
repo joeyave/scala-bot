@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"strconv"
@@ -358,7 +359,12 @@ func (c *BotController) searchSetlist(index int) handlers.Response {
 				if len(user.Cache.SongNames) < 1 {
 					_, _ = ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
 
-					err := c.songsAlbum(bot, ctx, user.Cache.DriveFileIDs)
+					songs, _, err := c.SongService.FindOrCreateManyByDriveFileIDs(user.Cache.DriveFileIDs)
+					if err != nil {
+						return err
+					}
+
+					err = c.songsAlbum(bot, ctx, songs)
 					if err != nil {
 						return err
 					}
@@ -530,97 +536,117 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 	return ext.DispatcherActionEndGroups
 }
 
-// todo: document that func
-func (c *BotController) songsAlbum(bot *gotgbot.Bot, ctx *ext.Context, driveFileIDs []string) error {
+func (c *BotController) buildSongsMediaGroup(songs []*entity.Song, downloadAll bool) ([]gotgbot.InputMedia, []io.Closer, error) {
+	g := new(errgroup.Group)
 
-	// Concurrently download drive files and return []gotgbot.InputMedia.
-	getAlbum := func(fileIDs []string, downloadAll bool) ([]gotgbot.InputMedia, error) {
-		g := new(errgroup.Group)
+	album := make([]gotgbot.InputMedia, len(songs))
+	closers := make([]io.Closer, len(songs))
 
-		album := make([]gotgbot.InputMedia, len(fileIDs))
-		for i, fileID := range fileIDs {
-			i, fileID := i, fileID // Important! See https://golang.org/doc/faq#closures_and_goroutines.
-			g.Go(func() error {
-				song, _, err := c.SongService.FindOrCreateOneByDriveFileID(fileID)
+	for i, song := range songs {
+		i, song := i, song // Important! See https://golang.org/doc/faq#closures_and_goroutines.
+		g.Go(func() error {
+			if song.PDF.TgFileID == "" || downloadAll {
+				reader, err := c.DriveFileService.DownloadOneByID(song.DriveFileID) // todo: close reader.
 				if err != nil {
 					return err
 				}
 
-				if song.PDF.TgFileID == "" || downloadAll {
-					reader, err := c.DriveFileService.DownloadOneByID(fileID) // todo: close reader.
-					if err != nil {
-						return err
-					}
-
-					album[i] = gotgbot.InputMediaDocument{
-						Media:   gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", song.PDF.Name), reader),
-						Caption: song.Meta(),
-					}
-				} else {
-					album[i] = gotgbot.InputMediaDocument{
-						Media:   gotgbot.InputFileByID(song.PDF.TgFileID),
-						Caption: song.Meta(),
-					}
+				album[i] = gotgbot.InputMediaDocument{
+					Media:   gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", song.PDF.Name), reader),
+					Caption: song.Meta(),
 				}
+				closers[i] = reader
+			} else {
+				album[i] = gotgbot.InputMediaDocument{
+					Media:   gotgbot.InputFileByID(song.PDF.TgFileID),
+					Caption: song.Meta(),
+				}
+			}
 
-				return nil
-			})
+			return nil
+		})
+	}
+	err := g.Wait()
+	if err != nil {
+		for _, closer := range closers {
+			if closer != nil {
+				_ = closer.Close()
+			}
 		}
-		err := g.Wait()
-		return album, err
+		return nil, nil, err
 	}
 
+	return album, closers, err
+}
+
+func (c *BotController) updateSongTgFileIDs(msgs []gotgbot.Message, songs []*entity.Song) {
+	if len(songs) != len(msgs) {
+		return
+	}
+
+	for j, song := range songs {
+		doc := msgs[j].Document
+		if doc == nil {
+			continue
+		}
+
+		// На всякий случай сравниваем названия. Сравниваем с помощью алгоритма Levenshtein.
+		//Получаем процент схожести двух строк. Пропускаем больше 90%.
+		str1 := song.PDF.Name
+		str2 := strings.ReplaceAll(strings.TrimSuffix(doc.FileName, ".pdf"), "_", " ")
+		similarity, err := edlib.StringsSimilarity(str1, str2, edlib.Levenshtein)
+		fmt.Printf("similarity: %g, str1: %s, str2: %s\n", similarity, str1, str2)
+		if err == nil && similarity > 0.9 {
+			song.PDF.TgFileID = doc.FileId
+		}
+	}
+	_, err := c.SongService.UpdateMany(songs)
+	if err != nil {
+		return
+	}
+}
+
+func (c *BotController) songsAlbum(bot *gotgbot.Bot, ctx *ext.Context, songs []*entity.Song) error {
+
 	// Подготавливаем файлы: берем из кеша (если файл уже есть на серверах телеграм) или загружаем.
-	bigAlbum, err := getAlbum(driveFileIDs, false)
+	mediaGroup, closers, err := c.buildSongsMediaGroup(songs, false)
 	if err != nil {
 		return err
 	}
 
 	// Если файлов больше чем 10, разделяем их на чанки и отправляем по очереди (ограничения ТГ).
-	inputMediaChunks := helpers.Chunk(bigAlbum, 10)
-	for i, inputMediaChunk := range inputMediaChunks {
-		_, err := bot.SendMediaGroup(ctx.EffectiveChat.Id, inputMediaChunk, nil)
+	mediaGroupChunks := helpers.Chunk(mediaGroup, 10)
+	closersChunks := helpers.Chunk(closers, 10)
+	songsChunks := helpers.Chunk(songs, 10)
 
+	for i, mediaGroupChunk := range mediaGroupChunks {
+		closersChunk := closersChunks[i]
+		_, err := bot.SendMediaGroup(ctx.EffectiveChat.Id, mediaGroupChunk, nil)
+		for _, closer := range closersChunk {
+			if closer != nil {
+				_ = closer.Close()
+			}
+		}
 		// Если не смогли отправить чанк, возможно проблема с файлами из кеша - TgFileID невалидный.
 		// Попробуем скачать все файлы из чанка и отправить.
 		if err != nil {
-			driveFileIDsChunks := helpers.Chunk(driveFileIDs, 10)
-			driveFileIDsChunk := driveFileIDsChunks[i]
-			album, err := getAlbum(driveFileIDsChunk, true)
+			songsChunk := songsChunks[i]
+			mediaGroup, closers, err := c.buildSongsMediaGroup(songsChunk, true)
 			if err != nil {
 				return err
 			}
-			msgs, err := bot.SendMediaGroup(ctx.EffectiveChat.Id, album, nil)
+			msgs, err := bot.SendMediaGroup(ctx.EffectiveChat.Id, mediaGroup, nil)
+			for _, closer := range closers {
+				if closer != nil {
+					_ = closer.Close()
+				}
+			}
 			if err != nil {
 				return err
 			}
 
 			// Попробуем обновить TgFileID у файлов.
-			updateSongs := func(msgs []gotgbot.Message, driveFileIDs []string) {
-				songs, err := c.SongService.FindManyByDriveFileIDs(driveFileIDs)
-				if err == nil {
-					if len(songs) != len(msgs) || len(songs) != len(driveFileIDs) {
-						return
-					}
-					for j, song := range songs {
-						doc := msgs[j].Document
-						// На всякий случай сравниваем названия. Сравниваем с помощью алгоритма Levenshtein.
-						//Получаем процент схожести двух строк. Пропускаем больше 90%.
-						str1 := song.PDF.Name
-						str2 := strings.ReplaceAll(strings.TrimSuffix(doc.FileName, ".pdf"), "_", " ")
-						similarity, err := edlib.StringsSimilarity(str1, str2, edlib.Levenshtein)
-						fmt.Printf("similarity: %g, str1: %s, str2: %s\n", similarity, str1, str2)
-						if err == nil && similarity > 0.9 {
-							song.PDF.TgFileID = doc.FileId
-						}
-					}
-					_, err := c.SongService.UpdateMany(songs)
-					if err != nil {
-						return
-					}
-				}
-			}
-			go updateSongs(msgs, driveFileIDsChunk)
+			go c.updateSongTgFileIDs(msgs, songsChunk)
 		}
 	}
 

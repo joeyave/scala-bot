@@ -62,14 +62,35 @@ func (s *SongService) FindOneByNameAndBandID(driveFileID string, bandID primitiv
 }
 
 func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entity.Song, *drive.File, error) {
-	var driveFile *drive.File
-	err := errors.New("fake error")
-	for err != nil {
+	// 1. Fetch Drive file with limited retries
+	var (
+		driveFile *drive.File
+		err       error
+	)
+
+	const maxAttempts = 5
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		driveFile, err = s.driveRepository.Files.Get(driveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+		if err == nil {
+			break
+		}
+
+		if attempt == maxAttempts {
+			return nil, nil, fmt.Errorf("error getting drive file %s: %w", driveFileID, err)
+		}
+
+		// simple linear backoff, you can tune it or remove it
+		time.Sleep(time.Duration(attempt) * 100 * time.Millisecond)
 	}
 
+	// 2. Try to find existing song
 	song, err := s.songRepository.FindOneByDriveFileID(driveFileID)
-	if err != nil {
+	if err != nil && !errors.Is(err, repository.ErrNotFound) {
+		return nil, nil, err
+	}
+
+	// 3. Create new song if not found
+	if errors.Is(err, repository.ErrNotFound) {
 		song = &entity.Song{
 			DriveFileID: driveFile.Id,
 		}
@@ -81,8 +102,17 @@ func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entity.
 				break
 			}
 		}
+
+		if song.BandID == primitive.NilObjectID {
+			return nil, nil, fmt.Errorf("band not found for drive file %s", driveFileID)
+		}
 	}
 
+	if song == nil {
+		return nil, nil, fmt.Errorf("song is nil for drive file %s", driveFileID)
+	}
+
+	// 4. Update PDF metadata if outdated or incomplete
 	if songHasOutdatedPDF(song, driveFile) ||
 		song.PDF.Name == "" || song.PDF.Key == "" || song.PDF.BPM == "" || song.PDF.Time == "" || song.PDF.WebViewLink == "" {
 		song.PDF.Name = driveFile.Name
@@ -92,8 +122,13 @@ func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entity.
 		song.PDF.WebViewLink = driveFile.WebViewLink
 	}
 
+	// 5. Persist song
 	song, err = s.songRepository.UpdateOne(*song)
-	return song, driveFile, err
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return song, driveFile, nil
 }
 
 func (s *SongService) FindOrCreateManyByDriveFileIDs(driveFileIDs []string) ([]*entity.Song, []*drive.File, error) {

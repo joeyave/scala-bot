@@ -17,6 +17,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var ErrNotFound = fmt.Errorf("not found")
+
 type SongRepository struct {
 	mongoClient *mongo.Client
 }
@@ -108,7 +110,7 @@ func (r *SongRepository) FindManyByDriveFileIDs(IDs []string) ([]*entity.Song, e
 	}
 
 	if len(songs) == 0 {
-		return nil, fmt.Errorf("not found")
+		return nil, ErrNotFound
 	}
 
 	return songs, nil
@@ -193,7 +195,7 @@ func (r *SongRepository) find(m bson.M, opts ...bson.M) ([]*entity.Song, error) 
 	}
 
 	if len(songs) == 0 {
-		return nil, fmt.Errorf("not found")
+		return nil, ErrNotFound
 	}
 
 	return songs, nil

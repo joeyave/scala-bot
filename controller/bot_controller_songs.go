@@ -100,7 +100,7 @@ func (c *BotController) song(bot *gotgbot.Bot, ctx *ext.Context, driveFileID str
 	}
 
 	sendDocumentByReader := func() (*gotgbot.Message, error) {
-		reader, err := c.DriveFileService.DownloadOneByID(driveFile.Id) // todo: close reader.
+		reader, err := c.DriveFileService.DownloadOneByID(driveFile.Id)
 		if err != nil {
 			return nil, err
 		}

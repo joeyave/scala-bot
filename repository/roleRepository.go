@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/joeyave/scala-bot/entity"
 
@@ -68,7 +67,7 @@ func (r *RoleRepository) find(m bson.M) ([]*entity.Role, error) {
 	}
 
 	if len(roles) == 0 {
-		return nil, fmt.Errorf("not found")
+		return nil, ErrNotFound
 	}
 
 	return roles, nil
