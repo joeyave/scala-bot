@@ -23,10 +23,6 @@ const (
 	EventCB = iota + 1
 
 	EventSetlistDocs
-	EventSetlistMetronome
-
-	EventSetlist
-	EventSetlistDeleteOrRecoverSong
 
 	EventMembers
 	EventMembersDeleteOrRecoverMember

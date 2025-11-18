@@ -268,9 +268,6 @@ func main() {
 
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.EventCB), botController.EventCB), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.EventSetlistDocs), botController.EventSetlistDocs), 1)
-	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.EventSetlistMetronome), botController.EventSetlistMetronome), 1)
-	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.EventSetlist), botController.EventSetlist), 1)
-	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.EventSetlistDeleteOrRecoverSong), botController.EventSetlistDeleteOrRecoverSong), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.EventMembers), botController.EventMembers), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.EventMembersDeleteOrRecoverMember), botController.EventMembersDeleteOrRecoverMember), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.EventMembersAddMemberChooseRole), botController.EventMembersAddMemberChooseRole), 1)
