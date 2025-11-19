@@ -250,6 +250,8 @@ func (c *BotController) search(index int) handlers.Response {
 					}
 					_, err := ctx.EffectiveChat.SendMessage(bot, txt.Get("text.nothingFound", ctx.EffectiveUser.LanguageCode), &gotgbot.SendMessageOpts{ReplyMarkup: markup})
 					return err
+				} else if len(driveFiles) == 1 { // todo: test this case.
+					_ = c.song(bot, ctx, driveFiles[0].Id)
 				}
 
 				markup := &gotgbot.ReplyKeyboardMarkup{
