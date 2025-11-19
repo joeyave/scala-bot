@@ -31,6 +31,7 @@
   "addingSong": "Добавляем песню...",
   "searching": "Выполняется поиск...",
   "nothingFound": "По запросу «{{query}}» ничего не найдено",
+  "typeMoreCharacters": "Введите минимум {{count}} символов для начала поиска",
   "resultsFound": "Найдено {{count}} результатов",
   "resultFound": "Найден {{count}} результат",
   "songExistsInSetlist": "Песня уже есть в списке",

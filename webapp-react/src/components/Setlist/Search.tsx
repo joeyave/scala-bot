@@ -1,14 +1,14 @@
-import * as React from "react";
-import { Autocomplete } from "@base-ui-components/react/autocomplete";
 import { searchDriveFiles } from "@/api/webapp/driveFiles.ts";
+import { getSongByDriveFileId } from "@/api/webapp/songs.ts";
 import { DriveFile } from "@/api/webapp/typesResp.ts";
+import { Song } from "@/pages/EventPage/util/types.ts";
+import { Autocomplete } from "@base-ui-components/react/autocomplete";
 import { MagnifyingGlassIcon } from "@heroicons/react/16/solid";
 import { IconButton } from "@telegram-apps/telegram-ui";
-import { getSongByDriveFileId } from "@/api/webapp/songs.ts";
 import { hapticFeedback } from "@tma.js/sdk-react";
-import { Song } from "@/pages/EventPage/util/types.ts";
-import { useTranslation } from "react-i18next";
 import { Notify } from "notiflix";
+import * as React from "react";
+import { useTranslation } from "react-i18next";
 
 interface SearchProps {
   driveFolderId: string;
@@ -23,19 +23,25 @@ export default function Search({
 }: SearchProps) {
   const { t } = useTranslation();
 
+  const MIN_SEARCH_LENGTH = 3;
+
   const [searchValue, setSearchValue] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [searchResults, setSearchResults] = React.useState<DriveFile[]>([]);
   const [isAddingSong, setIsAddingSong] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  const trimmedValue = searchValue.trim();
+
   const wrapperRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
-    if (!searchValue && !isAddingSong) {
+    if (!trimmedValue || trimmedValue.length < MIN_SEARCH_LENGTH) {
       setSearchResults([]);
       setIsLoading(false);
-      return undefined;
+      // setIsAddingSong(false);
+      setError(null);
+      return;
     }
 
     setIsLoading(true);
@@ -46,7 +52,7 @@ export default function Search({
     async function fetchDriveFiles() {
       try {
         const results = await searchDriveFiles(
-          searchValue,
+          trimmedValue,
           driveFolderId,
           archiveFolderId,
         );
@@ -70,23 +76,30 @@ export default function Search({
       }
     }
 
-    const timeoutId = setTimeout(fetchDriveFiles, 300);
+    const timeoutId = setTimeout(fetchDriveFiles, 100);
 
     return () => {
       clearTimeout(timeoutId);
       ignore = true;
     };
-  }, [archiveFolderId, driveFolderId, isAddingSong, searchValue, t]);
+  }, [archiveFolderId, driveFolderId, isAddingSong, trimmedValue, t]);
 
   let status: React.ReactNode =
     searchResults.length === 1
       ? t("resultFound", { count: searchResults.length })
       : t("resultsFound", { count: searchResults.length });
   if (isAddingSong) {
-    status = t("addingSong");
+    status = (
+      <React.Fragment>
+        <div
+          className="size-4 animate-spin rounded-full border-2 border-gray-200 border-t-gray-600"
+          aria-hidden
+        />
+        {t("addingSong")}
+      </React.Fragment>
+    );
   } else if (isLoading) {
     status = (
-      // todo: localize.
       <React.Fragment>
         <div
           className="size-4 animate-spin rounded-full border-2 border-gray-200 border-t-gray-600"
@@ -97,12 +110,13 @@ export default function Search({
     );
   } else if (error) {
     status = error;
-  } else if (searchResults.length === 0 && searchValue) {
-    // todo: localize.
-    status = t("nothingFound", { query: searchValue });
+  } else if (trimmedValue && trimmedValue.length < MIN_SEARCH_LENGTH) {
+    status = t("typeMoreCharacters", { count: MIN_SEARCH_LENGTH });
+  } else if (searchResults.length === 0 && trimmedValue) {
+    status = t("nothingFound", { query: trimmedValue });
   }
 
-  const shouldRenderPopup = searchValue !== "" || isAddingSong;
+  const shouldRenderPopup = trimmedValue !== "" || isAddingSong;
 
   return (
     <Autocomplete.Root

@@ -31,6 +31,7 @@
   "addingSong": "Додаємо пісню...",
   "searching": "Виконується пошук...",
   "nothingFound": "За запитом «{{query}}» нічого не знайдено",
+  "typeMoreCharacters": "Введіть мінімум {{count}} символи для початку пошуку",
   "resultsFound": "Знайдено {{count}} результатів",
   "resultFound": "Знайдено {{count}} результат",
   "songExistsInSetlist": "Пісня вже є у списку",
