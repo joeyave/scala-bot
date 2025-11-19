@@ -76,7 +76,7 @@ func (c *BotController) CreateSong(bot *gotgbot.Bot, ctx *ext.Context) error {
 		return err
 	}
 
-	err = c.song(bot, ctx, driveFile.Id)
+	err = c.songByDriveFile(bot, ctx, driveFile)
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func (c *BotController) CreateSong(bot *gotgbot.Bot, ctx *ext.Context) error {
 	return c.GetSongs(0)(bot, ctx)
 }
 
-func (c *BotController) song(bot *gotgbot.Bot, ctx *ext.Context, driveFileID string) error {
+func (c *BotController) songByDriveFileID(bot *gotgbot.Bot, ctx *ext.Context, driveFileID string) error {
 
 	user := ctx.Data["user"].(*entity.User)
 
@@ -95,6 +95,25 @@ func (c *BotController) song(bot *gotgbot.Bot, ctx *ext.Context, driveFileID str
 		return err
 	}
 
+	return c.song(bot, ctx, driveFile, song, user)
+}
+
+func (c *BotController) songByDriveFile(bot *gotgbot.Bot, ctx *ext.Context, driveFile *drive.File) error {
+
+	user := ctx.Data["user"].(*entity.User)
+
+	// todo: consider disabling.
+	_, _ = ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
+
+	song, err := c.SongService.FindOrCreateOneByDriveFile(driveFile)
+	if err != nil {
+		return err
+	}
+
+	return c.song(bot, ctx, driveFile, song, user)
+}
+
+func (c *BotController) song(bot *gotgbot.Bot, ctx *ext.Context, driveFile *drive.File, song *entity.Song, user *entity.User) error {
 	markup := gotgbot.InlineKeyboardMarkup{
 		InlineKeyboard: keyboard.SongInit(song, user, 0, 0, ctx.EffectiveUser.LanguageCode),
 	}
@@ -124,7 +143,10 @@ func (c *BotController) song(bot *gotgbot.Bot, ctx *ext.Context, driveFileID str
 		return message, err
 	}
 
-	var msg *gotgbot.Message
+	var (
+		msg *gotgbot.Message
+		err error
+	)
 	if song.PDF.TgFileID == "" {
 		msg, err = sendDocumentByReader()
 	} else {
@@ -272,7 +294,7 @@ func (c *BotController) GetSongs(index int) handlers.Response {
 				}
 
 				if foundDriveFile != nil {
-					return c.song(bot, ctx, foundDriveFile.Id)
+					return c.songByDriveFileID(bot, ctx, foundDriveFile.Id)
 				} else {
 					return c.search(0)(bot, ctx)
 				}
@@ -421,7 +443,7 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 					return c.search(0)(bot, ctx)
 				}
 
-				return c.song(bot, ctx, song.DriveFileID)
+				return c.songByDriveFileID(bot, ctx, song.DriveFileID)
 			}
 		case 2:
 			{
@@ -882,7 +904,7 @@ func (c *BotController) SongVoices_CreateVoice(index int) handlers.Response {
 				if err != nil {
 					return err
 				}
-				err = c.song(bot, ctx, song.DriveFileID)
+				err = c.songByDriveFileID(bot, ctx, song.DriveFileID)
 				if err != nil {
 					return err
 				}

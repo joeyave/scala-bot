@@ -251,7 +251,7 @@ func (c *BotController) search(index int) handlers.Response {
 					_, err := ctx.EffectiveChat.SendMessage(bot, txt.Get("text.nothingFound", ctx.EffectiveUser.LanguageCode), &gotgbot.SendMessageOpts{ReplyMarkup: markup})
 					return err
 				} else if len(driveFiles) == 1 { // todo: test this case.
-					_ = c.song(bot, ctx, driveFiles[0].Id)
+					go c.songByDriveFile(bot, ctx, driveFiles[0]) //nolint:errcheck
 				}
 
 				markup := &gotgbot.ReplyKeyboardMarkup{
@@ -331,7 +331,7 @@ func (c *BotController) search(index int) handlers.Response {
 				}
 
 				if foundDriveFile != nil {
-					return c.song(bot, ctx, foundDriveFile.Id)
+					return c.songByDriveFileID(bot, ctx, foundDriveFile.Id)
 				} else {
 					return c.search(0)(bot, ctx)
 				}

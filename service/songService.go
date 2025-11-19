@@ -62,28 +62,13 @@ func (s *SongService) FindOneByNameAndBandID(driveFileID string, bandID primitiv
 	return s.songRepository.FindOneByName(driveFileID, bandID)
 }
 
-func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entity.Song, *drive.File, error) {
-	// 1. Fetch Drive file with limited retries
-	var driveFile *drive.File
-
-	retrier := retry.NewRetrier(5, 50*time.Millisecond, time.Second/2)
-
-	err := retrier.Run(func() error {
-		f, err := s.driveRepository.Files.Get(driveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
-		if err != nil {
-			return err
-		}
-
-		driveFile = f
-		return nil
-	})
-
+func (s *SongService) FindOrCreateOneByDriveFile(driveFile *drive.File) (*entity.Song, error) {
 	// 2. Try to find existing song
-	song, err := s.songRepository.FindOneByDriveFileID(driveFileID)
+	song, err := s.songRepository.FindOneByDriveFileID(driveFile.Id)
 	needsSave := false
 
 	if err != nil && !errors.Is(err, repository.ErrNotFound) {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// 3. Create new song if not found
@@ -103,12 +88,12 @@ func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entity.
 		}
 
 		if song.BandID == primitive.NilObjectID {
-			return nil, nil, fmt.Errorf("band not found for drive file %s", driveFileID)
+			return nil, fmt.Errorf("band not found for drive file %s", driveFile.Id)
 		}
 	}
 
 	if song == nil {
-		return nil, nil, fmt.Errorf("song is nil for drive file %s", driveFileID)
+		return nil, fmt.Errorf("song is nil for drive file %s", driveFile.Id)
 	}
 
 	// 4. Update PDF metadata if outdated or incomplete
@@ -129,8 +114,35 @@ func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entity.
 	if needsSave {
 		song, err = s.songRepository.UpdateOne(*song)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
+	}
+
+	return song, nil
+}
+
+func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entity.Song, *drive.File, error) {
+	// 1. Fetch Drive file with limited retries
+	var driveFile *drive.File
+
+	retrier := retry.NewRetrier(5, 50*time.Millisecond, time.Second/2)
+
+	err := retrier.Run(func() error {
+		f, err := s.driveRepository.Files.Get(driveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+		if err != nil {
+			return err
+		}
+
+		driveFile = f
+		return nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	song, err := s.FindOrCreateOneByDriveFile(driveFile)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	return song, driveFile, nil
