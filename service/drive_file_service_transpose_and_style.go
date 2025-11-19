@@ -528,10 +528,10 @@ func changeStyleForChordsAcross(ip *indexedParagraph, segmentID string, chordRat
 			requests = append(requests, styleRange(docStart, docEnd, chordStyle, "bold,foregroundColor", segmentID))
 
 			runeStart = token.Offset + int64(len([]rune(token.Chord.Root)))
+			runeEnd = runeStart + int64(len([]rune(token.Chord.Suffix)))
 			if mSuffix := token.Chord.MinorSuffix(); mSuffix != "" {
 				runeStart += int64(len([]rune(mSuffix)))
 			}
-			runeEnd = runeStart + int64(len([]rune(token.Chord.Suffix)))
 			if runeStart == runeEnd {
 				continue
 			}
