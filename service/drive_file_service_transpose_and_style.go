@@ -507,6 +507,10 @@ func changeStyleForChordsAcross(ip *indexedParagraph, segmentID string, chordRat
 		ForegroundColor: newOptionalColor(rgbColorChord),
 	}
 
+	chordSuffixStyle := docs.TextStyle{
+		BaselineOffset: "SUPERSCRIPT",
+	}
+
 	for _, line := range lines {
 		for _, token := range line {
 			if token.Chord == nil {
@@ -522,6 +526,21 @@ func changeStyleForChordsAcross(ip *indexedParagraph, segmentID string, chordRat
 				continue
 			}
 			requests = append(requests, styleRange(docStart, docEnd, chordStyle, "bold,foregroundColor", segmentID))
+
+			runeStart = token.Offset + int64(len([]rune(token.Chord.Root)))
+			if mSuffix := token.Chord.MinorSuffix(); mSuffix != "" {
+				runeStart += int64(len([]rune(mSuffix)))
+			}
+			runeEnd = runeStart + int64(len([]rune(token.Chord.Suffix)))
+			if runeStart == runeEnd {
+				continue
+			}
+			docStart, docEnd, ok = ip.toDocRange(runeStart, runeEnd)
+			if !ok {
+				continue
+			}
+			requests = append(requests, styleRange(docStart, docEnd, chordSuffixStyle, "baselineOffset", segmentID))
+
 		}
 	}
 
