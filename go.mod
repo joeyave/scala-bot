@@ -9,7 +9,7 @@ require (
 	github.com/go-playground/locales v0.14.1
 	github.com/gorilla/schema v1.4.1
 	github.com/hbollon/go-edlib v1.7.0
-	github.com/joeyave/chords-transposer v0.0.21
+	github.com/joeyave/chords-transposer v0.0.22
 	github.com/klauspost/lctime v0.1.0
 	github.com/rs/zerolog v1.34.0
 	github.com/u2takey/ffmpeg-go v0.5.0
