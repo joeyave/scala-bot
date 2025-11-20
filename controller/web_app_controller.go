@@ -112,8 +112,8 @@ func (h *WebAppController) UsersWithEvents(ctx *gin.Context) {
 		for _, event := range user.Events {
 			viewEvent := &Event{
 				ID:      event.ID,
-				Date:    event.Time.Format("2006-01-02"),
-				Weekday: event.Time.Weekday(),
+				Date:    event.TimeUTC.Format("2006-01-02"),
+				Weekday: event.TimeUTC.Weekday(),
 				Name:    event.Name,
 			}
 
@@ -479,10 +479,11 @@ func (h *WebAppController) FrequentEventNames(ctx *gin.Context) {
 }
 
 type EditEventData struct {
-	Name    string   `json:"name"`
-	Date    string   `json:"date"`
-	SongIDs []string `json:"songIds"`
-	Notes   string   `json:"notes"`
+	Name     string   `json:"name"`
+	Date     string   `json:"date"`
+	Timezone string   `json:"timezone"`
+	SongIDs  []string `json:"songIds"`
+	Notes    string   `json:"notes"`
 }
 
 func (h *WebAppController) EventEdit(ctx *gin.Context) {
@@ -541,7 +542,8 @@ func (h *WebAppController) EventEdit(ctx *gin.Context) {
 		log.Error().Err(err).Msgf("Error:")
 		return
 	}
-	event.Time = date
+	event.TimeUTC = date
+	event.Timezone = data.Timezone
 
 	var songIDs []primitive.ObjectID
 	for _, id := range data.SongIDs {

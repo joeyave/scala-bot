@@ -663,7 +663,7 @@ func (c *BotController) NotifyUsers(bot *gotgbot.Bot) {
 		}
 
 		for _, event := range events {
-			if time.Until(event.Time.Add(time.Hour*8)).Hours() < 48 {
+			if time.Until(event.TimeUTC.Add(time.Hour*8)).Hours() < 48 {
 				for _, membership := range event.Memberships {
 					if membership.Notified {
 						continue

@@ -22,6 +22,7 @@ export interface ReqQueryParamsUpdateEvent {
 export interface ReqBodyUpdateEvent {
   name?: string;
   date?: string;
+  timezone?: string;
   songIds?: string[];
   notes?: string;
 }

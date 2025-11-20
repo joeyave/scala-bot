@@ -43,7 +43,7 @@ func (s *EventService) FindManyFromTodayByBandIDAndWeekday(bandID primitive.Obje
 
 	var events2 []*entity.Event
 	for _, event := range events {
-		if event.Time.Weekday() == weekday {
+		if event.TimeUTC.Weekday() == weekday {
 			events2 = append(events2, event)
 		}
 	}

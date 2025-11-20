@@ -56,6 +56,7 @@ export interface RespEventData {
 export interface Event {
   id: string;
   time: string;
+  timezone: string;
   name: string;
   // memberships: any[] // todo
   bandId: string;

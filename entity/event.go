@@ -12,9 +12,10 @@ import (
 )
 
 type Event struct {
-	ID   primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Time time.Time          `bson:"time,omitempty" json:"time"`
-	Name string             `bson:"name,omitempty" json:"name"`
+	ID       primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	TimeUTC  time.Time          `bson:"time,omitempty" json:"time"`
+	Timezone string             `bson:"timezone,omitempty" json:"timezone"`
+	Name     string             `bson:"name,omitempty" json:"name"`
 
 	Memberships []*Membership `bson:"memberships,omitempty" json:"memberships"`
 
@@ -27,8 +28,20 @@ type Event struct {
 	Notes *string `bson:"notes" json:"notes"`
 }
 
+func (e *Event) TimeLocation() *time.Location {
+	loc, err := time.LoadLocation(e.Timezone)
+	if err != nil {
+		loc = time.Local
+	}
+	return loc
+}
+
+func (e *Event) LocalTime() time.Time {
+	return e.TimeUTC.In(e.TimeLocation())
+}
+
 func (e *Event) Alias(lang string) string {
-	t, _ := lctime.StrftimeLoc(util.IetfToIsoLangCode(lang), "%A, %d.%m.%Y", e.Time)
+	t, _ := lctime.StrftimeLoc(util.IetfToIsoLangCode(lang), "%A, %d.%m.%Y", e.TimeUTC)
 	return fmt.Sprintf("%s (%s)", e.Name, t)
 }
 

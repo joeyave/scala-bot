@@ -354,7 +354,14 @@ func main() {
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(message.All, botController.UpdateUser), 2)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(callbackquery.Prefix(fmt.Sprintf("%d:", state.SettingsChooseBand)), botController.UpdateUser), 2)
 
-	go botController.NotifyUsers(bot)
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Error().Msgf("NotifyUsers panic: %v", r)
+			}
+		}()
+		botController.NotifyUsers(bot)
+	}()
 
 	router := gin.New()
 	router.SetFuncMap(template.FuncMap{

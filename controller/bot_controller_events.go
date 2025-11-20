@@ -663,7 +663,7 @@ func (c *BotController) eventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *e
 			}
 		}
 
-		if (len(u.Events) > 0 && time.Since(u.Events[0].Time) < 24*364/3*time.Hour) || loadMore {
+		if (len(u.Events) > 0 && time.Since(u.Events[0].TimeUTC) < 24*364/3*time.Hour) || loadMore {
 			if isMember {
 				text += " ✅"
 				markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: text, CallbackData: util.CallbackData(state.EventMembersDeleteMember, roleID.Hex()+":"+membership.ID.Hex())}})
@@ -847,8 +847,10 @@ func (c *BotController) notifyAdded(bot *gotgbot.Bot, user *entity.User, members
 		return
 	}
 
-	now := time.Now().Local()
-	if event.Time.After(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())) {
+	now := time.Now().In(event.TimeLocation())
+	todayStartDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
+	if event.LocalTime().After(todayStartDate) {
 
 		markup := gotgbot.InlineKeyboardMarkup{
 			InlineKeyboard: [][]gotgbot.InlineKeyboardButton{{{
@@ -889,8 +891,10 @@ func (c *BotController) notifyDeleted(bot *gotgbot.Bot, user *entity.User, membe
 		return
 	}
 
-	now := time.Now().Local()
-	if event.Time.After(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())) {
+	now := time.Now().In(event.TimeLocation())
+	todayStartDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
+	if event.LocalTime().After(todayStartDate) {
 
 		markup := gotgbot.InlineKeyboardMarkup{
 			InlineKeyboard: [][]gotgbot.InlineKeyboardButton{{{

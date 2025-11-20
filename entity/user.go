@@ -165,7 +165,7 @@ type UserWithEvents struct {
 }
 
 func (u *UserWithEvents) NameWithStats() string {
-	return fmt.Sprintf("%s (%v, %d)", u.Name, lctime.Strftime("%d %b", u.Events[0].Time), len(u.Events))
+	return fmt.Sprintf("%s (%v, %d)", u.Name, lctime.Strftime("%d %b", u.Events[0].TimeUTC), len(u.Events))
 }
 
 //func (u *UserWithEvents) String(lang string) string {
@@ -198,7 +198,7 @@ func (u *UserWithEvents) NameWithStats() string {
 //	for _, role := range keys {
 //		mp2 := map[int][]*Event{}
 //		for _, event := range mp[role] {
-//			mp2[int(event.Time.Weekday())] = append(mp2[int(event.Time.Weekday())], event)
+//			mp2[int(event.TimeUTC.Weekday())] = append(mp2[int(event.TimeUTC.Weekday())], event)
 //		}
 //		str = fmt.Sprintf("%s\n - %s: %d", str, role.Name, len(mp[role]))
 //
@@ -211,7 +211,7 @@ func (u *UserWithEvents) NameWithStats() string {
 //
 //		str = fmt.Sprintf("%s (", str)
 //		for _, k := range keys {
-//			t, _ := lctime.StrftimeLoc(util.IetfToIsoLangCode(lang), "%a", mp2[k][0].Time)
+//			t, _ := lctime.StrftimeLoc(util.IetfToIsoLangCode(lang), "%a", mp2[k][0].TimeUTC)
 //			str = fmt.Sprintf("%s%s %d, ", str, t, len(mp2[k]))
 //		}
 //		str = fmt.Sprintf("%s)", str[:len(str)-2])

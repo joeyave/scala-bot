@@ -46,7 +46,7 @@ func (r *EventRepository) FindAll() ([]*entity.Event, error) {
 }
 
 func (r *EventRepository) FindAllFromToday() ([]*entity.Event, error) {
-	now := time.Now()
+	now := time.Now().UTC()
 
 	return r.find(
 		bson.M{

@@ -6,12 +6,14 @@ import {
 import { ReqBodyUpdateEvent } from "@/api/webapp/typesReq.ts";
 import { EditableTitle } from "@/components/EditableTitle/EditableTitle.tsx";
 import { Page } from "@/components/Page.tsx";
+import { SetlistSection } from "@/components/Setlist/SetlistSection.tsx";
 import { logger } from "@/helpers/logger.ts";
 import { setMainButton } from "@/helpers/mainButton.ts";
 import {
   isFormChanged,
   isFormValid,
 } from "@/pages/EventPage/util/formValidation.ts";
+import { getLocalDateTimeString } from "@/pages/EventPage/util/helpers.ts";
 import { EventForm, Song } from "@/pages/EventPage/util/types.ts";
 import { CalendarIcon } from "@heroicons/react/20/solid";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
@@ -21,12 +23,12 @@ import { Notify } from "notiflix";
 import { FC, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams, useSearchParams } from "react-router";
-import { SetlistSection } from "@/components/Setlist/SetlistSection.tsx";
 
 interface EventMutationData {
   eventId: string;
   name: string;
   date: Date;
+  timezone: string;
   songIds: string[];
   notes: string;
   messageId: string;
@@ -46,6 +48,7 @@ export function useEventMutation() {
       const body: ReqBodyUpdateEvent = {
         name: d.name,
         date: d.date.toISOString(),
+        timezone: d.timezone,
         songIds: d.songIds,
         notes: d.notes,
       };
@@ -72,6 +75,7 @@ const CreateEventPage: FC = () => {
       if (!data) {
         throw new Error("Failed to get event data");
       }
+      console.log(data);
       return data;
     },
   });
@@ -91,7 +95,10 @@ const CreateEventPage: FC = () => {
 
   const init: EventForm = {
     name: queryEventRes.data.event.name,
-    date: queryEventRes.data.event.time,
+    // date: getLocalDateTimeString(new Date(queryEventRes.data.event.time)),
+    date: getLocalDateTimeString(new Date(queryEventRes.data.event.time)).split(
+      "T",
+    )[0],
     setlist: queryEventRes.data.event.songs.map((song) => {
       const s: Song = {
         id: song.id,
@@ -134,6 +141,7 @@ const CreateEventPage: FC = () => {
       eventId: eventId,
       name: formData.name,
       date: new Date(formData.date),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       songIds: formData.setlist.map((song) => song.id),
       notes: formData.notes,
       messageId: messageId,
@@ -217,8 +225,9 @@ const CreateEventPage: FC = () => {
                 </IconButton>
               }
               type="date"
+              // type="datetime-local"
               className="w-full rounded-xl bg-[var(--tg-theme-section-bg-color)] px-3 py-2 text-base font-medium"
-              value={new Date(formData.date).toISOString().split("T")[0]}
+              value={formData.date}
               // status={!isDateValid(formData.date) ? "error" : undefined}
               onChange={(val) => {
                 setFormData((prev) => ({
