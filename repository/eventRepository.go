@@ -45,13 +45,13 @@ func (r *EventRepository) FindAll() ([]*entity.Event, error) {
 	return events, nil
 }
 
-func (r *EventRepository) FindAllFromToday() ([]*entity.Event, error) {
-	now := time.Now().UTC()
+func (r *EventRepository) FindUpcoming(from, to time.Time) ([]*entity.Event, error) {
 
 	return r.find(
 		bson.M{
 			"time": bson.M{
-				"$gte": time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+				"$gte": from,
+				"$lte": to,
 			},
 		},
 		bson.M{

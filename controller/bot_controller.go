@@ -656,43 +656,68 @@ func (c *BotController) songsAlbum(bot *gotgbot.Bot, ctx *ext.Context, songs []*
 }
 
 func (c *BotController) NotifyUsers(bot *gotgbot.Bot) {
-	for range time.Tick(time.Hour * 2) {
-		events, err := c.EventService.FindAllFromToday()
+	ticker := time.NewTicker(time.Hour)
+	defer ticker.Stop()
+
+	for {
+		<-ticker.C
+
+		now := time.Now().UTC()
+		from := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		to := from.Add(48 * time.Hour)
+
+		// Load upcoming events (48h window)
+		events, err := c.EventService.FindUpcoming(from, to)
 		if err != nil {
-			return
+			log.Error().Err(err).Msg("Failed to load upcoming events")
+			continue
 		}
 
 		for _, event := range events {
-			if time.Until(event.TimeUTC.Add(time.Hour*8)).Hours() < 48 {
-				for _, membership := range event.Memberships {
-					if membership.Notified {
-						continue
-					}
 
-					markup := gotgbot.InlineKeyboardMarkup{
-						InlineKeyboard: [][]gotgbot.InlineKeyboardButton{{{
+			// NEW: Do not send notifications at night (local event time)
+			if !canSendNow(event) {
+				continue
+			}
+
+			// Loop through memberships
+			for _, membership := range event.Memberships {
+				if membership.Notified {
+					continue
+				}
+
+				markup := gotgbot.InlineKeyboardMarkup{
+					InlineKeyboard: [][]gotgbot.InlineKeyboardButton{{
+						{
 							Text:         txt.Get("button.moreInfo", membership.User.LanguageCode),
 							CallbackData: util.CallbackData(state.EventCB, event.ID.Hex()+":init"),
-						}}},
-					}
+						},
+					}},
+				}
 
-					text := txt.Get("text.upcomingEventNotification", membership.User.LanguageCode, event.Alias(membership.User.LanguageCode))
+				text := txt.Get("text.upcomingEventNotification", membership.User.LanguageCode, event.Alias(membership.User.LanguageCode))
 
-					_, err = bot.SendMessage(membership.UserID, text, &gotgbot.SendMessageOpts{
-						ParseMode:   "HTML",
-						ReplyMarkup: markup,
-					})
-					if err != nil {
-						continue
-					}
+				_, err = bot.SendMessage(membership.UserID, text, &gotgbot.SendMessageOpts{
+					ParseMode:   "HTML",
+					ReplyMarkup: markup,
+				})
+				if err != nil {
+					log.Error().Err(err).Msgf("Failed to send notification to user %d", membership.UserID)
+					continue
+				}
 
-					membership.Notified = true
-					_, err := c.MembershipService.UpdateOne(*membership)
-					if err != nil {
-						return
-					}
+				membership.Notified = true
+				if _, err := c.MembershipService.UpdateOne(*membership); err != nil {
+					log.Error().Err(err).Msg("Failed to update membership after sending notification")
 				}
 			}
 		}
 	}
+}
+
+// Do not send notifications between 21:00–08:00 (event local time)
+func canSendNow(event *entity.Event) bool {
+	now := time.Now().In(event.TimeLocation())
+	hour := now.Hour()
+	return !(hour >= 21 || hour < 7)
 }

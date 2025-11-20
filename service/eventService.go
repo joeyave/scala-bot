@@ -27,8 +27,8 @@ func NewEventService(eventRepository *repository.EventRepository, membershipRepo
 	}
 }
 
-func (s *EventService) FindAllFromToday() ([]*entity.Event, error) {
-	return s.eventRepository.FindAllFromToday()
+func (s *EventService) FindUpcoming(from, to time.Time) ([]*entity.Event, error) {
+	return s.eventRepository.FindUpcoming(from, to)
 }
 
 func (s *EventService) FindManyFromTodayByBandID(bandID primitive.ObjectID) ([]*entity.Event, error) {
