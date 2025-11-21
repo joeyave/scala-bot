@@ -78,11 +78,10 @@ const CreateEventPage: FC = () => {
 
   const handleMainButtonClick = useCallback(() => {
     setMainButton({ loader: true });
-    const utc = new Date(formData.date).toISOString();
     postEvent("web_app_data_send", {
       data: JSON.stringify({
         name: formData.name,
-        time: utc,
+        date: formData.date,
         timezone: bandTimezone,
         songIds: formData.setlist.map((song) => song.id),
         notes: formData.notes,

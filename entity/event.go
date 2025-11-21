@@ -12,10 +12,9 @@ import (
 )
 
 type Event struct {
-	ID       primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	TimeUTC  time.Time          `bson:"time,omitempty" json:"time"`
-	Timezone string             `bson:"timezone,omitempty" json:"timezone"`
-	Name     string             `bson:"name,omitempty" json:"name"`
+	ID      primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	TimeUTC time.Time          `bson:"time,omitempty" json:"time"`
+	Name    string             `bson:"name,omitempty" json:"name"`
 
 	Memberships []*Membership `bson:"memberships,omitempty" json:"memberships"`
 

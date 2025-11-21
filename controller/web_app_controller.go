@@ -489,10 +489,11 @@ func (h *WebAppController) FrequentEventNames(ctx *gin.Context) {
 }
 
 type EditEventData struct {
-	Name    string   `json:"name"`
-	Date    string   `json:"date"`
-	SongIDs []string `json:"songIds"`
-	Notes   string   `json:"notes"`
+	Name     string   `json:"name"`
+	Date     string   `json:"date"`
+	Timezone string   `json:"timezone"`
+	SongIDs  []string `json:"songIds"`
+	Notes    string   `json:"notes"`
 }
 
 func (h *WebAppController) EventEdit(ctx *gin.Context) {
@@ -545,13 +546,20 @@ func (h *WebAppController) EventEdit(ctx *gin.Context) {
 	}
 
 	event.Name = data.Name
-	date, err := time.Parse(time.RFC3339, data.Date)
+
+	loc, err := time.LoadLocation(data.Timezone)
+	if err != nil {
+		loc = time.UTC
+	}
+
+	// todo: format.
+	eventDate, err := time.ParseInLocation("2006-01-02T15:04", data.Date, loc)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		log.Error().Err(err).Msgf("Error:")
 		return
 	}
-	event.TimeUTC = date
+	event.TimeUTC = eventDate.UTC()
 
 	var songIDs []primitive.ObjectID
 	for _, id := range data.SongIDs {

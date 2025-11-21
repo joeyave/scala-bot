@@ -64,24 +64,51 @@ func (c *BotController) event(bot *gotgbot.Bot, ctx *ext.Context, event *entity.
 
 func (c *BotController) CreateEvent(bot *gotgbot.Bot, ctx *ext.Context) error {
 
-	var event *entity.Event
-	err := json.Unmarshal([]byte(ctx.EffectiveMessage.WebAppData.Data), &event)
+	var data *EditEventData
+	err := json.Unmarshal([]byte(ctx.EffectiveMessage.WebAppData.Data), &data)
 	if err != nil {
 		return err
 	}
 
 	user := ctx.Data["user"].(*entity.User)
 
-	event.BandID = user.BandID
+	newEvent := &entity.Event{
+		Name:   data.Name,
+		BandID: user.BandID,
+	}
 
-	createdEvent, err := c.EventService.UpdateOne(*event)
+	loc, err := time.LoadLocation(data.Timezone)
+	if err != nil {
+		loc = time.UTC
+	}
+
+	// todo: format.
+	eventDate, err := time.ParseInLocation("2006-01-02T15:04", data.Date, loc)
+	if err != nil {
+		return err
+	}
+	newEvent.TimeUTC = eventDate.UTC()
+
+	for _, id := range data.SongIDs {
+		hex, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			continue
+		}
+		newEvent.SongIDs = append(newEvent.SongIDs, hex)
+	}
+
+	if data.Notes != "" {
+		newEvent.Notes = &data.Notes
+	}
+
+	createdEvent, err := c.EventService.UpdateOne(*newEvent)
 	if err != nil {
 		return err
 	}
 
 	// todo: remove when added this as setting to band.
 	if createdEvent.Band.Timezone == "" {
-		createdEvent.Band.Timezone = event.Timezone
+		createdEvent.Band.Timezone = data.Timezone
 		_, err := c.BandService.UpdateOne(*createdEvent.Band)
 		if err != nil {
 			log.Info().Msgf("Error updating band timezone: %v", err)

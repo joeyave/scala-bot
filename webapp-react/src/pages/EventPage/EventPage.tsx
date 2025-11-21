@@ -33,7 +33,8 @@ import { useParams, useSearchParams } from "react-router";
 interface EventMutationData {
   eventId: string;
   name: string;
-  date: Date;
+  date: string;
+  timezone: string;
   songIds: string[];
   notes: string;
   messageId: string;
@@ -52,7 +53,8 @@ export function useEventMutation() {
 
       const body: ReqBodyUpdateEvent = {
         name: d.name,
-        date: d.date.toISOString(),
+        date: d.date,
+        timezone: d.timezone,
         songIds: d.songIds,
         notes: d.notes,
       };
@@ -154,7 +156,8 @@ const EventPage: FC = () => {
     const data: EventMutationData = {
       eventId: eventId,
       name: formData.name,
-      date: new Date(formData.date),
+      date: formData.date,
+      timezone: bandTimezone,
       songIds: formData.setlist.map((song) => song.id),
       notes: formData.notes,
       messageId: messageId,
@@ -176,6 +179,7 @@ const EventPage: FC = () => {
     chatId,
     eventId,
     formData.date,
+    bandTimezone,
     formData.name,
     formData.notes,
     formData.setlist,
