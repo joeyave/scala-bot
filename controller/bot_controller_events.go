@@ -13,10 +13,12 @@ import (
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers"
 	"github.com/joeyave/scala-bot/entity"
+	"github.com/joeyave/scala-bot/helpers"
 	"github.com/joeyave/scala-bot/keyboard"
 	"github.com/joeyave/scala-bot/state"
 	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -77,6 +79,15 @@ func (c *BotController) CreateEvent(bot *gotgbot.Bot, ctx *ext.Context) error {
 		return err
 	}
 
+	// todo: remove when added this as setting to band.
+	if createdEvent.Band.Timezone == "" {
+		createdEvent.Band.Timezone = event.Timezone
+		_, err := c.BandService.UpdateOne(*createdEvent.Band)
+		if err != nil {
+			log.Info().Msgf("Error updating band timezone: %v", err)
+		}
+	}
+
 	user.State.Index = 0
 	err = c.event(bot, ctx, createdEvent)
 	if err != nil {
@@ -106,7 +117,7 @@ func (c *BotController) GetEvents(index int) handlers.Response {
 		switch index {
 		case 0:
 			{
-				events, err := c.EventService.FindManyFromTodayByBandID(user.BandID)
+				events, err := c.EventService.FindManyFromTodayByBandID(user.BandID, user.Band.GetLocation())
 				if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 					return err
 				}
@@ -118,7 +129,7 @@ func (c *BotController) GetEvents(index int) handlers.Response {
 
 				user.Cache.Buttons = keyboard.GetEventsStateFilterButtons(events, ctx.EffectiveUser.LanguageCode)
 				markup.Keyboard = append(markup.Keyboard, user.Cache.Buttons)
-				markup.Keyboard = append(markup.Keyboard, []gotgbot.KeyboardButton{{Text: txt.Get("button.createEvent", ctx.EffectiveUser.LanguageCode), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/webapp-react/#/events/create?bandId=%s&driveFolderId=%s&archiveFolderId=%s", os.Getenv("BOT_DOMAIN"), user.Band.ID.Hex(), user.Band.DriveFolderID, user.Band.ArchiveFolderID)}}})
+				markup.Keyboard = append(markup.Keyboard, []gotgbot.KeyboardButton{{Text: txt.Get("button.createEvent", ctx.EffectiveUser.LanguageCode), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/webapp-react/#/events/create?bandId=%s&bandTimezone=%s&driveFolderId=%s&archiveFolderId=%s", os.Getenv("BOT_DOMAIN"), user.Band.ID.Hex(), user.Band.Timezone, user.Band.DriveFolderID, user.Band.ArchiveFolderID)}}})
 
 				for _, event := range events {
 					markup.Keyboard = append(markup.Keyboard, keyboard.EventButton(event, user, ctx.EffectiveUser.LanguageCode, false))
@@ -201,25 +212,27 @@ func (c *BotController) filterEvents(index int) handlers.Response {
 					err    error
 				)
 
+				bandLoc := user.Band.GetLocation()
+
 				if user.Cache.Filter == txt.Get("button.eventsWithMe", ctx.EffectiveUser.LanguageCode) {
-					events, err = c.EventService.FindManyFromTodayByBandIDAndUserID(user.BandID, user.ID, user.Cache.PageIndex)
+					events, err = c.EventService.FindManyFromTodayByBandIDAndUserID(user.BandID, bandLoc, user.ID, user.Cache.PageIndex)
 				} else if user.Cache.Filter == txt.Get("button.archive", ctx.EffectiveUser.LanguageCode) {
 					if keyboard.IsWeekdayButton(ctx.EffectiveMessage.Text) {
-						events, err = c.EventService.FindManyUntilTodayByBandIDAndWeekdayAndPageNumber(user.BandID, keyboard.ParseWeekdayButton(ctx.EffectiveMessage.Text), user.Cache.PageIndex)
+						events, err = c.EventService.FindManyUntilTodayByBandIDAndWeekdayAndPageNumber(user.BandID, bandLoc, keyboard.ParseWeekdayButton(ctx.EffectiveMessage.Text), user.Cache.PageIndex)
 						user.Cache.Query = ctx.EffectiveMessage.Text
 					} else if keyboard.IsWeekdayButton(user.Cache.Query) && (ctx.EffectiveMessage.Text == txt.Get("button.next", ctx.EffectiveUser.LanguageCode) || ctx.EffectiveMessage.Text == txt.Get("button.prev", ctx.EffectiveUser.LanguageCode)) {
-						events, err = c.EventService.FindManyUntilTodayByBandIDAndWeekdayAndPageNumber(user.BandID, keyboard.ParseWeekdayButton(user.Cache.Query), user.Cache.PageIndex)
+						events, err = c.EventService.FindManyUntilTodayByBandIDAndWeekdayAndPageNumber(user.BandID, bandLoc, keyboard.ParseWeekdayButton(user.Cache.Query), user.Cache.PageIndex)
 					} else if ctx.EffectiveMessage.Text == txt.Get("button.eventsWithMe", ctx.EffectiveUser.LanguageCode) {
-						events, err = c.EventService.FindManyUntilTodayByBandIDAndUserIDAndPageNumber(user.BandID, user.ID, user.Cache.PageIndex)
+						events, err = c.EventService.FindManyUntilTodayByBandIDAndUserIDAndPageNumber(user.BandID, bandLoc, user.ID, user.Cache.PageIndex)
 						user.Cache.Query = ctx.EffectiveMessage.Text
 					} else if user.Cache.Query == txt.Get("button.eventsWithMe", ctx.EffectiveUser.LanguageCode) && (ctx.EffectiveMessage.Text == txt.Get("button.next", ctx.EffectiveUser.LanguageCode) || ctx.EffectiveMessage.Text == txt.Get("button.prev", ctx.EffectiveUser.LanguageCode)) {
-						events, err = c.EventService.FindManyUntilTodayByBandIDAndUserIDAndPageNumber(user.BandID, user.ID, user.Cache.PageIndex)
+						events, err = c.EventService.FindManyUntilTodayByBandIDAndUserIDAndPageNumber(user.BandID, bandLoc, user.ID, user.Cache.PageIndex)
 					} else {
-						events, err = c.EventService.FindManyUntilTodayByBandIDAndPageNumber(user.BandID, user.Cache.PageIndex)
+						events, err = c.EventService.FindManyUntilTodayByBandIDAndPageNumber(user.BandID, bandLoc, user.Cache.PageIndex)
 						user.Cache.Buttons = keyboard.GetEventsStateFilterButtons(events, ctx.EffectiveUser.LanguageCode)
 					}
 				} else if keyboard.IsWeekdayButton(user.Cache.Filter) {
-					events, err = c.EventService.FindManyFromTodayByBandIDAndWeekday(user.BandID, keyboard.ParseWeekdayButton(user.Cache.Filter))
+					events, err = c.EventService.FindManyFromTodayByBandIDAndWeekday(user.BandID, keyboard.ParseWeekdayButton(user.Cache.Filter), bandLoc)
 				}
 				if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 					return err
@@ -243,7 +256,7 @@ func (c *BotController) filterEvents(index int) handlers.Response {
 				}
 
 				markup.Keyboard = append(markup.Keyboard, buttons)
-				markup.Keyboard = append(markup.Keyboard, []gotgbot.KeyboardButton{{Text: txt.Get("button.createEvent", ctx.EffectiveUser.LanguageCode), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/webapp-react/#/events/create?bandId=%s&driveFolderId=%s&archiveFolderId=%s", os.Getenv("BOT_DOMAIN"), user.Band.ID.Hex(), user.Band.DriveFolderID, user.Band.ArchiveFolderID)}}})
+				markup.Keyboard = append(markup.Keyboard, []gotgbot.KeyboardButton{{Text: txt.Get("button.createEvent", ctx.EffectiveUser.LanguageCode), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/webapp-react/#/events/create?bandId=%s&bandTimezone=%s&driveFolderId=%s&archiveFolderId=%s", os.Getenv("BOT_DOMAIN"), user.Band.Timezone, user.Band.ID.Hex(), user.Band.DriveFolderID, user.Band.ArchiveFolderID)}}})
 
 				for _, event := range events {
 					if user.Cache.Filter == txt.Get("button.eventsWithMe", ctx.EffectiveUser.LanguageCode) {
@@ -633,7 +646,11 @@ func (c *BotController) eventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *e
 		return err
 	}
 
-	fromDate := time.Date(time.Now().Year(), time.January, 1, 0, 0, 0, 0, time.Local)
+	now := event.Band.GetNowTime()
+	fromDate := time.Date(
+		now.Year(), time.January, 1,
+		0, 0, 0, 0,
+		now.Location())
 	usersWithEvents, err := c.UserService.FindManyByBandIDAndRoleID(event.BandID, roleID, fromDate)
 	if err != nil {
 		return err
@@ -663,7 +680,7 @@ func (c *BotController) eventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *e
 			}
 		}
 
-		if (len(u.Events) > 0 && time.Since(u.Events[0].TimeUTC) < 24*364/3*time.Hour) || loadMore {
+		if (len(u.Events) > 0 && u.Events[0].TimeUTC.After(time.Now().AddDate(0, -4, 0))) || loadMore {
 			if isMember {
 				text += " ✅"
 				markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: text, CallbackData: util.CallbackData(state.EventMembersDeleteMember, roleID.Hex()+":"+membership.ID.Hex())}})
@@ -847,10 +864,8 @@ func (c *BotController) notifyAdded(bot *gotgbot.Bot, user *entity.User, members
 		return
 	}
 
-	now := time.Now().In(event.TimeLocation())
-	todayStartDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-
-	if event.LocalTime().After(todayStartDate) {
+	todayStartUTC := helpers.GetStartOfDayInLocUTC(event.Band.GetLocation())
+	if event.TimeUTC.After(todayStartUTC) {
 
 		markup := gotgbot.InlineKeyboardMarkup{
 			InlineKeyboard: [][]gotgbot.InlineKeyboardButton{{{
@@ -891,10 +906,8 @@ func (c *BotController) notifyDeleted(bot *gotgbot.Bot, user *entity.User, membe
 		return
 	}
 
-	now := time.Now().In(event.TimeLocation())
-	todayStartDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-
-	if event.LocalTime().After(todayStartDate) {
+	todayStartUTC := helpers.GetStartOfDayInLocUTC(event.Band.GetLocation())
+	if event.TimeUTC.After(todayStartUTC) {
 
 		markup := gotgbot.InlineKeyboardMarkup{
 			InlineKeyboard: [][]gotgbot.InlineKeyboardButton{{{

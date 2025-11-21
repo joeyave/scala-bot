@@ -41,11 +41,11 @@ import (
 
 func main() {
 
-	location, err := time.LoadLocation("Europe/Kiev")
-	if err != nil {
-		log.Fatal().Msgf("Err loading location: %v", err)
-	}
-	time.Local = location
+	//location, err := time.LoadLocation("Europe/Kiev")
+	//if err != nil {
+	//	log.Fatal().Msgf("Err loading location: %v", err)
+	//}
+	//time.Local = location
 
 	out := zerolog.ConsoleWriter{
 		Out:        os.Stdout,

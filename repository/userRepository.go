@@ -273,7 +273,7 @@ func (r *UserRepository) FindManyExtraByBandIDAndRoleID(bandID primitive.ObjectI
 						"if": bson.M{
 							"$eq": bson.A{bson.M{"$size": "$events"}, 0},
 						},
-						"then": time.Now().AddDate(10, 0, 0),
+						"then": time.Now().AddDate(10, 0, 0), // todo: refactor.
 						"else": bson.M{
 							"$first": "$events.time",
 						},

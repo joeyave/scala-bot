@@ -662,12 +662,15 @@ func (c *BotController) NotifyUsers(bot *gotgbot.Bot) {
 	for {
 		<-ticker.C
 
-		now := time.Now().UTC()
-		from := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		now := time.Now()
+		from := time.Date(
+			now.Year(), now.Month(), now.Day(),
+			0, 0, 0, 0,
+			now.Location())
 		to := from.Add(48 * time.Hour)
 
 		// Load upcoming events (48h window)
-		events, err := c.EventService.FindUpcoming(from, to)
+		events, err := c.EventService.FindBetweenDates(from, to)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to load upcoming events")
 			continue
@@ -717,7 +720,7 @@ func (c *BotController) NotifyUsers(bot *gotgbot.Bot) {
 
 // Do not send notifications between 21:00–08:00 (event local time)
 func canSendNow(event *entity.Event) bool {
-	now := time.Now().In(event.TimeLocation())
+	now := event.Band.GetNowTime()
 	hour := now.Hour()
 	return !(hour >= 21 || hour < 7)
 }

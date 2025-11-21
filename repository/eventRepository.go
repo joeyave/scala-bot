@@ -45,23 +45,6 @@ func (r *EventRepository) FindAll() ([]*entity.Event, error) {
 	return events, nil
 }
 
-func (r *EventRepository) FindUpcoming(from, to time.Time) ([]*entity.Event, error) {
-
-	return r.find(
-		bson.M{
-			"time": bson.M{
-				"$gte": from,
-				"$lte": to,
-			},
-		},
-		bson.M{
-			"$sort": bson.M{
-				"time": 1,
-			},
-		},
-	)
-}
-
 func (r *EventRepository) FindOneOldestByBandID(bandID primitive.ObjectID) (*entity.Event, error) {
 	event, err := r.find(
 		bson.M{
@@ -83,14 +66,13 @@ func (r *EventRepository) FindOneOldestByBandID(bandID primitive.ObjectID) (*ent
 	return event[0], err
 }
 
-func (r *EventRepository) FindManyFromTodayByBandID(bandID primitive.ObjectID) ([]*entity.Event, error) {
-	now := time.Now()
+func (r *EventRepository) FindManyFromDateByBandID(bandID primitive.ObjectID, fromUTC time.Time) ([]*entity.Event, error) {
 
 	return r.find(
 		bson.M{
 			"bandId": bandID,
 			"time": bson.M{
-				"$gte": time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+				"$gte": fromUTC,
 			},
 		},
 		bson.M{
@@ -101,13 +83,30 @@ func (r *EventRepository) FindManyFromTodayByBandID(bandID primitive.ObjectID) (
 	)
 }
 
-func (r *EventRepository) FindManyBetweenDatesByBandID(from time.Time, to time.Time, bandID primitive.ObjectID) ([]*entity.Event, error) {
+func (r *EventRepository) FindBetweenDates(fromUTC, toUTC time.Time) ([]*entity.Event, error) {
+
+	return r.find(
+		bson.M{
+			"time": bson.M{
+				"$gte": fromUTC,
+				"$lte": toUTC,
+			},
+		},
+		bson.M{
+			"$sort": bson.M{
+				"time": 1,
+			},
+		},
+	)
+}
+
+func (r *EventRepository) FindManyBetweenDatesByBandID(fromUTC, toUTC time.Time, bandID primitive.ObjectID) ([]*entity.Event, error) {
 	return r.find(
 		bson.M{
 			"bandId": bandID,
 			"time": bson.M{
-				"$gte": from,
-				"$lte": to,
+				"$gte": fromUTC,
+				"$lte": toUTC,
 			},
 		},
 		bson.M{
@@ -138,13 +137,12 @@ func (r *EventRepository) FindManyByBandIDAndPageNumber(bandID primitive.ObjectI
 	)
 }
 
-func (r *EventRepository) FindManyUntilTodayByBandIDAndPageNumber(bandID primitive.ObjectID, pageNumber int) ([]*entity.Event, error) {
-
+func (r *EventRepository) FindManyUntilByBandIDAndPageNumber(bandID primitive.ObjectID, untilUTC time.Time, pageNumber int) ([]*entity.Event, error) {
 	return r.find(
 		bson.M{
 			"bandId": bandID,
 			"time": bson.M{
-				"$lt": time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Now().Location()),
+				"$lt": untilUTC,
 			},
 		},
 		bson.M{
@@ -161,13 +159,12 @@ func (r *EventRepository) FindManyUntilTodayByBandIDAndPageNumber(bandID primiti
 	)
 }
 
-func (r *EventRepository) FindManyUntilTodayByBandIDAndWeekdayAndPageNumber(bandID primitive.ObjectID, weekday time.Weekday, pageNumber int) ([]*entity.Event, error) {
-
+func (r *EventRepository) FindManyUntilByBandIDAndWeekdayAndPageNumber(bandID primitive.ObjectID, untilUTC time.Time, weekday time.Weekday, pageNumber int) ([]*entity.Event, error) {
 	return r.find(
 		bson.M{
 			"bandId": bandID,
 			"time": bson.M{
-				"$lt": time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Now().Location()),
+				"$lt": untilUTC,
 			},
 			"dayOfWeek": int(weekday) + 1,
 		},
@@ -185,14 +182,13 @@ func (r *EventRepository) FindManyUntilTodayByBandIDAndWeekdayAndPageNumber(band
 	)
 }
 
-func (r *EventRepository) FindManyUntilTodayByBandIDAndUserIDAndPageNumber(bandID primitive.ObjectID, userID int64, pageNumber int) ([]*entity.Event, error) {
-
+func (r *EventRepository) FindManyUntilByBandIDAndUserIDAndPageNumber(bandID primitive.ObjectID, userID int64, untilUTC time.Time, pageNumber int) ([]*entity.Event, error) {
 	return r.find(
 		bson.M{
 			"bandId":             bandID,
 			"memberships.userId": userID,
 			"time": bson.M{
-				"$lt": time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Now().Location()),
+				"$lt": untilUTC,
 			},
 		},
 		bson.M{
@@ -209,15 +205,13 @@ func (r *EventRepository) FindManyUntilTodayByBandIDAndUserIDAndPageNumber(bandI
 	)
 }
 
-func (r *EventRepository) FindManyFromTodayByBandIDAndUserID(bandID primitive.ObjectID, userID int64, pageNumber int) ([]*entity.Event, error) {
-	now := time.Now()
-
+func (r *EventRepository) FindManyFromTodayByBandIDAndUserID(bandID primitive.ObjectID, userID int64, fromUTC time.Time, pageNumber int) ([]*entity.Event, error) {
 	return r.find(
 		bson.M{
 			"bandId":             bandID,
 			"memberships.userId": userID,
 			"time": bson.M{
-				"$gte": time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()),
+				"$gte": fromUTC,
 			},
 		},
 		bson.M{
@@ -258,18 +252,14 @@ func (r *EventRepository) FindOneByID(ID primitive.ObjectID) (*entity.Event, err
 	return events[0], nil
 }
 
-func (r *EventRepository) FindOneByNameAndTimeAndBandID(name string, t time.Time, bandID primitive.ObjectID) (*entity.Event, error) {
+func (r *EventRepository) FindOneByNameAndTimeAndBandID(name string, fromUTC, toUTC time.Time, bandID primitive.ObjectID) (*entity.Event, error) {
 	events, err := r.find(
 		bson.M{
 			"name": name,
 			"time": bson.M{
-				"$gte": time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()),
-				"$lt":  t.AddDate(0, 0, 1),
+				"$gte": fromUTC,
+				"$lt":  toUTC,
 			},
-			// "time": bson.M{
-			// 	"$gte": t,
-			// 	"$lt":  t.AddDate(0, 0, 1),
-			// },
 			"bandId": bandID,
 		},
 		bson.M{
@@ -719,7 +709,7 @@ func (r *EventRepository) PullSongID(eventID primitive.ObjectID, songID primitiv
 	return err
 }
 
-func (r *EventRepository) GetMostFrequentEventNames(bandID primitive.ObjectID, limit int) ([]*entity.EventNameFrequencies, error) {
+func (r *EventRepository) GetMostFrequentEventNames(bandID primitive.ObjectID, limit int, fromUTC time.Time) ([]*entity.EventNameFrequencies, error) {
 
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("events")
 
@@ -728,7 +718,7 @@ func (r *EventRepository) GetMostFrequentEventNames(bandID primitive.ObjectID, l
 			"$match": bson.M{
 				"bandId": bandID,
 				"_id": bson.M{
-					"$gte": primitive.NewObjectIDFromTimestamp(time.Now().AddDate(0, -3, 0)),
+					"$gte": primitive.NewObjectIDFromTimestamp(fromUTC),
 				},
 			},
 		},

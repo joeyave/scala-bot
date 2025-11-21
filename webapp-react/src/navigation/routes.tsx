@@ -11,7 +11,7 @@ const SongConfirmationPage = lazy(
   () => import("@/pages/SongPage/SongConfirmationPage"),
 );
 
-const EventPage = lazy(() => import("@/pages/EventPage/EventPage"));
+const EventPage = lazy(() => import("@/pages/EventPage/EventPage.tsx"));
 const CreateEventPage = lazy(() => import("@/pages/EventPage/CreateEventPage"));
 
 interface Route {

@@ -17,7 +17,7 @@ import (
 
 func EventButton(event *entity.Event, user *entity.User, lang string, showMemberships bool) []gotgbot.KeyboardButton {
 
-	t, _ := lctime.StrftimeLoc(util.IetfToIsoLangCode(lang), "%A, %d.%m.%Y", event.TimeUTC)
+	t, _ := lctime.StrftimeLoc(util.IetfToIsoLangCode(lang), "%A, %d.%m.%Y", event.GetLocalTime())
 	text := fmt.Sprintf("%s (%s)", event.Name, t)
 
 	if user != nil {
@@ -170,7 +170,7 @@ func GetEventsStateFilterButtons(events []*entity.Event, lang string) []gotgbot.
 
 	weekdaysMap := make(map[time.Weekday]time.Time, 0)
 	for _, event := range events {
-		weekdaysMap[event.TimeUTC.Weekday()] = event.TimeUTC
+		weekdaysMap[event.GetLocalTime().Weekday()] = event.GetLocalTime()
 	}
 
 	var times []time.Time

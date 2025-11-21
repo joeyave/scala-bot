@@ -47,11 +47,13 @@ func (h *WebAppController) Statistics(ctx *gin.Context) {
 		return
 	}
 
+	now := band.GetNowTime()
+
 	ctx.HTML(http.StatusOK, "statistics.go.html", gin.H{
 		"Lang": ctx.Query("lang"),
 
 		//"Users": viewUsers,
-		"FromDate": time.Date(time.Now().Year(), time.January, 1, 0, 0, 0, 0, time.Local),
+		"FromDate": time.Date(now.Year(), time.January, 1, 0, 0, 0, 0, now.Location()),
 		"BandID":   bandID.Hex(),
 		"Roles":    band.Roles,
 	})
@@ -89,13 +91,21 @@ func (h *WebAppController) UsersWithEvents(ctx *gin.Context) {
 		return
 	}
 
+	band, err := h.BandService.FindOneByID(bandID)
+	if err != nil {
+		ctx.JSON(500, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+
+	now := band.GetNowTime()
+
 	from := ctx.Query("from")
 	fromDate, err := time.Parse("02.01.2006", from)
 	if err != nil {
-		fromDate = time.Date(time.Now().Year(), time.January, 1, 0, 0, 0, 0, time.Local)
+		fromDate = time.Date(now.Year(), time.January, 1, 0, 0, 0, 0, time.Local)
 	}
 
-	users, err := h.UserService.FindManyExtraByBandID(bandID, fromDate, time.Now())
+	users, err := h.UserService.FindManyExtraByBandID(bandID, fromDate, now)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		log.Error().Err(err).Msgf("Error:")
@@ -112,8 +122,8 @@ func (h *WebAppController) UsersWithEvents(ctx *gin.Context) {
 		for _, event := range user.Events {
 			viewEvent := &Event{
 				ID:      event.ID,
-				Date:    event.TimeUTC.Format("2006-01-02"),
-				Weekday: event.TimeUTC.Weekday(),
+				Date:    event.TimeUTC.In(band.GetLocation()).Format("2006-01-02"),
+				Weekday: event.TimeUTC.In(band.GetLocation()).Weekday(),
 				Name:    event.Name,
 			}
 
@@ -479,11 +489,10 @@ func (h *WebAppController) FrequentEventNames(ctx *gin.Context) {
 }
 
 type EditEventData struct {
-	Name     string   `json:"name"`
-	Date     string   `json:"date"`
-	Timezone string   `json:"timezone"`
-	SongIDs  []string `json:"songIds"`
-	Notes    string   `json:"notes"`
+	Name    string   `json:"name"`
+	Date    string   `json:"date"`
+	SongIDs []string `json:"songIds"`
+	Notes   string   `json:"notes"`
 }
 
 func (h *WebAppController) EventEdit(ctx *gin.Context) {
@@ -543,7 +552,6 @@ func (h *WebAppController) EventEdit(ctx *gin.Context) {
 		return
 	}
 	event.TimeUTC = date
-	event.Timezone = data.Timezone
 
 	var songIDs []primitive.ObjectID
 	for _, id := range data.SongIDs {

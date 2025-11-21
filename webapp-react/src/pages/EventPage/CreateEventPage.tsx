@@ -10,7 +10,13 @@ import { getLocalDateTimeString } from "@/pages/EventPage/util/helpers.ts";
 import { EventForm } from "@/pages/EventPage/util/types.ts";
 import { CalendarIcon } from "@heroicons/react/20/solid";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { IconButton, Input, List, Textarea } from "@telegram-apps/telegram-ui";
+import {
+  IconButton,
+  Input,
+  List,
+  Section,
+  Textarea,
+} from "@telegram-apps/telegram-ui";
 import { mainButton, miniApp, postEvent } from "@tma.js/sdk-react";
 import { FC, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -21,6 +27,9 @@ const CreateEventPage: FC = () => {
 
   const [searchParams] = useSearchParams();
   const bandId = searchParams.get("bandId");
+  const bandTimezone =
+    searchParams.get("bandTimezone") ||
+    Intl.DateTimeFormat().resolvedOptions().timeZone;
   const driveFolderId = searchParams.get("driveFolderId");
   const archiveFolderId = searchParams.get("archiveFolderId");
 
@@ -43,7 +52,7 @@ const CreateEventPage: FC = () => {
   const [initFormData] = useState<EventForm>({
     name: "",
     // date: getLocalDateTimeString(new Date()),
-    date: getLocalDateTimeString(new Date()).split("T")[0],
+    date: getLocalDateTimeString(new Date(), bandTimezone).split("T")[0],
     setlist: [],
     notes: "",
   });
@@ -69,19 +78,18 @@ const CreateEventPage: FC = () => {
 
   const handleMainButtonClick = useCallback(() => {
     setMainButton({ loader: true });
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const utc = new Date(formData.date).toISOString();
     postEvent("web_app_data_send", {
       data: JSON.stringify({
         name: formData.name,
         time: utc,
-        timezone: timezone,
+        timezone: bandTimezone,
         songIds: formData.setlist.map((song) => song.id),
         notes: formData.notes,
       }),
     });
     miniApp.close();
-  }, [formData]);
+  }, [formData, bandTimezone]);
 
   useEffect(() => {
     mainButton.onClick(handleMainButtonClick);
@@ -125,24 +133,26 @@ const CreateEventPage: FC = () => {
               ) || []}
             </datalist>
 
-            <Input
-              after={
-                <IconButton mode="plain" size="s">
-                  <CalendarIcon className="h-5 w-5 text-[var(--tg-theme-accent-text-color)]"></CalendarIcon>
-                </IconButton>
-              }
-              // type="datetime-local"
-              type="date"
-              className="w-full rounded-xl bg-[var(--tg-theme-section-bg-color)] px-3 py-2 text-base font-medium"
-              value={formData.date}
-              // status={!isDateValid(formData.date) ? "error" : undefined}
-              onChange={(val) => {
-                setFormData((prev) => ({
-                  ...prev,
-                  date: val.target.value,
-                }));
-              }}
-            />
+            <Section footer={bandTimezone}>
+              <Input
+                after={
+                  <IconButton mode="plain" size="s">
+                    <CalendarIcon className="h-5 w-5 text-[var(--tg-theme-accent-text-color)]"></CalendarIcon>
+                  </IconButton>
+                }
+                // type="datetime-local"
+                type="date"
+                className="w-full rounded-xl bg-[var(--tg-theme-section-bg-color)] px-3 py-2 text-base font-medium"
+                value={formData.date}
+                // status={!isDateValid(formData.date) ? "error" : undefined}
+                onChange={(val) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    date: val.target.value,
+                  }));
+                }}
+              />
+            </Section>
 
             <SetlistSection
               driveFolderId={driveFolderId}

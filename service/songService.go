@@ -220,7 +220,7 @@ func (s *SongService) DeleteOneByDriveFileIDFromDatabase(driveFileID string) (bo
 }
 
 func (s *SongService) Like(songID primitive.ObjectID, userID int64) error {
-	return s.songRepository.Like(songID, userID)
+	return s.songRepository.Like(songID, userID, time.Now().UTC())
 }
 
 const archiveFolderName = "Archive"

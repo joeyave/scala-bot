@@ -20,6 +20,7 @@ interface Song {
 interface Band {
   id: string;
   name: string;
+  timezone: string;
   driveFolderId: string;
   archiveFolderId: string;
   roles?: Role[];
@@ -56,7 +57,6 @@ export interface RespEventData {
 export interface Event {
   id: string;
   time: string;
-  timezone: string;
   name: string;
   // memberships: any[] // todo
   bandId: string;

@@ -3,6 +3,7 @@ package helpers
 import (
 	"bytes"
 	"encoding/json"
+	"time"
 )
 
 func JsonEscape(i string) string {
@@ -27,4 +28,16 @@ func Chunk[T any](items []T, chunkSize int) (chunks [][]T) {
 		items, chunks = items[chunkSize:], append(chunks, items[0:chunkSize:chunkSize])
 	}
 	return append(chunks, items)
+}
+
+func GetStartOfDayInLocUTC(loc *time.Location) time.Time {
+	now := time.Now().In(loc)
+
+	startOfDay := time.Date(
+		now.Year(), now.Month(), now.Day(),
+		0, 0, 0, 0,
+		now.Location(),
+	)
+
+	return startOfDay.UTC()
 }

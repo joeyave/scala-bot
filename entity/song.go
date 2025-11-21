@@ -88,7 +88,7 @@ func (s *SongWithEvents) Stats(lang string) string {
 	if len(s.Events) == 0 {
 		return "-, 0"
 	}
-	t, _ := lctime.StrftimeLoc(util.IetfToIsoLangCode(lang), "%d %b", s.Events[0].TimeUTC)
+	t, _ := lctime.StrftimeLoc(util.IetfToIsoLangCode(lang), "%d %b", s.Events[0].GetLocalTime())
 	return fmt.Sprintf("%v, %d", t, len(s.Events))
 }
 
@@ -99,6 +99,6 @@ func (s *SongWithEvents) StatsForCaption(periodText string, lang string) string 
 		return txt.Get("text.noStatsCaption", lang)
 	}
 
-	text := txt.Get("text.statsCaption", lang, len(s.Events), periodText, t.FmtDateLong(s.Events[0].TimeUTC), s.Events[0].Name)
+	text := txt.Get("text.statsCaption", lang, len(s.Events), periodText, t.FmtDateLong(s.Events[0].GetLocalTime()), s.Events[0].Name)
 	return text
 }

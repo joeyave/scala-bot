@@ -320,7 +320,6 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 		switch index {
 		case 0:
 			{
-
 				statsPeriodStartDate := entity.GetStatsPeriodStartDate(user.Cache.StatsPeriod, time.Now())
 				isAscending := user.Cache.StatsSorting == entity.StatsSortingAscending
 
@@ -1085,9 +1084,9 @@ func (c *BotController) SongStats(bot *gotgbot.Bot, ctx *ext.Context) error {
 	}
 
 	// todo: make it changeable from UI.
-	date := entity.GetStatsPeriodStartDate(entity.StatsPeriod(period), time.Now())
+	statsPeriodStartDate := entity.GetStatsPeriodStartDate(entity.StatsPeriod(period), time.Now())
 
-	song, err := c.SongService.FindOneWithExtraByID(songID, date)
+	song, err := c.SongService.FindOneWithExtraByID(songID, statsPeriodStartDate)
 	if err != nil {
 		return err
 	}

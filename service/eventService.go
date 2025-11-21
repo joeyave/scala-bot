@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/joeyave/scala-bot/entity"
+	"github.com/joeyave/scala-bot/helpers"
 	"github.com/joeyave/scala-bot/repository"
 	"github.com/joeyave/scala-bot/txt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -27,51 +28,63 @@ func NewEventService(eventRepository *repository.EventRepository, membershipRepo
 	}
 }
 
-func (s *EventService) FindUpcoming(from, to time.Time) ([]*entity.Event, error) {
-	return s.eventRepository.FindUpcoming(from, to)
+func (s *EventService) FindManyFromTodayByBandID(bandID primitive.ObjectID, loc *time.Location) ([]*entity.Event, error) {
+	startOfDayUTC := helpers.GetStartOfDayInLocUTC(loc)
+	return s.eventRepository.FindManyFromDateByBandID(bandID, startOfDayUTC)
 }
 
-func (s *EventService) FindManyFromTodayByBandID(bandID primitive.ObjectID) ([]*entity.Event, error) {
-	return s.eventRepository.FindManyFromTodayByBandID(bandID)
-}
+func (s *EventService) FindManyFromTodayByBandIDAndWeekday(bandID primitive.ObjectID, weekday time.Weekday, loc *time.Location) ([]*entity.Event, error) {
+	startOfDayUTC := helpers.GetStartOfDayInLocUTC(loc)
 
-func (s *EventService) FindManyFromTodayByBandIDAndWeekday(bandID primitive.ObjectID, weekday time.Weekday) ([]*entity.Event, error) {
-	events, err := s.eventRepository.FindManyFromTodayByBandID(bandID)
+	events, err := s.eventRepository.FindManyFromDateByBandID(bandID, startOfDayUTC)
 	if err != nil {
 		return nil, err
 	}
 
 	var events2 []*entity.Event
 	for _, event := range events {
-		if event.TimeUTC.Weekday() == weekday {
+		if event.GetLocalTime().Weekday() == weekday {
 			events2 = append(events2, event)
 		}
 	}
 	return events2, nil
 }
 
-func (s *EventService) FindManyBetweenDatesByBandID(from time.Time, to time.Time, bandID primitive.ObjectID) ([]*entity.Event, error) {
-	return s.eventRepository.FindManyBetweenDatesByBandID(from, to, bandID)
+func (s *EventService) FindBetweenDates(fromLoc, toLoc time.Time) ([]*entity.Event, error) {
+	fromUTC := fromLoc.UTC()
+	toUTC := toLoc.UTC()
+
+	return s.eventRepository.FindBetweenDates(fromUTC, toUTC)
+}
+
+func (s *EventService) FindManyBetweenDatesByBandID(fromLoc, toLoc time.Time, bandID primitive.ObjectID) ([]*entity.Event, error) {
+	fromUTC := fromLoc.UTC()
+	toUTC := toLoc.UTC()
+	return s.eventRepository.FindManyBetweenDatesByBandID(fromUTC, toUTC, bandID)
 }
 
 func (s *EventService) FindManyByBandIDAndPageNumber(bandID primitive.ObjectID, pageNumber int) ([]*entity.Event, error) {
 	return s.eventRepository.FindManyByBandIDAndPageNumber(bandID, pageNumber)
 }
 
-func (s *EventService) FindManyUntilTodayByBandIDAndPageNumber(bandID primitive.ObjectID, pageNumber int) ([]*entity.Event, error) {
-	return s.eventRepository.FindManyUntilTodayByBandIDAndPageNumber(bandID, pageNumber)
+func (s *EventService) FindManyUntilTodayByBandIDAndPageNumber(bandID primitive.ObjectID, loc *time.Location, pageNumber int) ([]*entity.Event, error) {
+	todayStartUTC := helpers.GetStartOfDayInLocUTC(loc)
+	return s.eventRepository.FindManyUntilByBandIDAndPageNumber(bandID, todayStartUTC, pageNumber)
 }
 
-func (s *EventService) FindManyUntilTodayByBandIDAndWeekdayAndPageNumber(bandID primitive.ObjectID, weekday time.Weekday, pageNumber int) ([]*entity.Event, error) {
-	return s.eventRepository.FindManyUntilTodayByBandIDAndWeekdayAndPageNumber(bandID, weekday, pageNumber)
+func (s *EventService) FindManyUntilTodayByBandIDAndWeekdayAndPageNumber(bandID primitive.ObjectID, loc *time.Location, weekday time.Weekday, pageNumber int) ([]*entity.Event, error) {
+	todayStartUTC := helpers.GetStartOfDayInLocUTC(loc)
+	return s.eventRepository.FindManyUntilByBandIDAndWeekdayAndPageNumber(bandID, todayStartUTC, weekday, pageNumber)
 }
 
-func (s *EventService) FindManyUntilTodayByBandIDAndUserIDAndPageNumber(bandID primitive.ObjectID, userID int64, pageNumber int) ([]*entity.Event, error) {
-	return s.eventRepository.FindManyUntilTodayByBandIDAndUserIDAndPageNumber(bandID, userID, pageNumber)
+func (s *EventService) FindManyUntilTodayByBandIDAndUserIDAndPageNumber(bandID primitive.ObjectID, loc *time.Location, userID int64, pageNumber int) ([]*entity.Event, error) {
+	todayStartUTC := helpers.GetStartOfDayInLocUTC(loc)
+	return s.eventRepository.FindManyUntilByBandIDAndUserIDAndPageNumber(bandID, userID, todayStartUTC, pageNumber)
 }
 
-func (s *EventService) FindManyFromTodayByBandIDAndUserID(bandID primitive.ObjectID, userID int64, pageNumber int) ([]*entity.Event, error) {
-	return s.eventRepository.FindManyFromTodayByBandIDAndUserID(bandID, userID, pageNumber)
+func (s *EventService) FindManyFromTodayByBandIDAndUserID(bandID primitive.ObjectID, loc *time.Location, userID int64, pageNumber int) ([]*entity.Event, error) {
+	todayStartUTC := helpers.GetStartOfDayInLocUTC(loc)
+	return s.eventRepository.FindManyFromTodayByBandIDAndUserID(bandID, userID, todayStartUTC, pageNumber)
 }
 
 func (s *EventService) FindOneOldestByBandID(bandID primitive.ObjectID) (*entity.Event, error) {
@@ -82,8 +95,18 @@ func (s *EventService) FindOneByID(ID primitive.ObjectID) (*entity.Event, error)
 	return s.eventRepository.FindOneByID(ID)
 }
 
-func (s *EventService) FindOneByNameAndTimeAndBandID(name string, time time.Time, bandID primitive.ObjectID) (*entity.Event, error) {
-	return s.eventRepository.FindOneByNameAndTimeAndBandID(name, time, bandID)
+func (s *EventService) FindOneByNameAndTimeAndBandID(name string, timeLoc time.Time, bandID primitive.ObjectID) (*entity.Event, error) {
+	fromLocal := time.Date(
+		timeLoc.Year(), timeLoc.Month(), timeLoc.Day(),
+		0, 0, 0, 0,
+		timeLoc.Location())
+	toLocal := fromLocal.AddDate(0, 0, 1)
+
+	// Convert to UTC for DB
+	fromUTC := fromLocal.UTC()
+	toUTC := toLocal.UTC()
+
+	return s.eventRepository.FindOneByNameAndTimeAndBandID(name, fromUTC, toUTC, bandID)
 }
 
 func (s *EventService) GetAlias(ctx context.Context, eventID primitive.ObjectID, lang string) (string, error) {
@@ -101,6 +124,7 @@ func (s *EventService) PushSongID(eventID primitive.ObjectID, songID primitive.O
 func (s *EventService) PullSongID(eventID primitive.ObjectID, songID primitive.ObjectID) error {
 	return s.eventRepository.PullSongID(eventID, songID)
 }
+
 func (s *EventService) ChangeSongIDPosition(eventID primitive.ObjectID, songID primitive.ObjectID, newPosition int) error {
 	return s.eventRepository.ChangeSongIDPosition(eventID, songID, newPosition)
 }
@@ -169,7 +193,8 @@ func (s *EventService) ToHtmlStringByEvent(event entity.Event, lang string) stri
 }
 
 func (s *EventService) GetMostFrequentEventNames(bandID primitive.ObjectID, limit int) ([]*entity.EventNameFrequencies, error) {
-	return s.eventRepository.GetMostFrequentEventNames(bandID, limit)
+	fromUTC := time.Now().AddDate(0, -3, 0).UTC()
+	return s.eventRepository.GetMostFrequentEventNames(bandID, limit, fromUTC)
 }
 
 func (s *EventService) GetEventWithSongs(eventID primitive.ObjectID) (*entity.Event, error) {

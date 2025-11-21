@@ -28,20 +28,15 @@ type Event struct {
 	Notes *string `bson:"notes" json:"notes"`
 }
 
-func (e *Event) TimeLocation() *time.Location {
-	loc, err := time.LoadLocation(e.Timezone)
-	if err != nil {
-		loc = time.Local
+func (e *Event) GetLocalTime() time.Time {
+	if e.Band == nil {
+		return e.TimeUTC
 	}
-	return loc
-}
-
-func (e *Event) LocalTime() time.Time {
-	return e.TimeUTC.In(e.TimeLocation())
+	return e.TimeUTC.In(e.Band.GetLocation())
 }
 
 func (e *Event) Alias(lang string) string {
-	t, _ := lctime.StrftimeLoc(util.IetfToIsoLangCode(lang), "%A, %d.%m.%Y", e.TimeUTC)
+	t, _ := lctime.StrftimeLoc(util.IetfToIsoLangCode(lang), "%A, %d.%m.%Y", e.GetLocalTime())
 	return fmt.Sprintf("%s (%s)", e.Name, t)
 }
 

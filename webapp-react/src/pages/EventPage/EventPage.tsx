@@ -17,7 +17,13 @@ import { getLocalDateTimeString } from "@/pages/EventPage/util/helpers.ts";
 import { EventForm, Song } from "@/pages/EventPage/util/types.ts";
 import { CalendarIcon } from "@heroicons/react/20/solid";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
-import { IconButton, Input, List, Textarea } from "@telegram-apps/telegram-ui";
+import {
+  IconButton,
+  Input,
+  List,
+  Section,
+  Textarea,
+} from "@telegram-apps/telegram-ui";
 import { mainButton, miniApp, postEvent } from "@tma.js/sdk-react";
 import { Notify } from "notiflix";
 import { FC, useCallback, useEffect, useState } from "react";
@@ -28,7 +34,6 @@ interface EventMutationData {
   eventId: string;
   name: string;
   date: Date;
-  timezone: string;
   songIds: string[];
   notes: string;
   messageId: string;
@@ -48,7 +53,6 @@ export function useEventMutation() {
       const body: ReqBodyUpdateEvent = {
         name: d.name,
         date: d.date.toISOString(),
-        timezone: d.timezone,
         songIds: d.songIds,
         notes: d.notes,
       };
@@ -59,7 +63,7 @@ export function useEventMutation() {
   return mutateEvent;
 }
 
-const CreateEventPage: FC = () => {
+const EventPage: FC = () => {
   const { t } = useTranslation();
 
   const { eventId, messageId, chatId, userId } = useInitParams();
@@ -93,12 +97,17 @@ const CreateEventPage: FC = () => {
 
   const mutateEvent = useEventMutation();
 
+  const bandTimezone =
+    queryEventRes.data.event.band.timezone ||
+    Intl.DateTimeFormat().resolvedOptions().timeZone;
+
   const init: EventForm = {
     name: queryEventRes.data.event.name,
     // date: getLocalDateTimeString(new Date(queryEventRes.data.event.time)),
-    date: getLocalDateTimeString(new Date(queryEventRes.data.event.time)).split(
-      "T",
-    )[0],
+    date: getLocalDateTimeString(
+      new Date(queryEventRes.data.event.time),
+      bandTimezone,
+    ).split("T")[0],
     setlist: queryEventRes.data.event.songs.map((song) => {
       const s: Song = {
         id: song.id,
@@ -141,7 +150,6 @@ const CreateEventPage: FC = () => {
       eventId: eventId,
       name: formData.name,
       date: new Date(formData.date),
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       songIds: formData.setlist.map((song) => song.id),
       notes: formData.notes,
       messageId: messageId,
@@ -218,24 +226,26 @@ const CreateEventPage: FC = () => {
               ) || []}
             </datalist>
 
-            <Input
-              after={
-                <IconButton mode="plain" size="s">
-                  <CalendarIcon className="h-5 w-5 text-[var(--tg-theme-accent-text-color)]"></CalendarIcon>
-                </IconButton>
-              }
-              type="date"
-              // type="datetime-local"
-              className="w-full rounded-xl bg-[var(--tg-theme-section-bg-color)] px-3 py-2 text-base font-medium"
-              value={formData.date}
-              // status={!isDateValid(formData.date) ? "error" : undefined}
-              onChange={(val) => {
-                setFormData((prev) => ({
-                  ...prev,
-                  date: val.target.value,
-                }));
-              }}
-            />
+            <Section footer={bandTimezone}>
+              <Input
+                after={
+                  <IconButton mode="plain" size="s">
+                    <CalendarIcon className="h-5 w-5 text-[var(--tg-theme-accent-text-color)]"></CalendarIcon>
+                  </IconButton>
+                }
+                type="date"
+                // type="datetime-local"
+                className="w-full rounded-xl bg-[var(--tg-theme-section-bg-color)] px-3 py-2 text-base font-medium"
+                value={formData.date}
+                // status={!isDateValid(formData.date) ? "error" : undefined}
+                onChange={(val) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    date: val.target.value,
+                  }));
+                }}
+              />
+            </Section>
 
             <SetlistSection
               driveFolderId={queryEventRes.data.event.band.driveFolderId}
@@ -288,4 +298,4 @@ export function useInitParams() {
   return { eventId, messageId, chatId, userId };
 }
 
-export default CreateEventPage;
+export default EventPage;

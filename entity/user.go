@@ -165,7 +165,7 @@ type UserWithEvents struct {
 }
 
 func (u *UserWithEvents) NameWithStats() string {
-	return fmt.Sprintf("%s (%v, %d)", u.Name, lctime.Strftime("%d %b", u.Events[0].TimeUTC), len(u.Events))
+	return fmt.Sprintf("%s (%v, %d)", u.Name, lctime.Strftime("%d %b", u.Events[0].GetLocalTime()), len(u.Events))
 }
 
 //func (u *UserWithEvents) String(lang string) string {

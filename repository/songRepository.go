@@ -327,13 +327,12 @@ func (r *SongRepository) Unarchive(songID primitive.ObjectID) error {
 	return err
 }
 
-func (r *SongRepository) Like(songID primitive.ObjectID, userID int64) error {
+func (r *SongRepository) Like(songID primitive.ObjectID, userID int64, likeTime time.Time) error {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
-	// Create a new Like struct with the user ID and the current time.
 	newLike := &entity.Like{
 		UserID: userID,
-		Time:   time.Now(),
+		Time:   likeTime,
 	}
 
 	filter := bson.M{
