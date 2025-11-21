@@ -36,7 +36,12 @@ func (e *Event) GetLocalTime() time.Time {
 }
 
 func (e *Event) Alias(lang string) string {
-	t, _ := lctime.StrftimeLoc(util.IetfToIsoLangCode(lang), "%A, %d.%m.%Y", e.GetLocalTime())
+	timeLoc := e.GetLocalTime()
+	format := "%A, %d.%m.%Y %H:%M"
+	if timeLoc.Hour() == 0 && timeLoc.Minute() == 0 {
+		format = "%A, %d.%m.%Y"
+	}
+	t, _ := lctime.StrftimeLoc(util.IetfToIsoLangCode(lang), format, timeLoc)
 	return fmt.Sprintf("%s (%s)", e.Name, t)
 }
 

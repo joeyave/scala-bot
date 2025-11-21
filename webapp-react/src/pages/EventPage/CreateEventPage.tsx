@@ -51,8 +51,8 @@ const CreateEventPage: FC = () => {
   // Form data state.
   const [initFormData] = useState<EventForm>({
     name: "",
-    // date: getLocalDateTimeString(new Date()),
-    date: getLocalDateTimeString(new Date(), bandTimezone).split("T")[0],
+    date: getLocalDateTimeString(new Date(), true, bandTimezone),
+    // date: getLocalDateTimeString(new Date(), true, bandTimezone).split("T")[0],
     setlist: [],
     notes: "",
   });
@@ -133,15 +133,15 @@ const CreateEventPage: FC = () => {
               ) || []}
             </datalist>
 
-            <Section footer={bandTimezone}>
+            <Section header={bandTimezone}>
               <Input
                 after={
                   <IconButton mode="plain" size="s">
                     <CalendarIcon className="h-5 w-5 text-[var(--tg-theme-accent-text-color)]"></CalendarIcon>
                   </IconButton>
                 }
-                // type="datetime-local"
-                type="date"
+                type="datetime-local"
+                // type="date"
                 className="w-full rounded-xl bg-[var(--tg-theme-section-bg-color)] px-3 py-2 text-base font-medium"
                 value={formData.date}
                 // status={!isDateValid(formData.date) ? "error" : undefined}

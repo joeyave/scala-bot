@@ -163,7 +163,7 @@ func (c *BotController) GetEvents(index int) handlers.Response {
 
 				_, _ = ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
-				eventName, eventTime, err := keyboard.ParseEventButton(ctx.EffectiveMessage.Text)
+				eventName, eventTime, err := keyboard.ParseEventButton(ctx.EffectiveMessage.Text, user.Band.GetLocation())
 				if err != nil {
 					return c.search(0)(bot, ctx)
 				}
@@ -315,7 +315,7 @@ func (c *BotController) filterEvents(index int) handlers.Response {
 
 				_, _ = ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
-				eventName, eventTime, err := keyboard.ParseEventButton(ctx.EffectiveMessage.Text)
+				eventName, eventTime, err := keyboard.ParseEventButton(ctx.EffectiveMessage.Text, user.Band.GetLocation())
 				if err != nil {
 					return c.search(0)(bot, ctx)
 				}

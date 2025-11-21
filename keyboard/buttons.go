@@ -17,7 +17,13 @@ import (
 
 func EventButton(event *entity.Event, user *entity.User, lang string, showMemberships bool) []gotgbot.KeyboardButton {
 
-	t, _ := lctime.StrftimeLoc(util.IetfToIsoLangCode(lang), "%A, %d.%m.%Y", event.GetLocalTime())
+	timeLoc := event.GetLocalTime()
+	format := "%A, %d.%m.%Y %H:%M"
+	if timeLoc.Hour() == 0 && timeLoc.Minute() == 0 {
+		format = "%A, %d.%m.%Y"
+	}
+	t, _ := lctime.StrftimeLoc(util.IetfToIsoLangCode(lang), format, timeLoc)
+
 	text := fmt.Sprintf("%s (%s)", event.Name, t)
 
 	if user != nil {
@@ -40,9 +46,9 @@ func EventButton(event *entity.Event, user *entity.User, lang string, showMember
 	return []gotgbot.KeyboardButton{{Text: text}}
 }
 
-var eventButtonRegEx = regexp.MustCompile(`(.*)\s\(.*,\s*([\d.]+)`)
+var eventButtonRegEx = regexp.MustCompile(`(.*)\s\(.*,\s*([\d.]+(?:\s+\d{1,2}:\d{2})?)`)
 
-func ParseEventButton(text string) (string, time.Time, error) {
+func ParseEventButton(text string, loc *time.Location) (string, time.Time, error) {
 
 	matches := eventButtonRegEx.FindStringSubmatch(text)
 	if len(matches) < 3 {
@@ -51,7 +57,12 @@ func ParseEventButton(text string) (string, time.Time, error) {
 
 	eventName := matches[1]
 
-	eventTime, err := time.Parse("02.01.2006", strings.TrimSpace(matches[2]))
+	timeStr := strings.TrimSpace(matches[2])
+	if len(timeStr) == len("02.01.2006") {
+		timeStr += " 00:00"
+	}
+
+	eventTime, err := time.ParseInLocation("02.01.2006 15:04", timeStr, loc)
 	if err != nil {
 		return "", time.Time{}, err
 	}

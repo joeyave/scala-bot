@@ -103,11 +103,16 @@ const EventPage: FC = () => {
 
   const init: EventForm = {
     name: queryEventRes.data.event.name,
-    // date: getLocalDateTimeString(new Date(queryEventRes.data.event.time)),
     date: getLocalDateTimeString(
       new Date(queryEventRes.data.event.time),
+      false,
       bandTimezone,
-    ).split("T")[0],
+    ),
+    // date: getLocalDateTimeString(
+    //   new Date(queryEventRes.data.event.time),
+    //   false,
+    //   bandTimezone,
+    // ).split("T")[0],
     setlist: queryEventRes.data.event.songs.map((song) => {
       const s: Song = {
         id: song.id,
@@ -226,15 +231,15 @@ const EventPage: FC = () => {
               ) || []}
             </datalist>
 
-            <Section footer={bandTimezone}>
+            <Section header={bandTimezone}>
               <Input
                 after={
                   <IconButton mode="plain" size="s">
                     <CalendarIcon className="h-5 w-5 text-[var(--tg-theme-accent-text-color)]"></CalendarIcon>
                   </IconButton>
                 }
-                type="date"
-                // type="datetime-local"
+                // type="date"
+                type="datetime-local"
                 className="w-full rounded-xl bg-[var(--tg-theme-section-bg-color)] px-3 py-2 text-base font-medium"
                 value={formData.date}
                 // status={!isDateValid(formData.date) ? "error" : undefined}

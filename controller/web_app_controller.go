@@ -100,7 +100,7 @@ func (h *WebAppController) UsersWithEvents(ctx *gin.Context) {
 	now := band.GetNowTime()
 
 	from := ctx.Query("from")
-	fromDate, err := time.Parse("02.01.2006", from)
+	fromDate, err := time.ParseInLocation("02.01.2006", from, band.GetLocation())
 	if err != nil {
 		fromDate = time.Date(now.Year(), time.January, 1, 0, 0, 0, 0, time.Local)
 	}
