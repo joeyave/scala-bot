@@ -387,18 +387,6 @@ func (r *EventRepository) find(m bson.M, opts ...bson.M) ([]*entity.Event, error
 			},
 		},
 		bson.M{
-			"$addFields": bson.M{
-				"dayOfWeek": bson.M{
-					"$dayOfWeek": bson.M{
-						"date": "$time",
-					},
-				},
-			},
-		},
-		bson.M{
-			"$match": m,
-		},
-		bson.M{
 			"$lookup": bson.M{
 				"from": "bands",
 				"let":  bson.M{"bandId": "$bandId"},
@@ -432,6 +420,24 @@ func (r *EventRepository) find(m bson.M, opts ...bson.M) ([]*entity.Event, error
 				"path":                       "$band",
 				"preserveNullAndEmptyArrays": true,
 			},
+		},
+		bson.M{
+			"$addFields": bson.M{
+				"bandTimezone": "$band.timezone",
+			},
+		},
+		bson.M{
+			"$addFields": bson.M{
+				"dayOfWeek": bson.M{
+					"$dayOfWeek": bson.M{
+						"date":     "$time",
+						"timezone": "$bandTimezone",
+					},
+				},
+			},
+		},
+		bson.M{
+			"$match": m,
 		},
 		bson.M{
 			"$addFields": bson.M{

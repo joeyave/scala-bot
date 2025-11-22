@@ -722,5 +722,5 @@ func (c *BotController) NotifyUsers(bot *gotgbot.Bot) {
 func canSendNow(event *entity.Event) bool {
 	now := event.Band.GetNowTime()
 	hour := now.Hour()
-	return !(hour >= 21 || hour < 7)
+	return hour >= 7 && hour < 21
 }
