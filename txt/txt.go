@@ -588,7 +588,7 @@ func init() {
 func Get(key, lang string, a ...interface{}) string {
 	switch lang {
 	case "ru":
-		return ruPrinter.Sprintf(key, a)
+		return ruPrinter.Sprintf(key, a...)
 	}
 	return ukPrinter.Sprintf(key, a...)
 }
