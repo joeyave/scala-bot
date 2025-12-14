@@ -308,6 +308,9 @@ func (c *BotController) search(index int) handlers.Response {
 
 				user.State.Index = 1
 
+				if len(driveFiles) == 1 {
+					_, _ = ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
+				}
 				return nil
 			}
 		case 1:
