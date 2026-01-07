@@ -77,5 +77,47 @@ if (import.meta.env.DEV) {
     console.info(
       "⚠️ As long as the current environment was not considered as the Telegram-based one, it was mocked. Take a note, that you should not do it in production and current behavior is only specific to the development process. Environment mocking is also applied only in development mode. So, after building the application, you will not see this behavior and related warning, leading to crashing the application outside Telegram.",
     );
+
+    // Auto-redirect to mock pages for easy development
+    // Only redirects if VITE_USE_MOCK_DATA is enabled
+    // Uses hash for HashRouter compatibility (e.g., /#/events/test/edit?params)
+    if (import.meta.env.VITE_USE_MOCK_DATA === "true") {
+      // Parse hash route: /#/path?query -> path and query
+      const hash = window.location.hash.slice(1); // Remove leading #
+      const [hashPath, hashQuery] = hash.split("?");
+      const searchParams = new URLSearchParams(hashQuery || "");
+
+      console.log("hashPath", hashPath);
+      console.log("searchParams", searchParams.toString());
+
+      // If at root or empty hash, redirect to mock EventPage for development
+      if (!hashPath || hashPath === "/" || hashPath === "") {
+        const mockEventUrl = `/events/mock-event-id-123/edit?messageId=mock-msg-123&chatId=mock-chat-456&userId=1`;
+        console.info(`🔄 Redirecting to mock EventPage: ${mockEventUrl}`);
+        window.location.hash = mockEventUrl;
+      }
+      // If on create event page but missing query params, add them
+      // NOTE: Check this BEFORE the edit condition since /events/create also contains "/events/"
+      else if (
+        hashPath.startsWith("/events/create") &&
+        !searchParams.has("bandId")
+      ) {
+        const mockParams = `bandId=mock-band-id-456&driveFolderId=mock-drive-folder-id&archiveFolderId=mock-archive-folder-id&bandTimezone=${encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone)}`;
+        const newHash = `${hashPath}?${mockParams}`;
+        console.info(`🔄 Adding mock query params for create: ${newHash}`);
+        window.location.hash = newHash;
+      }
+      // If on event edit page but missing query params, add them
+      else if (
+        hashPath.includes("/events/") &&
+        hashPath.endsWith("/edit") &&
+        !searchParams.has("messageId")
+      ) {
+        const mockParams = `messageId=mock-msg-123&chatId=mock-chat-456&userId=1`;
+        const newHash = `${hashPath}?${mockParams}`;
+        console.info(`🔄 Adding mock query params for edit: ${newHash}`);
+        window.location.hash = newHash;
+      }
+    }
   }
 }

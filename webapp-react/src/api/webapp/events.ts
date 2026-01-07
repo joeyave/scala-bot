@@ -4,10 +4,21 @@ import {
   ReqBodyUpdateEvent,
   ReqQueryParamsUpdateEvent,
 } from "@/api/webapp/typesReq.ts";
+import {
+  isMockEnabled,
+  mockEventData,
+  mockEventFreqNames,
+} from "@/api/webapp/mockData.ts";
 
 export async function getEventFreqNames(
   bandId: string,
 ): Promise<RespEventFreqNames | null> {
+  // Return mock data in development mode when mocking is enabled
+  if (isMockEnabled()) {
+    console.info("📦 Using mock data for getEventFreqNames");
+    return Promise.resolve(mockEventFreqNames);
+  }
+
   const { data, err } = await doReqWebappApi<RespEventFreqNames>(
     `/api/events/frequent-names`,
     "GET",
@@ -25,6 +36,12 @@ export async function getEventFreqNames(
 export async function getEventData(
   eventId: string,
 ): Promise<RespEventData | null> {
+  // Return mock data in development mode when mocking is enabled
+  if (isMockEnabled()) {
+    console.info("📦 Using mock data for getEventData");
+    return Promise.resolve(mockEventData);
+  }
+
   const { data, err } = await doReqWebappApi<RespEventData>(
     `/api/events/${eventId}`,
     "GET",
