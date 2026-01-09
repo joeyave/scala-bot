@@ -541,7 +541,30 @@ func (c *BotController) buildSongsMediaGroup(songs []*entity.Song, downloadAll b
 			if song.GetTgFileID() == "" || downloadAll {
 				reader, err := c.DriveFileService.DownloadOneByID(song.GetDriveFileID())
 				if err != nil {
-					return err
+					if song.AltPDF != nil {
+						// No cached version exists - create a new transposed copy.
+						bandTempFolderID, err := c.getBandTempFolderID(song.BandID)
+						if err != nil {
+							return err
+						}
+
+						// Copy and transpose the song to the requested key.
+						transposedDriveFile, err := c.DriveFileService.CopyAndTransposeFirstSection(
+							song.DriveFileID, song.AltPDF.Key, bandTempFolderID,
+						)
+						if err != nil {
+							return err
+						}
+
+						song.AltPDF.DriveFileID = transposedDriveFile.Id
+
+						reader, err = c.DriveFileService.DownloadOneByID(song.GetDriveFileID())
+						if err != nil {
+							return err
+						}
+					} else {
+						return err
+					}
 				}
 
 				album[i] = gotgbot.InputMediaDocument{
