@@ -29,9 +29,10 @@ interface SetlistProps {
   items: Song[];
   onRemove: (song: Song) => void;
   onReorder: (newSetlist: Song[]) => void;
+  onKeyChange?: (song: Song, newKey: string) => void;
 }
 
-export function Setlist({ items, onRemove, onReorder }: SetlistProps) {
+export function Setlist({ items, onRemove, onReorder, onKeyChange }: SetlistProps) {
   const { t } = useTranslation();
 
   const [activeSong, setActiveSong] = useState<Song | null>(null);
@@ -104,7 +105,7 @@ export function Setlist({ items, onRemove, onReorder }: SetlistProps) {
         <SortableContext items={items} strategy={verticalListSortingStrategy}>
           <Section footer={items.length > 0 && t("setlistFooter")}>
             {items.map((song: Song) => (
-              <SetlistSong key={song.id} song={song} onRemove={onRemove} />
+              <SetlistSong key={song.id} song={song} onRemove={onRemove} onKeyChange={onKeyChange} />
             ))}
           </Section>
         </SortableContext>

@@ -22,6 +22,10 @@ export const mockEventData: RespEventData = {
       ],
     },
     songIds: ["song-1", "song-2", "song-3"],
+    songOverrides: [
+      { songId: "song-2", eventKey: "D" }, // Original key is C, override to D
+      { songId: "song-3", eventKey: "G" }, // Original key is D, override to G
+    ],
     songs: [
       {
         id: "song-1",

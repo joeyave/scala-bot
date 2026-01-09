@@ -19,10 +19,16 @@ export interface ReqQueryParamsUpdateEvent {
   userId: string;
 }
 
+export interface SongOverride {
+  songId: string;
+  eventKey: string;
+}
+
 export interface ReqBodyUpdateEvent {
   name?: string;
   date?: string;
   timezone?: string;
   songIds?: string[];
+  songOverrides?: SongOverride[];
   notes?: string;
 }

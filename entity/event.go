@@ -11,6 +11,12 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// SongOverride represents a song in an event's setlist with optional key override and caching
+type SongOverride struct {
+	SongID   primitive.ObjectID `bson:"songId" json:"songId"`
+	EventKey Key                `bson:"eventKey,omitempty" json:"eventKey,omitempty"` // Key override for this event
+}
+
 type Event struct {
 	ID      primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	TimeUTC time.Time          `bson:"time,omitempty" json:"time"`
@@ -21,10 +27,21 @@ type Event struct {
 	BandID primitive.ObjectID `bson:"bandId,omitempty" json:"bandId"`
 	Band   *Band              `bson:"band,omitempty" json:"band"`
 
-	SongIDs []primitive.ObjectID `bson:"songIds" json:"songIds"`
-	Songs   []*Song              `bson:"songs,omitempty" json:"songs"`
+	SongIDs       []primitive.ObjectID `bson:"songIds" json:"songIds"`
+	SongOverrides []SongOverride       `bson:"songOverrides,omitempty" json:"songOverrides,omitempty"`
+
+	Songs []*Song `bson:"songs,omitempty" json:"songs"`
 
 	Notes *string `bson:"notes" json:"notes"`
+}
+
+func (e *Event) GetSongOverride(songID primitive.ObjectID) *SongOverride {
+	for _, song := range e.SongOverrides {
+		if song.SongID == songID {
+			return &song
+		}
+	}
+	return nil
 }
 
 func (e *Event) GetLocalTime() time.Time {

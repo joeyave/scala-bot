@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/joeyave/chords-transposer/transposer"
+	"github.com/joeyave/scala-bot/entity"
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
 )
@@ -67,7 +68,7 @@ func (s *DriveFileService) batchUpdate(docID string, requests []*docs.Request) (
 		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
 }
 
-func (s *DriveFileService) TransposeOne(ID string, toKey string, sectionIndex int) (*drive.File, error) {
+func (s *DriveFileService) TransposeOne(ID string, toKey entity.Key, sectionIndex int) (*drive.File, error) {
 	doc, err := s.getDoc(ID)
 	if err != nil {
 		return nil, err
@@ -100,7 +101,7 @@ func (s *DriveFileService) TransposeOne(ID string, toKey string, sectionIndex in
 	return s.FindOneByID(ID)
 }
 
-func (s *DriveFileService) TransposeHeader(ID string, toKey string, sectionIndex int) (*drive.File, error) {
+func (s *DriveFileService) TransposeHeader(ID string, toKey entity.Key, sectionIndex int) (*drive.File, error) {
 	doc, err := s.getDoc(ID)
 	if err != nil {
 		return nil, err
@@ -120,6 +121,26 @@ func (s *DriveFileService) TransposeHeader(ID string, toKey string, sectionIndex
 	}
 
 	return s.FindOneByID(ID)
+}
+
+// CopyAndTransposeFirstSection copies a file to the temp folder and transposes section 0 (header + body).
+// Returns the new file's Drive file. On transpose error, the copied file is deleted.
+func (s *DriveFileService) CopyAndTransposeFirstSection(sourceID string, toKey entity.Key, tempFolderID string) (*drive.File, error) {
+	copiedFile, err := s.CloneOne(sourceID, &drive.File{
+		Parents: []string{tempFolderID},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to copy file: %w", err)
+	}
+
+	_, err = s.TransposeOne(copiedFile.Id, toKey, 0)
+	if err != nil {
+		// Clean up copied file on error
+		_ = s.driveClient.Files.Delete(copiedFile.Id).Do()
+		return nil, fmt.Errorf("failed to transpose: %w", err)
+	}
+
+	return copiedFile, nil
 }
 
 func (s *DriveFileService) StyleOne(ID, lang string) (*drive.File, error) {
@@ -194,7 +215,7 @@ func (s *DriveFileService) StyleOne(ID, lang string) (*drive.File, error) {
 // Core Logic - Transposition
 // =========================================================================
 
-func transposeHeader(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int, toKey string) ([]*docs.Request, string) {
+func transposeHeader(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int, toKey entity.Key) ([]*docs.Request, entity.Key) {
 	docHeaderID := doc.DocumentStyle.DefaultHeaderId
 	if docHeaderID == "" {
 		return nil, ""
@@ -235,7 +256,7 @@ func transposeHeader(doc *docs.Document, sections []docs.StructuralElement, sect
 	return requests, key
 }
 
-func transposeBody(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int, key string, toKey string) []*docs.Request {
+func transposeBody(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int, key, toKey entity.Key) []*docs.Request {
 	requests := make([]*docs.Request, 0)
 
 	sectionToInsertStartIndex := sections[sectionIndex].StartIndex + 1
@@ -267,7 +288,7 @@ func transposeBody(doc *docs.Document, sections []docs.StructuralElement, sectio
 	return requests
 }
 
-func composeTransposeRequests(content []*docs.StructuralElement, index int64, key string, toKey string, segmentId string, chordRatioThreshold float64) ([]*docs.Request, string) {
+func composeTransposeRequests(content []*docs.StructuralElement, index int64, key, toKey entity.Key, segmentId string, chordRatioThreshold float64) ([]*docs.Request, entity.Key) {
 	allRequests := make([]*docs.Request, 0)
 	paragraphs, idxs := getParagraphs(content)
 
@@ -281,7 +302,7 @@ func composeTransposeRequests(content []*docs.StructuralElement, index int64, ke
 		key = guessKeyIfNeeded(key, fullText)
 
 		// Generate requests for all elements in this paragraph
-		isLastParagraph := (i == len(paragraphs)-1)
+		isLastParagraph := i == len(paragraphs)-1
 		paraRequests, newIndex := newTransposeRequestsForParagraph(
 			paragraph, isLastParagraph, shouldTranspose,
 			key, toKey, segmentId, index,
@@ -645,18 +666,18 @@ func shouldTransposeParagraph(fullText string, chordRatioThreshold float64) bool
 }
 
 // guessKeyIfNeeded attempts to guess the key from text if no key is currently set.
-func guessKeyIfNeeded(currentKey, fullText string) string {
+func guessKeyIfNeeded(currentKey entity.Key, fullText string) entity.Key {
 	if currentKey != "" {
 		return currentKey // Key is already set, do nothing
 	}
 	if guessedKey, err := transposer.GuessKeyFromText(fullText); err == nil {
-		return guessedKey.String() // Guessed a new key
+		return entity.Key(guessedKey.String()) // Guessed a new key
 	}
 	return currentKey // Guessing failed, return original (empty) key
 }
 
 // newTransposeRequestsForParagraph generates all the requests for a single paragraph's elements.
-func newTransposeRequestsForParagraph(paragraph *docs.Paragraph, isLastParagraph bool, shouldTranspose bool, key, toKey, segmentId string, index int64) ([]*docs.Request, int64) {
+func newTransposeRequestsForParagraph(paragraph *docs.Paragraph, isLastParagraph bool, shouldTranspose bool, key, toKey entity.Key, segmentId string, index int64) ([]*docs.Request, int64) {
 	requests := make([]*docs.Request, 0)
 
 	for j, element := range paragraph.Elements {
@@ -678,9 +699,9 @@ func newTransposeRequestsForParagraph(paragraph *docs.Paragraph, isLastParagraph
 			var transposedText string
 			var err error
 			if toKey == keyNashville {
-				transposedText, err = transposer.TransposeToNashville(runText, key)
+				transposedText, err = transposer.TransposeToNashville(runText, string(key))
 			} else {
-				transposedText, err = transposer.TransposeToKey(runText, key, toKey)
+				transposedText, err = transposer.TransposeToKey(runText, string(key), string(toKey))
 			}
 			if err == nil {
 				runText = transposedText

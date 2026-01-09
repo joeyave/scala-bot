@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/flowchartsman/retry"
@@ -15,6 +16,8 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
+type TransposeHandler func(freshSong *entity.Song, override *entity.SongOverride) (freshSongWithAltPDF *entity.Song, transposedDriveFile *drive.File, err error)
+
 type SongService struct {
 	songRepository   *repository.SongRepository
 	voiceRepository  *repository.VoiceRepository
@@ -24,7 +27,8 @@ type SongService struct {
 }
 
 func NewSongService(songRepository *repository.SongRepository, voiceRepository *repository.VoiceRepository, bandRepository *repository.BandRepository,
-	driveClient *drive.Service, driveFileService *DriveFileService) *SongService {
+	driveClient *drive.Service, driveFileService *DriveFileService,
+) *SongService {
 	return &SongService{
 		songRepository:   songRepository,
 		voiceRepository:  voiceRepository,
@@ -149,7 +153,6 @@ func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entity.
 }
 
 func (s *SongService) FindOrCreateManyByDriveFileIDs(driveFileIDs []string) ([]*entity.Song, []*drive.File, error) {
-
 	errwg := new(errgroup.Group)
 	songs := make([]*entity.Song, len(driveFileIDs))
 	driveFiles := make([]*drive.File, len(driveFileIDs))
@@ -234,7 +237,6 @@ func (s *SongService) FindOneWithExtraByID(songID primitive.ObjectID, eventsStar
 }
 
 func (s *SongService) Archive(songID primitive.ObjectID) (*drive.File, error) {
-
 	song, err := s.FindOneByID(songID)
 	if err != nil {
 		return nil, err
@@ -265,7 +267,6 @@ func (s *SongService) Archive(songID primitive.ObjectID) (*drive.File, error) {
 }
 
 func (s *SongService) Unarchive(songID primitive.ObjectID) (*drive.File, error) {
-
 	song, err := s.FindOneByID(songID)
 	if err != nil {
 		return nil, err
@@ -322,4 +323,65 @@ func (s *SongService) GetTags(bandID primitive.ObjectID) ([]string, error) {
 
 func (s *SongService) TagOrUntag(tag string, songID primitive.ObjectID) (*entity.Song, error) {
 	return s.songRepository.TagOrUntag(tag, songID)
+}
+
+func (s *SongService) RetrieveFreshSongsForEvent(event *entity.Event) ([]*entity.Song, error) {
+	songs, _, err := s.RetrieveFreshSongsForEventWithTransposeHandler(event, nil)
+	return songs, err
+}
+
+func (s *SongService) RetrieveFreshSongsForEventWithTransposeHandler(
+	event *entity.Event, transposeHandler TransposeHandler,
+) ([]*entity.Song, []*drive.File, error) {
+	songs := make([]*entity.Song, len(event.Songs))
+	var transposedDriveFiles []*drive.File
+	var mu sync.Mutex
+
+	g := new(errgroup.Group)
+	for i, eventSong := range event.Songs {
+		g.Go(func() error {
+			// Fetch the latest song data from Google Drive.
+			freshSong, _, err := s.FindOrCreateOneByDriveFileID(eventSong.DriveFileID)
+			if err != nil {
+				return err
+			}
+
+			// Check if this event has a specific key override for this song.
+			override := event.GetSongOverride(freshSong.ID)
+
+			// Only process if there's an override AND the key differs from the original.
+			if override != nil && override.EventKey != freshSong.PDF.Key {
+				// First, check if we already have a cached PDF in the desired key.
+				altPDF, ok := freshSong.AltPDFs[override.EventKey]
+				if ok && altPDF.ModifiedTime == freshSong.PDF.ModifiedTime {
+					// Use the cached alternative PDF version.
+					freshSong.AltPDF = &altPDF
+				} else if transposeHandler == nil {
+					freshSong.AltPDF = &entity.AltPDF{
+						Key: override.EventKey,
+					}
+				} else {
+					freshSongWithAltPDF, transposedSong, err := transposeHandler(freshSong, override)
+					if err != nil {
+						return err
+					}
+					freshSong = freshSongWithAltPDF
+					mu.Lock()
+					transposedDriveFiles = append(transposedDriveFiles, transposedSong)
+					mu.Unlock()
+				}
+			}
+			// Otherwise, just use the original song.
+			songs[i] = freshSong
+			return nil
+		})
+	}
+
+	// Wait for all concurrent operations to complete.
+	err := g.Wait()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return songs, transposedDriveFiles, nil
 }

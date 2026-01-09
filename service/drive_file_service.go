@@ -11,6 +11,7 @@ import (
 
 	"github.com/flowchartsman/retry"
 	"github.com/joeyave/chords-transposer/transposer"
+	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/helpers"
 	"github.com/joeyave/scala-bot/txt"
 	"golang.org/x/sync/errgroup"
@@ -161,7 +162,7 @@ func (s *DriveFileService) FindManyByIDs(IDs []string) ([]*drive.File, error) {
 	return driveFiles, err
 }
 
-func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key string, BPM string, time, lang string) (*drive.File, error) {
+func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key entity.Key, BPM string, time, lang string) (*drive.File, error) {
 	newFile, err := s.driveClient.Files.
 		Create(newFile).
 		Fields("id, name, modifiedTime, webViewLink, parents").
@@ -393,6 +394,11 @@ func (s *DriveFileService) MoveOne(fileID string, newFolderID string) (*drive.Fi
 	return newFile, err
 }
 
+// DeleteOne deletes a file from Google Drive by its ID
+func (s *DriveFileService) DeleteOne(fileID string) error {
+	return s.driveClient.Files.Delete(fileID).Do()
+}
+
 func (s *DriveFileService) DownloadOneByID(ID string) (io.ReadCloser, error) {
 	retrier := retry.NewRetrier(5, 100*time.Millisecond, time.Second)
 
@@ -506,7 +512,7 @@ func (s *DriveFileService) GetSectionsNumber(ID string) (int, error) {
 	return len(getSections(doc)), nil
 }
 
-func (s *DriveFileService) GetMetadata(ID string) (string, string, string) {
+func (s *DriveFileService) GetMetadata(ID string) (entity.Key, string, string) {
 	retrier := retry.NewRetrier(5, 100*time.Millisecond, time.Second)
 
 	var reader io.Reader
@@ -560,7 +566,7 @@ func (s *DriveFileService) GetMetadata(ID string) (string, string, string) {
 		}
 	}
 
-	return key, BPM, time
+	return entity.Key(key), BPM, time
 }
 
 func (s *DriveFileService) GetHTMLTextWithSectionsNumber(ID string) (string, int) {
@@ -878,7 +884,7 @@ func getSections(doc *docs.Document) []docs.StructuralElement {
 	return sections
 }
 
-func getDefaultHeaderRequest(headerID, name, key, BPM, time, lang string) *docs.Request {
+func getDefaultHeaderRequest(headerID, name string, key entity.Key, BPM, time, lang string) *docs.Request {
 
 	if name == "" {
 		// TODO: replace "uk" with user language if available in context

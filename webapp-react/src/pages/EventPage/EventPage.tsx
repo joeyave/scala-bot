@@ -30,12 +30,18 @@ import { FC, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams, useSearchParams } from "react-router";
 
+interface SongOverrideMutation {
+  songId: string;
+  eventKey: string;
+}
+
 interface EventMutationData {
   eventId: string;
   name: string;
   date: string;
   timezone: string;
   songIds: string[];
+  songOverrides: SongOverrideMutation[];
   notes: string;
   messageId: string;
   chatId: string;
@@ -56,6 +62,7 @@ export function useEventMutation() {
         date: d.date,
         timezone: d.timezone,
         songIds: d.songIds,
+        songOverrides: d.songOverrides,
         notes: d.notes,
       };
 
@@ -116,12 +123,19 @@ const EventPage: FC = () => {
     //   bandTimezone,
     // ).split("T")[0],
     setlist: queryEventRes.data.event.songs.map((song) => {
+      // Get eventKey from songOverrides if available
+      const songOverrides = queryEventRes.data.event.songOverrides;
+      const eventKey = songOverrides?.find(
+        (o) => o.songId === song.id,
+      )?.eventKey;
+
       const s: Song = {
         id: song.id,
         name: `${song.pdf.name}`,
         key: song.pdf.key,
         bpm: song.pdf.bpm,
         time: song.pdf.time,
+        eventKey: eventKey, // Populate from songOverrides
       };
       return s;
     }),
@@ -159,6 +173,12 @@ const EventPage: FC = () => {
       date: formData.date,
       timezone: bandTimezone,
       songIds: formData.setlist.map((song) => song.id),
+      songOverrides: formData.setlist
+        .filter((song) => song.eventKey)
+        .map((song) => ({
+          songId: song.id,
+          eventKey: song.eventKey!,
+        })),
       notes: formData.notes,
       messageId: messageId,
       chatId: chatId,
@@ -276,6 +296,19 @@ const EventPage: FC = () => {
                 setFormData((prev) => ({
                   ...prev,
                   setlist: newSetlist,
+                }));
+              }}
+              onKeyChange={(song, newKey) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  setlist: prev.setlist.map((s) =>
+                    s.id === song.id
+                      ? {
+                          ...s,
+                          eventKey: newKey === s.key ? undefined : newKey,
+                        }
+                      : s,
+                  ),
                 }));
               }}
             />

@@ -1,7 +1,7 @@
 import { Select, SelectProps } from "@telegram-apps/telegram-ui";
 import React, { ChangeEvent, useEffect, useState } from "react";
 
-const keyGroups = [
+export const keyGroups = [
   {
     id: "nashville",
     label: "Nashville Number System",
@@ -81,7 +81,7 @@ const keyGroups = [
 ];
 
 // Create a flat list of all valid key values for validation
-const allValidKeys = keyGroups.flatMap((group) =>
+export const allValidKeys = keyGroups.flatMap((group) =>
   group.options.map((option) => option.value),
 );
 

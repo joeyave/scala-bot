@@ -550,8 +550,9 @@ func (c *BotController) buildSongsMediaGroup(songs []*entity.Song, downloadAll b
 	for i, song := range songs {
 		i, song := i, song // Important! See https://golang.org/doc/faq#closures_and_goroutines.
 		g.Go(func() error {
-			if song.PDF.TgFileID == "" || downloadAll {
-				reader, err := c.DriveFileService.DownloadOneByID(song.DriveFileID)
+
+			if song.GetTgFileID() == "" || downloadAll {
+				reader, err := c.DriveFileService.DownloadOneByID(song.GetDriveFileID())
 				if err != nil {
 					return err
 				}
@@ -563,7 +564,7 @@ func (c *BotController) buildSongsMediaGroup(songs []*entity.Song, downloadAll b
 				closers[i] = reader
 			} else {
 				album[i] = gotgbot.InputMediaDocument{
-					Media:   gotgbot.InputFileByID(song.PDF.TgFileID),
+					Media:   gotgbot.InputFileByID(song.GetTgFileID()),
 					Caption: song.Meta(),
 				}
 			}
@@ -602,7 +603,7 @@ func (c *BotController) updateSongTgFileIDs(msgs []gotgbot.Message, songs []*ent
 		similarity, err := edlib.StringsSimilarity(str1, str2, edlib.Levenshtein)
 		fmt.Printf("similarity: %g, str1: %s, str2: %s\n", similarity, str1, str2)
 		if err == nil && similarity > 0.9 {
-			song.PDF.TgFileID = doc.FileId
+			song.SetTgFileID(doc.FileId)
 		}
 	}
 	_, err := c.SongService.UpdateMany(songs)
@@ -626,7 +627,9 @@ func (c *BotController) songsAlbum(bot *gotgbot.Bot, ctx *ext.Context, songs []*
 
 	for i, mediaGroupChunk := range mediaGroupChunks {
 		closersChunk := closersChunks[i]
-		_, err := bot.SendMediaGroup(ctx.EffectiveChat.Id, mediaGroupChunk, nil)
+		songsChunk := songsChunks[i]
+
+		msgs, err := bot.SendMediaGroup(ctx.EffectiveChat.Id, mediaGroupChunk, nil)
 		for _, closer := range closersChunk {
 			if closer != nil {
 				_ = closer.Close()
@@ -635,12 +638,11 @@ func (c *BotController) songsAlbum(bot *gotgbot.Bot, ctx *ext.Context, songs []*
 		// Если не смогли отправить чанк, возможно проблема с файлами из кеша - TgFileID невалидный.
 		// Попробуем скачать все файлы из чанка и отправить.
 		if err != nil {
-			songsChunk := songsChunks[i]
 			mediaGroup, closers, err := c.buildSongsMediaGroup(songsChunk, true)
 			if err != nil {
 				return err
 			}
-			msgs, err := bot.SendMediaGroup(ctx.EffectiveChat.Id, mediaGroup, nil)
+			msgs, err = bot.SendMediaGroup(ctx.EffectiveChat.Id, mediaGroup, nil)
 			for _, closer := range closers {
 				if closer != nil {
 					_ = closer.Close()
@@ -649,10 +651,10 @@ func (c *BotController) songsAlbum(bot *gotgbot.Bot, ctx *ext.Context, songs []*
 			if err != nil {
 				return err
 			}
-
-			// Попробуем обновить TgFileID у файлов.
-			go c.updateSongTgFileIDs(msgs, songsChunk)
 		}
+
+		// Попробуем обновить TgFileID у файлов.
+		go c.updateSongTgFileIDs(msgs, songsChunk)
 	}
 
 	return nil

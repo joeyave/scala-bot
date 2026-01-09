@@ -84,6 +84,12 @@ const CreateEventPage: FC = () => {
         date: formData.date,
         timezone: bandTimezone,
         songIds: formData.setlist.map((song) => song.id),
+        songOverrides: formData.setlist
+          .filter((song) => song.eventKey)
+          .map((song) => ({
+            songId: song.id,
+            eventKey: song.eventKey,
+          })),
         notes: formData.notes,
       }),
     });
@@ -173,6 +179,19 @@ const CreateEventPage: FC = () => {
                 setFormData((prev) => ({
                   ...prev,
                   setlist: newSetlist,
+                }));
+              }}
+              onKeyChange={(song, newKey) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  setlist: prev.setlist.map((s) =>
+                    s.id === song.id
+                      ? {
+                          ...s,
+                          eventKey: newKey === s.key ? undefined : newKey,
+                        }
+                      : s,
+                  ),
                 }));
               }}
             />

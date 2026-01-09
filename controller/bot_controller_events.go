@@ -15,19 +15,27 @@ import (
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/helpers"
 	"github.com/joeyave/scala-bot/keyboard"
+	"github.com/joeyave/scala-bot/service"
 	"github.com/joeyave/scala-bot/state"
 	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"google.golang.org/api/drive/v3"
 )
 
-func (c *BotController) event(bot *gotgbot.Bot, ctx *ext.Context, event *entity.Event) error {
+const tempFolderName = "_temp"
 
+func (c *BotController) event(bot *gotgbot.Bot, ctx *ext.Context, event *entity.Event) error {
 	user := ctx.Data["user"].(*entity.User)
 
-	html := c.EventService.ToHtmlStringByEvent(*event, ctx.EffectiveUser.LanguageCode) // todo: refactor
+	songs, err := c.SongService.RetrieveFreshSongsForEvent(event)
+	if err != nil {
+		return err
+	}
+
+	html := service.HTMLStringForEvent(*event, songs, ctx.EffectiveUser.LanguageCode)
 
 	markup := gotgbot.InlineKeyboardMarkup{
 		InlineKeyboard: keyboard.EventInit(event, user, ctx.EffectiveUser.LanguageCode),
@@ -63,7 +71,6 @@ func (c *BotController) event(bot *gotgbot.Bot, ctx *ext.Context, event *entity.
 }
 
 func (c *BotController) CreateEvent(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	var data *EditEventData
 	err := json.Unmarshal([]byte(ctx.EffectiveMessage.WebAppData.Data), &data)
 	if err != nil {
@@ -130,7 +137,6 @@ func (c *BotController) CreateEvent(bot *gotgbot.Bot, ctx *ext.Context) error {
 
 func (c *BotController) GetEvents(index int) handlers.Response {
 	return func(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 		user := ctx.Data["user"].(*entity.User)
 
 		if user.State.Name != state.GetEvents {
@@ -210,7 +216,6 @@ func (c *BotController) GetEvents(index int) handlers.Response {
 
 func (c *BotController) filterEvents(index int) handlers.Response {
 	return func(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 		user := ctx.Data["user"].(*entity.User)
 
 		if user.State.Name != state.FilterEvents {
@@ -364,7 +369,6 @@ func (c *BotController) filterEvents(index int) handlers.Response {
 // ------- Callback controllers -------
 
 func (c *BotController) EventSetlistDocs(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	eventIDHex := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 
 	eventID, err := primitive.ObjectIDFromHex(eventIDHex)
@@ -376,12 +380,7 @@ func (c *BotController) EventSetlistDocs(bot *gotgbot.Bot, ctx *ext.Context) err
 		return err
 	}
 
-	var driveFileIDs []string
-	for _, song := range event.Songs {
-		driveFileIDs = append(driveFileIDs, song.DriveFileID)
-	}
-
-	if len(driveFileIDs) == 0 {
+	if len(event.Songs) == 0 {
 		_, err := ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
 			Text: txt.Get("noSongs", ctx.EffectiveUser.LanguageCode),
 		})
@@ -391,12 +390,48 @@ func (c *BotController) EventSetlistDocs(bot *gotgbot.Bot, ctx *ext.Context) err
 		return nil
 	}
 
-	songs, _, err := c.SongService.FindOrCreateManyByDriveFileIDs(driveFileIDs)
+	songs, tempDriveFiles, err := c.SongService.RetrieveFreshSongsForEventWithTransposeHandler(
+		event,
+		func(freshSong *entity.Song, override *entity.SongOverride) (*entity.Song, *drive.File, error) {
+			// No cached version exists - create a new transposed copy.
+			bandTempFolderID, err := c.getBandTempFolderID(freshSong.BandID)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			// Copy and transpose the song to the requested key.
+			transposedDriveFile, err := c.DriveFileService.CopyAndTransposeFirstSection(
+				freshSong.DriveFileID, override.EventKey, bandTempFolderID,
+			)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			freshSong.AltPDF = &entity.AltPDF{
+				Key:          override.EventKey,
+				ModifiedTime: freshSong.PDF.ModifiedTime,
+				DriveFileID:  transposedDriveFile.Id,
+				TgFileID:     "",
+			}
+
+			return freshSong, transposedDriveFile, nil
+		},
+	)
 	if err != nil {
 		return err
 	}
 
 	err = c.songsAlbum(bot, ctx, songs)
+
+	// Cleanup: Delete transposed files from temp folder after sending.
+	go func() {
+		for _, file := range tempDriveFiles {
+			if file != nil {
+				_ = c.DriveFileService.DeleteOne(file.Id)
+			}
+		}
+	}()
+
 	if err != nil {
 		return err
 	}
@@ -406,8 +441,27 @@ func (c *BotController) EventSetlistDocs(bot *gotgbot.Bot, ctx *ext.Context) err
 	return nil
 }
 
-func (c *BotController) EventCB(bot *gotgbot.Bot, ctx *ext.Context) error {
+func (c *BotController) getBandTempFolderID(bandID primitive.ObjectID) (string, error) {
+	band, err := c.BandService.FindOneByID(bandID)
+	if err != nil {
+		return "", err
+	}
 
+	if band.TempFolderID == "" {
+		tempFolder, err := c.DriveFileService.FindOrCreateOneFolderByNameAndFolderID(
+			tempFolderName, band.DriveFolderID,
+		)
+		if err != nil {
+			return "", err
+		}
+
+		band.TempFolderID = tempFolder.Id
+		go c.BandService.UpdateOne(*band)
+	}
+	return band.TempFolderID, nil
+}
+
+func (c *BotController) EventCB(bot *gotgbot.Bot, ctx *ext.Context) error {
 	user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
@@ -419,10 +473,17 @@ func (c *BotController) EventCB(bot *gotgbot.Bot, ctx *ext.Context) error {
 		return err
 	}
 
-	html, event, err := c.EventService.ToHtmlStringByID(eventID, ctx.EffectiveUser.LanguageCode)
+	event, err := c.EventService.FindOneByID(eventID)
 	if err != nil {
 		return err
 	}
+
+	songs, err := c.SongService.RetrieveFreshSongsForEvent(event)
+	if err != nil {
+		return err
+	}
+
+	html := service.HTMLStringForEvent(*event, songs, ctx.EffectiveUser.LanguageCode)
 
 	markup := gotgbot.InlineKeyboardMarkup{}
 
@@ -454,7 +515,6 @@ func (c *BotController) EventCB(bot *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (c *BotController) eventMembers(bot *gotgbot.Bot, ctx *ext.Context, event *entity.Event, memberships []*entity.Membership) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	markup := gotgbot.InlineKeyboardMarkup{}
@@ -498,7 +558,6 @@ func (c *BotController) eventMembers(bot *gotgbot.Bot, ctx *ext.Context, event *
 }
 
 func (c *BotController) EventMembers(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	hex := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
@@ -524,7 +583,6 @@ func (c *BotController) EventMembers(bot *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (c *BotController) EventMembersDeleteOrRecoverMember(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
@@ -586,7 +644,6 @@ func (c *BotController) EventMembersDeleteOrRecoverMember(bot *gotgbot.Bot, ctx 
 }
 
 func (c *BotController) EventMembersAddMemberChooseRole(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	hex := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
@@ -634,8 +691,7 @@ func (c *BotController) EventMembersAddMemberChooseRole(bot *gotgbot.Bot, ctx *e
 }
 
 func (c *BotController) EventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *ext.Context) error {
-
-	//user := ctx.Data["user"].(*entity.User)
+	// user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 	split := strings.Split(payload, ":")
@@ -660,7 +716,6 @@ func (c *BotController) EventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *e
 }
 
 func (c *BotController) eventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *ext.Context, eventID primitive.ObjectID, roleID primitive.ObjectID, loadMore bool) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	event, err := c.EventService.FindOneByID(eventID)
@@ -745,7 +800,6 @@ func (c *BotController) eventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *e
 }
 
 func (c *BotController) EventMembersAddMember(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
@@ -781,7 +835,6 @@ func (c *BotController) EventMembersAddMember(bot *gotgbot.Bot, ctx *ext.Context
 }
 
 func (c *BotController) EventMembersDeleteMember(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
@@ -818,7 +871,6 @@ func (c *BotController) EventMembersDeleteMember(bot *gotgbot.Bot, ctx *ext.Cont
 }
 
 func (c *BotController) EventDeleteConfirm(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
@@ -849,8 +901,7 @@ func (c *BotController) EventDeleteConfirm(bot *gotgbot.Bot, ctx *ext.Context) e
 }
 
 func (c *BotController) EventDelete(bot *gotgbot.Bot, ctx *ext.Context) error {
-
-	//user := ctx.Data["user"].(*entity.User)
+	// user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 
@@ -873,7 +924,6 @@ func (c *BotController) EventDelete(bot *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (c *BotController) notifyAdded(bot *gotgbot.Bot, user *entity.User, membership *entity.Membership) {
-
 	if user.ID == membership.UserID {
 		return
 	}
@@ -915,7 +965,6 @@ func (c *BotController) notifyAdded(bot *gotgbot.Bot, user *entity.User, members
 }
 
 func (c *BotController) notifyDeleted(bot *gotgbot.Bot, user *entity.User, membership *entity.Membership) {
-
 	if user.ID == membership.UserID {
 		return
 	}

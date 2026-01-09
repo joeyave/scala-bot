@@ -25,12 +25,12 @@ import (
 )
 
 type CreateSongData struct {
-	Name   string   `json:"name"`
-	Key    string   `json:"key"`
-	BPM    string   `json:"bpm"`
-	Time   string   `json:"time"`
-	Lyrics string   `json:"lyrics"`
-	Tags   []string `json:"tags"`
+	Name   string     `json:"name"`
+	Key    entity.Key `json:"key"`
+	BPM    string     `json:"bpm"`
+	Time   string     `json:"time"`
+	Lyrics string     `json:"lyrics"`
+	Tags   []string   `json:"tags"`
 }
 
 func (c *BotController) CreateSong(bot *gotgbot.Bot, ctx *ext.Context) error {

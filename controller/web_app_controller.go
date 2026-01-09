@@ -219,12 +219,12 @@ func (h *WebAppController) SongLyrics(ctx *gin.Context) {
 }
 
 type EditSongData struct {
-	Name             string   `json:"name"`
-	Key              string   `json:"key"`
-	BPM              string   `json:"bpm"`
-	Time             string   `json:"time"`
-	Tags             []string `json:"tags"`
-	TransposeSection string   `json:"transposeSection"`
+	Name             string     `json:"name"`
+	Key              entity.Key `json:"key"`
+	BPM              string     `json:"bpm"`
+	Time             string     `json:"time"`
+	Tags             []string   `json:"tags"`
+	TransposeSection string     `json:"transposeSection"`
 }
 
 var bpmRegex = regexp.MustCompile(`(?i)bpm:(.*?);`)
@@ -488,12 +488,28 @@ func (h *WebAppController) FrequentEventNames(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": gin.H{"names": names}})
 }
 
+// SongOverridesData represents a song in the setlist with optional key override from the frontend
+type SongOverridesData struct {
+	SongID   string     `json:"songId"`
+	EventKey entity.Key `json:"eventKey,omitempty"`
+}
+
 type EditEventData struct {
-	Name     string   `json:"name"`
-	Date     string   `json:"date"`
-	Timezone string   `json:"timezone"`
-	SongIDs  []string `json:"songIds"`
-	Notes    string   `json:"notes"`
+	Name          string              `json:"name"`
+	Date          string              `json:"date"`
+	Timezone      string              `json:"timezone"`
+	SongIDs       []string            `json:"songIds"`
+	SongOverrides []SongOverridesData `json:"songOverrides"`
+	Notes         string              `json:"notes"`
+}
+
+func (d *EditEventData) GetSongOverride(songID string) *SongOverridesData {
+	for _, item := range d.SongOverrides {
+		if item.SongID == songID {
+			return &item
+		}
+	}
+	return nil
 }
 
 func (h *WebAppController) EventEdit(ctx *gin.Context) {
@@ -562,20 +578,30 @@ func (h *WebAppController) EventEdit(ctx *gin.Context) {
 	event.TimeUTC = eventDate.UTC()
 
 	var songIDs []primitive.ObjectID
-	for _, id := range data.SongIDs {
-		idFromHex, err := primitive.ObjectIDFromHex(id)
+	var songOverrides []entity.SongOverride
+	for _, songIDHex := range data.SongIDs {
+		songID, err := primitive.ObjectIDFromHex(songIDHex)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			log.Error().Err(err).Msgf("Error:")
 			return
 		}
-		songIDs = append(songIDs, idFromHex)
+		songIDs = append(songIDs, songID)
+
+		override := data.GetSongOverride(songIDHex)
+		if override != nil && override.EventKey != "" {
+			songOverrides = append(songOverrides, entity.SongOverride{
+				SongID:   songID,
+				EventKey: override.EventKey,
+			})
+		}
 	}
 	event.SongIDs = songIDs
+	event.SongOverrides = songOverrides
 
 	event.Notes = &data.Notes
 
-	updatedEvent, err := h.EventService.UpdateOne(*event)
+	event, err = h.EventService.UpdateOne(*event)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		log.Error().Err(err).Msgf("Error:")
@@ -592,7 +618,16 @@ func (h *WebAppController) EventEdit(ctx *gin.Context) {
 	markup := gotgbot.InlineKeyboardMarkup{}
 	markup.InlineKeyboard = keyboard.EventEdit(event, user, chatID, messageID, user.LanguageCode)
 
-	html := h.EventService.ToHtmlStringByEvent(*updatedEvent, user.LanguageCode)
+	// call retrieveFreshSongsForEvent here.
+
+	songs, err := h.SongService.RetrieveFreshSongsForEvent(event)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+
+	html := service.HTMLStringForEvent(*event, songs, user.LanguageCode)
 
 	user.CallbackCache = entity.CallbackCache{
 		MessageID: messageID,

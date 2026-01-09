@@ -11,6 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type Key string
+
 type Song struct {
 	ID primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 
@@ -19,7 +21,9 @@ type Song struct {
 	BandID primitive.ObjectID `bson:"bandId,omitempty" json:"bandId"`
 	Band   *Band              `bson:"band,omitempty" json:"band"`
 
-	PDF PDF `bson:"pdf,omitempty" json:"pdf"`
+	PDF     PDF            `bson:"pdf,omitempty" json:"pdf"`
+	AltPDFs map[Key]AltPDF `bson:"altPdfs,omitempty" json:"altPdfs,omitempty"`
+	AltPDF  *AltPDF        `bson:"-" json:"-"`
 
 	Voices []*Voice `bson:"voices,omitempty" json:"-"`
 
@@ -29,27 +33,17 @@ type Song struct {
 	IsArchived bool `bson:"isArchived" json:"isArchived"`
 }
 
-type OldSong struct {
-	ID primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-
-	DriveFileID string `bson:"driveFileId,omitempty" json:"driveFileId"`
-
-	BandID primitive.ObjectID `bson:"bandId,omitempty" json:"bandId"`
-	Band   *Band              `bson:"band,omitempty" json:"band"`
-
-	PDF PDF `bson:"pdf,omitempty" json:"pdf"`
-
-	Voices []*Voice `bson:"voices,omitempty" json:"-"`
-
-	Likes []int64  `bson:"likes,omitempty" json:"-"`
-	Tags  []string `bson:"tags" json:"tags"`
-}
-
 type Like struct {
 	UserID int64     `bson:"userId"`
 	Time   time.Time `bson:"time"`
 }
 
+type AltPDF struct {
+	Key          Key    `bson:"key,omitempty" json:"key,omitempty"`
+	ModifiedTime string `bson:"modifiedTime,omitempty" json:"modifiedTime,omitempty"`
+	DriveFileID  string `bson:"driveFileId,omitempty" json:"driveFileId,omitempty"`
+	TgFileID     string `bson:"tgFileId,omitempty" json:"tgFileId,omitempty"`
+}
 type PDF struct {
 	ModifiedTime string `bson:"modifiedTime,omitempty" json:"modifiedTime,omitempty"`
 
@@ -57,15 +51,45 @@ type PDF struct {
 	TgChannelMessageID int    `bson:"tgChannelMessageId,omitempty" json:"tgChannelMessageId,omitempty"`
 
 	Name string `bson:"name,omitempty" json:"name,omitempty"`
-	Key  string `bson:"key,omitempty" json:"key,omitempty"`
+	Key  Key    `bson:"key,omitempty" json:"key,omitempty"`
 	BPM  string `bson:"bpm,omitempty" json:"bpm,omitempty"`
 	Time string `bson:"time,omitempty" json:"time,omitempty"`
 
 	WebViewLink string `bson:"webViewLink,omitempty" json:"webViewLink,omitempty"`
 }
 
+func (s *Song) GetTgFileID() string {
+	if s.AltPDF != nil {
+		return s.AltPDF.TgFileID
+	}
+	return s.PDF.TgFileID
+}
+
+func (s *Song) SetTgFileID(tgFileID string) {
+	if s.AltPDF != nil {
+		s.AltPDF.TgFileID = tgFileID
+		if s.AltPDFs == nil {
+			s.AltPDFs = make(map[Key]AltPDF)
+		}
+		s.AltPDFs[s.AltPDF.Key] = *s.AltPDF
+		return
+	}
+	s.PDF.TgFileID = tgFileID
+}
+
+func (s *Song) GetDriveFileID() string {
+	if s.AltPDF != nil {
+		return s.AltPDF.DriveFileID
+	}
+	return s.DriveFileID
+}
+
 func (s *Song) Meta() string {
-	return fmt.Sprintf("%s, %s, %s", s.PDF.Key, s.PDF.BPM, s.PDF.Time)
+	key := s.PDF.Key
+	if s.AltPDF != nil {
+		key = s.AltPDF.Key
+	}
+	return fmt.Sprintf("%s, %s, %s", key, s.PDF.BPM, s.PDF.Time)
 }
 
 func (s *Song) Caption() string {

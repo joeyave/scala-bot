@@ -54,6 +54,12 @@ export interface RespEventData {
   event: Event;
 }
 
+// SetlistItem represents a song in the setlist with optional event-specific overrides
+export interface SongOverride {
+  songId: string;
+  eventKey: string;
+}
+
 export interface Event {
   id: string;
   time: string;
@@ -62,6 +68,7 @@ export interface Event {
   bandId: string;
   band: Band;
   songIds: string[];
+  songOverrides?: SongOverride[];
   songs: Song[];
   notes: string;
 }

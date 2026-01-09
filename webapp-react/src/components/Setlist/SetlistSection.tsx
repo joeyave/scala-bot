@@ -11,6 +11,7 @@ interface SetlistSectionProps {
   onAddSong: (song: Song) => void;
   onRemove: (song: Song) => void;
   onReorder: (newSetlist: Song[]) => void;
+  onKeyChange?: (song: Song, newKey: string) => void;
   driveFolderId: string;
   archiveFolderId?: string | null;
 }
@@ -20,6 +21,7 @@ export function SetlistSection({
   onAddSong,
   onRemove,
   onReorder,
+  onKeyChange,
   driveFolderId,
   archiveFolderId,
 }: SetlistSectionProps) {
@@ -49,7 +51,7 @@ export function SetlistSection({
           onSelectSong={handleSelectSong}
         />
       </div>
-      <Setlist items={songs} onRemove={onRemove} onReorder={onReorder} />
+      <Setlist items={songs} onRemove={onRemove} onReorder={onReorder} onKeyChange={onKeyChange} />
     </div>
   );
 }

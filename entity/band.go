@@ -11,6 +11,7 @@ type Band struct {
 	Name            string             `bson:"name,omitempty" json:"name,omitempty"`
 	DriveFolderID   string             `bson:"driveFolderId,omitempty" json:"driveFolderId,omitempty"`
 	ArchiveFolderID string             `bson:"archiveFolderId,omitempty" json:"archiveFolderId,omitempty"`
+	TempFolderID    string             `bson:"tempFolderID,omitempty" json:"tempFolderID,omitempty"`
 	Roles           []*Role            `bson:"roles,omitempty" json:"roles,omitempty"`
 	Timezone        string             `bson:"timezone,omitempty" json:"timezone,omitempty"`
 }

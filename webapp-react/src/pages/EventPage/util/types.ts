@@ -11,4 +11,5 @@ export interface Song {
   key: string;
   bpm: string;
   time: string;
+  eventKey?: string; // Key override for this event (if different from original)
 }

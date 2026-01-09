@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/joeyave/scala-bot/entity"
@@ -143,18 +142,7 @@ func (s *EventService) DeleteOneByID(ID primitive.ObjectID) error {
 	return nil
 }
 
-func (s *EventService) ToHtmlStringByID(ID primitive.ObjectID, lang string) (string, *entity.Event, error) {
-
-	event, err := s.eventRepository.FindOneByID(ID)
-	if err != nil {
-		return "", nil, err
-	}
-
-	return s.ToHtmlStringByEvent(*event, lang), event, nil
-}
-
-func (s *EventService) ToHtmlStringByEvent(event entity.Event, lang string) string {
-
+func HTMLStringForEvent(event entity.Event, songs []*entity.Song, lang string) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "<b>%s</b>", event.Alias(lang))
 	rolesString := event.RolesString()
@@ -162,25 +150,14 @@ func (s *EventService) ToHtmlStringByEvent(event entity.Event, lang string) stri
 		fmt.Fprintf(&b, "\n\n%s", rolesString)
 	}
 
-	if len(event.Songs) > 0 {
+	if len(songs) > 0 {
 		fmt.Fprintf(&b, "\n\n<b>%s:</b>", txt.Get("button.setlist", lang))
 
-		var waitGroup sync.WaitGroup
-		waitGroup.Add(len(event.Songs))
-		songNames := make([]string, len(event.Songs))
-		for i := range event.Songs {
-			go func(i int) {
-				defer waitGroup.Done()
-				driveFile, err := s.driveFileService.FindOneByID(event.Songs[i].DriveFileID)
-				if err != nil {
-					// todo: output some message.
-					return
-				}
-				songName := fmt.Sprintf("%d. <a href=\"%s\">%s</a>  (%s)", i+1, driveFile.WebViewLink, driveFile.Name, event.Songs[i].Meta())
-				songNames[i] = songName
-			}(i)
+		var songNames []string
+		for i, song := range songs {
+			songName := fmt.Sprintf("%d. <a href=\"%s\">%s</a>  (%s)", i+1, song.PDF.WebViewLink, song.PDF.Name, song.Meta())
+			songNames = append(songNames, songName)
 		}
-		waitGroup.Wait()
 
 		fmt.Fprintf(&b, "\n%s", strings.Join(songNames, "\n"))
 	}
