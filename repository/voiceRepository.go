@@ -91,7 +91,6 @@ func (r *VoiceRepository) findOne(m bson.M) (*entity.Voice, error) {
 }
 
 func (r *VoiceRepository) CloneVoicesForNewSongID(oldSongID, newSongID primitive.ObjectID) error {
-
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("voices")
 
 	// Find all voices with oldSongID
@@ -100,7 +99,7 @@ func (r *VoiceRepository) CloneVoicesForNewSongID(oldSongID, newSongID primitive
 	if err != nil {
 		return err
 	}
-	defer cursor.Close(context.TODO()) //nolint:errcheck
+	defer cursor.Close(context.TODO())
 
 	// Clone voices with new newSongID
 	var voices []any

@@ -19,7 +19,6 @@ import (
 )
 
 func (c *BotController) SettingsChooseBand(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	hex := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
@@ -28,7 +27,7 @@ func (c *BotController) SettingsChooseBand(bot *gotgbot.Bot, ctx *ext.Context) e
 		return err
 	}
 
-	//band, err := c.BandService.FindOneByID(bandID)
+	// band, err := c.BandService.FindOneByID(bandID)
 
 	index := slices.IndexFunc(user.BandIDs, func(id primitive.ObjectID) bool {
 		return id == bandID
@@ -38,14 +37,13 @@ func (c *BotController) SettingsChooseBand(bot *gotgbot.Bot, ctx *ext.Context) e
 		user.BandID = bandID
 		user.BandIDs = append(user.BandIDs, bandID)
 
-		//_, _, err = bot.EditMessageText(txt.Get("text.addedToBand", ctx.EffectiveUser.LanguageCode, band.Name), &gotgbot.EditMessageTextOpts{
+		// _, _, err = bot.EditMessageText(txt.Get("text.addedToBand", ctx.EffectiveUser.LanguageCode, band.Name), &gotgbot.EditMessageTextOpts{
 		//	ChatId:    ctx.EffectiveChat.Id,
 		//	MessageId: ctx.EffectiveMessage.MessageId,
 		//})
 		//if err != nil {
 		//	return err
 		//}
-
 	} else { // If removing.
 		user.BandIDs = slices.Delete(user.BandIDs, index, index+1)
 
@@ -55,7 +53,7 @@ func (c *BotController) SettingsChooseBand(bot *gotgbot.Bot, ctx *ext.Context) e
 			user.BandID = primitive.NilObjectID
 		}
 
-		//_, _, err = bot.EditMessageText(txt.Get("text.removedFromBand", ctx.EffectiveUser.LanguageCode, band.Name), &gotgbot.EditMessageTextOpts{
+		// _, _, err = bot.EditMessageText(txt.Get("text.removedFromBand", ctx.EffectiveUser.LanguageCode, band.Name), &gotgbot.EditMessageTextOpts{
 		//	ChatId:    ctx.EffectiveChat.Id,
 		//	MessageId: ctx.EffectiveMessage.MessageId,
 		//})
@@ -68,7 +66,6 @@ func (c *BotController) SettingsChooseBand(bot *gotgbot.Bot, ctx *ext.Context) e
 }
 
 func (c *BotController) Settings(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	markup := gotgbot.InlineKeyboardMarkup{
@@ -86,7 +83,6 @@ func (c *BotController) Settings(bot *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (c *BotController) SettingsCB(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	markup := gotgbot.InlineKeyboardMarkup{
@@ -107,7 +103,6 @@ func (c *BotController) SettingsCB(bot *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (c *BotController) SettingsBands(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	markup := gotgbot.InlineKeyboardMarkup{}
@@ -144,8 +139,7 @@ func (c *BotController) SettingsBands(bot *gotgbot.Bot, ctx *ext.Context) error 
 }
 
 func (c *BotController) SettingsBandMembers(bot *gotgbot.Bot, ctx *ext.Context) error {
-
-	//user := ctx.Data["user"].(*entity.User)
+	// user := ctx.Data["user"].(*entity.User)
 
 	hex := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 	bandID, err := primitive.ObjectIDFromHex(hex)
@@ -157,10 +151,9 @@ func (c *BotController) SettingsBandMembers(bot *gotgbot.Bot, ctx *ext.Context) 
 }
 
 func (c *BotController) SettingsCleanupDatabase(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
-	//hex := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
+	// hex := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 	//bandID, err := primitive.ObjectIDFromHex(hex)
 	//if err != nil {
 	//	return err
@@ -184,7 +177,6 @@ func (c *BotController) SettingsCleanupDatabase(bot *gotgbot.Bot, ctx *ext.Conte
 
 		var gErr *googleapi.Error
 		if errors.As(err, &gErr) && gErr.Code == 404 {
-
 			deleted, _ := c.SongService.DeleteOneByDriveFileIDFromDatabase(song.DriveFileID)
 			if deleted {
 				builder.WriteString(fmt.Sprintf("\nDeleted: <a href=\"%s\">%s</a>", song.PDF.WebViewLink, song.PDF.Name))
@@ -230,8 +222,7 @@ func (c *BotController) SettingsCleanupDatabase(bot *gotgbot.Bot, ctx *ext.Conte
 }
 
 func (c *BotController) settingsBandMembers(bot *gotgbot.Bot, ctx *ext.Context, bandID primitive.ObjectID) error {
-
-	//user := ctx.Data["user"].(*entity.User)
+	// user := ctx.Data["user"].(*entity.User)
 
 	members, err := c.UserService.FindMultipleByBandID(bandID)
 	if err != nil {
@@ -270,8 +261,7 @@ func (c *BotController) settingsBandMembers(bot *gotgbot.Bot, ctx *ext.Context, 
 // todo: BUG! move role from User to Band
 
 func (c *BotController) SettingsBandAddAdmin(bot *gotgbot.Bot, ctx *ext.Context) error {
-
-	//user := ctx.Data["user"].(*entity.User)
+	// user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 	split := strings.Split(payload, ":")

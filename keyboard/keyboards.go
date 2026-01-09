@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"os"
 
+	"slices"
+
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/state"
 	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
-	"golang.org/x/exp/slices"
 	"google.golang.org/api/drive/v3"
 )
 
@@ -38,7 +39,7 @@ func Settings(user *entity.User, lang string) [][]gotgbot.InlineKeyboardButton {
 	keyboard := [][]gotgbot.InlineKeyboardButton{
 		{{Text: txt.Get("button.changeBand", lang), CallbackData: util.CallbackData(state.SettingsBands, "")}},
 	}
-	//if user.IsAdmin() {
+	// if user.IsAdmin() {
 	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.addAdmin", lang), CallbackData: util.CallbackData(state.SettingsBandMembers, user.BandID.Hex())}})
 	//}
 
@@ -50,7 +51,6 @@ func Settings(user *entity.User, lang string) [][]gotgbot.InlineKeyboardButton {
 }
 
 func NavigationByToken(nextPageToken *entity.NextPageToken, lang string) [][]gotgbot.KeyboardButton {
-
 	var keyboard [][]gotgbot.KeyboardButton
 
 	// если есть пред стр
@@ -73,15 +73,14 @@ func NavigationByToken(nextPageToken *entity.NextPageToken, lang string) [][]got
 }
 
 func EventInit(event *entity.Event, user *entity.User, lang string) [][]gotgbot.InlineKeyboardButton {
-
 	keyboard := [][]gotgbot.InlineKeyboardButton{
 		{
 			{Text: txt.Get("button.chords", lang), CallbackData: util.CallbackData(state.EventSetlistDocs, event.ID.Hex())},
-			//{Text: txt.Get("button.metronome", lang), CallbackData: util.CallbackData(state.EventSetlistMetronome, event.ID.Hex())},
+			// {Text: txt.Get("button.metronome", lang), CallbackData: util.CallbackData(state.EventSetlistMetronome, event.ID.Hex())},
 		},
 	}
 
-	//if user.IsAdmin() || user.IsEventMember(event) {
+	// if user.IsAdmin() || user.IsEventMember(event) {
 	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
 		{Text: txt.Get("button.edit", lang), CallbackData: util.CallbackData(state.EventCB, event.ID.Hex()+":edit")},
 	})
@@ -91,7 +90,6 @@ func EventInit(event *entity.Event, user *entity.User, lang string) [][]gotgbot.
 }
 
 func EventEdit(event *entity.Event, user *entity.User, chatID, messageID int64, lang string) [][]gotgbot.InlineKeyboardButton {
-
 	keyboard := [][]gotgbot.InlineKeyboardButton{
 		{
 			{Text: txt.Get("button.setlist", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/webapp-react/#/events/%s/edit?messageId=%d&chatId=%d&userId=%d&lang=%s", os.Getenv("BOT_DOMAIN"), event.ID.Hex(), messageID, chatID, user.ID, lang)}},
@@ -109,11 +107,9 @@ func EventEdit(event *entity.Event, user *entity.User, chatID, messageID int64, 
 }
 
 func SongInit(song *entity.Song, user *entity.User, chatID int64, messageID int64, lang string) [][]gotgbot.InlineKeyboardButton {
-
 	var keyboard [][]gotgbot.InlineKeyboardButton
 
 	if song.BandID == user.BandID {
-
 		liked := false
 		for _, like := range song.Likes {
 			if user.ID == like.UserID {
@@ -137,11 +133,10 @@ func SongInit(song *entity.Song, user *entity.User, chatID int64, messageID int6
 		}
 
 		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.edit", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/webapp-react/#/songs/%s/edit?userId=%d&messageId=%d&chatId=%d&lang=%s", os.Getenv("BOT_DOMAIN"), song.ID.Hex(), user.ID, messageID, chatID, lang)}}})
-
 	} else {
 		keyboard = [][]gotgbot.InlineKeyboardButton{
 			{{Text: txt.Get("button.copyToMyBand", lang), CallbackData: util.CallbackData(state.SongCopyToMyBand, song.DriveFileID)}},
-			//{{Text: txt.Get("button.voices", lang, len(song.Voices)), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())}}, // todo: enable
+			// {{Text: txt.Get("button.voices", lang, len(song.Voices)), CallbackData: util.CallbackData(state.SongVoices, song.ID.Hex())}}, // todo: enable
 		}
 
 		if user.ID == 195295372 { // todo: remove
@@ -153,7 +148,6 @@ func SongInit(song *entity.Song, user *entity.User, chatID int64, messageID int6
 }
 
 func SongInitIQ(song *entity.Song, user *entity.User, lang string) [][]gotgbot.InlineKeyboardButton {
-
 	var keyboard [][]gotgbot.InlineKeyboardButton
 
 	liked := false
@@ -178,7 +172,6 @@ func SongInitIQ(song *entity.Song, user *entity.User, lang string) [][]gotgbot.I
 }
 
 func SongEdit(song *entity.Song, driveFile *drive.File, user *entity.User, lang string) [][]gotgbot.InlineKeyboardButton {
-
 	keyboard := [][]gotgbot.InlineKeyboardButton{
 		{
 			{Text: txt.Get("button.docLink", lang), Url: song.PDF.WebViewLink},
@@ -189,19 +182,19 @@ func SongEdit(song *entity.Song, driveFile *drive.File, user *entity.User, lang 
 		},
 	}
 
-	//if user.IsAdmin() {
+	// if user.IsAdmin() {
 	if slices.Contains(driveFile.Parents, song.Band.ArchiveFolderID) {
 		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
 			{Text: txt.Get("button.unarchiveText", lang), CallbackData: util.CallbackData(state.SongArchive, song.ID.Hex()+":unarchive")},
 			{Text: txt.Get("button.delete", lang), CallbackData: util.CallbackData(state.SongDeleteConfirm, song.ID.Hex())},
 		})
-		} else {
+	} else {
 		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{
-				{Text: txt.Get("button.archiveText", lang), CallbackData: util.CallbackData(state.SongArchive, song.ID.Hex()+":archive")},
-				{Text: txt.Get("button.delete", lang), CallbackData: util.CallbackData(state.SongDeleteConfirm, song.ID.Hex())},
-			})
-		}
-//	}
+			{Text: txt.Get("button.archiveText", lang), CallbackData: util.CallbackData(state.SongArchive, song.ID.Hex()+":archive")},
+			{Text: txt.Get("button.delete", lang), CallbackData: util.CallbackData(state.SongDeleteConfirm, song.ID.Hex())},
+		})
+	}
+	//	}
 
 	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.stats", lang), CallbackData: util.CallbackData(state.SongStats, song.ID.Hex())}})
 	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.back", lang), CallbackData: util.CallbackData(state.SongCB, song.ID.Hex()+":init")}})

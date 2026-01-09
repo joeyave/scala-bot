@@ -67,7 +67,6 @@ func (r *EventRepository) FindOneOldestByBandID(bandID primitive.ObjectID) (*ent
 }
 
 func (r *EventRepository) FindManyFromDateByBandID(bandID primitive.ObjectID, fromUTC time.Time) ([]*entity.Event, error) {
-
 	return r.find(
 		bson.M{
 			"bandId": bandID,
@@ -84,7 +83,6 @@ func (r *EventRepository) FindManyFromDateByBandID(bandID primitive.ObjectID, fr
 }
 
 func (r *EventRepository) FindBetweenDates(fromUTC, toUTC time.Time) ([]*entity.Event, error) {
-
 	return r.find(
 		bson.M{
 			"time": bson.M{
@@ -118,7 +116,6 @@ func (r *EventRepository) FindManyBetweenDatesByBandID(fromUTC, toUTC time.Time,
 }
 
 func (r *EventRepository) FindManyByBandIDAndPageNumber(bandID primitive.ObjectID, pageNumber int) ([]*entity.Event, error) {
-
 	return r.find(
 		bson.M{
 			"bandId": bandID,
@@ -716,7 +713,6 @@ func (r *EventRepository) PullSongID(eventID primitive.ObjectID, songID primitiv
 }
 
 func (r *EventRepository) GetMostFrequentEventNames(bandID primitive.ObjectID, limit int, fromUTC time.Time) ([]*entity.EventNameFrequencies, error) {
-
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("events")
 
 	pipeline := bson.A{

@@ -16,7 +16,6 @@ import (
 )
 
 func (c *BotController) BandCreate_AskForName(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	markup := &gotgbot.ReplyKeyboardMarkup{
@@ -48,7 +47,6 @@ func (c *BotController) BandCreate_AskForName(bot *gotgbot.Bot, ctx *ext.Context
 
 func (c *BotController) BandCreate(index int) handlers.Response {
 	return func(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 		user := ctx.Data["user"].(*entity.User)
 
 		if user.State.Name != state.BandCreate {
@@ -113,7 +111,6 @@ func (c *BotController) BandCreate(index int) handlers.Response {
 }
 
 func (c *BotController) RoleCreate_AskForName(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	markup := &gotgbot.ReplyKeyboardMarkup{
@@ -144,7 +141,6 @@ func (c *BotController) RoleCreate_AskForName(bot *gotgbot.Bot, ctx *ext.Context
 }
 
 func (c *BotController) RoleCreate_ChoosePosition(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	markup := &gotgbot.InlineKeyboardMarkup{}
@@ -153,7 +149,7 @@ func (c *BotController) RoleCreate_ChoosePosition(bot *gotgbot.Bot, ctx *ext.Con
 	for _, role := range user.Band.Roles {
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: role.Name, CallbackData: util.CallbackData(state.RoleCreate, fmt.Sprintf("%s:%d", ctx.EffectiveMessage.Text, role.Priority+1))}})
 	}
-	//markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.cancel", ctx.EffectiveUser.LanguageCode), CallbackData: "todo"}})
+	// markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.cancel", ctx.EffectiveUser.LanguageCode), CallbackData: "todo"}})
 
 	_, err := ctx.EffectiveChat.SendMessage(bot, txt.Get("text.roleIndex", ctx.EffectiveUser.LanguageCode), &gotgbot.SendMessageOpts{ReplyMarkup: markup})
 	if err != nil {
@@ -166,7 +162,6 @@ func (c *BotController) RoleCreate_ChoosePosition(bot *gotgbot.Bot, ctx *ext.Con
 }
 
 func (c *BotController) RoleCreate(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)

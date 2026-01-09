@@ -29,7 +29,6 @@ type WebAppController struct {
 }
 
 func (h *WebAppController) Statistics(ctx *gin.Context) {
-
 	fmt.Println(ctx.Request.URL.String())
 
 	hex := ctx.Query("bandId")
@@ -52,7 +51,7 @@ func (h *WebAppController) Statistics(ctx *gin.Context) {
 	ctx.HTML(http.StatusOK, "statistics.go.html", gin.H{
 		"Lang": ctx.Query("lang"),
 
-		//"Users": viewUsers,
+		// "Users": viewUsers,
 		"FromDate": time.Date(now.Year(), time.January, 1, 0, 0, 0, 0, now.Location()),
 		"BandID":   bandID.Hex(),
 		"Roles":    band.Roles,
@@ -81,7 +80,6 @@ type Role struct {
 }
 
 func (h *WebAppController) UsersWithEvents(ctx *gin.Context) {
-
 	fmt.Println(ctx.Request.URL)
 
 	hex := ctx.Query("bandId")
@@ -152,7 +150,6 @@ func (h *WebAppController) UsersWithEvents(ctx *gin.Context) {
 // API Songs.
 
 func (h *WebAppController) SongData(ctx *gin.Context) {
-
 	songIDFromQ := ctx.Param("id")
 	songID, err := primitive.ObjectIDFromHex(songIDFromQ)
 	if err != nil {
@@ -194,7 +191,6 @@ func (h *WebAppController) SongData(ctx *gin.Context) {
 }
 
 func (h *WebAppController) SongLyrics(ctx *gin.Context) {
-
 	songIDFromQ := ctx.Param("id")
 	songID, err := primitive.ObjectIDFromHex(songIDFromQ)
 	if err != nil {
@@ -231,7 +227,6 @@ var bpmRegex = regexp.MustCompile(`(?i)bpm:(.*?);`)
 var timeRegex = regexp.MustCompile(`(?i)time:(.*?);`)
 
 func (h *WebAppController) SongEdit(ctx *gin.Context) {
-
 	songIDStr := ctx.Param("id")
 	songID, err := primitive.ObjectIDFromHex(songIDStr)
 	if err != nil {
@@ -358,7 +353,7 @@ func (h *WebAppController) SongEdit(ctx *gin.Context) {
 		return
 	}
 
-	defer reader.Close() //nolint:errcheck
+	defer reader.Close()
 
 	markup := gotgbot.InlineKeyboardMarkup{
 		InlineKeyboard: keyboard.SongInit(song, user, chatID, messageID, user.LanguageCode),
@@ -383,7 +378,6 @@ func (h *WebAppController) SongEdit(ctx *gin.Context) {
 }
 
 func (h *WebAppController) SongDownload(ctx *gin.Context) {
-
 	songIDStr := ctx.Param("id")
 	songID, err := primitive.ObjectIDFromHex(songIDStr)
 	if err != nil {
@@ -406,7 +400,7 @@ func (h *WebAppController) SongDownload(ctx *gin.Context) {
 		return
 	}
 
-	defer resp.Body.Close() //nolint:errcheck
+	defer resp.Body.Close()
 
 	contentType := resp.Header.Get("Content-Type")
 	if contentType == "" {
@@ -427,7 +421,6 @@ func (h *WebAppController) SongDownload(ctx *gin.Context) {
 // API tags.
 
 func (h *WebAppController) Tags(ctx *gin.Context) {
-
 	bandIdFromQ := ctx.Query("bandId")
 	bandID, err := primitive.ObjectIDFromHex(bandIdFromQ)
 	if err != nil {
@@ -445,7 +438,6 @@ func (h *WebAppController) Tags(ctx *gin.Context) {
 }
 
 func (h *WebAppController) EventData(ctx *gin.Context) {
-
 	eventIDFromCtx := ctx.Param("id")
 	eventID, err := primitive.ObjectIDFromHex(eventIDFromCtx)
 	if err != nil {
@@ -488,7 +480,7 @@ func (h *WebAppController) FrequentEventNames(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": gin.H{"names": names}})
 }
 
-// SongOverridesData represents a song in the setlist with optional key override from the frontend
+// SongOverridesData represents a song in the setlist with optional key override from the frontend.
 type SongOverridesData struct {
 	SongID   string     `json:"songId"`
 	EventKey entity.Key `json:"eventKey,omitempty"`
@@ -513,7 +505,6 @@ func (d *EditEventData) GetSongOverride(songID string) *SongOverridesData {
 }
 
 func (h *WebAppController) EventEdit(ctx *gin.Context) {
-
 	eventIDStr := ctx.Param("id")
 	eventID, err := primitive.ObjectIDFromHex(eventIDStr)
 	if err != nil {

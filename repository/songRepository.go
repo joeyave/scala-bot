@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sort"
 	"time"
 
@@ -17,7 +17,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var ErrNotFound = fmt.Errorf("not found")
+var ErrNotFound = errors.New("not found")
 
 type SongRepository struct {
 	mongoClient *mongo.Client
@@ -48,7 +48,6 @@ func (r *SongRepository) FindManyLiked(bandID primitive.ObjectID, userID int64) 
 }
 
 func (r *SongRepository) FindManyByDriveFileIDs(IDs []string) ([]*entity.Song, error) {
-
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	pipeline := bson.A{
@@ -249,7 +248,6 @@ func (r *SongRepository) UpdateOne(song entity.Song) (*entity.Song, error) {
 }
 
 func (r *SongRepository) UpdateMany(songs []*entity.Song) (*mongo.BulkWriteResult, error) {
-
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	var models []mongo.WriteModel
@@ -366,7 +364,6 @@ func (r *SongRepository) Dislike(songID primitive.ObjectID, userID int64) error 
 }
 
 func (r *SongRepository) FindOneWithExtraByID(songID primitive.ObjectID, eventsStartDate time.Time) (*entity.SongWithEvents, error) {
-
 	songs, err := r.findWithExtra(
 		bson.M{
 			"_id": songID,
@@ -380,7 +377,6 @@ func (r *SongRepository) FindOneWithExtraByID(songID primitive.ObjectID, eventsS
 }
 
 func (r *SongRepository) FindAllExtraByPageNumberSortedByEventsNumber(bandID primitive.ObjectID, eventsStartDate time.Time, isAscending bool, pageNumber int) ([]*entity.SongWithEvents, error) {
-
 	sortingValue := -1
 	if isAscending {
 		sortingValue = 1
@@ -416,7 +412,6 @@ func (r *SongRepository) FindAllExtraByPageNumberSortedByEventsNumber(bandID pri
 }
 
 func (r *SongRepository) FindAllExtraByPageNumberSortedByEventDate(bandID primitive.ObjectID, eventsStartDate time.Time, isAscending bool, pageNumber int) ([]*entity.SongWithEvents, error) {
-
 	sortingValue := -1
 	if isAscending {
 		sortingValue = 1
@@ -447,7 +442,6 @@ func (r *SongRepository) FindAllExtraByPageNumberSortedByEventDate(bandID primit
 }
 
 func (r *SongRepository) FindManyExtraByTag(tag string, bandID primitive.ObjectID, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {
-
 	return r.findWithExtra(
 		bson.M{
 			"bandId": bandID,

@@ -38,11 +38,10 @@ type BotController struct {
 	MembershipService *service.MembershipService
 	EventService      *service.EventService
 	RoleService       *service.RoleService
-	//OldHandler        *myhandlers.Handler
+	// OldHandler        *myhandlers.Handler
 }
 
 func (c *BotController) ChooseHandlerOrSearch(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	switch user.State.Name {
@@ -70,7 +69,6 @@ func (c *BotController) ChooseHandlerOrSearch(bot *gotgbot.Bot, ctx *ext.Context
 var decoder = schema.NewDecoder()
 
 func (c *BotController) RegisterUser(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user, err := c.UserService.FindOneOrCreateByID(ctx.EffectiveUser.Id)
 	if err != nil {
 		return err
@@ -82,13 +80,12 @@ func (c *BotController) RegisterUser(bot *gotgbot.Bot, ctx *ext.Context) error {
 	user.LanguageCode = ctx.EffectiveUser.LanguageCode
 
 	// todo
-	//if user.BandID == primitive.NilObjectID && user.State.Name != helpers.ChooseBandState && user.State.Name != helpers.CreateBandState {
+	// if user.BandID == primitive.NilObjectID && user.State.Name != helpers.ChooseBandState && user.State.Name != helpers.CreateBandState {
 	//	user.State = entity.State{
 	//		Name: helpers.ChooseBandState,
 	//	}
 	//}
 	if user.BandID == primitive.NilObjectID || user.Band == nil {
-
 		if ctx.CallbackQuery != nil {
 			parsedData := strings.Split(ctx.CallbackQuery.Data, ":")
 			if parsedData[0] == strconv.Itoa(state.SettingsChooseBand) || parsedData[0] == strconv.Itoa(state.BandCreate_AskForName) {
@@ -155,7 +152,6 @@ func (c *BotController) RegisterUser(bot *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (c *BotController) UpdateUser(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	_, err := c.UserService.UpdateOne(*user)
@@ -164,7 +160,6 @@ func (c *BotController) UpdateUser(bot *gotgbot.Bot, ctx *ext.Context) error {
 
 func (c *BotController) search(index int) handlers.Response {
 	return func(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 		user := ctx.Data["user"].(*entity.User)
 
 		bandIndex := slices.IndexFunc(user.Cache.Bands, func(band *entity.Band) bool {
@@ -212,7 +207,6 @@ func (c *BotController) search(index int) handlers.Response {
 				if len(songNames) > 1 {
 					user.Cache.SongNames = songNames
 					return c.searchSetlist(0)(bot, ctx)
-
 				} else if len(songNames) == 1 {
 					query = songNames[0]
 					user.Cache.Query = query
@@ -266,9 +260,7 @@ func (c *BotController) search(index int) handlers.Response {
 
 				set := make(map[string]*entity.Band)
 				for i, driveFile := range driveFiles {
-
 					if user.Cache.Filter == txt.Get("button.globalSearch", ctx.EffectiveUser.LanguageCode) {
-
 						for _, parentFolderID := range driveFile.Parents {
 							_, exists := set[parentFolderID]
 							if !exists {
@@ -451,7 +443,6 @@ func (c *BotController) searchSetlist(index int) handlers.Response {
 }
 
 func (c *BotController) Menu(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	user.State = entity.State{}
@@ -481,7 +472,6 @@ func (c *BotController) Menu(bot *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) ext.DispatcherAction {
-
 	log.Error().Msgf("Error handling update: %v", botErr)
 
 	user, err := c.UserService.FindOneByID(ctx.EffectiveUser.Id)
@@ -494,7 +484,7 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 		_, _ = ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
 			Text: txt.Get("text.serverError", ctx.EffectiveUser.LanguageCode),
 		})
-		//if err != nil {
+		// if err != nil {
 		//	log.Error().Err(err).Msg("Error!")
 		//	return ext.DispatcherActionEndGroups
 		//}
@@ -502,7 +492,6 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 		_, _ = ctx.InlineQuery.Answer(bot, nil, &gotgbot.AnswerInlineQueryOpts{
 			CacheTime: 1,
 		})
-
 	} else if ctx.EffectiveChat != nil {
 		_, err := ctx.EffectiveChat.SendMessage(bot, txt.Get("text.serverError", ctx.EffectiveUser.LanguageCode), nil)
 		if err != nil {
@@ -548,9 +537,7 @@ func (c *BotController) buildSongsMediaGroup(songs []*entity.Song, downloadAll b
 	closers := make([]io.Closer, len(songs))
 
 	for i, song := range songs {
-		i, song := i, song // Important! See https://golang.org/doc/faq#closures_and_goroutines.
 		g.Go(func() error {
-
 			if song.GetTgFileID() == "" || downloadAll {
 				reader, err := c.DriveFileService.DownloadOneByID(song.GetDriveFileID())
 				if err != nil {
@@ -597,7 +584,7 @@ func (c *BotController) updateSongTgFileIDs(msgs []gotgbot.Message, songs []*ent
 		}
 
 		// На всякий случай сравниваем названия. Сравниваем с помощью алгоритма Levenshtein.
-		//Получаем процент схожести двух строк. Пропускаем больше 90%.
+		// Получаем процент схожести двух строк. Пропускаем больше 90%.
 		str1 := song.PDF.Name
 		str2 := strings.ReplaceAll(strings.TrimSuffix(doc.FileName, ".pdf"), "_", " ")
 		similarity, err := edlib.StringsSimilarity(str1, str2, edlib.Levenshtein)
@@ -613,7 +600,6 @@ func (c *BotController) updateSongTgFileIDs(msgs []gotgbot.Message, songs []*ent
 }
 
 func (c *BotController) songsAlbum(bot *gotgbot.Bot, ctx *ext.Context, songs []*entity.Song) error {
-
 	// Подготавливаем файлы: берем из кеша (если файл уже есть на серверах телеграм) или загружаем.
 	mediaGroup, closers, err := c.buildSongsMediaGroup(songs, false)
 	if err != nil {
@@ -682,7 +668,6 @@ func (c *BotController) NotifyUsers(bot *gotgbot.Bot) {
 		}
 
 		for _, event := range events {
-
 			// NEW: Do not send notifications at night (local event time)
 			if !canSendNow(event) {
 				continue
@@ -723,7 +708,7 @@ func (c *BotController) NotifyUsers(bot *gotgbot.Bot) {
 	}
 }
 
-// Do not send notifications between 21:00–08:00 (event local time)
+// Do not send notifications between 21:00–08:00 (event local time).
 func canSendNow(event *entity.Event) bool {
 	now := event.Band.GetNowTime()
 	hour := now.Hour()

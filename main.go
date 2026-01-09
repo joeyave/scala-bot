@@ -40,8 +40,7 @@ import (
 )
 
 func main() {
-
-	//location, err := time.LoadLocation("Europe/Kiev")
+	// location, err := time.LoadLocation("Europe/Kiev")
 	//if err != nil {
 	//	log.Fatal().Msgf("Err loading location: %v", err)
 	//}
@@ -128,7 +127,7 @@ func main() {
 	roleRepository := repository.NewRoleRepository(mongoClient)
 	roleService := service.NewRoleService(roleRepository)
 
-	//handler := myhandlers.NewHandler(
+	// handler := myhandlers.NewHandler(
 	//	bot,
 	//	userService,
 	//	driveFileService,
@@ -171,7 +170,7 @@ func main() {
 	// Create updater and dispatcher.
 	dispatcher := ext.NewDispatcher(&ext.DispatcherOpts{
 		Error: botController.Error,
-		Panic: func(b *gotgbot.Bot, ctx *ext.Context, r interface{}) {
+		Panic: func(b *gotgbot.Bot, ctx *ext.Context, r any) {
 			err, ok := r.(error)
 			if ok {
 				botController.Error(bot, ctx, err)
@@ -184,7 +183,6 @@ func main() {
 	updater := ext.NewUpdater(dispatcher, nil)
 
 	dispatcher.AddHandlerToGroup(handlers.NewInlineQuery(inlinequery.All, func(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 		user, err := userService.FindOneByID(ctx.EffectiveUser.Id)
 		if err == nil && user.BandID != primitive.NilObjectID {
 			ctx.Data["user"] = user
@@ -220,7 +218,7 @@ func main() {
 		}
 
 		return botController.Menu(bot, ctx)
-		//return nil
+		// return nil
 	}), 1)
 
 	dispatcher.AddHandlerToGroup(handlers.NewCommand("schedule", botController.GetEvents(0)), 1)
@@ -297,10 +295,9 @@ func main() {
 
 	// Inline query.
 	dispatcher.AddHandlerToGroup(handlers.NewInlineQuery(inlinequery.All, func(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 		user := ctx.Data["user"].(*entity.User)
 
-		//if len(ctx.InlineQuery.Query) < 2 {
+		// if len(ctx.InlineQuery.Query) < 2 {
 		//	ctx.InlineQuery.Answer(bot, nil, nil)
 		//	return nil
 		//}
@@ -368,7 +365,7 @@ func main() {
 		"hex": func(id primitive.ObjectID) string {
 			return id.Hex()
 		},
-		"json": func(s interface{}) string {
+		"json": func(s any) string {
 			jsonBytes, err := json.Marshal(s)
 			if err != nil {
 				return ""

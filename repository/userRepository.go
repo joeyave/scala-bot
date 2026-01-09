@@ -293,7 +293,6 @@ func (r *UserRepository) FindManyExtraByBandIDAndRoleID(bandID primitive.ObjectI
 }
 
 func (r *UserRepository) FindManyExtraByBandID(bandID primitive.ObjectID, from, to time.Time) ([]*entity.UserWithEvents, error) {
-
 	fromDate := primitive.NewObjectIDFromTimestamp(from)
 
 	pipeline := bson.A{

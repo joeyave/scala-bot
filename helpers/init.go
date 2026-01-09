@@ -1,6 +1,6 @@
 package helpers
 
-//func init() {
+// func init() {
 //	filesChannelID, err := strconv.ParseInt(os.Getenv("BOT_FILES_CHANNEL_ID"), 10, 0)
 //	if err != nil {
 //		panic("files channel id is invalid")

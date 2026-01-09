@@ -11,7 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// SongOverride represents a song in an event's setlist with optional key override and caching
+// SongOverride represents a song in an event's setlist with optional key override and caching.
 type SongOverride struct {
 	SongID   primitive.ObjectID `bson:"songId" json:"songId"`
 	EventKey Key                `bson:"eventKey,omitempty" json:"eventKey,omitempty"` // Key override for this event
@@ -62,7 +62,6 @@ func (e *Event) Alias(lang string) string {
 }
 
 func (e *Event) RolesString() string {
-
 	var b strings.Builder
 
 	var currRoleID primitive.ObjectID

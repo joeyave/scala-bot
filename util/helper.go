@@ -9,7 +9,6 @@ import (
 )
 
 func File(bot *gotgbot.Bot, file *gotgbot.File) (io.ReadCloser, error) {
-
 	url := bot.GetAPIURL(nil) + "/file/bot" + bot.Token + "/" + file.FilePath
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -23,7 +22,7 @@ func File(bot *gotgbot.Bot, file *gotgbot.File) (io.ReadCloser, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close() //nolint:errcheck
+		resp.Body.Close()
 		return nil, fmt.Errorf("telebot: expected status 200 but got %s", resp.Status)
 	}
 
@@ -31,7 +30,6 @@ func File(bot *gotgbot.Bot, file *gotgbot.File) (io.ReadCloser, error) {
 }
 
 func SplitKeyboardToColumns(k [][]gotgbot.KeyboardButton, colNum int) [][]gotgbot.KeyboardButton {
-
 	var newK [][]gotgbot.KeyboardButton
 	var i int
 
@@ -54,7 +52,6 @@ func SplitKeyboardToColumns(k [][]gotgbot.KeyboardButton, colNum int) [][]gotgbo
 }
 
 func SplitInlineKeyboardToColumns(k [][]gotgbot.InlineKeyboardButton, colNum int) [][]gotgbot.InlineKeyboardButton {
-
 	var newK [][]gotgbot.InlineKeyboardButton
 	var i int
 

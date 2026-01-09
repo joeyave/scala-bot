@@ -277,7 +277,6 @@ func (c *BotController) filterEvents(index int) handlers.Response {
 
 				var buttons []gotgbot.KeyboardButton
 				for _, button := range user.Cache.Buttons {
-
 					if button.Text == user.Cache.Filter ||
 						(button.Text == ctx.EffectiveMessage.Text && user.Cache.Filter == txt.Get("button.archive", ctx.EffectiveUser.LanguageCode)) ||
 						(button.Text == user.Cache.Query && user.Cache.Filter == txt.Get("button.archive", ctx.EffectiveUser.LanguageCode) && (ctx.EffectiveMessage.Text == txt.Get("button.next", ctx.EffectiveUser.LanguageCode) || ctx.EffectiveMessage.Text == txt.Get("button.prev", ctx.EffectiveUser.LanguageCode))) {
@@ -929,7 +928,7 @@ func (c *BotController) notifyAdded(bot *gotgbot.Bot, user *entity.User, members
 	}
 
 	// todo
-	//time.Sleep(5 * time.Second)
+	// time.Sleep(5 * time.Second)
 	//
 	//_, err := c.MembershipService.FindOneByID(membership.ID)
 	//if err != nil {
@@ -943,7 +942,6 @@ func (c *BotController) notifyAdded(bot *gotgbot.Bot, user *entity.User, members
 
 	todayStartUTC := helpers.GetStartOfDayInLocUTC(event.Band.GetLocation())
 	if event.TimeUTC.After(todayStartUTC) {
-
 		markup := gotgbot.InlineKeyboardMarkup{
 			InlineKeyboard: [][]gotgbot.InlineKeyboardButton{{{
 				Text:         txt.Get("button.moreInfo", membership.User.LanguageCode),
@@ -970,7 +968,7 @@ func (c *BotController) notifyDeleted(bot *gotgbot.Bot, user *entity.User, membe
 	}
 
 	// todo
-	//time.Sleep(5 * time.Second)
+	// time.Sleep(5 * time.Second)
 	//
 	//_, err := c.MembershipService.FindSimilar(membership)
 	//if err == nil {
@@ -984,7 +982,6 @@ func (c *BotController) notifyDeleted(bot *gotgbot.Bot, user *entity.User, membe
 
 	todayStartUTC := helpers.GetStartOfDayInLocUTC(event.Band.GetLocation())
 	if event.TimeUTC.After(todayStartUTC) {
-
 		markup := gotgbot.InlineKeyboardMarkup{
 			InlineKeyboard: [][]gotgbot.InlineKeyboardButton{{{
 				Text:         txt.Get("button.moreInfo", membership.User.LanguageCode),

@@ -158,7 +158,6 @@ func (s *SongService) FindOrCreateManyByDriveFileIDs(driveFileIDs []string) ([]*
 	driveFiles := make([]*drive.File, len(driveFileIDs))
 
 	for i := range driveFileIDs {
-		i := i
 		errwg.Go(func() error {
 			song, driveFile, err := s.FindOrCreateOneByDriveFileID(driveFileIDs[i])
 			if err != nil {

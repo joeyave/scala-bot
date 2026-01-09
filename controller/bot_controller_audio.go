@@ -26,7 +26,6 @@ import (
 var ffmpegAudioExt = "mp3"
 
 func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	if user.State.Name == state.SongVoices_CreateVoice {
@@ -34,7 +33,7 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 	}
 
 	semitones := 0
-	//useR3 := false
+	// useR3 := false
 	//skipClipping := false
 	fine := false
 	more := false
@@ -113,13 +112,13 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 		if i%4 == 0 || i == 0 {
 			markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{})
 		}
-		buttonText := fmt.Sprintf("%d", i-1)
+		buttonText := strconv.Itoa(i - 1)
 		if semitones == i-1 {
 			buttonText = fmt.Sprintf("〔%s〕", buttonText)
 		}
 		markup.InlineKeyboard[len(markup.InlineKeyboard)-1] = append(markup.InlineKeyboard[len(markup.InlineKeyboard)-1], gotgbot.InlineKeyboardButton{Text: buttonText, CallbackData: util.CallbackData(state.TransposeAudio_AskForSemitonesNumber, fmt.Sprintf("%d:%t:%t", i-1, fine, more))})
 	}
-	for i := 0; i < limit; i++ {
+	for i := range limit {
 		if i%4 == 0 || i == 0 {
 			markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{})
 		}
@@ -142,7 +141,7 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 	}
 
 	text := user.CallbackCache.AddToText(txt.Get("text.sendSemitones", ctx.EffectiveUser.LanguageCode))
-	//text := user.CallbackCache.AddToText(txt.Get("text.sendSemitones", ctx.EffectiveUser.LanguageCode, user.CallbackCache.AudioFileName, s))
+	// text := user.CallbackCache.AddToText(txt.Get("text.sendSemitones", ctx.EffectiveUser.LanguageCode, user.CallbackCache.AudioFileName, s))
 
 	if ctx.CallbackQuery != nil {
 		if semitones != 0 {
@@ -152,7 +151,7 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 				})
 		}
 
-		//ctx.EffectiveMessage.EditText(bot, text, &gotgbot.EditMessageTextOpts{
+		// ctx.EffectiveMessage.EditText(bot, text, &gotgbot.EditMessageTextOpts{
 		//	ReplyMarkup:           *markup,
 		//	ParseMode:             "HTML",
 		//	LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
@@ -167,7 +166,6 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 			return err
 		}
 		_, _ = ctx.CallbackQuery.Answer(bot, nil)
-
 	} else {
 		_, err := ctx.EffectiveChat.SendMessage(bot, text, &gotgbot.SendMessageOpts{
 			ReplyMarkup: markup,
@@ -190,7 +188,6 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 var sem = mysemaphore.NewWeighted(100)
 
 func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	_, _ = ctx.CallbackQuery.Answer(bot, nil)
 
 	user := ctx.Data["user"].(*entity.User)
@@ -309,13 +306,13 @@ func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQ
 	if err != nil {
 		return false, nil, err
 	}
-	defer originalFileBytes.Close() //nolint:errcheck
+	defer originalFileBytes.Close()
 
 	inputTmpFile, err := os.CreateTemp("", "input_audio_*")
 	if err != nil {
 		return false, nil, err
 	}
-	defer os.Remove(inputTmpFile.Name()) //nolint:errcheck
+	defer os.Remove(inputTmpFile.Name())
 
 	converted := false
 	if mimeType == "audio/mp4" {
@@ -330,7 +327,7 @@ func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQ
 			Output(inputTmpFile.Name(), ffmpeg.KwArgs{"f": ffmpegAudioExt, "c:v": "copy", "c:a": "libmp3lame", "q:a": "4"}).
 			WithInput(originalFileBytes).
 			OverWriteOutput().
-			//ErrorToStdOut().
+			// ErrorToStdOut().
 			Run()
 		if err != nil {
 			return false, nil, err
@@ -350,7 +347,7 @@ func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQ
 	if err != nil {
 		return false, nil, err
 	}
-	defer os.Remove(outTmpFile.Name()) //nolint:errcheck
+	defer os.Remove(outTmpFile.Name())
 
 	if err := outTmpFile.Close(); err != nil {
 		return false, nil, err
@@ -402,7 +399,7 @@ func sendProgressToUser(stderr io.Reader, bot *gotgbot.Bot, processingMsg *gotgb
 	defer ticker.Stop()
 
 	for scanner.Scan() {
-		//fmt.Println(scanner.Text())
+		// fmt.Println(scanner.Text())
 
 		if scanner.Text() == "Processing..." {
 			processingStage = true
@@ -421,7 +418,7 @@ func sendProgressToUser(stderr io.Reader, bot *gotgbot.Bot, processingMsg *gotgb
 			select {
 			case <-ticker.C:
 				_, _, _ = processingMsg.EditText(bot, "Processing... "+scanner.Text(), nil)
-				//fmt.Println(wordsScanner.Text())
+				// fmt.Println(wordsScanner.Text())
 			default:
 			}
 		}

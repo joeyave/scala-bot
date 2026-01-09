@@ -1,6 +1,6 @@
 package handlers
 
-//func uploadVoiceHandler() (int, []HandlerFunc) {
+// func uploadVoiceHandler() (int, []HandlerFunc) {
 //	handlerFunc := make([]HandlerFunc, 0)
 //
 //	markup := &gotgbot.ReplyKeyboardMarkup{

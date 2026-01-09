@@ -30,7 +30,7 @@ const (
 	alignmentCenter      = "CENTER"
 	alignmentEnd         = "END"
 
-	// Margins and Spacing
+	// Margins and Spacing.
 	docMarginVertical   float64 = 14
 	docMarginHorizontal float64 = 30
 	docMarginHeader     float64 = 18
@@ -38,7 +38,7 @@ const (
 	paraLineSpacing      float64 = 90
 	paraSpacingMagnitude float64 = 0
 
-	// Font Sizes
+	// Font Sizes.
 	fontSizeHeaderTitle    float64 = 20
 	fontSizeHeaderMetadata float64 = 14
 	fontSizeHeaderLastPara float64 = 11
@@ -393,7 +393,7 @@ type paraSlice struct {
 	end   int64
 }
 
-// indexedParagraph holds a "flat" view of a paragraph for easy manipulation
+// indexedParagraph holds a "flat" view of a paragraph for easy manipulation.
 type indexedParagraph struct {
 	para     *docs.Paragraph
 	fullText string
@@ -474,7 +474,6 @@ func replaceRange(docStart, docEnd int64, text, segmentID string) []*docs.Reques
 // changeStyleByRegexAcross applies style (and optional textFunc transforms) for matches
 // that may span multiple ParagraphElements inside the given paragraph.
 func changeStyleByRegexAcross(ip *indexedParagraph, regex *regexp.Regexp, style docs.TextStyle, fields string, textFunc func(string) string, segmentID string) []*docs.Request {
-
 	requests := make([]*docs.Request, 0)
 
 	// Find matches on concatenated text (regex gives byte offsets)
@@ -561,7 +560,6 @@ func changeStyleForChordsAcross(ip *indexedParagraph, segmentID string, chordRat
 				continue
 			}
 			requests = append(requests, styleRange(docStart, docEnd, chordSuffixStyle, "baselineOffset", segmentID))
-
 		}
 	}
 

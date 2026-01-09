@@ -1,6 +1,6 @@
 package handlers
 
-//func SendSongToChannel(h *Handler, c *ext.Context, user *entities.User, song *entities.Song) error {
+// func SendSongToChannel(h *Handler, c *ext.Context, user *entities.User, song *entities.Song) error {
 //	send := func() (*telebot.Message, error) {
 //		return h.bot.Send(
 //			telebot.ChatID(helpers.FilesChannelID),

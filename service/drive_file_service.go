@@ -34,7 +34,6 @@ func NewDriveFileService(driveRepository *drive.Service, docsRepository *docs.Se
 var newLinesRegex = regexp.MustCompile(`\n{3,}`)
 
 func (s *DriveFileService) FindAllByFolderID(folderID string, nextPageToken string) ([]*drive.File, string, error) {
-
 	q := fmt.Sprintf(`trashed = false and mimeType = 'application/vnd.google-apps.document' and '%s' in parents`, folderID)
 
 	res, err := s.driveClient.Files.List().
@@ -144,11 +143,9 @@ func (s *DriveFileService) FindOneByID(ID string) (*drive.File, error) {
 }
 
 func (s *DriveFileService) FindManyByIDs(IDs []string) ([]*drive.File, error) {
-
 	errwg := new(errgroup.Group)
 	driveFiles := make([]*drive.File, len(IDs))
 	for i := range IDs {
-		i := i
 		errwg.Go(func() error {
 			driveFile, err := s.FindOneByID(IDs[i])
 			if err == nil {
@@ -200,7 +197,7 @@ func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key ent
 			_, _ = s.driveClient.Permissions.
 				Create(newFile.Id, permission).
 				TransferOwnership(false).Do()
-			//if err != nil {
+			// if err != nil {
 			//	return nil, err
 			//}
 		}
@@ -215,7 +212,7 @@ func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key ent
 	})
 
 	// todo: test and include.
-	//requests = append(requests, &docs.Request{
+	// requests = append(requests, &docs.Request{
 	//	UpdateDocumentStyle: &docs.UpdateDocumentStyleRequest{
 	//		DocumentStyle: &docs.DocumentStyle{
 	//			PageSize: &docs.Size{
@@ -394,7 +391,7 @@ func (s *DriveFileService) MoveOne(fileID string, newFolderID string) (*drive.Fi
 	return newFile, err
 }
 
-// DeleteOne deletes a file from Google Drive by its ID
+// DeleteOne deletes a file from Google Drive by its ID.
 func (s *DriveFileService) DeleteOne(fileID string) error {
 	return s.driveClient.Files.Delete(fileID).Do()
 }
@@ -570,7 +567,6 @@ func (s *DriveFileService) GetMetadata(ID string) (entity.Key, string, string) {
 }
 
 func (s *DriveFileService) GetHTMLTextWithSectionsNumber(ID string) (string, int) {
-
 	doc, err := s.docsRepository.Documents.Get(ID).Do()
 	if err != nil {
 		return "", 0
@@ -580,7 +576,6 @@ func (s *DriveFileService) GetHTMLTextWithSectionsNumber(ID string) (string, int
 }
 
 func (s *DriveFileService) GetLyrics(ID string) (string, error) {
-
 	retrier := retry.NewRetrier(5, 100*time.Millisecond, time.Second)
 
 	var reader io.Reader
@@ -681,7 +676,7 @@ func docToHTML(doc *docs.Document) string {
 						}
 						if style.ForegroundColor != nil && style.ForegroundColor.Color != nil && style.ForegroundColor.Color.RgbColor != nil {
 							text = fmt.Sprintf(`<span class="chord">%s</span>`, text)
-							//text = fmt.Sprintf(`<span class="chord" style="color: rgb(%d%%, %d%%, %d%%)">%s</span>`, int(style.ForegroundColor.Color.RgbColor.Red*100), int(style.ForegroundColor.Color.RgbColor.Green*100), int(style.ForegroundColor.Color.RgbColor.Blue*100), text)
+							// text = fmt.Sprintf(`<span class="chord" style="color: rgb(%d%%, %d%%, %d%%)">%s</span>`, int(style.ForegroundColor.Color.RgbColor.Red*100), int(style.ForegroundColor.Color.RgbColor.Green*100), int(style.ForegroundColor.Color.RgbColor.Blue*100), text)
 						}
 					}
 
@@ -781,7 +776,6 @@ func composeCloneWithoutChordsRequests(content []*docs.StructuralElement, index 
 	for _, item := range content {
 		if item.Paragraph != nil && item.Paragraph.Elements != nil {
 			for _, element := range item.Paragraph.Elements {
-
 				var sb strings.Builder
 				for _, element := range item.Paragraph.Elements {
 					if element.TextRun != nil && element.TextRun.Content != "" {
@@ -794,7 +788,6 @@ func composeCloneWithoutChordsRequests(content []*docs.StructuralElement, index 
 				}
 
 				if element.TextRun != nil && element.TextRun.Content != "" {
-
 					if element.TextRun.TextStyle.ForegroundColor == nil {
 						element.TextRun.TextStyle.ForegroundColor = &docs.OptionalColor{
 							Color: &docs.Color{
@@ -885,7 +878,6 @@ func getSections(doc *docs.Document) []docs.StructuralElement {
 }
 
 func getDefaultHeaderRequest(headerID, name string, key entity.Key, BPM, time, lang string) *docs.Request {
-
 	if name == "" {
 		// TODO: replace "uk" with user language if available in context
 		name = txt.Get("text.defaultDocTitle", lang)

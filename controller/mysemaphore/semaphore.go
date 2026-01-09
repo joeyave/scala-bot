@@ -34,8 +34,7 @@ type Weighted struct {
 //
 // If ctx is already done, Acquire may still succeed without blocking.
 func (s *Weighted) Acquire(ctx context.Context, n, id int64) error {
-
-	//n := int64(1)
+	// n := int64(1)
 
 	s.mu.Lock()
 	if s.size-s.cur >= n && s.waiters.Len() == 0 {
@@ -95,7 +94,7 @@ func (s *Weighted) TryAcquire(n int64) bool {
 
 // Release releases the semaphore with a weight of n.
 func (s *Weighted) Release(n int64) {
-	//n := int64(1)
+	// n := int64(1)
 
 	s.mu.Lock()
 	s.cur -= n

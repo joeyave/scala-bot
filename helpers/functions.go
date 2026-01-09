@@ -7,7 +7,6 @@ import (
 )
 
 func JsonEscape(i string) string {
-
 	buffer := &bytes.Buffer{}
 	encoder := json.NewEncoder(buffer)
 	encoder.SetEscapeHTML(false)

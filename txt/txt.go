@@ -202,7 +202,7 @@ var locales = map[string]map[string]string{
 		"uk": "🔖 Теги",
 	},
 	"button.more": {
-		//"ru": "💬",
+		// "ru": "💬",
 		"ru": "•••",
 		"uk": "•••",
 	},
@@ -585,7 +585,7 @@ func init() {
 	}
 }
 
-func Get(key, lang string, a ...interface{}) string {
+func Get(key, lang string, a ...any) string {
 	switch lang {
 	case "ru":
 		return ruPrinter.Sprintf(key, a...)
@@ -599,7 +599,6 @@ func GetTranslator(lang string) locales2.Translator {
 		return ruTranslator
 	}
 	return ukTranslator
-
 }
 
 var ukPrinter = message.NewPrinter(language.Ukrainian)

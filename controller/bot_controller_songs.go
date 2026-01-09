@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"slices"
+
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers"
@@ -20,7 +22,6 @@ import (
 	"github.com/joeyave/scala-bot/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"golang.org/x/exp/slices"
 	"google.golang.org/api/drive/v3"
 )
 
@@ -34,7 +35,6 @@ type CreateSongData struct {
 }
 
 func (c *BotController) CreateSong(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	_, _ = ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
 
 	var data *CreateSongData
@@ -85,7 +85,6 @@ func (c *BotController) CreateSong(bot *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (c *BotController) songByDriveFileID(bot *gotgbot.Bot, ctx *ext.Context, driveFileID string) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	_, _ = ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
@@ -99,7 +98,6 @@ func (c *BotController) songByDriveFileID(bot *gotgbot.Bot, ctx *ext.Context, dr
 }
 
 func (c *BotController) songByDriveFile(bot *gotgbot.Bot, ctx *ext.Context, driveFile *drive.File) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	// todo: consider disabling.
@@ -124,7 +122,7 @@ func (c *BotController) song(bot *gotgbot.Bot, ctx *ext.Context, driveFile *driv
 			return nil, err
 		}
 
-		defer reader.Close() //nolint:errcheck
+		defer reader.Close()
 
 		message, err := bot.SendDocument(ctx.EffectiveChat.Id, gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", driveFile.Name), reader), &gotgbot.SendDocumentOpts{
 			Caption:     song.Caption(),
@@ -162,7 +160,7 @@ func (c *BotController) song(bot *gotgbot.Bot, ctx *ext.Context, driveFile *driv
 	song.PDF.TgFileID = msg.Document.FileId
 
 	// todo
-	//err = SendSongToChannel(h, c, user, song)
+	// err = SendSongToChannel(h, c, user, song)
 	//if err != nil {
 	//	return err
 	//}
@@ -195,7 +193,6 @@ func (c *BotController) song(bot *gotgbot.Bot, ctx *ext.Context, driveFile *driv
 
 func (c *BotController) GetSongs(index int) handlers.Response {
 	return func(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 		user := ctx.Data["user"].(*entity.User)
 
 		if user.State.Name != state.GetSongs {
@@ -272,7 +269,6 @@ func (c *BotController) GetSongs(index int) handlers.Response {
 		case 1:
 			{
 				switch ctx.EffectiveMessage.Text {
-
 				case txt.Get("button.next", ctx.EffectiveUser.LanguageCode), txt.Get("button.prev", ctx.EffectiveUser.LanguageCode):
 					return c.GetSongs(0)(bot, ctx)
 
@@ -306,7 +302,6 @@ func (c *BotController) GetSongs(index int) handlers.Response {
 
 func (c *BotController) filterSongs(index int) handlers.Response {
 	return func(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 		user := ctx.Data["user"].(*entity.User)
 
 		if user.State.Name != state.FilterSongs {
@@ -380,7 +375,6 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 				}
 
 				for _, song := range songs {
-
 					songButtonOpts := &keyboard.SongButtonOpts{
 						ShowLike:  false,
 						ShowStats: true,
@@ -581,7 +575,6 @@ func (c *BotController) filterSongs(index int) handlers.Response {
 }
 
 func (c *BotController) SongCB(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
@@ -641,7 +634,6 @@ func (c *BotController) SongCB(bot *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (c *BotController) SongLike(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
@@ -685,7 +677,6 @@ func (c *BotController) SongLike(bot *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (c *BotController) SongArchive(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
@@ -730,8 +721,7 @@ func (c *BotController) SongArchive(bot *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (c *BotController) SongVoices(bot *gotgbot.Bot, ctx *ext.Context) error {
-
-	//user := ctx.Data["user"].(*entity.User)
+	// user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 
@@ -748,7 +738,6 @@ func (c *BotController) SongVoices(bot *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (c *BotController) songVoices(bot *gotgbot.Bot, ctx *ext.Context, songID primitive.ObjectID) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	song, err := c.SongService.FindOneByID(songID)
@@ -807,7 +796,6 @@ func (c *BotController) songVoices(bot *gotgbot.Bot, ctx *ext.Context, songID pr
 }
 
 func (c *BotController) SongVoicesAddVoiceAskForAudio(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
@@ -845,7 +833,6 @@ func (c *BotController) SongVoicesAddVoiceAskForAudio(bot *gotgbot.Bot, ctx *ext
 
 func (c *BotController) SongVoices_CreateVoice(index int) handlers.Response {
 	return func(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 		user := ctx.Data["user"].(*entity.User)
 
 		if user.State.Name != state.SongVoices_CreateVoice {
@@ -915,7 +902,6 @@ func (c *BotController) SongVoices_CreateVoice(index int) handlers.Response {
 }
 
 func (c *BotController) SongVoice(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
@@ -994,7 +980,6 @@ func (c *BotController) SongVoice(bot *gotgbot.Bot, ctx *ext.Context) error {
 			return err
 		}
 	} else {
-
 		opts := &gotgbot.EditMessageMediaOpts{
 			ReplyMarkup: markup,
 		}
@@ -1023,7 +1008,6 @@ func (c *BotController) SongVoice(bot *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (c *BotController) SongVoiceDeleteConfirm(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
@@ -1063,7 +1047,6 @@ func (c *BotController) SongVoiceDeleteConfirm(bot *gotgbot.Bot, ctx *ext.Contex
 }
 
 func (c *BotController) SongStats(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
@@ -1125,8 +1108,7 @@ func (c *BotController) SongStats(bot *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (c *BotController) SongVoiceDelete(bot *gotgbot.Bot, ctx *ext.Context) error {
-
-	//user := ctx.Data["user"].(*entity.User)
+	// user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 	split := strings.Split(payload, ":")
@@ -1150,7 +1132,6 @@ func (c *BotController) SongVoiceDelete(bot *gotgbot.Bot, ctx *ext.Context) erro
 }
 
 func (c *BotController) SongDeleteConfirm(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
@@ -1182,8 +1163,7 @@ func (c *BotController) SongDeleteConfirm(bot *gotgbot.Bot, ctx *ext.Context) er
 }
 
 func (c *BotController) SongDelete(bot *gotgbot.Bot, ctx *ext.Context) error {
-
-	//user := ctx.Data["user"].(*entity.User)
+	// user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 
@@ -1214,10 +1194,9 @@ func (c *BotController) SongDelete(bot *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (c *BotController) SongCopyToMyBand(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
-	//ctx.EffectiveChat.SendAction(bot, "typing", nil)
+	// ctx.EffectiveChat.SendAction(bot, "typing", nil)
 
 	driveFileID := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 
@@ -1258,7 +1237,6 @@ func (c *BotController) SongCopyToMyBand(bot *gotgbot.Bot, ctx *ext.Context) err
 }
 
 func (c *BotController) SongStyle(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	driveFileID := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
@@ -1286,7 +1264,7 @@ func (c *BotController) SongStyle(bot *gotgbot.Bot, ctx *ext.Context) error {
 		return err
 	}
 
-	defer reader.Close() //nolint:errcheck
+	defer reader.Close()
 
 	markup := gotgbot.InlineKeyboardMarkup{
 		InlineKeyboard: keyboard.SongEdit(song, driveFile, user, ctx.EffectiveUser.LanguageCode),
@@ -1313,7 +1291,6 @@ func (c *BotController) SongStyle(bot *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (c *BotController) SongAddLyricsPage(bot *gotgbot.Bot, ctx *ext.Context) error {
-
 	user := ctx.Data["user"].(*entity.User)
 
 	driveFileID := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
@@ -1341,7 +1318,7 @@ func (c *BotController) SongAddLyricsPage(bot *gotgbot.Bot, ctx *ext.Context) er
 		return err
 	}
 
-	defer reader.Close() //nolint:errcheck
+	defer reader.Close()
 
 	markup := gotgbot.InlineKeyboardMarkup{
 		InlineKeyboard: keyboard.SongEdit(song, driveFile, user, ctx.EffectiveUser.LanguageCode),

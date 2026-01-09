@@ -122,7 +122,7 @@ type CallbackCache struct {
 
 	IsVoice bool `schema:"isVoice,omitempty"`
 
-	//VoiceFileId   string `schema:"voiceFileId,omitempty"`
+	// VoiceFileId   string `schema:"voiceFileId,omitempty"`
 	//VoiceDuration int64  `schema:"voiceDuration,omitempty"`
 	//VoiceMimeType string `schema:"voiceMimeType,omitempty"`
 	//VoiceFileSize int64  `schema:"voiceFileSize,omitempty"`
@@ -135,7 +135,7 @@ func (c *CallbackCache) AddToText(text string) string {
 	_ = encoder.Encode(c, values)
 	u, _ := url.Parse(util.CallbackCacheURL)
 	u.RawQuery = values.Encode()
-	//return fmt.Sprintf("%s\n\n<a href=\"%s\">cache</a>", text, u.String())
+	// return fmt.Sprintf("%s\n\n<a href=\"%s\">cache</a>", text, u.String())
 	return fmt.Sprintf("%s <a href=\"%s\">&#8203;</a>", text, u.String())
 }
 
@@ -168,7 +168,7 @@ func (u *UserWithEvents) NameWithStats() string {
 	return fmt.Sprintf("%s (%v, %d)", u.Name, lctime.Strftime("%d %b", u.Events[0].GetLocalTime()), len(u.Events))
 }
 
-//func (u *UserWithEvents) String(lang string) string {
+// func (u *UserWithEvents) String(lang string) string {
 //	str := fmt.Sprintf("<b><a href=\"tg://user?id=%d\">%s</a></b>\nВсего участий: %d", u.ID, u.Name, len(u.Events))
 //
 //	if len(u.Events) > 0 {

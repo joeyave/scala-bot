@@ -16,7 +16,6 @@ import (
 )
 
 func EventButton(event *entity.Event, user *entity.User, lang string, showMemberships bool) []gotgbot.KeyboardButton {
-
 	timeLoc := event.GetLocalTime()
 	format := "%A, %d.%m.%Y %H:%M"
 	if timeLoc.Hour() == 0 && timeLoc.Minute() == 0 {
@@ -49,7 +48,6 @@ func EventButton(event *entity.Event, user *entity.User, lang string, showMember
 var eventButtonRegEx = regexp.MustCompile(`(.*)\s\(.*,\s*([\d.]+(?:\s+\d{1,2}:\d{2})?)`)
 
 func ParseEventButton(text string, loc *time.Location) (string, time.Time, error) {
-
 	matches := eventButtonRegEx.FindStringSubmatch(text)
 	if len(matches) < 3 {
 		return "", time.Time{}, fmt.Errorf("error parsing event button: %v", matches)
@@ -83,12 +81,14 @@ func SongButton(song *entity.SongWithEvents, user *entity.User, lang string, opt
 			text += fmt.Sprintf(" (%s)", song.Stats(lang))
 		}
 		if opts.ShowLike {
+			var textSb86 strings.Builder
 			for _, like := range song.Likes {
 				if user.ID == like.UserID {
-					text += fmt.Sprintf(" %s", txt.Get("button.like", ""))
+					textSb86.WriteString(fmt.Sprintf(" %s", txt.Get("button.like", "")))
 					break
 				}
 			}
+			text += textSb86.String()
 		}
 	}
 
@@ -112,12 +112,14 @@ func DriveFileButton(driveFile *drive.File, likedSongs []*entity.Song, opts *Dri
 
 	if opts != nil {
 		if opts.ShowLike {
+			var textSb115 strings.Builder
 			for _, likedSong := range likedSongs {
 				if likedSong.DriveFileID == driveFile.Id {
-					text += fmt.Sprintf(" %s", txt.Get("button.like", ""))
+					textSb115.WriteString(fmt.Sprintf(" %s", txt.Get("button.like", "")))
 					break
 				}
 			}
+			text += textSb115.String()
 		}
 	}
 
@@ -178,7 +180,6 @@ func IsSelectedButton(text string) bool {
 }
 
 func GetEventsStateFilterButtons(events []*entity.Event, lang string) []gotgbot.KeyboardButton {
-
 	weekdaysMap := make(map[time.Weekday]time.Time, 0)
 	for _, event := range events {
 		weekdaysMap[event.GetLocalTime().Weekday()] = event.GetLocalTime()
@@ -257,7 +258,6 @@ func GetStatsPeriodByButtonText(text string, lang string) entity.StatsPeriod {
 }
 
 func GetStatsPeriodButton(period entity.StatsPeriod, lang string) []gotgbot.KeyboardButton {
-
 	text := GetStatsPeriodButtonText(period, lang, false)
 	return []gotgbot.KeyboardButton{
 		{Text: text},
@@ -292,7 +292,6 @@ func GetStatsSortingByButtonText(text string, lang string) entity.StatsSorting {
 }
 
 func GetStatsSortingButton(sorting entity.StatsSorting, lang string) []gotgbot.KeyboardButton {
-
 	text := GetStatsSortingButtonText(sorting, lang, false)
 	return []gotgbot.KeyboardButton{
 		{Text: text},
