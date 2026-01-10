@@ -40,12 +40,6 @@ import (
 )
 
 func main() {
-	// location, err := time.LoadLocation("Europe/Kiev")
-	//if err != nil {
-	//	log.Fatal().Msgf("Err loading location: %v", err)
-	//}
-	//time.Local = location
-
 	out := zerolog.ConsoleWriter{
 		Out:        os.Stdout,
 		TimeFormat: time.RFC3339,
@@ -140,7 +134,7 @@ func main() {
 	//)
 
 	botController := controller.BotController{
-		//OldHandler:        handler,
+		// OldHandler:        handler,
 		UserService:       userService,
 		DriveFileService:  driveFileService,
 		SongService:       songService,
@@ -379,7 +373,7 @@ func main() {
 	router.Static("/webapp/assets", "./webapp/assets")
 
 	router.Any("/check", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok"})
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
 	router.GET("/web-app/statistics", webAppController.Statistics)
