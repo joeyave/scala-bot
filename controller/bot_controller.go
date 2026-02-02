@@ -245,7 +245,7 @@ func (c *BotController) search(index int) handlers.Response {
 					_, err := ctx.EffectiveChat.SendMessage(bot, txt.Get("text.nothingFound", ctx.EffectiveUser.LanguageCode), &gotgbot.SendMessageOpts{ReplyMarkup: markup})
 					return err
 				} else if len(driveFiles) == 1 { // todo: test this case.
-					go c.songByDriveFile(bot, ctx, driveFiles[0]) //nolint:errcheck
+					return c.songByDriveFile(bot, ctx, driveFiles[0]) //nolint:errcheck
 				}
 
 				markup := &gotgbot.ReplyKeyboardMarkup{
@@ -300,9 +300,9 @@ func (c *BotController) search(index int) handlers.Response {
 
 				user.State.Index = 1
 
-				if len(driveFiles) == 1 {
-					_, _ = ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
-				}
+				// if len(driveFiles) == 1 {
+				// 	_, _ = ctx.EffectiveChat.SendAction(bot, "upload_document", nil)
+				// }
 				return nil
 			}
 		case 1:
