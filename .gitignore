@@ -1,2 +1,40 @@
+# Environment files
 .env
-/.idea
+.env.local
+.env.*.local
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+go.work
+go.work.sum
+
+# IDE - GoLand/IntelliJ
+.idea/
+
+# IDE - VSCode
+.vscode/
+*.code-workspace
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Debug
+debug
+__debug_bin*
+*.log
+
+# Build output
+bin/
+dist/
