@@ -10,10 +10,9 @@ import (
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/helpers"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 var ErrNotFound = errors.New("not found")
@@ -32,7 +31,7 @@ func (r *SongRepository) FindAll() ([]*entity.Song, error) {
 	return r.find(bson.M{})
 }
 
-func (r *SongRepository) FindManyLiked(bandID primitive.ObjectID, userID int64) ([]*entity.Song, error) {
+func (r *SongRepository) FindManyLiked(bandID bson.ObjectID, userID int64) ([]*entity.Song, error) {
 	return r.find(
 		bson.M{
 			"bandId": bandID,
@@ -114,7 +113,7 @@ func (r *SongRepository) FindManyByDriveFileIDs(IDs []string) ([]*entity.Song, e
 	return songs, nil
 }
 
-func (r *SongRepository) FindOneByID(ID primitive.ObjectID) (*entity.Song, error) {
+func (r *SongRepository) FindOneByID(ID bson.ObjectID) (*entity.Song, error) {
 	songs, err := r.find(bson.M{"_id": ID})
 	if err != nil {
 		return nil, err
@@ -130,7 +129,7 @@ func (r *SongRepository) FindOneByDriveFileID(driveFileID string) (*entity.Song,
 	return songs[0], nil
 }
 
-func (r *SongRepository) FindOneByName(name string, bandID primitive.ObjectID) (*entity.Song, error) {
+func (r *SongRepository) FindOneByName(name string, bandID bson.ObjectID) (*entity.Song, error) {
 	songs, err := r.find(bson.M{
 		"bandId":   bandID,
 		"pdf.name": name,
@@ -201,7 +200,7 @@ func (r *SongRepository) find(m bson.M, opts ...bson.M) ([]*entity.Song, error) 
 
 func (r *SongRepository) UpdateOne(song entity.Song) (*entity.Song, error) {
 	if song.ID.IsZero() {
-		song.ID = primitive.NewObjectID()
+		song.ID = bson.NewObjectID()
 	}
 
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
@@ -216,14 +215,9 @@ func (r *SongRepository) UpdateOne(song entity.Song) (*entity.Song, error) {
 		"$set": song,
 	}
 
-	after := options.After
-	upsert := true
-	opts := options.FindOneAndUpdateOptions{
-		ReturnDocument: &after,
-		Upsert:         &upsert,
-	}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After).SetUpsert(true)
 
-	result := collection.FindOneAndUpdate(context.TODO(), filter, update, &opts)
+	result := collection.FindOneAndUpdate(context.TODO(), filter, update, opts)
 	if result.Err() != nil {
 		return nil, result.Err()
 	}
@@ -252,7 +246,7 @@ func (r *SongRepository) UpdateMany(songs []*entity.Song) (*mongo.BulkWriteResul
 	var models []mongo.WriteModel
 	for _, song := range songs {
 		if song.ID.IsZero() {
-			song.ID = primitive.NewObjectID()
+			song.ID = bson.NewObjectID()
 		}
 
 		upsert := true
@@ -266,10 +260,8 @@ func (r *SongRepository) UpdateMany(songs []*entity.Song) (*mongo.BulkWriteResul
 		models = append(models, model)
 	}
 
-	ordered := false
-	res, err := collection.BulkWrite(context.TODO(), models, &options.BulkWriteOptions{
-		Ordered: &ordered,
-	})
+	opts := options.BulkWrite().SetOrdered(false)
+	res, err := collection.BulkWrite(context.TODO(), models, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -290,7 +282,7 @@ func (r *SongRepository) DeleteOneByDriveFileID(driveFileID string) (int64, erro
 	return deletedCount, err
 }
 
-func (r *SongRepository) Archive(songID primitive.ObjectID) error {
+func (r *SongRepository) Archive(songID bson.ObjectID) error {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	filter := bson.M{
@@ -307,7 +299,7 @@ func (r *SongRepository) Archive(songID primitive.ObjectID) error {
 	return err
 }
 
-func (r *SongRepository) Unarchive(songID primitive.ObjectID) error {
+func (r *SongRepository) Unarchive(songID bson.ObjectID) error {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	filter := bson.M{
@@ -324,7 +316,7 @@ func (r *SongRepository) Unarchive(songID primitive.ObjectID) error {
 	return err
 }
 
-func (r *SongRepository) Like(songID primitive.ObjectID, userID int64, likeTime time.Time) error {
+func (r *SongRepository) Like(songID bson.ObjectID, userID int64, likeTime time.Time) error {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	newLike := &entity.Like{
@@ -347,7 +339,7 @@ func (r *SongRepository) Like(songID primitive.ObjectID, userID int64, likeTime 
 	return err
 }
 
-func (r *SongRepository) Dislike(songID primitive.ObjectID, userID int64) error {
+func (r *SongRepository) Dislike(songID bson.ObjectID, userID int64) error {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	filter := bson.M{"_id": songID}
@@ -362,7 +354,7 @@ func (r *SongRepository) Dislike(songID primitive.ObjectID, userID int64) error 
 	return err
 }
 
-func (r *SongRepository) FindOneWithExtraByID(songID primitive.ObjectID, eventsStartDate time.Time) (*entity.SongWithEvents, error) {
+func (r *SongRepository) FindOneWithExtraByID(songID bson.ObjectID, eventsStartDate time.Time) (*entity.SongWithEvents, error) {
 	songs, err := r.findWithExtra(
 		bson.M{
 			"_id": songID,
@@ -375,7 +367,7 @@ func (r *SongRepository) FindOneWithExtraByID(songID primitive.ObjectID, eventsS
 	return songs[0], nil
 }
 
-func (r *SongRepository) FindAllExtraByPageNumberSortedByEventsNumber(bandID primitive.ObjectID, eventsStartDate time.Time, isAscending bool, pageNumber int) ([]*entity.SongWithEvents, error) {
+func (r *SongRepository) FindAllExtraByPageNumberSortedByEventsNumber(bandID bson.ObjectID, eventsStartDate time.Time, isAscending bool, pageNumber int) ([]*entity.SongWithEvents, error) {
 	sortingValue := -1
 	if isAscending {
 		sortingValue = 1
@@ -410,7 +402,7 @@ func (r *SongRepository) FindAllExtraByPageNumberSortedByEventsNumber(bandID pri
 	)
 }
 
-func (r *SongRepository) FindAllExtraByPageNumberSortedByEventDate(bandID primitive.ObjectID, eventsStartDate time.Time, isAscending bool, pageNumber int) ([]*entity.SongWithEvents, error) {
+func (r *SongRepository) FindAllExtraByPageNumberSortedByEventDate(bandID bson.ObjectID, eventsStartDate time.Time, isAscending bool, pageNumber int) ([]*entity.SongWithEvents, error) {
 	sortingValue := -1
 	if isAscending {
 		sortingValue = 1
@@ -440,7 +432,7 @@ func (r *SongRepository) FindAllExtraByPageNumberSortedByEventDate(bandID primit
 	)
 }
 
-func (r *SongRepository) FindManyExtraByTag(tag string, bandID primitive.ObjectID, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {
+func (r *SongRepository) FindManyExtraByTag(tag string, bandID bson.ObjectID, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {
 	return r.findWithExtra(
 		bson.M{
 			"bandId": bandID,
@@ -471,7 +463,7 @@ func (r *SongRepository) FindManyExtraByDriveFileIDs(driveFileIDs []string, even
 	)
 }
 
-func (r *SongRepository) FindManyExtraByPageNumberLiked(bandID primitive.ObjectID, userID int64, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {
+func (r *SongRepository) FindManyExtraByPageNumberLiked(bandID bson.ObjectID, userID int64, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {
 	return r.findWithExtra(
 		bson.M{
 			"bandId": bandID,
@@ -626,7 +618,7 @@ func (r *SongRepository) findWithExtra(m bson.M, eventsStartDate time.Time, opts
 	return songs, err
 }
 
-func (r *SongRepository) GetTags(bandID primitive.ObjectID) ([]string, error) {
+func (r *SongRepository) GetTags(bandID bson.ObjectID) ([]string, error) {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	pipeline := bson.A{
@@ -655,7 +647,7 @@ func (r *SongRepository) GetTags(bandID primitive.ObjectID) ([]string, error) {
 	return tags, nil
 }
 
-func (r *SongRepository) TagOrUntag(tag string, songID primitive.ObjectID) (*entity.Song, error) {
+func (r *SongRepository) TagOrUntag(tag string, songID bson.ObjectID) (*entity.Song, error) {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("songs")
 
 	filter := bson.M{
@@ -700,12 +692,9 @@ func (r *SongRepository) TagOrUntag(tag string, songID primitive.ObjectID) (*ent
 	// 	},
 	// }
 
-	after := options.After
-	opts := options.FindOneAndUpdateOptions{
-		ReturnDocument: &after,
-	}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 
-	result := collection.FindOneAndUpdate(context.TODO(), filter, update, &opts)
+	result := collection.FindOneAndUpdate(context.TODO(), filter, update, opts)
 	if result.Err() != nil {
 		return nil, result.Err()
 	}

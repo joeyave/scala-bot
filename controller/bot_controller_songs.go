@@ -19,8 +19,8 @@ import (
 	"github.com/joeyave/scala-bot/state"
 	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 	"google.golang.org/api/drive/v3"
 )
 
@@ -580,7 +580,7 @@ func (c *BotController) SongCB(bot *gotgbot.Bot, ctx *ext.Context) error {
 	split := strings.Split(payload, ":")
 
 	hex := split[0]
-	songID, err := primitive.ObjectIDFromHex(hex)
+	songID, err := bson.ObjectIDFromHex(hex)
 	if err != nil {
 		return err
 	}
@@ -638,7 +638,7 @@ func (c *BotController) SongLike(bot *gotgbot.Bot, ctx *ext.Context) error {
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 	split := strings.Split(payload, ":")
 
-	songID, err := primitive.ObjectIDFromHex(split[0])
+	songID, err := bson.ObjectIDFromHex(split[0])
 	if err != nil {
 		return err
 	}
@@ -681,7 +681,7 @@ func (c *BotController) SongArchive(bot *gotgbot.Bot, ctx *ext.Context) error {
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 	split := strings.Split(payload, ":")
 
-	songID, err := primitive.ObjectIDFromHex(split[0])
+	songID, err := bson.ObjectIDFromHex(split[0])
 	if err != nil {
 		return err
 	}
@@ -724,7 +724,7 @@ func (c *BotController) SongVoices(bot *gotgbot.Bot, ctx *ext.Context) error {
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 
-	songID, err := primitive.ObjectIDFromHex(payload)
+	songID, err := bson.ObjectIDFromHex(payload)
 	if err != nil {
 		return err
 	}
@@ -736,7 +736,7 @@ func (c *BotController) SongVoices(bot *gotgbot.Bot, ctx *ext.Context) error {
 	return nil
 }
 
-func (c *BotController) songVoices(bot *gotgbot.Bot, ctx *ext.Context, songID primitive.ObjectID) error {
+func (c *BotController) songVoices(bot *gotgbot.Bot, ctx *ext.Context, songID bson.ObjectID) error {
 	user := ctx.Data["user"].(*entity.User)
 
 	song, err := c.SongService.FindOneByID(songID)
@@ -799,7 +799,7 @@ func (c *BotController) SongVoicesAddVoiceAskForAudio(bot *gotgbot.Bot, ctx *ext
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 
-	songID, err := primitive.ObjectIDFromHex(payload)
+	songID, err := bson.ObjectIDFromHex(payload)
 	if err != nil {
 		return err
 	}
@@ -906,12 +906,12 @@ func (c *BotController) SongVoice(bot *gotgbot.Bot, ctx *ext.Context) error {
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 	split := strings.Split(payload, ":")
 
-	songID, err := primitive.ObjectIDFromHex(split[0])
+	songID, err := bson.ObjectIDFromHex(split[0])
 	if err != nil {
 		return err
 	}
 
-	voiceID, err := primitive.ObjectIDFromHex(split[1])
+	voiceID, err := bson.ObjectIDFromHex(split[1])
 	if err != nil {
 		return err
 	}
@@ -1012,12 +1012,12 @@ func (c *BotController) SongVoiceDeleteConfirm(bot *gotgbot.Bot, ctx *ext.Contex
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 	split := strings.Split(payload, ":")
 
-	songID, err := primitive.ObjectIDFromHex(split[0])
+	songID, err := bson.ObjectIDFromHex(split[0])
 	if err != nil {
 		return err
 	}
 
-	voiceID, err := primitive.ObjectIDFromHex(split[1])
+	voiceID, err := bson.ObjectIDFromHex(split[1])
 	if err != nil {
 		return err
 	}
@@ -1051,7 +1051,7 @@ func (c *BotController) SongStats(bot *gotgbot.Bot, ctx *ext.Context) error {
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 	split := strings.Split(payload, ":")
 
-	songID, err := primitive.ObjectIDFromHex(split[0])
+	songID, err := bson.ObjectIDFromHex(split[0])
 	if err != nil {
 		return err
 	}
@@ -1114,12 +1114,12 @@ func (c *BotController) SongVoiceDelete(bot *gotgbot.Bot, ctx *ext.Context) erro
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 	split := strings.Split(payload, ":")
 
-	songID, err := primitive.ObjectIDFromHex(split[0])
+	songID, err := bson.ObjectIDFromHex(split[0])
 	if err != nil {
 		return err
 	}
 
-	voiceID, err := primitive.ObjectIDFromHex(split[1])
+	voiceID, err := bson.ObjectIDFromHex(split[1])
 	if err != nil {
 		return err
 	}
@@ -1136,7 +1136,7 @@ func (c *BotController) SongDeleteConfirm(bot *gotgbot.Bot, ctx *ext.Context) er
 	user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
-	songID, err := primitive.ObjectIDFromHex(payload)
+	songID, err := bson.ObjectIDFromHex(payload)
 	if err != nil {
 		return err
 	}
@@ -1168,7 +1168,7 @@ func (c *BotController) SongDelete(bot *gotgbot.Bot, ctx *ext.Context) error {
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 
-	songID, err := primitive.ObjectIDFromHex(payload)
+	songID, err := bson.ObjectIDFromHex(payload)
 	if err != nil {
 		return err
 	}

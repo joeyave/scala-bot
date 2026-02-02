@@ -8,17 +8,17 @@ import (
 	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
 	"github.com/klauspost/lctime"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type Key string
 
 type Song struct {
-	ID primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	ID bson.ObjectID `bson:"_id,omitempty" json:"id"`
 
 	DriveFileID string `bson:"driveFileId,omitempty" json:"driveFileId"`
 
-	BandID primitive.ObjectID `bson:"bandId,omitempty" json:"bandId"`
+	BandID bson.ObjectID `bson:"bandId,omitempty" json:"bandId"`
 	Band   *Band              `bson:"band,omitempty" json:"band"`
 
 	PDF     PDF            `bson:"pdf,omitempty" json:"pdf"`

@@ -9,8 +9,8 @@ import (
 	"github.com/flowchartsman/retry"
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/repository"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/googleapi"
@@ -42,7 +42,7 @@ func (s *SongService) FindAll() ([]*entity.Song, error) {
 	return s.songRepository.FindAll()
 }
 
-func (s *SongService) FindManyLiked(bandID primitive.ObjectID, userID int64) ([]*entity.Song, error) {
+func (s *SongService) FindManyLiked(bandID bson.ObjectID, userID int64) ([]*entity.Song, error) {
 	return s.songRepository.FindManyLiked(bandID, userID)
 }
 
@@ -50,11 +50,11 @@ func (s *SongService) FindManyByDriveFileIDs(IDs []string) ([]*entity.Song, erro
 	return s.songRepository.FindManyByDriveFileIDs(IDs)
 }
 
-func (s *SongService) FindManyExtraLiked(bandID primitive.ObjectID, userID int64, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {
+func (s *SongService) FindManyExtraLiked(bandID bson.ObjectID, userID int64, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {
 	return s.songRepository.FindManyExtraByPageNumberLiked(bandID, userID, eventsStartDate, pageNumber)
 }
 
-func (s *SongService) FindOneByID(ID primitive.ObjectID) (*entity.Song, error) {
+func (s *SongService) FindOneByID(ID bson.ObjectID) (*entity.Song, error) {
 	return s.songRepository.FindOneByID(ID)
 }
 
@@ -62,7 +62,7 @@ func (s *SongService) FindOneByDriveFileID(driveFileID string) (*entity.Song, er
 	return s.songRepository.FindOneByDriveFileID(driveFileID)
 }
 
-func (s *SongService) FindOneByNameAndBandID(driveFileID string, bandID primitive.ObjectID) (*entity.Song, error) {
+func (s *SongService) FindOneByNameAndBandID(driveFileID string, bandID bson.ObjectID) (*entity.Song, error) {
 	return s.songRepository.FindOneByName(driveFileID, bandID)
 }
 
@@ -91,7 +91,7 @@ func (s *SongService) FindOrCreateOneByDriveFile(driveFile *drive.File) (*entity
 			}
 		}
 
-		if song.BandID == primitive.NilObjectID {
+		if song.BandID == bson.NilObjectID {
 			return nil, fmt.Errorf("band not found for drive file %s", driveFile.Id)
 		}
 	}
@@ -221,21 +221,21 @@ func (s *SongService) DeleteOneByDriveFileIDFromDatabase(driveFileID string) (bo
 	return deleted, nil
 }
 
-func (s *SongService) Like(songID primitive.ObjectID, userID int64) error {
+func (s *SongService) Like(songID bson.ObjectID, userID int64) error {
 	return s.songRepository.Like(songID, userID, time.Now().UTC())
 }
 
 const archiveFolderName = "Archive"
 
-func (s *SongService) Dislike(songID primitive.ObjectID, userID int64) error {
+func (s *SongService) Dislike(songID bson.ObjectID, userID int64) error {
 	return s.songRepository.Dislike(songID, userID)
 }
 
-func (s *SongService) FindOneWithExtraByID(songID primitive.ObjectID, eventsStartDate time.Time) (*entity.SongWithEvents, error) {
+func (s *SongService) FindOneWithExtraByID(songID bson.ObjectID, eventsStartDate time.Time) (*entity.SongWithEvents, error) {
 	return s.songRepository.FindOneWithExtraByID(songID, eventsStartDate)
 }
 
-func (s *SongService) Archive(songID primitive.ObjectID) (*drive.File, error) {
+func (s *SongService) Archive(songID bson.ObjectID) (*drive.File, error) {
 	song, err := s.FindOneByID(songID)
 	if err != nil {
 		return nil, err
@@ -265,7 +265,7 @@ func (s *SongService) Archive(songID primitive.ObjectID) (*drive.File, error) {
 	return driveFile, err
 }
 
-func (s *SongService) Unarchive(songID primitive.ObjectID) (*drive.File, error) {
+func (s *SongService) Unarchive(songID bson.ObjectID) (*drive.File, error) {
 	song, err := s.FindOneByID(songID)
 	if err != nil {
 		return nil, err
@@ -281,15 +281,15 @@ func (s *SongService) Unarchive(songID primitive.ObjectID) (*drive.File, error) 
 	return driveFile, err
 }
 
-func (s *SongService) FindAllExtraByPageNumberSortedByEventsNumber(bandID primitive.ObjectID, eventsStartDate time.Time, isAscending bool, pageNumber int) ([]*entity.SongWithEvents, error) {
+func (s *SongService) FindAllExtraByPageNumberSortedByEventsNumber(bandID bson.ObjectID, eventsStartDate time.Time, isAscending bool, pageNumber int) ([]*entity.SongWithEvents, error) {
 	return s.songRepository.FindAllExtraByPageNumberSortedByEventsNumber(bandID, eventsStartDate, isAscending, pageNumber)
 }
 
-func (s *SongService) FindAllExtraByPageNumberSortedByEventDate(bandID primitive.ObjectID, eventsStartDate time.Time, isAscending bool, pageNumber int) ([]*entity.SongWithEvents, error) {
+func (s *SongService) FindAllExtraByPageNumberSortedByEventDate(bandID bson.ObjectID, eventsStartDate time.Time, isAscending bool, pageNumber int) ([]*entity.SongWithEvents, error) {
 	return s.songRepository.FindAllExtraByPageNumberSortedByEventDate(bandID, eventsStartDate, isAscending, pageNumber)
 }
 
-func (s *SongService) FindManyExtraByTag(tag string, bandID primitive.ObjectID, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {
+func (s *SongService) FindManyExtraByTag(tag string, bandID bson.ObjectID, eventsStartDate time.Time, pageNumber int) ([]*entity.SongWithEvents, error) {
 	return s.songRepository.FindManyExtraByTag(tag, bandID, eventsStartDate, pageNumber)
 }
 
@@ -316,11 +316,11 @@ func songHasOutdatedPDF(song *entity.Song, driveFile *drive.File) bool {
 	return false
 }
 
-func (s *SongService) GetTags(bandID primitive.ObjectID) ([]string, error) {
+func (s *SongService) GetTags(bandID bson.ObjectID) ([]string, error) {
 	return s.songRepository.GetTags(bandID)
 }
 
-func (s *SongService) TagOrUntag(tag string, songID primitive.ObjectID) (*entity.Song, error) {
+func (s *SongService) TagOrUntag(tag string, songID bson.ObjectID) (*entity.Song, error) {
 	return s.songRepository.TagOrUntag(tag, songID)
 }
 

@@ -3,7 +3,7 @@ package service
 import (
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/repository"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type VoiceService struct {
@@ -16,7 +16,7 @@ func NewVoiceService(voiceRepository *repository.VoiceRepository) *VoiceService 
 	}
 }
 
-func (s *VoiceService) FindOneByID(ID primitive.ObjectID) (*entity.Voice, error) {
+func (s *VoiceService) FindOneByID(ID bson.ObjectID) (*entity.Voice, error) {
 	return s.voiceRepository.FindOneByID(ID)
 }
 
@@ -28,14 +28,14 @@ func (s *VoiceService) UpdateOne(voice entity.Voice) (*entity.Voice, error) {
 	return s.voiceRepository.UpdateOne(voice)
 }
 
-func (s *VoiceService) DeleteOne(ID primitive.ObjectID) error {
+func (s *VoiceService) DeleteOne(ID bson.ObjectID) error {
 	return s.voiceRepository.DeleteOneByID(ID)
 }
 
-func (s *VoiceService) DeleteManyByIDs(IDs []primitive.ObjectID) error {
+func (s *VoiceService) DeleteManyByIDs(IDs []bson.ObjectID) error {
 	return s.voiceRepository.DeleteManyByIDs(IDs)
 }
 
-func (s *VoiceService) CloneVoicesForNewSongID(oldSongID, newSongID primitive.ObjectID) error {
+func (s *VoiceService) CloneVoicesForNewSongID(oldSongID, newSongID bson.ObjectID) error {
 	return s.voiceRepository.CloneVoicesForNewSongID(oldSongID, newSongID)
 }

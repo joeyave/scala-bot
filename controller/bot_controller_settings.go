@@ -13,7 +13,7 @@ import (
 	"github.com/joeyave/scala-bot/state"
 	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"golang.org/x/exp/slices"
 	"google.golang.org/api/googleapi"
 )
@@ -22,14 +22,14 @@ func (c *BotController) SettingsChooseBand(bot *gotgbot.Bot, ctx *ext.Context) e
 	user := ctx.Data["user"].(*entity.User)
 
 	hex := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
-	bandID, err := primitive.ObjectIDFromHex(hex)
+	bandID, err := bson.ObjectIDFromHex(hex)
 	if err != nil {
 		return err
 	}
 
 	// band, err := c.BandService.FindOneByID(bandID)
 
-	index := slices.IndexFunc(user.BandIDs, func(id primitive.ObjectID) bool {
+	index := slices.IndexFunc(user.BandIDs, func(id bson.ObjectID) bool {
 		return id == bandID
 	})
 
@@ -50,7 +50,7 @@ func (c *BotController) SettingsChooseBand(bot *gotgbot.Bot, ctx *ext.Context) e
 		if len(user.BandIDs) > 0 {
 			user.BandID = user.BandIDs[0]
 		} else {
-			user.BandID = primitive.NilObjectID
+			user.BandID = bson.NilObjectID
 		}
 
 		// _, _, err = bot.EditMessageText(txt.Get("text.removedFromBand", ctx.EffectiveUser.LanguageCode, band.Name), &gotgbot.EditMessageTextOpts{
@@ -113,7 +113,7 @@ func (c *BotController) SettingsBands(bot *gotgbot.Bot, ctx *ext.Context) error 
 	}
 	for _, band := range bands {
 		text := band.Name
-		contains := slices.ContainsFunc(user.BandIDs, func(id primitive.ObjectID) bool {
+		contains := slices.ContainsFunc(user.BandIDs, func(id bson.ObjectID) bool {
 			return id == band.ID
 		})
 		if contains || user.BandID == band.ID {
@@ -142,7 +142,7 @@ func (c *BotController) SettingsBandMembers(bot *gotgbot.Bot, ctx *ext.Context) 
 	// user := ctx.Data["user"].(*entity.User)
 
 	hex := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
-	bandID, err := primitive.ObjectIDFromHex(hex)
+	bandID, err := bson.ObjectIDFromHex(hex)
 	if err != nil {
 		return err
 	}
@@ -154,7 +154,7 @@ func (c *BotController) SettingsCleanupDatabase(bot *gotgbot.Bot, ctx *ext.Conte
 	user := ctx.Data["user"].(*entity.User)
 
 	// hex := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
-	// bandID, err := primitive.ObjectIDFromHex(hex)
+	// bandID, err := bson.ObjectIDFromHex(hex)
 	//if err != nil {
 	//	return err
 	//}
@@ -180,7 +180,7 @@ func (c *BotController) SettingsCleanupDatabase(bot *gotgbot.Bot, ctx *ext.Conte
 			deleted, _ := c.SongService.DeleteOneByDriveFileIDFromDatabase(song.DriveFileID)
 			if deleted {
 				builder.WriteString(fmt.Sprintf("\nDeleted: <a href=\"%s\">%s</a>", song.PDF.WebViewLink, song.PDF.Name))
-				var voiceIDs []primitive.ObjectID
+				var voiceIDs []bson.ObjectID
 				for _, voice := range song.Voices {
 					voiceIDs = append(voiceIDs, voice.ID)
 				}
@@ -221,7 +221,7 @@ func (c *BotController) SettingsCleanupDatabase(bot *gotgbot.Bot, ctx *ext.Conte
 	return nil
 }
 
-func (c *BotController) settingsBandMembers(bot *gotgbot.Bot, ctx *ext.Context, bandID primitive.ObjectID) error {
+func (c *BotController) settingsBandMembers(bot *gotgbot.Bot, ctx *ext.Context, bandID bson.ObjectID) error {
 	// user := ctx.Data["user"].(*entity.User)
 
 	members, err := c.UserService.FindMultipleByBandID(bandID)
@@ -266,7 +266,7 @@ func (c *BotController) SettingsBandAddAdmin(bot *gotgbot.Bot, ctx *ext.Context)
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 	split := strings.Split(payload, ":")
 
-	bandID, err := primitive.ObjectIDFromHex(split[0])
+	bandID, err := bson.ObjectIDFromHex(split[0])
 	if err != nil {
 		return err
 	}

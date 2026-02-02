@@ -3,7 +3,7 @@ package service
 import (
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/repository"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type BandService struct {
@@ -20,11 +20,11 @@ func (s *BandService) FindAll() ([]*entity.Band, error) {
 	return s.bandRepository.FindAll()
 }
 
-func (s *BandService) FindManyByIDs(ids []primitive.ObjectID) ([]*entity.Band, error) {
+func (s *BandService) FindManyByIDs(ids []bson.ObjectID) ([]*entity.Band, error) {
 	return s.bandRepository.FindManyByIDs(ids)
 }
 
-func (s *BandService) FindOneByID(ID primitive.ObjectID) (*entity.Band, error) {
+func (s *BandService) FindOneByID(ID bson.ObjectID) (*entity.Band, error) {
 	return s.bandRepository.FindOneByID(ID)
 }
 

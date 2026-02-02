@@ -3,7 +3,7 @@ package service
 import (
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/repository"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type MembershipService struct {
@@ -20,11 +20,11 @@ func (s *MembershipService) FindAll() ([]*entity.Membership, error) {
 	return s.membershipRepository.FindAll()
 }
 
-func (s *MembershipService) FindOneByID(ID primitive.ObjectID) (*entity.Membership, error) {
+func (s *MembershipService) FindOneByID(ID bson.ObjectID) (*entity.Membership, error) {
 	return s.membershipRepository.FindOneByID(ID)
 }
 
-func (s *MembershipService) FindMultipleByEventID(ID primitive.ObjectID) ([]*entity.Membership, error) {
+func (s *MembershipService) FindMultipleByEventID(ID bson.ObjectID) ([]*entity.Membership, error) {
 	return s.membershipRepository.FindMultipleByEventID(ID)
 }
 
@@ -50,6 +50,6 @@ func (s *MembershipService) UpdateOne(membership entity.Membership) (*entity.Mem
 	return s.membershipRepository.UpdateOne(membership)
 }
 
-func (s *MembershipService) DeleteOneByID(ID primitive.ObjectID) error {
+func (s *MembershipService) DeleteOneByID(ID bson.ObjectID) error {
 	return s.membershipRepository.DeleteOneByID(ID)
 }

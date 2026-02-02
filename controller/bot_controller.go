@@ -23,7 +23,7 @@ import (
 	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
 	"github.com/rs/zerolog/log"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"golang.org/x/exp/slices"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/drive/v3"
@@ -80,12 +80,12 @@ func (c *BotController) RegisterUser(bot *gotgbot.Bot, ctx *ext.Context) error {
 	user.LanguageCode = ctx.EffectiveUser.LanguageCode
 
 	// todo
-	// if user.BandID == primitive.NilObjectID && user.State.Name != helpers.ChooseBandState && user.State.Name != helpers.CreateBandState {
+	// if user.BandID == bson.NilObjectID && user.State.Name != helpers.ChooseBandState && user.State.Name != helpers.CreateBandState {
 	//	user.State = entity.State{
 	//		Name: helpers.ChooseBandState,
 	//	}
 	//}
-	if user.BandID == primitive.NilObjectID || user.Band == nil {
+	if user.BandID == bson.NilObjectID || user.Band == nil {
 		if ctx.CallbackQuery != nil {
 			parsedData := strings.Split(ctx.CallbackQuery.Data, ":")
 			if parsedData[0] == strconv.Itoa(state.SettingsChooseBand) || parsedData[0] == strconv.Itoa(state.BandCreate_AskForName) {

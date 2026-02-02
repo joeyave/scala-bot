@@ -30,10 +30,10 @@ import (
 	"github.com/joeyave/scala-bot/util"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
@@ -70,20 +70,21 @@ func main() {
 		log.Fatal().Err(err).Msg("Error setting commands")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("BOT_MONGODB_URI")))
+	mongoClient, err := mongo.Connect(options.Client().ApplyURI(os.Getenv("BOT_MONGODB_URI")))
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error connecting to MongoDB")
 	}
 	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
 		if err := mongoClient.Disconnect(ctx); err != nil {
 			log.Fatal().Err(err).Msg("Error disconnecting from MongoDB")
 		}
 	}()
 
-	err = mongoClient.Ping(ctx, readpref.Primary())
+	pingCtx, pingCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer pingCancel()
+	err = mongoClient.Ping(pingCtx, readpref.Primary())
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error pinging MongoDB")
 	}
@@ -178,7 +179,7 @@ func main() {
 
 	dispatcher.AddHandlerToGroup(handlers.NewInlineQuery(inlinequery.All, func(bot *gotgbot.Bot, ctx *ext.Context) error {
 		user, err := userService.FindOneByID(ctx.EffectiveUser.Id)
-		if err == nil && user.BandID != primitive.NilObjectID {
+		if err == nil && user.BandID != bson.NilObjectID {
 			ctx.Data["user"] = user
 			return nil
 		}
@@ -356,7 +357,7 @@ func main() {
 
 	router := gin.New()
 	router.SetFuncMap(template.FuncMap{
-		"hex": func(id primitive.ObjectID) string {
+		"hex": func(id bson.ObjectID) string {
 			return id.Hex()
 		},
 		"json": func(s any) string {

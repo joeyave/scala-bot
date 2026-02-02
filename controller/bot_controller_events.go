@@ -20,8 +20,8 @@ import (
 	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
 	"github.com/rs/zerolog/log"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 	"google.golang.org/api/drive/v3"
 )
 
@@ -97,7 +97,7 @@ func (c *BotController) CreateEvent(bot *gotgbot.Bot, ctx *ext.Context) error {
 	newEvent.TimeUTC = eventDate.UTC()
 
 	for _, id := range data.SongIDs {
-		hex, err := primitive.ObjectIDFromHex(id)
+		hex, err := bson.ObjectIDFromHex(id)
 		if err != nil {
 			continue
 		}
@@ -370,7 +370,7 @@ func (c *BotController) filterEvents(index int) handlers.Response {
 func (c *BotController) EventSetlistDocs(bot *gotgbot.Bot, ctx *ext.Context) error {
 	eventIDHex := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 
-	eventID, err := primitive.ObjectIDFromHex(eventIDHex)
+	eventID, err := bson.ObjectIDFromHex(eventIDHex)
 	if err != nil {
 		return err
 	}
@@ -440,7 +440,7 @@ func (c *BotController) EventSetlistDocs(bot *gotgbot.Bot, ctx *ext.Context) err
 	return nil
 }
 
-func (c *BotController) getBandTempFolderID(bandID primitive.ObjectID) (string, error) {
+func (c *BotController) getBandTempFolderID(bandID bson.ObjectID) (string, error) {
 	band, err := c.BandService.FindOneByID(bandID)
 	if err != nil {
 		return "", err
@@ -467,7 +467,7 @@ func (c *BotController) EventCB(bot *gotgbot.Bot, ctx *ext.Context) error {
 	split := strings.Split(payload, ":")
 
 	hex := split[0]
-	eventID, err := primitive.ObjectIDFromHex(hex)
+	eventID, err := bson.ObjectIDFromHex(hex)
 	if err != nil {
 		return err
 	}
@@ -561,7 +561,7 @@ func (c *BotController) EventMembers(bot *gotgbot.Bot, ctx *ext.Context) error {
 
 	hex := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 
-	eventID, err := primitive.ObjectIDFromHex(hex)
+	eventID, err := bson.ObjectIDFromHex(hex)
 	if err != nil {
 		return err
 	}
@@ -587,12 +587,12 @@ func (c *BotController) EventMembersDeleteOrRecoverMember(bot *gotgbot.Bot, ctx 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 	split := strings.Split(payload, ":")
 
-	eventID, err := primitive.ObjectIDFromHex(split[0])
+	eventID, err := bson.ObjectIDFromHex(split[0])
 	if err != nil {
 		return err
 	}
 
-	membershipID, err := primitive.ObjectIDFromHex(split[1])
+	membershipID, err := bson.ObjectIDFromHex(split[1])
 	if err != nil {
 		return err
 	}
@@ -647,7 +647,7 @@ func (c *BotController) EventMembersAddMemberChooseRole(bot *gotgbot.Bot, ctx *e
 
 	hex := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 
-	eventID, err := primitive.ObjectIDFromHex(hex)
+	eventID, err := bson.ObjectIDFromHex(hex)
 	if err != nil {
 		return err
 	}
@@ -695,12 +695,12 @@ func (c *BotController) EventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *e
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 	split := strings.Split(payload, ":")
 
-	eventID, err := primitive.ObjectIDFromHex(split[0])
+	eventID, err := bson.ObjectIDFromHex(split[0])
 	if err != nil {
 		return err
 	}
 
-	roleID, err := primitive.ObjectIDFromHex(split[1])
+	roleID, err := bson.ObjectIDFromHex(split[1])
 	if err != nil {
 		return err
 	}
@@ -714,7 +714,7 @@ func (c *BotController) EventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *e
 	return nil
 }
 
-func (c *BotController) eventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *ext.Context, eventID, roleID primitive.ObjectID, loadMore bool) error {
+func (c *BotController) eventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *ext.Context, eventID, roleID bson.ObjectID, loadMore bool) error {
 	user := ctx.Data["user"].(*entity.User)
 
 	event, err := c.EventService.FindOneByID(eventID)
@@ -804,7 +804,7 @@ func (c *BotController) EventMembersAddMember(bot *gotgbot.Bot, ctx *ext.Context
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 	split := strings.Split(payload, ":")
 
-	roleID, err := primitive.ObjectIDFromHex(split[0])
+	roleID, err := bson.ObjectIDFromHex(split[0])
 	if err != nil {
 		return err
 	}
@@ -814,7 +814,7 @@ func (c *BotController) EventMembersAddMember(bot *gotgbot.Bot, ctx *ext.Context
 		return err
 	}
 
-	eventID, err := primitive.ObjectIDFromHex(user.CallbackCache.EventIDHex)
+	eventID, err := bson.ObjectIDFromHex(user.CallbackCache.EventIDHex)
 	if err != nil {
 		return err
 	}
@@ -839,17 +839,17 @@ func (c *BotController) EventMembersDeleteMember(bot *gotgbot.Bot, ctx *ext.Cont
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 	split := strings.Split(payload, ":")
 
-	roleID, err := primitive.ObjectIDFromHex(split[0])
+	roleID, err := bson.ObjectIDFromHex(split[0])
 	if err != nil {
 		return err
 	}
 
-	membershipID, err := primitive.ObjectIDFromHex(split[1])
+	membershipID, err := bson.ObjectIDFromHex(split[1])
 	if err != nil {
 		return err
 	}
 
-	eventID, err := primitive.ObjectIDFromHex(user.CallbackCache.EventIDHex)
+	eventID, err := bson.ObjectIDFromHex(user.CallbackCache.EventIDHex)
 	if err != nil {
 		return err
 	}
@@ -873,7 +873,7 @@ func (c *BotController) EventDeleteConfirm(bot *gotgbot.Bot, ctx *ext.Context) e
 	user := ctx.Data["user"].(*entity.User)
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
-	eventID, err := primitive.ObjectIDFromHex(payload)
+	eventID, err := bson.ObjectIDFromHex(payload)
 	if err != nil {
 		return err
 	}
@@ -904,7 +904,7 @@ func (c *BotController) EventDelete(bot *gotgbot.Bot, ctx *ext.Context) error {
 
 	payload := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
 
-	eventID, err := primitive.ObjectIDFromHex(payload)
+	eventID, err := bson.ObjectIDFromHex(payload)
 	if err != nil {
 		return err
 	}

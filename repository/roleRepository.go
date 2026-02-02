@@ -6,10 +6,9 @@ import (
 
 	"github.com/joeyave/scala-bot/entity"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type RoleRepository struct {
@@ -31,7 +30,7 @@ func (r *RoleRepository) FindAll() ([]*entity.Role, error) {
 	return roles, nil
 }
 
-func (r *RoleRepository) FindOneByID(ID primitive.ObjectID) (*entity.Role, error) {
+func (r *RoleRepository) FindOneByID(ID bson.ObjectID) (*entity.Role, error) {
 	roles, err := r.find(bson.M{"_id": ID})
 	if err != nil {
 		return nil, err
@@ -74,7 +73,7 @@ func (r *RoleRepository) find(m bson.M) ([]*entity.Role, error) {
 
 func (r *RoleRepository) UpdateOne(role entity.Role) (*entity.Role, error) {
 	if role.ID.IsZero() {
-		role.ID = primitive.NewObjectID()
+		role.ID = bson.NewObjectID()
 	}
 
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("roles")
@@ -85,14 +84,9 @@ func (r *RoleRepository) UpdateOne(role entity.Role) (*entity.Role, error) {
 		"$set": role,
 	}
 
-	after := options.After
-	upsert := true
-	opts := options.FindOneAndUpdateOptions{
-		ReturnDocument: &after,
-		Upsert:         &upsert,
-	}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After).SetUpsert(true)
 
-	result := collection.FindOneAndUpdate(context.TODO(), filter, update, &opts)
+	result := collection.FindOneAndUpdate(context.TODO(), filter, update, opts)
 	if result.Err() != nil {
 		return nil, result.Err()
 	}

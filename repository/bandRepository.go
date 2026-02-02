@@ -5,10 +5,9 @@ import (
 	"os"
 
 	"github.com/joeyave/scala-bot/entity"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type BandRepository struct {
@@ -30,7 +29,7 @@ func (r *BandRepository) FindAll() ([]*entity.Band, error) {
 	return bands, nil
 }
 
-func (r *BandRepository) FindManyByIDs(ids []primitive.ObjectID) ([]*entity.Band, error) {
+func (r *BandRepository) FindManyByIDs(ids []bson.ObjectID) ([]*entity.Band, error) {
 	if len(ids) == 0 {
 		return []*entity.Band{}, nil
 	}
@@ -42,7 +41,7 @@ func (r *BandRepository) FindManyByIDs(ids []primitive.ObjectID) ([]*entity.Band
 	return bands, nil
 }
 
-func (r *BandRepository) FindOneByID(ID primitive.ObjectID) (*entity.Band, error) {
+func (r *BandRepository) FindOneByID(ID bson.ObjectID) (*entity.Band, error) {
 	bands, err := r.find(bson.M{"_id": ID})
 	if err != nil {
 		return nil, err
@@ -107,7 +106,7 @@ func (r *BandRepository) find(m bson.M) ([]*entity.Band, error) {
 
 func (r *BandRepository) UpdateOne(band entity.Band) (*entity.Band, error) {
 	if band.ID.IsZero() {
-		band.ID = primitive.NewObjectID()
+		band.ID = bson.NewObjectID()
 	}
 
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("bands")
@@ -119,14 +118,9 @@ func (r *BandRepository) UpdateOne(band entity.Band) (*entity.Band, error) {
 		"$set": band,
 	}
 
-	after := options.After
-	upsert := true
-	opts := options.FindOneAndUpdateOptions{
-		ReturnDocument: &after,
-		Upsert:         &upsert,
-	}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After).SetUpsert(true)
 
-	result := collection.FindOneAndUpdate(context.TODO(), filter, update, &opts)
+	result := collection.FindOneAndUpdate(context.TODO(), filter, update, opts)
 	if result.Err() != nil {
 		return nil, result.Err()
 	}

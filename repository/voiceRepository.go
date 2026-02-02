@@ -6,10 +6,9 @@ import (
 
 	"github.com/joeyave/scala-bot/entity"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type VoiceRepository struct {
@@ -22,7 +21,7 @@ func NewVoiceRepository(mongoClient *mongo.Client) *VoiceRepository {
 	}
 }
 
-func (r *VoiceRepository) FindOneByID(ID primitive.ObjectID) (*entity.Voice, error) {
+func (r *VoiceRepository) FindOneByID(ID bson.ObjectID) (*entity.Voice, error) {
 	return r.findOne(bson.M{"_id": ID})
 }
 
@@ -32,7 +31,7 @@ func (r *VoiceRepository) FindOneByFileID(fileID string) (*entity.Voice, error) 
 
 func (r *VoiceRepository) UpdateOne(voice entity.Voice) (*entity.Voice, error) {
 	if voice.ID.IsZero() {
-		voice.ID = primitive.NewObjectID()
+		voice.ID = bson.NewObjectID()
 	}
 
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("voices")
@@ -45,14 +44,9 @@ func (r *VoiceRepository) UpdateOne(voice entity.Voice) (*entity.Voice, error) {
 		"$set": voice,
 	}
 
-	after := options.After
-	upsert := true
-	opts := options.FindOneAndUpdateOptions{
-		ReturnDocument: &after,
-		Upsert:         &upsert,
-	}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After).SetUpsert(true)
 
-	result := collection.FindOneAndUpdate(context.TODO(), filter, update, &opts)
+	result := collection.FindOneAndUpdate(context.TODO(), filter, update, opts)
 	if result.Err() != nil {
 		return nil, result.Err()
 	}
@@ -62,14 +56,14 @@ func (r *VoiceRepository) UpdateOne(voice entity.Voice) (*entity.Voice, error) {
 	return newVoice, err
 }
 
-func (r *VoiceRepository) DeleteOneByID(ID primitive.ObjectID) error {
+func (r *VoiceRepository) DeleteOneByID(ID bson.ObjectID) error {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("voices")
 
 	_, err := collection.DeleteOne(context.TODO(), bson.M{"_id": ID})
 	return err
 }
 
-func (r *VoiceRepository) DeleteManyByIDs(IDs []primitive.ObjectID) error {
+func (r *VoiceRepository) DeleteManyByIDs(IDs []bson.ObjectID) error {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("voices")
 
 	_, err := collection.DeleteMany(context.TODO(), bson.M{"_id": bson.M{"$in": IDs}})
@@ -89,7 +83,7 @@ func (r *VoiceRepository) findOne(m bson.M) (*entity.Voice, error) {
 	return voice, err
 }
 
-func (r *VoiceRepository) CloneVoicesForNewSongID(oldSongID, newSongID primitive.ObjectID) error {
+func (r *VoiceRepository) CloneVoicesForNewSongID(oldSongID, newSongID bson.ObjectID) error {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("voices")
 
 	// Find all voices with oldSongID
@@ -109,7 +103,7 @@ func (r *VoiceRepository) CloneVoicesForNewSongID(oldSongID, newSongID primitive
 		}
 
 		// Clone the voice and assign newSongID
-		voice.ID = primitive.NewObjectID() // Generate a new ID for the cloned voice
+		voice.ID = bson.NewObjectID() // Generate a new ID for the cloned voice
 		voice.SongID = newSongID
 
 		voices = append(voices, voice)

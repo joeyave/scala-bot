@@ -5,7 +5,7 @@ import (
 
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/repository"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type UserService struct {
@@ -38,7 +38,7 @@ func (s *UserService) FindOneByName(name string) (*entity.User, error) {
 	return s.userRepository.FindOneByName(name)
 }
 
-func (s *UserService) FindMultipleByBandID(bandID primitive.ObjectID) ([]*entity.User, error) {
+func (s *UserService) FindMultipleByBandID(bandID bson.ObjectID) ([]*entity.User, error) {
 	return s.userRepository.FindManyByBandID(bandID)
 }
 
@@ -50,10 +50,10 @@ func (s *UserService) UpdateOne(user entity.User) (*entity.User, error) {
 	return s.userRepository.UpdateOne(user)
 }
 
-func (s *UserService) FindManyByBandIDAndRoleID(bandID, roleID primitive.ObjectID, from time.Time) ([]*entity.UserWithEvents, error) {
+func (s *UserService) FindManyByBandIDAndRoleID(bandID, roleID bson.ObjectID, from time.Time) ([]*entity.UserWithEvents, error) {
 	return s.userRepository.FindManyExtraByBandIDAndRoleID(bandID, roleID, from)
 }
 
-func (s *UserService) FindManyExtraByBandID(bandID primitive.ObjectID, from, to time.Time) ([]*entity.UserWithEvents, error) {
+func (s *UserService) FindManyExtraByBandID(bandID bson.ObjectID, from, to time.Time) ([]*entity.UserWithEvents, error) {
 	return s.userRepository.FindManyExtraByBandID(bandID, from, to)
 }

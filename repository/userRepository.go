@@ -7,10 +7,9 @@ import (
 
 	"github.com/joeyave/scala-bot/entity"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type UserRepository struct {
@@ -70,7 +69,7 @@ func (r *UserRepository) FindManyByIDs(IDs []int64) ([]*entity.User, error) {
 	})
 }
 
-func (r *UserRepository) FindManyByBandID(bandID primitive.ObjectID) ([]*entity.User, error) {
+func (r *UserRepository) FindManyByBandID(bandID bson.ObjectID) ([]*entity.User, error) {
 	return r.find(bson.M{
 		"bandId": bandID,
 	})
@@ -153,14 +152,9 @@ func (r *UserRepository) UpdateOne(user entity.User) (*entity.User, error) {
 		"$set": user,
 	}
 
-	after := options.After
-	upsert := true
-	opts := options.FindOneAndUpdateOptions{
-		ReturnDocument: &after,
-		Upsert:         &upsert,
-	}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After).SetUpsert(true)
 
-	result := collection.FindOneAndUpdate(context.TODO(), filter, update, &opts)
+	result := collection.FindOneAndUpdate(context.TODO(), filter, update, opts)
 	if result.Err() != nil {
 		return nil, result.Err()
 	}
@@ -174,7 +168,7 @@ func (r *UserRepository) UpdateOne(user entity.User) (*entity.User, error) {
 	return r.FindOneByID(newUser.ID)
 }
 
-func (r *UserRepository) FindManyExtraByBandIDAndRoleID(bandID, roleID primitive.ObjectID, from time.Time) ([]*entity.UserWithEvents, error) {
+func (r *UserRepository) FindManyExtraByBandIDAndRoleID(bandID, roleID bson.ObjectID, from time.Time) ([]*entity.UserWithEvents, error) {
 	pipeline := bson.A{
 		bson.M{
 			"$match": bson.M{
@@ -291,8 +285,8 @@ func (r *UserRepository) FindManyExtraByBandIDAndRoleID(bandID, roleID primitive
 	return r.findWithExtra(pipeline)
 }
 
-func (r *UserRepository) FindManyExtraByBandID(bandID primitive.ObjectID, from, to time.Time) ([]*entity.UserWithEvents, error) {
-	fromDate := primitive.NewObjectIDFromTimestamp(from)
+func (r *UserRepository) FindManyExtraByBandID(bandID bson.ObjectID, from, to time.Time) ([]*entity.UserWithEvents, error) {
+	fromDate := bson.NewObjectIDFromTimestamp(from)
 
 	pipeline := bson.A{
 		bson.M{

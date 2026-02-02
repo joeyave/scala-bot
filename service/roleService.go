@@ -3,7 +3,7 @@ package service
 import (
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/repository"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type RoleService struct {
@@ -20,7 +20,7 @@ func (s *RoleService) FindAll() ([]*entity.Role, error) {
 	return s.roleRepository.FindAll()
 }
 
-func (s *RoleService) FindOneByID(ID primitive.ObjectID) (*entity.Role, error) {
+func (s *RoleService) FindOneByID(ID bson.ObjectID) (*entity.Role, error) {
 	return s.roleRepository.FindOneByID(ID)
 }
 

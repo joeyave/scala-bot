@@ -6,10 +6,9 @@ import (
 
 	"github.com/joeyave/scala-bot/entity"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type MembershipRepository struct {
@@ -31,7 +30,7 @@ func (r *MembershipRepository) FindAll() ([]*entity.Membership, error) {
 	return memberships, nil
 }
 
-func (r *MembershipRepository) FindOneByID(ID primitive.ObjectID) (*entity.Membership, error) {
+func (r *MembershipRepository) FindOneByID(ID bson.ObjectID) (*entity.Membership, error) {
 	memberships, err := r.find(bson.M{"_id": ID})
 	if err != nil {
 		return nil, err
@@ -40,7 +39,7 @@ func (r *MembershipRepository) FindOneByID(ID primitive.ObjectID) (*entity.Membe
 	return memberships[0], nil
 }
 
-func (r *MembershipRepository) FindMultipleByUserIDAndEventID(userID int64, eventID primitive.ObjectID) ([]*entity.Membership, error) {
+func (r *MembershipRepository) FindMultipleByUserIDAndEventID(userID int64, eventID bson.ObjectID) ([]*entity.Membership, error) {
 	memberships, err := r.find(bson.M{"userId": userID, "eventId": eventID})
 	if err != nil {
 		return nil, err
@@ -49,7 +48,7 @@ func (r *MembershipRepository) FindMultipleByUserIDAndEventID(userID int64, even
 	return memberships, nil
 }
 
-func (r *MembershipRepository) FindMultipleByUserIDAndEventIDAndRoleID(userID int64, eventID, roleID primitive.ObjectID) ([]*entity.Membership, error) {
+func (r *MembershipRepository) FindMultipleByUserIDAndEventIDAndRoleID(userID int64, eventID, roleID bson.ObjectID) ([]*entity.Membership, error) {
 	memberships, err := r.find(bson.M{"userId": userID, "eventId": eventID, "roleId": roleID})
 	if err != nil {
 		return nil, err
@@ -58,7 +57,7 @@ func (r *MembershipRepository) FindMultipleByUserIDAndEventIDAndRoleID(userID in
 	return memberships, nil
 }
 
-func (r *MembershipRepository) FindMultipleByEventID(eventID primitive.ObjectID) ([]*entity.Membership, error) {
+func (r *MembershipRepository) FindMultipleByEventID(eventID bson.ObjectID) ([]*entity.Membership, error) {
 	memberships, err := r.find(bson.M{"eventId": eventID})
 	if err != nil {
 		return nil, err
@@ -173,7 +172,7 @@ func (r *MembershipRepository) find(m bson.M) ([]*entity.Membership, error) {
 
 func (r *MembershipRepository) UpdateOne(membership entity.Membership) (*entity.Membership, error) {
 	if membership.ID.IsZero() {
-		membership.ID = primitive.NewObjectID()
+		membership.ID = bson.NewObjectID()
 	}
 
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("memberships")
@@ -186,14 +185,9 @@ func (r *MembershipRepository) UpdateOne(membership entity.Membership) (*entity.
 		"$set": membership,
 	}
 
-	after := options.After
-	upsert := true
-	opts := options.FindOneAndUpdateOptions{
-		ReturnDocument: &after,
-		Upsert:         &upsert,
-	}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After).SetUpsert(true)
 
-	result := collection.FindOneAndUpdate(context.TODO(), filter, update, &opts)
+	result := collection.FindOneAndUpdate(context.TODO(), filter, update, opts)
 	if result.Err() != nil {
 		return nil, result.Err()
 	}
@@ -207,14 +201,14 @@ func (r *MembershipRepository) UpdateOne(membership entity.Membership) (*entity.
 	return r.FindOneByID(newMembership.ID)
 }
 
-func (r *MembershipRepository) DeleteOneByID(ID primitive.ObjectID) error {
+func (r *MembershipRepository) DeleteOneByID(ID bson.ObjectID) error {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("memberships")
 
 	_, err := collection.DeleteOne(context.TODO(), bson.M{"_id": ID})
 	return err
 }
 
-func (r *MembershipRepository) DeleteManyByEventID(eventID primitive.ObjectID) error {
+func (r *MembershipRepository) DeleteManyByEventID(eventID bson.ObjectID) error {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("memberships")
 
 	_, err := collection.DeleteMany(context.TODO(), bson.M{"eventId": eventID})

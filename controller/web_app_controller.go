@@ -13,7 +13,7 @@ import (
 	"github.com/joeyave/scala-bot/keyboard"
 	"github.com/joeyave/scala-bot/service"
 	"github.com/rs/zerolog/log"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type WebAppController struct {
@@ -32,7 +32,7 @@ func (h *WebAppController) Statistics(ctx *gin.Context) {
 	fmt.Println(ctx.Request.URL.String())
 
 	hex := ctx.Query("bandId")
-	bandID, err := primitive.ObjectIDFromHex(hex)
+	bandID, err := bson.ObjectIDFromHex(hex)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		log.Error().Err(err).Msgf("Error:")
@@ -67,7 +67,7 @@ type User struct {
 }
 
 type Event struct {
-	ID      primitive.ObjectID `json:"id"`
+	ID      bson.ObjectID `json:"id"`
 	Date    string             `json:"date"`
 	Weekday time.Weekday       `json:"weekday"`
 	Name    string             `json:"name"`
@@ -75,7 +75,7 @@ type Event struct {
 }
 
 type Role struct {
-	ID   primitive.ObjectID `json:"id"`
+	ID   bson.ObjectID `json:"id"`
 	Name string             `json:"name"`
 }
 
@@ -83,7 +83,7 @@ func (h *WebAppController) UsersWithEvents(ctx *gin.Context) {
 	fmt.Println(ctx.Request.URL)
 
 	hex := ctx.Query("bandId")
-	bandID, err := primitive.ObjectIDFromHex(hex)
+	bandID, err := bson.ObjectIDFromHex(hex)
 	if err != nil {
 		ctx.JSON(500, gin.H{"status": "error", "message": err.Error()})
 		return
@@ -151,7 +151,7 @@ func (h *WebAppController) UsersWithEvents(ctx *gin.Context) {
 
 func (h *WebAppController) SongData(ctx *gin.Context) {
 	songIDFromQ := ctx.Param("id")
-	songID, err := primitive.ObjectIDFromHex(songIDFromQ)
+	songID, err := bson.ObjectIDFromHex(songIDFromQ)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -192,7 +192,7 @@ func (h *WebAppController) SongData(ctx *gin.Context) {
 
 func (h *WebAppController) SongLyrics(ctx *gin.Context) {
 	songIDFromQ := ctx.Param("id")
-	songID, err := primitive.ObjectIDFromHex(songIDFromQ)
+	songID, err := bson.ObjectIDFromHex(songIDFromQ)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -230,7 +230,7 @@ var (
 
 func (h *WebAppController) SongEdit(ctx *gin.Context) {
 	songIDStr := ctx.Param("id")
-	songID, err := primitive.ObjectIDFromHex(songIDStr)
+	songID, err := bson.ObjectIDFromHex(songIDStr)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		log.Error().Err(err).Msgf("Error:")
@@ -381,7 +381,7 @@ func (h *WebAppController) SongEdit(ctx *gin.Context) {
 
 func (h *WebAppController) SongDownload(ctx *gin.Context) {
 	songIDStr := ctx.Param("id")
-	songID, err := primitive.ObjectIDFromHex(songIDStr)
+	songID, err := bson.ObjectIDFromHex(songIDStr)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		log.Error().Err(err).Msgf("Error:")
@@ -424,7 +424,7 @@ func (h *WebAppController) SongDownload(ctx *gin.Context) {
 
 func (h *WebAppController) Tags(ctx *gin.Context) {
 	bandIdFromQ := ctx.Query("bandId")
-	bandID, err := primitive.ObjectIDFromHex(bandIdFromQ)
+	bandID, err := bson.ObjectIDFromHex(bandIdFromQ)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -441,7 +441,7 @@ func (h *WebAppController) Tags(ctx *gin.Context) {
 
 func (h *WebAppController) EventData(ctx *gin.Context) {
 	eventIDFromCtx := ctx.Param("id")
-	eventID, err := primitive.ObjectIDFromHex(eventIDFromCtx)
+	eventID, err := bson.ObjectIDFromHex(eventIDFromCtx)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -462,7 +462,7 @@ func (h *WebAppController) EventData(ctx *gin.Context) {
 
 func (h *WebAppController) FrequentEventNames(ctx *gin.Context) {
 	bandIdFromQ := ctx.Query("bandId")
-	bandID, err := primitive.ObjectIDFromHex(bandIdFromQ)
+	bandID, err := bson.ObjectIDFromHex(bandIdFromQ)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -508,7 +508,7 @@ func (d *EditEventData) GetSongOverride(songID string) *SongOverridesData {
 
 func (h *WebAppController) EventEdit(ctx *gin.Context) {
 	eventIDStr := ctx.Param("id")
-	eventID, err := primitive.ObjectIDFromHex(eventIDStr)
+	eventID, err := bson.ObjectIDFromHex(eventIDStr)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		log.Error().Err(err).Msgf("Error:")
@@ -570,10 +570,10 @@ func (h *WebAppController) EventEdit(ctx *gin.Context) {
 	}
 	event.TimeUTC = eventDate.UTC()
 
-	songIDs := make([]primitive.ObjectID, 0)
+	songIDs := make([]bson.ObjectID, 0)
 	songOverrides := make([]entity.SongOverride, 0)
 	for _, songIDHex := range data.SongIDs {
-		songID, err := primitive.ObjectIDFromHex(songIDHex)
+		songID, err := bson.ObjectIDFromHex(songIDHex)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			log.Error().Err(err).Msgf("Error:")

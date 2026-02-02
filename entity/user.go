@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/schema"
 	"github.com/joeyave/scala-bot/util"
 	"github.com/klauspost/lctime"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"google.golang.org/api/drive/v3"
 )
 
@@ -23,10 +23,10 @@ type User struct {
 	Cache         Cache         `bson:"cache" json:"-"`
 	CallbackCache CallbackCache `bson:"-" json:"-"`
 
-	BandID primitive.ObjectID `bson:"bandId,omitempty" json:"band_id,omitempty"`
+	BandID bson.ObjectID `bson:"bandId,omitempty" json:"band_id,omitempty"`
 	Band   *Band              `bson:"band,omitempty" json:"-"`
 
-	BandIDs []primitive.ObjectID `bson:"bandIDs,omitempty" json:"bandIDs,omitempty"`
+	BandIDs []bson.ObjectID `bson:"bandIDs,omitempty" json:"bandIDs,omitempty"`
 }
 
 func (u *User) IsAdmin() bool {
@@ -91,7 +91,7 @@ type Cache struct {
 	SongNames     []string           `bson:"song_names,omitempty"`
 	DriveFileIDs  []string           `bson:"drive_file_ids,omitempty"`
 	Voice         *Voice             `bson:"voice,omitempty"`
-	SongID        primitive.ObjectID `bson:"song_id,omitempty"`
+	SongID        bson.ObjectID `bson:"song_id,omitempty"`
 	Band          *Band              `bson:"band,omitempty"`
 	Role          *Role              `bson:"role,omitempty"`
 	Audio         *gotgbot.Audio     `json:"audio,omitempty"`
