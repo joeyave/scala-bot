@@ -4,12 +4,27 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 export function formatBpm(input: string): string {
-  // Clean and format the input
+  // Allow digits and decimal point
+  const cleaned = input.replace(/[^\d.]/g, "");
 
-  return input
-    .replace(/\D/g, "") // Remove non-digits
-    .replace(/^0+/, "") // Remove leading zeros
-    .slice(0, 3); // Limit to 3 digits
+  // Handle decimal: only allow .5
+  const parts = cleaned.split(".");
+  const integerPart = parts[0].replace(/^0+/, "").slice(0, 3);
+
+  if (parts.length > 1) {
+    // Only allow .5, nothing else
+    const decimal = parts[1];
+    if (decimal.startsWith("5")) {
+      return integerPart + ".5";
+    }
+    // If user typed just ".", keep the dot to allow typing .5
+    if (decimal === "") {
+      return integerPart + ".";
+    }
+    return integerPart;
+  }
+
+  return integerPart;
 }
 
 interface BpmInputProps extends Omit<InputProps, "onChange"> {
@@ -44,9 +59,9 @@ export const BPMInput: React.FC<BpmInputProps> = ({
       value={input}
       onChange={handleInput}
       placeholder={placeholder}
-      maxLength={3}
-      inputMode="numeric"
-      pattern="\d{1,3}"
+      maxLength={5}
+      inputMode="decimal"
+      pattern="\d{1,3}(\.5)?"
       autoComplete="off"
       {...restProps}
     />

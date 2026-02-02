@@ -6,7 +6,12 @@ export const isNameValid = (name: string): boolean => {
 
 export const isBpmValid = (bpm: string): boolean => {
   if (bpm.length === 0) return true; // Empty is considered valid (optional field)
-  const bpmValue = parseInt(bpm, 10);
+
+  // Pattern: 1-3 digits, optionally followed by exactly ".5"
+  const bpmPattern = /^\d{1,3}(\.5)?$/;
+  if (!bpmPattern.test(bpm)) return false;
+
+  const bpmValue = parseFloat(bpm);
   return !isNaN(bpmValue) && bpmValue >= 20 && bpmValue <= 300;
 };
 
