@@ -714,7 +714,7 @@ func (c *BotController) EventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *e
 	return nil
 }
 
-func (c *BotController) eventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *ext.Context, eventID primitive.ObjectID, roleID primitive.ObjectID, loadMore bool) error {
+func (c *BotController) eventMembersAddMemberChooseUser(bot *gotgbot.Bot, ctx *ext.Context, eventID, roleID primitive.ObjectID, loadMore bool) error {
 	user := ctx.Data["user"].(*entity.User)
 
 	event, err := c.EventService.FindOneByID(eventID)
@@ -930,7 +930,7 @@ func (c *BotController) notifyAdded(bot *gotgbot.Bot, user *entity.User, members
 	// todo
 	// time.Sleep(5 * time.Second)
 	//
-	//_, err := c.MembershipService.FindOneByID(membership.ID)
+	// _, err := c.MembershipService.FindOneByID(membership.ID)
 	//if err != nil {
 	//	return
 	//}
@@ -970,7 +970,7 @@ func (c *BotController) notifyDeleted(bot *gotgbot.Bot, user *entity.User, membe
 	// todo
 	// time.Sleep(5 * time.Second)
 	//
-	//_, err := c.MembershipService.FindSimilar(membership)
+	// _, err := c.MembershipService.FindSimilar(membership)
 	//if err == nil {
 	//	return
 	//}

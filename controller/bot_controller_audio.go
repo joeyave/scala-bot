@@ -34,7 +34,7 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 
 	semitones := 0
 	// useR3 := false
-	//skipClipping := false
+	// skipClipping := false
 	fine := false
 	more := false
 	if ctx.CallbackQuery != nil {
@@ -157,7 +157,7 @@ func (c *BotController) TransposeAudio_AskForSemitonesNumber(bot *gotgbot.Bot, c
 		//	LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
 		//IsDisabled:
 		//	true,
-		//},
+		// },
 		//})
 		_, _, err := ctx.EffectiveMessage.EditReplyMarkup(bot, &gotgbot.EditMessageReplyMarkupOpts{
 			ReplyMarkup: *markup,
@@ -260,7 +260,7 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 		opts := &gotgbot.SendAudioOpts{
 			Duration:  user.CallbackCache.AudioDuration,
 			Performer: user.CallbackCache.AudioPerformer,
-			//Thumbnail: user.CallbackCache.AudioThumbFileId,
+			// Thumbnail: user.CallbackCache.AudioThumbFileId,
 		}
 		if user.CallbackCache.AudioTitle != "" {
 			opts.Title = fmt.Sprintf("%s (%s)", user.CallbackCache.AudioTitle, s)
@@ -285,7 +285,7 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 	return nil
 }
 
-func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQueueMessages context.CancelFunc, sem *mysemaphore.Weighted, weight int64, mimeType string, audioFileID string, semitones string, fine bool, processingMsg *gotgbot.Message) (bool, []byte, error) {
+func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQueueMessages context.CancelFunc, sem *mysemaphore.Weighted, weight int64, mimeType, audioFileID, semitones string, fine bool, processingMsg *gotgbot.Message) (bool, []byte, error) {
 	err := sem.Acquire(context.TODO(), weight, ctx.EffectiveMessage.MessageId)
 	if err != nil {
 		sem.Release(weight)

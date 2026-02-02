@@ -116,7 +116,7 @@ func (s *SongWithEvents) Stats(lang string) string {
 	return fmt.Sprintf("%v, %d", t, len(s.Events))
 }
 
-func (s *SongWithEvents) StatsForCaption(periodText string, lang string) string {
+func (s *SongWithEvents) StatsForCaption(periodText, lang string) string {
 	t := txt.GetTranslator(lang)
 
 	if len(s.Events) == 0 {

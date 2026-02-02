@@ -6,11 +6,10 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
-
-	"slices"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
@@ -161,7 +160,7 @@ func (c *BotController) song(bot *gotgbot.Bot, ctx *ext.Context, driveFile *driv
 
 	// todo
 	// err = SendSongToChannel(h, c, user, song)
-	//if err != nil {
+	// if err != nil {
 	//	return err
 	//}
 
@@ -1089,8 +1088,10 @@ func (c *BotController) SongStats(bot *gotgbot.Bot, ctx *ext.Context) error {
 			text = "✅ " + text
 		}
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{
-			{Text: text,
-				CallbackData: util.CallbackData(state.SongStats, songID.Hex()+":"+fmt.Sprintf("%v", p))},
+			{
+				Text:         text,
+				CallbackData: util.CallbackData(state.SongStats, songID.Hex()+":"+fmt.Sprintf("%v", p)),
+			},
 		})
 	}
 	markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.back", ctx.EffectiveUser.LanguageCode), CallbackData: util.CallbackData(state.SongCB, song.ID.Hex()+":edit")}})

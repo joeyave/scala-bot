@@ -116,15 +116,15 @@ func (s *EventService) UpdateOne(event entity.Event) (*entity.Event, error) {
 	return s.eventRepository.UpdateOne(event)
 }
 
-func (s *EventService) PushSongID(eventID primitive.ObjectID, songID primitive.ObjectID) error {
+func (s *EventService) PushSongID(eventID, songID primitive.ObjectID) error {
 	return s.eventRepository.PushSongID(eventID, songID)
 }
 
-func (s *EventService) PullSongID(eventID primitive.ObjectID, songID primitive.ObjectID) error {
+func (s *EventService) PullSongID(eventID, songID primitive.ObjectID) error {
 	return s.eventRepository.PullSongID(eventID, songID)
 }
 
-func (s *EventService) ChangeSongIDPosition(eventID primitive.ObjectID, songID primitive.ObjectID, newPosition int) error {
+func (s *EventService) ChangeSongIDPosition(eventID, songID primitive.ObjectID, newPosition int) error {
 	return s.eventRepository.ChangeSongIDPosition(eventID, songID, newPosition)
 }
 

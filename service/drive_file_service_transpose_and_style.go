@@ -699,7 +699,7 @@ func guessKeyIfNeeded(currentKey entity.Key, fullText string) entity.Key {
 }
 
 // newTransposeRequestsForParagraph generates all the requests for a single paragraph's elements.
-func newTransposeRequestsForParagraph(paragraph *docs.Paragraph, isLastParagraph bool, shouldTranspose bool, key, toKey entity.Key, segmentId string, index int64) ([]*docs.Request, int64) {
+func newTransposeRequestsForParagraph(paragraph *docs.Paragraph, isLastParagraph, shouldTranspose bool, key, toKey entity.Key, segmentId string, index int64) ([]*docs.Request, int64) {
 	requests := make([]*docs.Request, 0)
 
 	for j, element := range paragraph.Elements {

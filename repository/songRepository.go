@@ -3,13 +3,12 @@ package repository
 import (
 	"context"
 	"errors"
+	"os"
 	"sort"
 	"time"
 
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/helpers"
-
-	"os"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"

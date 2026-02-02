@@ -75,7 +75,7 @@ func TestUppercasePreservingRepetition(t *testing.T) {
 	}
 }
 
-// Helper to create an indexedParagraph from text for testing
+// Helper to create an indexedParagraph from text for testing.
 func createTestIndexedParagraph(text string, startIndex int64) *indexedParagraph {
 	para := &docs.Paragraph{
 		Elements: []*docs.ParagraphElement{

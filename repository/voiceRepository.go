@@ -2,10 +2,9 @@ package repository
 
 import (
 	"context"
+	"os"
 
 	"github.com/joeyave/scala-bot/entity"
-
-	"os"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"

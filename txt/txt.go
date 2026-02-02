@@ -601,10 +601,14 @@ func GetTranslator(lang string) locales2.Translator {
 	return ukTranslator
 }
 
-var ukPrinter = message.NewPrinter(language.Ukrainian)
-var ukTranslator = uk.New()
+var (
+	ukPrinter    = message.NewPrinter(language.Ukrainian)
+	ukTranslator = uk.New()
+)
 
-var ruPrinter = message.NewPrinter(language.Russian)
-var ruTranslator = ru.New()
+var (
+	ruPrinter    = message.NewPrinter(language.Russian)
+	ruTranslator = ru.New()
+)
 
 // var enPrinter = message.NewPrinter(language.English)

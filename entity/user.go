@@ -123,9 +123,9 @@ type CallbackCache struct {
 	IsVoice bool `schema:"isVoice,omitempty"`
 
 	// VoiceFileId   string `schema:"voiceFileId,omitempty"`
-	//VoiceDuration int64  `schema:"voiceDuration,omitempty"`
-	//VoiceMimeType string `schema:"voiceMimeType,omitempty"`
-	//VoiceFileSize int64  `schema:"voiceFileSize,omitempty"`
+	// VoiceDuration int64  `schema:"voiceDuration,omitempty"`
+	// VoiceMimeType string `schema:"voiceMimeType,omitempty"`
+	// VoiceFileSize int64  `schema:"voiceFileSize,omitempty"`
 }
 
 var encoder = schema.NewEncoder()

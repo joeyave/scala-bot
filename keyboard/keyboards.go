@@ -3,7 +3,6 @@ package keyboard
 import (
 	"fmt"
 	"os"
-
 	"slices"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
@@ -106,7 +105,7 @@ func EventEdit(event *entity.Event, user *entity.User, chatID, messageID int64, 
 	return keyboard
 }
 
-func SongInit(song *entity.Song, user *entity.User, chatID int64, messageID int64, lang string) [][]gotgbot.InlineKeyboardButton {
+func SongInit(song *entity.Song, user *entity.User, chatID, messageID int64, lang string) [][]gotgbot.InlineKeyboardButton {
 	var keyboard [][]gotgbot.InlineKeyboardButton
 
 	if song.BandID == user.BandID {

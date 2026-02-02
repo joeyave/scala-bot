@@ -40,7 +40,7 @@ func (c *BotController) SettingsChooseBand(bot *gotgbot.Bot, ctx *ext.Context) e
 		// _, _, err = bot.EditMessageText(txt.Get("text.addedToBand", ctx.EffectiveUser.LanguageCode, band.Name), &gotgbot.EditMessageTextOpts{
 		//	ChatId:    ctx.EffectiveChat.Id,
 		//	MessageId: ctx.EffectiveMessage.MessageId,
-		//})
+		// })
 		//if err != nil {
 		//	return err
 		//}
@@ -56,7 +56,7 @@ func (c *BotController) SettingsChooseBand(bot *gotgbot.Bot, ctx *ext.Context) e
 		// _, _, err = bot.EditMessageText(txt.Get("text.removedFromBand", ctx.EffectiveUser.LanguageCode, band.Name), &gotgbot.EditMessageTextOpts{
 		//	ChatId:    ctx.EffectiveChat.Id,
 		//	MessageId: ctx.EffectiveMessage.MessageId,
-		//})
+		// })
 		//if err != nil {
 		//	return err
 		//}
@@ -154,7 +154,7 @@ func (c *BotController) SettingsCleanupDatabase(bot *gotgbot.Bot, ctx *ext.Conte
 	user := ctx.Data["user"].(*entity.User)
 
 	// hex := util.ParseCallbackPayload(ctx.CallbackQuery.Data)
-	//bandID, err := primitive.ObjectIDFromHex(hex)
+	// bandID, err := primitive.ObjectIDFromHex(hex)
 	//if err != nil {
 	//	return err
 	//}

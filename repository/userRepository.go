@@ -2,11 +2,10 @@ package repository
 
 import (
 	"context"
-
-	"github.com/joeyave/scala-bot/entity"
-
 	"os"
 	"time"
+
+	"github.com/joeyave/scala-bot/entity"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -175,7 +174,7 @@ func (r *UserRepository) UpdateOne(user entity.User) (*entity.User, error) {
 	return r.FindOneByID(newUser.ID)
 }
 
-func (r *UserRepository) FindManyExtraByBandIDAndRoleID(bandID primitive.ObjectID, roleID primitive.ObjectID, from time.Time) ([]*entity.UserWithEvents, error) {
+func (r *UserRepository) FindManyExtraByBandIDAndRoleID(bandID, roleID primitive.ObjectID, from time.Time) ([]*entity.UserWithEvents, error) {
 	pipeline := bson.A{
 		bson.M{
 			"$match": bson.M{

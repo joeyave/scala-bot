@@ -244,7 +244,7 @@ func GetStatsPeriodButtonText(period entity.StatsPeriod, lang string, noPeriodWo
 	return txt.Get("text.period", lang, periodStr)
 }
 
-func GetStatsPeriodByButtonText(text string, lang string) entity.StatsPeriod {
+func GetStatsPeriodByButtonText(text, lang string) entity.StatsPeriod {
 	switch text {
 	case txt.Get("text.period.lastYear", lang):
 		return entity.StatsPeriodLastYear
@@ -280,7 +280,7 @@ func GetStatsSortingButtonText(sorting entity.StatsSorting, lang string, noSorti
 	return txt.Get("text.sorting", lang, str)
 }
 
-func GetStatsSortingByButtonText(text string, lang string) entity.StatsSorting {
+func GetStatsSortingByButtonText(text, lang string) entity.StatsSorting {
 	switch text {
 	case txt.Get("text.sorting.ascending", lang):
 		return entity.StatsSortingAscending

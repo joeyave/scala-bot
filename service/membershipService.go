@@ -23,6 +23,7 @@ func (s *MembershipService) FindAll() ([]*entity.Membership, error) {
 func (s *MembershipService) FindOneByID(ID primitive.ObjectID) (*entity.Membership, error) {
 	return s.membershipRepository.FindOneByID(ID)
 }
+
 func (s *MembershipService) FindMultipleByEventID(ID primitive.ObjectID) ([]*entity.Membership, error) {
 	return s.membershipRepository.FindMultipleByEventID(ID)
 }

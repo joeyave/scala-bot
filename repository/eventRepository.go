@@ -2,12 +2,11 @@ package repository
 
 import (
 	"context"
+	"os"
+	"time"
 
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/helpers"
-
-	"os"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -265,7 +264,6 @@ func (r *EventRepository) FindOneByNameAndTimeAndBandID(name string, fromUTC, to
 			},
 		},
 	)
-
 	if err != nil {
 		return nil, err
 	}
@@ -643,7 +641,7 @@ func (r *EventRepository) GetEventWithSongs(eventID primitive.ObjectID) (*entity
 	return events[0], nil
 }
 
-func (r *EventRepository) PushSongID(eventID primitive.ObjectID, songID primitive.ObjectID) error {
+func (r *EventRepository) PushSongID(eventID, songID primitive.ObjectID) error {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("events")
 
 	filter := bson.M{
@@ -661,7 +659,7 @@ func (r *EventRepository) PushSongID(eventID primitive.ObjectID, songID primitiv
 	return err
 }
 
-func (r *EventRepository) ChangeSongIDPosition(eventID primitive.ObjectID, songID primitive.ObjectID, newPosition int) error {
+func (r *EventRepository) ChangeSongIDPosition(eventID, songID primitive.ObjectID, newPosition int) error {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("events")
 
 	filter := bson.M{
@@ -697,7 +695,7 @@ func (r *EventRepository) ChangeSongIDPosition(eventID primitive.ObjectID, songI
 	return err
 }
 
-func (r *EventRepository) PullSongID(eventID primitive.ObjectID, songID primitive.ObjectID) error {
+func (r *EventRepository) PullSongID(eventID, songID primitive.ObjectID) error {
 	collection := r.mongoClient.Database(os.Getenv("BOT_MONGODB_NAME")).Collection("events")
 
 	filter := bson.M{"_id": eventID}

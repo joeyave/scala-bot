@@ -33,14 +33,13 @@ func NewDriveFileService(driveRepository *drive.Service, docsRepository *docs.Se
 
 var newLinesRegex = regexp.MustCompile(`\n{3,}`)
 
-func (s *DriveFileService) FindAllByFolderID(folderID string, nextPageToken string) ([]*drive.File, string, error) {
+func (s *DriveFileService) FindAllByFolderID(folderID, nextPageToken string) ([]*drive.File, string, error) {
 	q := fmt.Sprintf(`trashed = false and mimeType = 'application/vnd.google-apps.document' and '%s' in parents`, folderID)
 
 	res, err := s.driveClient.Files.List().
 		Q(q).
 		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink, parents)").
 		PageSize(helpers.SongsPageSize).PageToken(nextPageToken).Do()
-
 	if err != nil {
 		return nil, "", err
 	}
@@ -78,7 +77,6 @@ func (s *DriveFileService) FindSomeByFullTextAndFolderID(name string, folderIDs 
 		Q(q).
 		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink, parents)").
 		PageSize(helpers.SongsPageSize).PageToken(pageToken).Do()
-
 	if err != nil {
 		return nil, "", err
 	}
@@ -159,7 +157,7 @@ func (s *DriveFileService) FindManyByIDs(IDs []string) ([]*drive.File, error) {
 	return driveFiles, err
 }
 
-func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key entity.Key, BPM string, time, lang string) (*drive.File, error) {
+func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key entity.Key, BPM, time, lang string) (*drive.File, error) {
 	newFile, err := s.driveClient.Files.
 		Create(newFile).
 		Fields("id, name, modifiedTime, webViewLink, parents").
@@ -228,7 +226,7 @@ func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key ent
 	//		},
 	//		Fields: "*",
 	//	},
-	//})
+	// })
 
 	if lyrics != "" {
 		requests = append(requests, &docs.Request{
@@ -345,7 +343,7 @@ func (s *DriveFileService) CloneOne(fileToCloneID string, newFile *drive.File) (
 	return newFile, nil
 }
 
-func (s *DriveFileService) FindOrCreateOneFolderByNameAndFolderID(name string, folderID string) (*drive.File, error) {
+func (s *DriveFileService) FindOrCreateOneFolderByNameAndFolderID(name, folderID string) (*drive.File, error) {
 	name = helpers.JsonEscape(name)
 
 	q := fmt.Sprintf(`name = '%s'`+
@@ -375,7 +373,7 @@ func (s *DriveFileService) FindOrCreateOneFolderByNameAndFolderID(name string, f
 	return res.Files[0], nil
 }
 
-func (s *DriveFileService) MoveOne(fileID string, newFolderID string) (*drive.File, error) {
+func (s *DriveFileService) MoveOne(fileID, newFolderID string) (*drive.File, error) {
 	file, err := s.driveClient.Files.Get(fileID).Fields("parents").Do()
 	if err != nil {
 		return nil, err
@@ -461,7 +459,7 @@ func (s *DriveFileService) AddLyricsPage(ID string) (*drive.File, error) {
 	return s.FindOneByID(ID)
 }
 
-func (s *DriveFileService) Rename(ID string, newName string) error {
+func (s *DriveFileService) Rename(ID, newName string) error {
 	_, err := s.driveClient.Files.Update(ID, &drive.File{Name: newName}).Do()
 	return err
 }
