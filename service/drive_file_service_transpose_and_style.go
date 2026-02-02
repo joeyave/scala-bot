@@ -47,8 +47,10 @@ const (
 	chordRatioThresholdBody   float64 = 0 // todo: find a better value.
 )
 
-var rgbColorChord = newRgbColor(0.8, 0, 0)
-var rgbColorBlack = newRgbColor(0, 0, 0)
+var (
+	rgbColorChord = newRgbColor(0.8, 0, 0)
+	rgbColorBlack = newRgbColor(0, 0, 0)
+)
 
 // =========================================================================
 // Public Service Methods (DriveFileService)
@@ -365,11 +367,11 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string, i
 		}
 		requests = append(requests, changeStyleByRegexAcross(ip, barlineRe, textStyle, "bold,foregroundColor", nil, segmentID)...)
 
-		// [ ... ] -> bold
+		// [ ... ] -> bold + uppercase (preserving repetition markers)
 		textStyle = docs.TextStyle{
 			Bold: true,
 		}
-		requests = append(requests, changeStyleByRegexAcross(ip, bracketedRe, textStyle, "bold", nil, segmentID)...)
+		requests = append(requests, changeStyleByRegexAcross(ip, bracketedRe, textStyle, "bold", uppercasePreservingRepetition, segmentID)...)
 
 		// (x|х)\d+ -> bold, red-ish
 		textStyle = docs.TextStyle{
@@ -455,6 +457,28 @@ func (ip *indexedParagraph) toDocRange(runeStart, runeEnd int64) (int64, int64, 
 // byteToRune converts a byte index (from Go regex) into a rune count prefix.
 func (ip *indexedParagraph) byteToRune(byteIdx int) int64 {
 	return int64(len([]rune(ip.fullText[:byteIdx])))
+}
+
+// uppercasePreservingRepetition uppercases a string while preserving
+// substrings matching repetitionRe in their original case.
+func uppercasePreservingRepetition(s string) string {
+	matches := repetitionRe.FindAllStringIndex(s, -1)
+	if matches == nil {
+		return strings.ToUpper(s)
+	}
+
+	var result strings.Builder
+	lastEnd := 0
+	for _, match := range matches {
+		// Uppercase text before this repetition marker
+		result.WriteString(strings.ToUpper(s[lastEnd:match[0]]))
+		// Keep repetition marker as-is
+		result.WriteString(s[match[0]:match[1]])
+		lastEnd = match[1]
+	}
+	// Uppercase remaining text after last match
+	result.WriteString(strings.ToUpper(s[lastEnd:]))
+	return result.String()
 }
 
 // styleRange builds a single UpdateTextStyle request for [docStart, docEnd).
