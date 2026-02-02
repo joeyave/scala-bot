@@ -110,7 +110,7 @@ func (h *WebAppController) UsersWithEvents(ctx *gin.Context) {
 		return
 	}
 
-	var viewUsers []*User
+	viewUsers := make([]*User, 0)
 	for _, user := range users {
 		viewUser := &User{
 			ID:   user.ID,
@@ -223,8 +223,10 @@ type EditSongData struct {
 	TransposeSection string     `json:"transposeSection"`
 }
 
-var bpmRegex = regexp.MustCompile(`(?i)bpm:(.*?);`)
-var timeRegex = regexp.MustCompile(`(?i)time:(.*?);`)
+var (
+	bpmRegex  = regexp.MustCompile(`(?i)bpm:(.*?);`)
+	timeRegex = regexp.MustCompile(`(?i)time:(.*?);`)
+)
 
 func (h *WebAppController) SongEdit(ctx *gin.Context) {
 	songIDStr := ctx.Param("id")
@@ -472,7 +474,7 @@ func (h *WebAppController) FrequentEventNames(ctx *gin.Context) {
 		return
 	}
 
-	var names []string
+	names := make([]string, 0)
 	for _, n := range namesWithFreq {
 		names = append(names, n.Name)
 	}
@@ -568,8 +570,8 @@ func (h *WebAppController) EventEdit(ctx *gin.Context) {
 	}
 	event.TimeUTC = eventDate.UTC()
 
-	var songIDs []primitive.ObjectID
-	var songOverrides []entity.SongOverride
+	songIDs := make([]primitive.ObjectID, 0)
+	songOverrides := make([]entity.SongOverride, 0)
 	for _, songIDHex := range data.SongIDs {
 		songID, err := primitive.ObjectIDFromHex(songIDHex)
 		if err != nil {

@@ -131,7 +131,7 @@ const CreateEventPage: FC = () => {
             ></Input>
 
             <datalist id="suggestions">
-              {queryFreqNamesRes.data?.names.map(
+              {queryFreqNamesRes.data?.names?.map(
                 (name: string, index: number) => (
                   <option key={index} value={name}></option>
                 ),
