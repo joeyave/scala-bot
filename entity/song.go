@@ -19,7 +19,7 @@ type Song struct {
 	DriveFileID string `bson:"driveFileId,omitempty" json:"driveFileId"`
 
 	BandID bson.ObjectID `bson:"bandId,omitempty" json:"bandId"`
-	Band   *Band              `bson:"band,omitempty" json:"band"`
+	Band   *Band         `bson:"band,omitempty" json:"band"`
 
 	PDF     PDF            `bson:"pdf,omitempty" json:"pdf"`
 	AltPDFs map[Key]AltPDF `bson:"altPdfs,omitempty" json:"altPdfs,omitempty"`
@@ -39,13 +39,13 @@ type Like struct {
 }
 
 type AltPDF struct {
-	Key          Key    `bson:"key,omitempty" json:"key,omitempty"`
-	ModifiedTime string `bson:"modifiedTime,omitempty" json:"modifiedTime,omitempty"`
-	DriveFileID  string `bson:"driveFileId,omitempty" json:"driveFileId,omitempty"`
-	TgFileID     string `bson:"tgFileId,omitempty" json:"tgFileId,omitempty"`
+	Key         Key    `bson:"key,omitempty" json:"key,omitempty"`
+	Version     int64  `bson:"version,omitempty" json:"version,omitempty"`
+	DriveFileID string `bson:"driveFileId,omitempty" json:"driveFileId,omitempty"`
+	TgFileID    string `bson:"tgFileId,omitempty" json:"tgFileId,omitempty"`
 }
 type PDF struct {
-	ModifiedTime string `bson:"modifiedTime,omitempty" json:"modifiedTime,omitempty"`
+	Version int64 `bson:"version,omitempty" json:"version,omitempty"`
 
 	TgFileID           string `bson:"tgFileId,omitempty" json:"tgFileId,omitempty"`
 	TgChannelMessageID int    `bson:"tgChannelMessageId,omitempty" json:"tgChannelMessageId,omitempty"`

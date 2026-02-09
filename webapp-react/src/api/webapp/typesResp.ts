@@ -27,7 +27,7 @@ interface Band {
 }
 
 interface Pdf {
-  modifiedTime: string;
+  version: number;
   tgFileId: string;
   tgChannelMessageId: number;
   name: string;
@@ -40,6 +40,13 @@ interface Pdf {
 export interface RespSongLyrics {
   lyricsHtml: string;
   sectionsNumber: number;
+  metadataSyncWasUpdated: boolean;
+  metadata: {
+    name: string;
+    key: string;
+    bpm: string;
+    time: string;
+  };
 }
 
 export interface RespTags {
@@ -87,7 +94,6 @@ export interface RespSearchDriveFiles {
 export interface DriveFile {
   id: string;
   name: string;
-  modifiedTime: string;
   parents: string[];
   webViewLink: string;
 }

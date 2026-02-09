@@ -78,6 +78,24 @@ export async function updateSong(
   return;
 }
 
+export async function formatSong(
+  songId: string,
+  queryParams: ReqQueryParamsUpdateSong,
+) {
+  const { err } = await doReqWebappApi(
+    `/api/songs/${songId}/format`,
+    "POST",
+    queryParams,
+    { Accept: "application/json" },
+  );
+
+  if (err) {
+    throw err;
+  }
+
+  return;
+}
+
 export async function downloadSongPdf(songId: string): Promise<Blob | null> {
   const { data, err } = await doReqWebappApi<Blob>(
     `/api/songs/${songId}/download`,

@@ -5,7 +5,7 @@ export const keyGroups = [
   {
     id: "nashville",
     label: "Nashville Number System",
-    options: [{ value: "NNS", label: "Numbers" }],
+    options: [{ value: "Numbers", label: "Numbers" }],
   },
   {
     id: "major",

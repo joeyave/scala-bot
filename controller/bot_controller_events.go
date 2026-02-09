@@ -400,17 +400,17 @@ func (c *BotController) EventSetlistDocs(bot *gotgbot.Bot, ctx *ext.Context) err
 
 			// Copy and transpose the song to the requested key.
 			transposedDriveFile, err := c.DriveFileService.CopyAndTransposeFirstSection(
-				freshSong.DriveFileID, override.EventKey, bandTempFolderID,
+				freshSong.DriveFileID, freshSong.PDF.Name, override.EventKey, bandTempFolderID,
 			)
 			if err != nil {
 				return nil, nil, err
 			}
 
 			freshSong.AltPDF = &entity.AltPDF{
-				Key:          override.EventKey,
-				ModifiedTime: freshSong.PDF.ModifiedTime,
-				DriveFileID:  transposedDriveFile.Id,
-				TgFileID:     "",
+				Key:         override.EventKey,
+				Version:     freshSong.PDF.Version,
+				DriveFileID: transposedDriveFile.Id,
+				TgFileID:    "",
 			}
 
 			return freshSong, transposedDriveFile, nil

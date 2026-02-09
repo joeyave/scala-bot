@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/joeyave/scala-bot/entity"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/api/docs/v1"
 )
@@ -92,6 +93,24 @@ func createTestIndexedParagraph(text string, startIndex int64) *indexedParagraph
 	return ip
 }
 
+func createTestStructuralParagraph(text string, startIndex, endIndex int64) *docs.StructuralElement {
+	return &docs.StructuralElement{
+		StartIndex: startIndex,
+		EndIndex:   endIndex,
+		Paragraph: &docs.Paragraph{
+			Elements: []*docs.ParagraphElement{
+				{
+					StartIndex: startIndex,
+					EndIndex:   endIndex,
+					TextRun: &docs.TextRun{
+						Content: text,
+					},
+				},
+			},
+		},
+	}
+}
+
 func TestChangeStyleByRegexAcross(t *testing.T) {
 	testRegex := regexp.MustCompile(`\[[^\]]*\]`) // matches [...]
 	boldStyle := docs.TextStyle{Bold: true}
@@ -155,4 +174,82 @@ func TestChangeStyleByRegexAcross(t *testing.T) {
 		assert.Len(t, requests, 1)
 		assert.Equal(t, "header-123", requests[0].UpdateTextStyle.Range.SegmentId)
 	})
+}
+
+func TestGuessKeyIfNeeded(t *testing.T) {
+	t.Run("keeps valid metadata key", func(t *testing.T) {
+		key := guessKeyIfNeeded(entity.Key("Dm"), "C F G C")
+		assert.Equal(t, entity.Key("Dm"), key)
+	})
+
+	t.Run("invalid metadata key falls back to guess", func(t *testing.T) {
+		key := guessKeyIfNeeded(entity.Key("C->D"), "C F G C")
+		assert.NotEqual(t, entity.Key("C->D"), key)
+		assert.NotEmpty(t, string(key))
+	})
+}
+
+func TestNewTransposeRequestsForParagraphAppliesParagraphStyleOnce(t *testing.T) {
+	paragraph := &docs.Paragraph{
+		ParagraphStyle: &docs.ParagraphStyle{Alignment: "CENTER"},
+		Elements: []*docs.ParagraphElement{
+			{
+				TextRun: &docs.TextRun{
+					Content:   "A ",
+					TextStyle: &docs.TextStyle{Bold: true},
+				},
+			},
+			{
+				TextRun: &docs.TextRun{
+					Content:   "B\n",
+					TextStyle: &docs.TextStyle{Italic: true},
+				},
+			},
+		},
+	}
+
+	requests, _ := newTransposeRequestsForParagraph(paragraph, false, false, "", "", "", 1)
+
+	paragraphStyleReqs := 0
+	for _, req := range requests {
+		if req.UpdateParagraphStyle != nil {
+			paragraphStyleReqs++
+		}
+	}
+
+	assert.Equal(t, 1, paragraphStyleReqs)
+}
+
+func TestGetContentForSectionBodyKeepsBoundaryParagraph(t *testing.T) {
+	doc := &docs.Document{
+		Body: &docs.Body{
+			Content: []*docs.StructuralElement{
+				createTestStructuralParagraph("Line 1\n", 1, 10),
+				createTestStructuralParagraph("Last line in section\n", 10, 20),
+				{
+					StartIndex: 20,
+					EndIndex:   21,
+					SectionBreak: &docs.SectionBreak{
+						SectionStyle: &docs.SectionStyle{SectionType: "NEXT_PAGE"},
+					},
+				},
+				createTestStructuralParagraph("Next section line\n", 21, 35),
+			},
+		},
+	}
+
+	sections := []docs.StructuralElement{
+		{StartIndex: 0},
+		{
+			StartIndex: 20,
+			SectionBreak: &docs.SectionBreak{
+				SectionStyle: &docs.SectionStyle{SectionType: "NEXT_PAGE"},
+			},
+		},
+	}
+
+	firstBody := getContentForSectionBody(doc, sections, 0)
+	assert.Len(t, firstBody, 2)
+	assert.Equal(t, int64(10), firstBody[1].StartIndex)
+	assert.Equal(t, "Last line in section\n", firstBody[1].Paragraph.Elements[0].TextRun.Content)
 }

@@ -387,6 +387,7 @@ func main() {
 	router.GET("/api/songs/:id", webAppController.SongData)
 	router.GET("/api/songs/:id/lyrics", webAppController.SongLyrics)
 	router.POST("/api/songs/:id/edit", webAppController.SongEdit)
+	router.POST("/api/songs/:id/format", webAppController.SongFormat)
 	router.GET("/api/songs/:id/download", webAppController.SongDownload)
 
 	router.GET("/api/tags", webAppController.Tags)

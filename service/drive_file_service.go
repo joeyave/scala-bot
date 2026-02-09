@@ -13,7 +13,6 @@ import (
 	"github.com/joeyave/chords-transposer/transposer"
 	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/helpers"
-	"github.com/joeyave/scala-bot/txt"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
@@ -38,7 +37,7 @@ func (s *DriveFileService) FindAllByFolderID(folderID, nextPageToken string) ([]
 
 	res, err := s.driveClient.Files.List().
 		Q(q).
-		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink, parents)").
+		Fields("nextPageToken, files(id, name, version, webViewLink, parents)").
 		PageSize(helpers.SongsPageSize).PageToken(nextPageToken).Do()
 	if err != nil {
 		return nil, "", err
@@ -75,7 +74,7 @@ func (s *DriveFileService) FindSomeByFullTextAndFolderID(name string, folderIDs 
 		// Use this for precise search.
 		// Q(fmt.Sprintf("fullText contains '\"%s\"'", name)).
 		Q(q).
-		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink, parents)").
+		Fields("nextPageToken, files(id, name, version, webViewLink, parents)").
 		PageSize(helpers.SongsPageSize).PageToken(pageToken).Do()
 	if err != nil {
 		return nil, "", err
@@ -110,7 +109,7 @@ func (s *DriveFileService) FindOneByNameAndFolderID(name string, folderIDs []str
 
 	res, err := s.driveClient.Files.List().
 		Q(q).
-		Fields("nextPageToken, files(id, name, modifiedTime, webViewLink, parents)").
+		Fields("nextPageToken, files(id, name, version, webViewLink, parents)").
 		PageSize(1).Do()
 	if err != nil {
 		return nil, err
@@ -128,7 +127,7 @@ func (s *DriveFileService) FindOneByID(ID string) (*drive.File, error) {
 
 	var driveFile *drive.File
 	err := retrier.Run(func() error {
-		_driveFile, err := s.driveClient.Files.Get(ID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+		_driveFile, err := s.driveClient.Files.Get(ID).Fields("id, name, version, webViewLink, parents").Do()
 		if err != nil {
 			return err
 		}
@@ -158,9 +157,10 @@ func (s *DriveFileService) FindManyByIDs(IDs []string) ([]*drive.File, error) {
 }
 
 func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key entity.Key, BPM, time, lang string) (*drive.File, error) {
+	_ = lang
 	newFile, err := s.driveClient.Files.
 		Create(newFile).
-		Fields("id, name, modifiedTime, webViewLink, parents").
+		Fields("id, name, version, webViewLink, parents").
 		Do()
 	if err != nil {
 		return nil, err
@@ -203,12 +203,6 @@ func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key ent
 
 	requests := make([]*docs.Request, 0)
 
-	requests = append(requests, &docs.Request{
-		CreateHeader: &docs.CreateHeaderRequest{
-			Type: "DEFAULT",
-		},
-	})
-
 	// todo: test and include.
 	// requests = append(requests, &docs.Request{
 	//	UpdateDocumentStyle: &docs.UpdateDocumentStyleRequest{
@@ -239,19 +233,10 @@ func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key ent
 		})
 	}
 
-	res, err := s.docsRepository.Documents.BatchUpdate(newFile.Id,
+	_, err = s.docsRepository.Documents.BatchUpdate(newFile.Id,
 		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
 	if err != nil {
 		return nil, err
-	}
-
-	if res.Replies[0].CreateHeader.HeaderId != "" {
-		_, _ = s.docsRepository.Documents.BatchUpdate(newFile.Id,
-			&docs.BatchUpdateDocumentRequest{
-				Requests: []*docs.Request{
-					getDefaultHeaderRequest(res.Replies[0].CreateHeader.HeaderId, newFile.Name, key, BPM, time, lang),
-				},
-			}).Do()
 	}
 
 	doc, err := s.docsRepository.Documents.Get(newFile.Id).Do()
@@ -293,13 +278,24 @@ func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key ent
 	_, _ = s.docsRepository.Documents.BatchUpdate(newFile.Id,
 		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
 
+	// Canonicalize metadata layout right after document creation.
+	mdPatch := MetadataPatch{
+		Title: &newFile.Name,
+		Key:   &key,
+		BPM:   &BPM,
+		Time:  &time,
+	}
+	if err := s.UpdateMetadataAcrossSections(newFile.Id, mdPatch); err != nil {
+		return nil, err
+	}
+
 	return s.FindOneByID(newFile.Id)
 }
 
 func (s *DriveFileService) CloneOne(fileToCloneID string, newFile *drive.File) (*drive.File, error) {
 	newFile, err := s.driveClient.Files.
 		Copy(fileToCloneID, newFile).
-		Fields("id, name, modifiedTime, webViewLink, parents").
+		Fields("id, name, version, webViewLink, parents").
 		Do()
 	if err != nil {
 		return nil, err
@@ -356,7 +352,7 @@ func (s *DriveFileService) FindOrCreateOneFolderByNameAndFolderID(name, folderID
 
 	res, err := s.driveClient.Files.List().
 		Q(q).
-		Fields("nextPageToken, files(id, name, modifiedTime, parents)").
+		Fields("nextPageToken, files(id, name, version, parents)").
 		PageSize(1).Do()
 	if err != nil {
 		return nil, err
@@ -382,7 +378,7 @@ func (s *DriveFileService) MoveOne(fileID, newFolderID string) (*drive.File, err
 	previousParents := strings.Join(file.Parents, ",")
 
 	newFile, err := s.driveClient.Files.Update(fileID, nil).
-		AddParents(newFolderID).RemoveParents(previousParents).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+		AddParents(newFolderID).RemoveParents(previousParents).Fields("id, name, version, webViewLink, parents").Do()
 	if err != nil {
 		return nil, err
 	}
@@ -429,7 +425,7 @@ func (s *DriveFileService) DownloadOneByIDWithResp(ID string) (*http.Response, e
 }
 
 func (s *DriveFileService) AddLyricsPage(ID string) (*drive.File, error) {
-	doc, err := s.docsRepository.Documents.Get(ID).Do()
+	doc, err := s.ensureBodyMetadataLayout(ID)
 	if err != nil {
 		return nil, err
 	}
@@ -442,17 +438,29 @@ func (s *DriveFileService) AddLyricsPage(ID string) (*drive.File, error) {
 			return nil, err
 		}
 
-		doc, err = s.docsRepository.Documents.Get(ID).Do()
+		doc, err = s.ensureBodyMetadataLayout(ID)
 		if err != nil {
 			return nil, err
 		}
 	}
+	sections = getSections(doc)
 
 	requests := removeChords(doc, sections, 1)
 
 	_, err = s.docsRepository.Documents.BatchUpdate(doc.DocumentId,
 		&docs.BatchUpdateDocumentRequest{Requests: requests}).Do()
 	if err != nil {
+		return nil, err
+	}
+
+	// Keep target section metadata in sync with section 0 metadata.
+	sourceMetadata := s.extractSectionMetadata(doc, sections[0])
+	if err := s.updateSectionMetadataByIndex(ID, 1, MetadataPatch{
+		Title: &sourceMetadata.Title,
+		Key:   &sourceMetadata.Key,
+		BPM:   &sourceMetadata.BPM,
+		Time:  &sourceMetadata.Time,
+	}); err != nil {
 		return nil, err
 	}
 
@@ -508,60 +516,18 @@ func (s *DriveFileService) GetSectionsNumber(ID string) (int, error) {
 }
 
 func (s *DriveFileService) GetMetadata(ID string) (entity.Key, string, string) {
-	retrier := retry.NewRetrier(5, 100*time.Millisecond, time.Second)
-
-	var reader io.Reader
-	err := retrier.Run(func() error {
-		res, err := s.driveClient.Files.Export(ID, "text/plain").Download()
-		if err != nil {
-			return err
-		}
-
-		reader = res.Body
-
-		return nil
-	})
+	doc, err := s.docsRepository.Documents.Get(ID).Do()
 	if err != nil {
-		return "", "", ""
+		return "?", "?", "?"
+	}
+	sections := getSections(doc)
+	if len(sections) == 0 {
+		return "?", "?", "?"
 	}
 
-	var driveFileText string
-	b, err := io.ReadAll(reader)
-	if err == nil {
-		driveFileText = string(b)
-	}
+	md := s.extractSectionMetadata(doc, sections[0])
 
-	key := "?"
-	keyRegex := regexp.MustCompile(`(?i)key:(.*?);`)
-	keyMatches := keyRegex.FindStringSubmatch(driveFileText)
-	if len(keyMatches) > 1 {
-		keyTrimmed := strings.TrimSpace(keyMatches[1])
-		if keyTrimmed != "" {
-			key = keyTrimmed
-		}
-	}
-
-	BPM := "?"
-	BPMRegex := regexp.MustCompile(`(?i)bpm:(.*?);`)
-	BPMMatches := BPMRegex.FindStringSubmatch(driveFileText)
-	if len(BPMMatches) > 1 {
-		BPMTrimmed := strings.TrimSpace(BPMMatches[1])
-		if BPMTrimmed != "" {
-			BPM = BPMTrimmed
-		}
-	}
-
-	time := "?"
-	timeRegex := regexp.MustCompile(`(?i)time:(.*?);`)
-	timeMatches := timeRegex.FindStringSubmatch(driveFileText)
-	if len(timeMatches) > 1 {
-		timeTrimmed := strings.TrimSpace(timeMatches[1])
-		if timeTrimmed != "" {
-			time = timeTrimmed
-		}
-	}
-
-	return entity.Key(key), BPM, time
+	return md.Key, md.BPM, md.Time
 }
 
 func (s *DriveFileService) GetHTMLTextWithSectionsNumber(ID string) (string, int) {
@@ -571,6 +537,27 @@ func (s *DriveFileService) GetHTMLTextWithSectionsNumber(ID string) (string, int
 	}
 
 	return docToHTML(doc), len(getSections(doc))
+}
+
+func (s *DriveFileService) GetHTMLTextWithSectionsNumberAndMetadata(ID string) (string, int, SectionMetadata, error) {
+	doc, err := s.docsRepository.Documents.Get(ID).Do()
+	if err != nil {
+		return "", 0, SectionMetadata{}, err
+	}
+
+	sections := getSections(doc)
+	md := SectionMetadata{
+		Title: normalizeTextValue(doc.Title),
+		Key:   "?",
+		BPM:   "?",
+		Time:  "?",
+	}
+	if len(sections) > 0 {
+		md = s.extractSectionMetadata(doc, sections[0])
+		md.Title = normalizeTextValue(doc.Title)
+	}
+
+	return docToHTML(doc), len(sections), md, nil
 }
 
 func (s *DriveFileService) GetLyrics(ID string) (string, error) {
@@ -622,41 +609,38 @@ func (s *DriveFileService) appendSectionByID(ID string) ([]docs.StructuralElemen
 	if err != nil {
 		return nil, err
 	}
-
-	sections := getSections(doc)
-
-	requests = &docs.BatchUpdateDocumentRequest{
-		Requests: []*docs.Request{
-			{
-				CreateHeader: &docs.CreateHeaderRequest{
-					SectionBreakLocation: &docs.Location{
-						Index:     sections[len(sections)-1].StartIndex,
-						SegmentId: "",
-					},
-					Type: "DEFAULT",
-				},
-			},
-		},
-	}
-
-	_, err = s.docsRepository.Documents.BatchUpdate(ID, requests).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	doc, err = s.docsRepository.Documents.Get(ID).Do()
-	if err != nil {
-		return nil, err
-	}
 	return getSections(doc), nil
 }
 
 func docToHTML(doc *docs.Document) string {
 	var sb strings.Builder
+	firstSectionBodyStarted := false
+	firstSectionContinuousBreakStartIndex := int64(-1)
+	sections := getSections(doc)
+	if len(sections) > 0 {
+		start := sections[0].StartIndex + 1
+		end := contentEndForSection(doc, sections, 0)
+		continuousBreak := findFirstContinuousBreakInRange(doc, start, end)
+		firstSectionBodyStarted = continuousBreak == nil
+		if continuousBreak != nil {
+			firstSectionContinuousBreakStartIndex = continuousBreak.StartIndex
+		}
+	}
 
 	for _, item := range doc.Body.Content {
-		if item.SectionBreak != nil && item.SectionBreak.SectionStyle != nil && item.SectionBreak.SectionStyle.SectionType == "NEXT_PAGE" {
-			break
+		if item.SectionBreak != nil && item.SectionBreak.SectionStyle != nil {
+			if item.SectionBreak.SectionStyle.SectionType == "NEXT_PAGE" {
+				break
+			}
+			// Start rendering body only after the exact CONTINUOUS break found for section 0.
+			if item.StartIndex == firstSectionContinuousBreakStartIndex {
+				firstSectionBodyStarted = true
+			}
+			continue
+		}
+
+		if !firstSectionBodyStarted {
+			continue
 		}
 
 		if item.Paragraph != nil && item.Paragraph.Elements != nil {
@@ -691,7 +675,7 @@ func docToHTML(doc *docs.Document) string {
 func removeChords(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int) []*docs.Request {
 	requests := make([]*docs.Request, 0)
 
-	sectionToInsertStartIndex := sections[sectionIndex].StartIndex + 1
+	sectionToInsertStartIndex := getSectionBodyStartIndex(doc, sections, sectionIndex)
 	var sectionToInsertEndIndex int64
 
 	if len(sections) > sectionIndex+1 {
@@ -700,19 +684,7 @@ func removeChords(doc *docs.Document, sections []docs.StructuralElement, section
 		sectionToInsertEndIndex = doc.Body.Content[len(doc.Body.Content)-1].EndIndex - 1
 	}
 
-	var content []*docs.StructuralElement
-	if len(sections) > 1 {
-		index := len(doc.Body.Content)
-		for i := range doc.Body.Content {
-			if doc.Body.Content[i].StartIndex == sections[1].StartIndex {
-				index = i
-				break
-			}
-		}
-		content = doc.Body.Content[:index]
-	} else {
-		content = doc.Body.Content
-	}
+	content := getContentForSectionBody(doc, sections, 0)
 
 	if sectionToInsertEndIndex-sectionToInsertStartIndex > 0 {
 		requests = append(requests, &docs.Request{
@@ -729,41 +701,6 @@ func removeChords(doc *docs.Document, sections []docs.StructuralElement, section
 
 	bodyCloneRequests := composeCloneWithoutChordsRequests(content, sectionToInsertStartIndex, "")
 	requests = append(requests, bodyCloneRequests...)
-
-	if doc.DocumentStyle.DefaultHeaderId == "" {
-		return requests
-	}
-
-	// Create header if section doesn't have it.
-	if sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId == "" {
-		requests = append(requests, &docs.Request{
-			CreateHeader: &docs.CreateHeaderRequest{
-				SectionBreakLocation: &docs.Location{
-					SegmentId: "",
-					Index:     sections[sectionIndex].StartIndex,
-				},
-				Type: "DEFAULT",
-			},
-		})
-	} else {
-		header := doc.Headers[sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId]
-		if header.Content[len(header.Content)-1].EndIndex-1 > 0 {
-			requests = append(requests, &docs.Request{
-				DeleteContentRange: &docs.DeleteContentRangeRequest{
-					Range: &docs.Range{
-						StartIndex:      0,
-						EndIndex:        header.Content[len(header.Content)-1].EndIndex - 1,
-						SegmentId:       header.HeaderId,
-						ForceSendFields: []string{"StartIndex"},
-					},
-				},
-			})
-		}
-	}
-
-	headerCloneRequests := composeCloneWithoutChordsRequests(doc.Headers[doc.DocumentStyle.DefaultHeaderId].Content, 0, doc.Headers[sections[sectionIndex].SectionBreak.SectionStyle.DefaultHeaderId].HeaderId)
-
-	requests = append(requests, headerCloneRequests...)
 
 	return requests
 }
@@ -865,7 +802,6 @@ func getSections(doc *docs.Document) []docs.StructuralElement {
 			i == 0 {
 			if i == 0 {
 				section.StartIndex = 0
-				section.SectionBreak.SectionStyle.DefaultHeaderId = doc.DocumentStyle.DefaultHeaderId
 			}
 
 			sections = append(sections, *section)
@@ -873,35 +809,4 @@ func getSections(doc *docs.Document) []docs.StructuralElement {
 	}
 
 	return sections
-}
-
-func getDefaultHeaderRequest(headerID, name string, key entity.Key, BPM, time, lang string) *docs.Request {
-	if name == "" {
-		// TODO: replace "uk" with user language if available in context
-		name = txt.Get("text.defaultDocTitle", lang)
-	}
-
-	if key == "" {
-		key = "?"
-	}
-
-	if BPM == "" {
-		BPM = "?"
-	}
-
-	if time == "" {
-		time = "?"
-	}
-
-	text := fmt.Sprintf("%s\nKEY: %s; BPM: %s; TIME: %s;\n",
-		name, key, BPM, time)
-
-	return &docs.Request{
-		InsertText: &docs.InsertTextRequest{
-			EndOfSegmentLocation: &docs.EndOfSegmentLocation{
-				SegmentId: headerID,
-			},
-			Text: text,
-		},
-	}
 }

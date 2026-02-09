@@ -550,7 +550,7 @@ func (c *BotController) buildSongsMediaGroup(songs []*entity.Song, downloadAll b
 
 						// Copy and transpose the song to the requested key.
 						transposedDriveFile, err := c.DriveFileService.CopyAndTransposeFirstSection(
-							song.DriveFileID, song.AltPDF.Key, bandTempFolderID,
+							song.DriveFileID, song.PDF.Name, song.AltPDF.Key, bandTempFolderID,
 						)
 						if err != nil {
 							return err

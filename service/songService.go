@@ -110,7 +110,7 @@ func (s *SongService) FindOrCreateOneByDriveFile(driveFile *drive.File) (*entity
 		song.PDF.Name = driveFile.Name
 		song.PDF.Key, song.PDF.BPM, song.PDF.Time = s.driveFileService.GetMetadata(driveFile.Id)
 		song.PDF.TgFileID = ""
-		song.PDF.ModifiedTime = driveFile.ModifiedTime
+		song.PDF.Version = driveFile.Version
 		song.PDF.WebViewLink = driveFile.WebViewLink
 	}
 
@@ -132,7 +132,7 @@ func (s *SongService) FindOrCreateOneByDriveFileID(driveFileID string) (*entity.
 	retrier := retry.NewRetrier(5, 50*time.Millisecond, time.Second/2)
 
 	err := retrier.Run(func() error {
-		f, err := s.driveRepository.Files.Get(driveFileID).Fields("id, name, modifiedTime, webViewLink, parents").Do()
+		f, err := s.driveRepository.Files.Get(driveFileID).Fields("id, name, version, webViewLink, parents").Do()
 		if err != nil {
 			return err
 		}
@@ -177,6 +177,50 @@ func (s *SongService) FindOrCreateManyByDriveFileIDs(driveFileIDs []string) ([]*
 
 func (s *SongService) UpdateOne(song entity.Song) (*entity.Song, error) {
 	return s.songRepository.UpdateOne(song)
+}
+
+func (s *SongService) SyncPDFMetadataByDriveFileID(driveFileID string) (*entity.Song, *drive.File, error) {
+	song, driveFile, err := s.FindOrCreateOneByDriveFileID(driveFileID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	key, bpm, time := s.driveFileService.GetMetadata(driveFileID)
+
+	changed := false
+	if song.PDF.Name != driveFile.Name {
+		song.PDF.Name = driveFile.Name
+		changed = true
+	}
+	if song.PDF.Key != key {
+		song.PDF.Key = key
+		changed = true
+	}
+	if song.PDF.BPM != bpm {
+		song.PDF.BPM = bpm
+		changed = true
+	}
+	if song.PDF.Time != time {
+		song.PDF.Time = time
+		changed = true
+	}
+	if song.PDF.Version != driveFile.Version {
+		song.PDF.Version = driveFile.Version
+		changed = true
+	}
+	if song.PDF.WebViewLink != driveFile.WebViewLink {
+		song.PDF.WebViewLink = driveFile.WebViewLink
+		changed = true
+	}
+
+	if changed {
+		song, err = s.songRepository.UpdateOne(*song)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	return song, driveFile, nil
 }
 
 func (s *SongService) UpdateMany(songs []*entity.Song) (*mongo.BulkWriteResult, error) {
@@ -295,21 +339,10 @@ func (s *SongService) FindManyExtraByTag(tag string, bandID bson.ObjectID, event
 
 func songHasOutdatedPDF(song *entity.Song, driveFile *drive.File) bool {
 	if song == nil || driveFile == nil ||
-		song.PDF.ModifiedTime == "" || driveFile.ModifiedTime == "" {
+		song.PDF.Version == 0 || driveFile.Version == 0 {
 		return true
 	}
-
-	pdfModifiedTime, err := time.Parse(time.RFC3339, song.PDF.ModifiedTime)
-	if err != nil {
-		return true
-	}
-
-	driveFileModifiedTime, err := time.Parse(time.RFC3339, driveFile.ModifiedTime)
-	if err != nil {
-		return true
-	}
-
-	if driveFileModifiedTime.After(pdfModifiedTime) {
+	if song.PDF.Version != driveFile.Version {
 		return true
 	}
 
@@ -352,7 +385,7 @@ func (s *SongService) RetrieveFreshSongsForEventWithTransposeHandler(
 			if override != nil && override.EventKey != freshSong.PDF.Key {
 				// First, check if we already have a cached PDF in the desired key.
 				altPDF, ok := freshSong.AltPDFs[override.EventKey]
-				if ok && altPDF.ModifiedTime == freshSong.PDF.ModifiedTime {
+				if ok && altPDF.Version == freshSong.PDF.Version {
 					// Use the cached alternative PDF version.
 					freshSong.AltPDF = &altPDF
 				} else if transposeHandler == nil {

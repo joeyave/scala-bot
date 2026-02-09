@@ -39,7 +39,7 @@ export const mockEventData: RespEventData = {
           archiveFolderId: "mock-archive-folder-id",
         },
         pdf: {
-          modifiedTime: new Date().toISOString(),
+          version: 1,
           tgFileId: "tg-file-1",
           tgChannelMessageId: 1001,
           name: "Amazing Grace",
@@ -63,7 +63,7 @@ export const mockEventData: RespEventData = {
           archiveFolderId: "mock-archive-folder-id",
         },
         pdf: {
-          modifiedTime: new Date().toISOString(),
+          version: 1,
           tgFileId: "tg-file-2",
           tgChannelMessageId: 1002,
           name: "How Great Is Our God",
@@ -87,7 +87,7 @@ export const mockEventData: RespEventData = {
           archiveFolderId: "mock-archive-folder-id",
         },
         pdf: {
-          modifiedTime: new Date().toISOString(),
+          version: 1,
           tgFileId: "tg-file-3",
           tgChannelMessageId: 1003,
           name: "Oceans",

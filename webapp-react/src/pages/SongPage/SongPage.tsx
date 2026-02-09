@@ -1,4 +1,9 @@
-import { getSongData, getSongLyrics, updateSong } from "@/api/webapp/songs.ts";
+import {
+  formatSong,
+  getSongData,
+  getSongLyrics,
+  updateSong,
+} from "@/api/webapp/songs.ts";
 import { ReqBodyUpdateSong } from "@/api/webapp/typesReq.ts";
 import { BPMInput, formatBpm } from "@/components/BPMInput/BPMInput.tsx";
 import {
@@ -24,13 +29,17 @@ import {
 import { transposeAllText } from "@/pages/SongPage/util/transpose.ts";
 import { SongForm, StateSongData } from "@/pages/SongPage/util/types.ts";
 import { PageError } from "@/pages/UtilPages/PageError.tsx";
-import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { Button, List, Section, Text } from "@telegram-apps/telegram-ui";
 import { MultiselectOption } from "@telegram-apps/telegram-ui/dist/components/Form/Multiselect/types";
 import { mainButton, miniApp, postEvent, viewport } from "@tma.js/sdk-react";
 import { Notify } from "notiflix";
-import { FC, useCallback, useEffect, useState } from "react";
-import { FileEarmarkTextFill } from "react-bootstrap-icons";
+import { FC, useCallback, useEffect, useRef, useState } from "react";
+import { FileEarmarkTextFill, Magic } from "react-bootstrap-icons";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 
@@ -102,6 +111,9 @@ const SongPage: FC = () => {
 
   const [transposedLyricsHtml, setTransposedLyricsHtml] = useState<string>("");
   const [transpositionError, setTranspositionError] = useState<boolean>(false);
+  const formDataRef = useRef(formData);
+  const initialFormDataRef = useRef(initialFormData);
+  const appliedLyricsMetadataAtRef = useRef<number>(0);
 
   useEffect(() => {
     postEvent("web_app_expand");
@@ -137,8 +149,29 @@ const SongPage: FC = () => {
   });
 
   const mutateSong = useSongMutation();
+  const [isFormattingSong, setIsFormattingSong] = useState(false);
 
-  // Set form data after fetches completed or updated.
+  const { mutateAsync: mutateFormatSong } = useMutation({
+    mutationFn: async (d: {
+      songId: string;
+      messageId: string;
+      chatId: string;
+      userId: string;
+    }) => {
+      return await formatSong(d.songId, {
+        messageId: d.messageId,
+        chatId: d.chatId,
+        userId: d.userId,
+      });
+    },
+  });
+
+  useEffect(() => {
+    formDataRef.current = formData;
+    initialFormDataRef.current = initialFormData;
+  }, [formData, initialFormData]);
+
+  // Initialize form with metadata from DB.
   useEffect(() => {
     if (!querySongDataRes.isSuccess) {
       return;
@@ -157,15 +190,47 @@ const SongPage: FC = () => {
 
     setInitialFormData(initFormData);
     setFormData(initFormData);
-
-    if (querySongLyricsRes.isSuccess) {
-      setTransposedLyricsHtml(querySongLyricsRes.data.lyricsHtml);
-    }
   }, [
     querySongDataRes.data,
     querySongDataRes.isSuccess,
-    querySongLyricsRes.data,
+  ]);
+
+  useEffect(() => {
+    if (!querySongLyricsRes.isSuccess || !querySongLyricsRes.data) {
+      return;
+    }
+    setTransposedLyricsHtml(querySongLyricsRes.data.lyricsHtml);
+
+    if (
+      querySongLyricsRes.dataUpdatedAt ===
+      appliedLyricsMetadataAtRef.current
+    ) {
+      return;
+    }
+    appliedLyricsMetadataAtRef.current = querySongLyricsRes.dataUpdatedAt;
+
+    if (!querySongLyricsRes.data.metadataSyncWasUpdated) {
+      return;
+    }
+    if (isFormChanged(formDataRef.current, initialFormDataRef.current)) {
+      return;
+    }
+
+    const refreshedMetadata = querySongLyricsRes.data.metadata;
+    const refreshedInitFormData: SongForm = {
+      name: formatTitle(refreshedMetadata.name),
+      key: formatKey(refreshedMetadata.key),
+      bpm: formatBpm(refreshedMetadata.bpm),
+      time: formatTimeSignature(refreshedMetadata.time),
+      tags: initialFormDataRef.current.tags || [],
+    };
+
+    setInitialFormData(refreshedInitFormData);
+    setFormData(refreshedInitFormData);
+  }, [
     querySongLyricsRes.isSuccess,
+    querySongLyricsRes.data,
+    querySongLyricsRes.dataUpdatedAt,
   ]);
 
   // Effect to handle button visibility based on form changes.
@@ -190,7 +255,7 @@ const SongPage: FC = () => {
 
     const songLyrics = querySongLyricsRes.data;
 
-    if (newKey != initialFormData.key && newKey != "NNS") {
+    if (newKey != initialFormData.key && newKey != "Numbers") {
       try {
         const transposedHtml = transposeAllText(
           songLyrics.lyricsHtml,
@@ -266,6 +331,37 @@ const SongPage: FC = () => {
     songId,
     userId,
     t,
+  ]);
+
+  const handleFormatClick = useCallback(async () => {
+    if (isFormChanged(formData, initialFormData) || isFormattingSong) {
+      return;
+    }
+
+    setIsFormattingSong(true);
+    try {
+      await mutateFormatSong({
+        songId,
+        messageId,
+        chatId,
+        userId,
+      });
+      miniApp.close();
+    } catch (err) {
+      logger.error("Failed to format song", { error: err });
+      Notify.failure(t("formatError"));
+      setIsFormattingSong(false);
+    }
+  }, [
+    chatId,
+    formData,
+    initialFormData,
+    isFormattingSong,
+    messageId,
+    mutateFormatSong,
+    songId,
+    t,
+    userId,
   ]);
 
   useEffect(() => {
@@ -394,17 +490,35 @@ const SongPage: FC = () => {
         {/*    </InlineButtonsItem>*/}
         {/*</InlineButtons>*/}
 
-        <Button
-          before={<FileEarmarkTextFill size={"1.2em"} />}
-          stretched={true}
-          Component="a"
-          href={querySongDataRes.data.song.pdf.webViewLink}
-          mode="bezeled"
-          size="m"
-          target="_blank"
-        >
-          {t("googleDoc")}
-        </Button>
+        <div className="flex flex-row gap-2">
+          <div className="flex-1">
+            <Button
+              before={<FileEarmarkTextFill size={"1.2em"} />}
+              stretched={true}
+              Component="a"
+              href={querySongDataRes.data.song.pdf.webViewLink}
+              mode="bezeled"
+              size="m"
+              target="_blank"
+            >
+              {t("googleDoc")}
+            </Button>
+          </div>
+          <div className="flex-1">
+            <Button
+              before={<Magic size={"1.1em"} />}
+              stretched={true}
+              mode="outline"
+              size="m"
+              disabled={isFormattingSong || isFormChanged(formData, initialFormData)}
+              onClick={() => {
+                void handleFormatClick();
+              }}
+            >
+              {isFormattingSong ? t("loading") : t("format")}
+            </Button>
+          </div>
+        </div>
 
         <Section className={"sect"}>
           <Text>

@@ -63,6 +63,7 @@ func (c *BotController) CreateSong(bot *gotgbot.Bot, ctx *ext.Context) error {
 		DriveFileID: driveFile.Id,
 		BandID:      user.BandID,
 		PDF: entity.PDF{
+			Version:     driveFile.Version,
 			Name:        data.Name,
 			Key:         data.Key,
 			BPM:         data.BPM,
@@ -1247,15 +1248,7 @@ func (c *BotController) SongStyle(bot *gotgbot.Bot, ctx *ext.Context) error {
 		return err
 	}
 
-	song, err := c.SongService.FindOneByDriveFileID(driveFile.Id)
-	if err != nil {
-		return err
-	}
-
-	fakeTime, _ := time.Parse("2006", "2006")
-	song.PDF.ModifiedTime = fakeTime.Format(time.RFC3339)
-
-	_, err = c.SongService.UpdateOne(*song)
+	song, driveFile, err := c.SongService.SyncPDFMetadataByDriveFileID(driveFile.Id)
 	if err != nil {
 		return err
 	}
@@ -1306,8 +1299,8 @@ func (c *BotController) SongAddLyricsPage(bot *gotgbot.Bot, ctx *ext.Context) er
 		return err
 	}
 
-	fakeTime, _ := time.Parse("2006", "2006")
-	song.PDF.ModifiedTime = fakeTime.Format(time.RFC3339)
+	// Force refresh of stored Drive metadata token after in-place document edits.
+	song.PDF.Version = 0
 
 	_, err = c.SongService.UpdateOne(*song)
 	if err != nil {

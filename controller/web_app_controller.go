@@ -3,7 +3,6 @@ package controller
 import (
 	"fmt"
 	"net/http"
-	"regexp"
 	"strconv"
 	"time"
 
@@ -68,15 +67,15 @@ type User struct {
 
 type Event struct {
 	ID      bson.ObjectID `json:"id"`
-	Date    string             `json:"date"`
-	Weekday time.Weekday       `json:"weekday"`
-	Name    string             `json:"name"`
-	Roles   []*Role            `json:"roles"`
+	Date    string        `json:"date"`
+	Weekday time.Weekday  `json:"weekday"`
+	Name    string        `json:"name"`
+	Roles   []*Role       `json:"roles"`
 }
 
 type Role struct {
 	ID   bson.ObjectID `json:"id"`
-	Name string             `json:"name"`
+	Name string        `json:"name"`
 }
 
 func (h *WebAppController) UsersWithEvents(ctx *gin.Context) {
@@ -203,13 +202,38 @@ func (h *WebAppController) SongLyrics(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	songLyricsHTML, sectionsNumber, md, err := h.DriveFileService.GetHTMLTextWithSectionsNumberAndMetadata(song.DriveFileID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
-	songLyricsHTML, sectionsNumber := h.DriveFileService.GetHTMLTextWithSectionsNumber(song.DriveFileID)
+	metadataSyncWasUpdated := false
+	if song.PDF.Name != md.Title || song.PDF.Key != md.Key || song.PDF.BPM != md.BPM || song.PDF.Time != md.Time {
+		song.PDF.Name = md.Title
+		song.PDF.Key = md.Key
+		song.PDF.BPM = md.BPM
+		song.PDF.Time = md.Time
+		song, err = h.SongService.UpdateOne(*song)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		metadataSyncWasUpdated = true
+	}
+	ctx.Header("X-Metadata-Sync-Updated", strconv.FormatBool(metadataSyncWasUpdated))
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"lyricsHtml":     songLyricsHTML,
-			"sectionsNumber": sectionsNumber,
+			"lyricsHtml":             songLyricsHTML,
+			"sectionsNumber":         sectionsNumber,
+			"metadataSyncWasUpdated": metadataSyncWasUpdated,
+			"metadata": gin.H{
+				"name": md.Title,
+				"key":  md.Key,
+				"bpm":  md.BPM,
+				"time": md.Time,
+			},
 		},
 	})
 }
@@ -222,11 +246,6 @@ type EditSongData struct {
 	Tags             []string   `json:"tags"`
 	TransposeSection string     `json:"transposeSection"`
 }
-
-var (
-	bpmRegex  = regexp.MustCompile(`(?i)bpm:(.*?);`)
-	timeRegex = regexp.MustCompile(`(?i)time:(.*?);`)
-)
 
 func (h *WebAppController) SongEdit(ctx *gin.Context) {
 	songIDStr := ctx.Param("id")
@@ -276,8 +295,11 @@ func (h *WebAppController) SongEdit(ctx *gin.Context) {
 	}
 
 	song.Tags = data.Tags
+	nameChanged := song.PDF.Name != data.Name
+	bpmChanged := song.PDF.BPM != data.BPM
+	timeChanged := song.PDF.Time != data.Time
 
-	if song.PDF.Name != data.Name {
+	if nameChanged {
 		err := h.DriveFileService.Rename(song.DriveFileID, data.Name)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -285,6 +307,12 @@ func (h *WebAppController) SongEdit(ctx *gin.Context) {
 			return
 		}
 		song.PDF.Name = data.Name
+	}
+
+	if err := h.DriveFileService.NormalizeMetadataLayout(song.DriveFileID); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
 	}
 
 	if song.PDF.Key != data.Key {
@@ -305,29 +333,43 @@ func (h *WebAppController) SongEdit(ctx *gin.Context) {
 				song.PDF.Key = data.Key
 			}
 		} else {
-			song.PDF.Key = data.Key
-
-			_, err = h.DriveFileService.TransposeHeader(song.DriveFileID, data.Key, 0)
-			if err != nil {
-				ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				log.Error().Err(err).Msgf("Error:")
-				return
-			}
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "transposeSection is required when key is changed"})
+			return
 		}
 	}
 
-	if song.PDF.BPM != data.BPM {
+	metadataPatch := service.MetadataPatch{}
+	metadataChanged := false
+	if nameChanged {
+		metadataPatch.Title = &data.Name
+		metadataChanged = true
+	}
+
+	if bpmChanged {
 		song.PDF.BPM = data.BPM
-		_, _ = h.DriveFileService.ReplaceAllTextByRegex(song.DriveFileID, bpmRegex, fmt.Sprintf("BPM: %s;", data.BPM))
+		metadataPatch.BPM = &data.BPM
+		metadataChanged = true
 	}
 
-	if song.PDF.Time != data.Time {
+	if timeChanged {
 		song.PDF.Time = data.Time
-		_, _ = h.DriveFileService.ReplaceAllTextByRegex(song.DriveFileID, timeRegex, fmt.Sprintf("TIME: %s;", data.Time))
+		metadataPatch.Time = &data.Time
+		metadataChanged = true
 	}
 
-	fakeTime, _ := time.Parse("2006", "2006")
-	song.PDF.ModifiedTime = fakeTime.Format(time.RFC3339)
+	if metadataChanged {
+		if err := h.DriveFileService.UpdateMetadataAcrossSections(song.DriveFileID, metadataPatch); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			log.Error().Err(err).Msgf("Error:")
+			return
+		}
+	}
+
+	// Keep Mongo metadata aligned with the current document metadata after normalize/transpose.
+	song.PDF.Key, song.PDF.BPM, song.PDF.Time = h.DriveFileService.GetMetadata(song.DriveFileID)
+
+	// Force refresh of stored Drive metadata token after in-place document edits.
+	song.PDF.Version = 0
 
 	song, err = h.SongService.UpdateOne(*song)
 	if err != nil {
@@ -355,6 +397,104 @@ func (h *WebAppController) SongEdit(ctx *gin.Context) {
 		return
 	}
 
+	defer reader.Close()
+
+	markup := gotgbot.InlineKeyboardMarkup{
+		InlineKeyboard: keyboard.SongInit(song, user, chatID, messageID, user.LanguageCode),
+	}
+
+	_, _, err = h.Bot.EditMessageMedia(gotgbot.InputMediaDocument{
+		Media:     gotgbot.InputFileByReader(fmt.Sprintf("%s.pdf", song.PDF.Name), reader),
+		Caption:   caption,
+		ParseMode: "HTML",
+	}, &gotgbot.EditMessageMediaOpts{
+		ChatId:      chatID,
+		MessageId:   messageID,
+		ReplyMarkup: markup,
+	})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{})
+}
+
+func (h *WebAppController) SongFormat(ctx *gin.Context) {
+	songIDStr := ctx.Param("id")
+	songID, err := bson.ObjectIDFromHex(songIDStr)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+
+	userIDStr := ctx.Query("userId")
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+
+	messageIDStr := ctx.Query("messageId")
+	messageID, err := strconv.ParseInt(messageIDStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+
+	chatIDStr := ctx.Query("chatId")
+	chatID, err := strconv.ParseInt(chatIDStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+
+	song, err := h.SongService.FindOneByID(songID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+
+	user, err := h.UserService.FindOneByID(userID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+
+	driveFile, err := h.DriveFileService.StyleOne(song.DriveFileID, user.LanguageCode)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+
+	song, _, err = h.SongService.SyncPDFMetadataByDriveFileID(driveFile.Id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
+
+	user.CallbackCache = entity.CallbackCache{
+		ChatID:    chatID,
+		MessageID: messageID,
+		UserID:    userID,
+	}
+	caption := user.CallbackCache.AddToText(song.Caption())
+
+	reader, err := h.DriveFileService.DownloadOneByID(song.DriveFileID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error().Err(err).Msgf("Error:")
+		return
+	}
 	defer reader.Close()
 
 	markup := gotgbot.InlineKeyboardMarkup{

@@ -23,12 +23,10 @@ var (
 )
 
 const (
-	headerTypeDefault    = "DEFAULT"
 	unitPoints           = "PT"
-	keyNashville         = "NNS"
+	keyNashville         = "Numbers"
 	fontFamilyRobotoMono = "Roboto Mono"
-	alignmentCenter      = "CENTER"
-	alignmentEnd         = "END"
+	maxBatchRequests     = 900
 
 	// Margins and Spacing.
 	docMarginVertical   float64 = 14
@@ -39,12 +37,7 @@ const (
 	paraSpacingMagnitude float64 = 0
 
 	// Font Sizes.
-	fontSizeHeaderTitle    float64 = 20
-	fontSizeHeaderMetadata float64 = 14
-	fontSizeHeaderLastPara float64 = 11
-
-	chordRatioThresholdHeader float64 = 0
-	chordRatioThresholdBody   float64 = 0 // todo: find a better value.
+	chordRatioThresholdBody float64 = 0 // todo: find a better value.
 )
 
 var (
@@ -71,29 +64,50 @@ func (s *DriveFileService) batchUpdate(docID string, requests []*docs.Request) (
 }
 
 func (s *DriveFileService) TransposeOne(ID string, toKey entity.Key, sectionIndex int) (*drive.File, error) {
-	doc, err := s.getDoc(ID)
+	doc, _, err := s.normalizeMetadataLayout(ID)
 	if err != nil {
 		return nil, err
 	}
 
 	sections := getSections(doc)
+	createdNewSection := false
 
 	if len(sections) <= sectionIndex || sectionIndex < 0 {
+		createdNewSection = true
 		sections, err = s.appendSectionByID(ID)
 		if err != nil {
 			return nil, err
 		}
 
-		doc, err = s.getDoc(ID)
+		doc, err = s.ensureBodyMetadataLayout(ID)
 		if err != nil {
 			return nil, err
 		}
 
+		sections = getSections(doc)
 		sectionIndex = len(sections) - 1
 	}
 
-	requests, key := transposeHeader(doc, sections, sectionIndex, toKey)
-	requests = append(requests, transposeBody(doc, sections, sectionIndex, key, toKey)...)
+	sourceMetadata := s.extractSectionMetadata(doc, sections[0])
+	requests := transposeBody(doc, sections, sectionIndex, sourceMetadata.Key, toKey)
+	if createdNewSection {
+		targetBodyStart := getSectionBodyStartIndex(doc, sections, sectionIndex)
+		sourceBodyStyle := getSectionBodyStyle(doc, sections, 0)
+		if bodyStyle, fields := copyBodySectionStyle(sourceBodyStyle); bodyStyle != nil && fields != "" {
+			if req := sectionStyleUpdateRequest(targetBodyStart, bodyStyle, fields); req != nil {
+				requests = append(requests, req)
+			}
+		}
+	}
+
+	targetMetadata := sourceMetadata
+	targetMetadata.Title = normalizeTextValue(doc.Title)
+	targetMetadata.Key = toKey
+	metadataReqs, err := metadataRewriteRequestsForSection(doc, sections, sectionIndex, targetMetadata)
+	if err != nil {
+		return nil, err
+	}
+	requests = append(requests, metadataReqs...)
 
 	_, err = s.batchUpdate(doc.DocumentId, requests)
 	if err != nil {
@@ -103,34 +117,18 @@ func (s *DriveFileService) TransposeOne(ID string, toKey entity.Key, sectionInde
 	return s.FindOneByID(ID)
 }
 
-func (s *DriveFileService) TransposeHeader(ID string, toKey entity.Key, sectionIndex int) (*drive.File, error) {
-	doc, err := s.getDoc(ID)
-	if err != nil {
-		return nil, err
-	}
-
-	sections := getSections(doc)
-
-	if len(sections) <= sectionIndex || sectionIndex < 0 {
-		return nil, fmt.Errorf("section index %d is out of bounds", sectionIndex)
-	}
-
-	requests, _ := transposeHeader(doc, sections, sectionIndex, toKey)
-
-	_, err = s.batchUpdate(doc.DocumentId, requests)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.FindOneByID(ID)
-}
-
-// CopyAndTransposeFirstSection copies a file to the temp folder and transposes section 0 (header + body).
+// CopyAndTransposeFirstSection copies a file to the temp folder and transposes section 0.
 // Returns the new file's Drive file. On transpose error, the copied file is deleted.
-func (s *DriveFileService) CopyAndTransposeFirstSection(sourceID string, toKey entity.Key, tempFolderID string) (*drive.File, error) {
-	copiedFile, err := s.CloneOne(sourceID, &drive.File{
+func (s *DriveFileService) CopyAndTransposeFirstSection(sourceID string, sourceName string, toKey entity.Key, tempFolderID string) (*drive.File, error) {
+	copyTarget := &drive.File{
 		Parents: []string{tempFolderID},
-	})
+	}
+	if strings.TrimSpace(sourceName) != "" {
+		// Prevent Drive default "Copy of ..." naming to keep metadata title stable.
+		copyTarget.Name = sourceName
+	}
+
+	copiedFile, err := s.CloneOne(sourceID, copyTarget)
 	if err != nil {
 		return nil, fmt.Errorf("failed to copy file: %w", err)
 	}
@@ -148,36 +146,24 @@ func (s *DriveFileService) CopyAndTransposeFirstSection(sourceID string, toKey e
 func (s *DriveFileService) StyleOne(ID, lang string) (*drive.File, error) {
 	requests := make([]*docs.Request, 0)
 
-	doc, err := s.getDoc(ID)
+	doc, _, err := s.normalizeMetadataLayoutWithOptions(ID, normalizeMetadataLayoutOptions{
+		applyMetadataStyles: false,
+	})
 	if err != nil {
 		return nil, err
 	}
+	_ = lang
+	sections := getSections(doc)
 
-	if doc.DocumentStyle.DefaultHeaderId == "" {
-		res, err := s.batchUpdate(ID, []*docs.Request{
-			newCreateHeaderRequest(headerTypeDefault, nil),
-		})
-
-		if err == nil && res != nil && len(res.Replies) > 0 {
-			createHeaderRes := res.Replies[0].CreateHeader
-			if createHeaderRes != nil && createHeaderRes.HeaderId != "" {
-				_, _ = s.batchUpdate(ID, []*docs.Request{
-					getDefaultHeaderRequest(createHeaderRes.HeaderId, doc.Title, "", "", "", lang),
-				})
-			}
-		}
+	// Hard mode: always restore canonical metadata styles on StyleOne.
+	for _, section := range sections {
+		sectionStart := section.StartIndex + 1
+		md := s.extractSectionMetadata(doc, section)
+		md.Title = normalizeTextValue(doc.Title)
+		requests = append(requests, composeCanonicalMetadataStyleRequests(sectionStart, md)...)
 	}
 
-	doc, err = s.getDoc(ID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, header := range doc.Headers {
-		requests = append(requests, composeStyleRequests(header.Content, header.HeaderId, true, chordRatioThresholdHeader)...)
-	}
-
-	requests = append(requests, composeStyleRequests(doc.Body.Content, "", false, chordRatioThresholdBody)...)
+	requests = append(requests, composeStyleRequests(getContentForSectionBody(doc, sections, 0), "", false, chordRatioThresholdBody)...)
 
 	docStyle := &docs.DocumentStyle{
 		MarginBottom: &docs.Dimension{
@@ -200,14 +186,89 @@ func (s *DriveFileService) StyleOne(ID, lang string) (*drive.File, error) {
 			Magnitude: docMarginHeader,
 			Unit:      unitPoints,
 		},
-		UseFirstPageHeaderFooter: false,
-		ForceSendFields:          []string{"UseFirstPageHeaderFooter"},
 	}
-	requests = append(requests, newUpdateDocumentStyleRequest(docStyle, "marginBottom,marginLeft,marginRight,marginTop,marginHeader,useFirstPageHeaderFooter"))
+	requests = append(requests, newUpdateDocumentStyleRequest(docStyle, "marginBottom,marginLeft,marginRight,marginTop,marginHeader"))
 
 	_, err = s.batchUpdate(ID, requests)
 	if err != nil {
 		return nil, err
+	}
+
+	// Keep non-primary sections in sync with the latest first-section content.
+	if len(sections) > 1 {
+		doc, err = s.getDoc(ID)
+		if err != nil {
+			return nil, err
+		}
+		sections = getSections(doc)
+		if len(sections) > 1 {
+			sourceMetadata := s.extractSectionMetadata(doc, sections[0])
+
+			type retransposeTarget struct {
+				sectionIndex int
+				toKey        entity.Key
+			}
+			targets := make([]retransposeTarget, 0, len(sections)-1)
+			// Process from the last section backwards so index shifts in later
+			// sections never affect pending operations for earlier sections.
+			for i := len(sections) - 1; i >= 1; i-- {
+				targetMetadata := s.extractSectionMetadata(doc, sections[i])
+				if targetMetadata.Key == sourceMetadata.Key {
+					continue
+				}
+				if !isTranspositionTargetKeySupported(targetMetadata.Key) {
+					continue
+				}
+				targets = append(targets, retransposeTarget{
+					sectionIndex: i,
+					toKey:        targetMetadata.Key,
+				})
+			}
+
+			pendingRequests := make([]*docs.Request, 0)
+			flushPending := func() error {
+				if len(pendingRequests) == 0 {
+					return nil
+				}
+				_, batchErr := s.batchUpdate(ID, pendingRequests)
+				pendingRequests = pendingRequests[:0]
+				return batchErr
+			}
+
+			for _, target := range targets {
+				targetRequests := transposeBody(doc, sections, target.sectionIndex, sourceMetadata.Key, target.toKey)
+				targetMetadata := sourceMetadata
+				targetMetadata.Title = normalizeTextValue(doc.Title)
+				targetMetadata.Key = target.toKey
+				metadataReqs, reqErr := metadataRewriteRequestsForSection(doc, sections, target.sectionIndex, targetMetadata)
+				if reqErr != nil {
+					return nil, reqErr
+				}
+				targetRequests = append(targetRequests, metadataReqs...)
+
+				if len(targetRequests) >= maxBatchRequests {
+					if err := flushPending(); err != nil {
+						return nil, err
+					}
+					if _, err := s.batchUpdate(ID, targetRequests); err != nil {
+						return nil, err
+					}
+					continue
+				}
+
+				if len(pendingRequests)+len(targetRequests) > maxBatchRequests {
+					if err := flushPending(); err != nil {
+						return nil, err
+					}
+				}
+
+				pendingRequests = append(pendingRequests, targetRequests...)
+			}
+
+			if err := flushPending(); err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	return s.FindOneByID(ID)
@@ -217,51 +278,10 @@ func (s *DriveFileService) StyleOne(ID, lang string) (*drive.File, error) {
 // Core Logic - Transposition
 // =========================================================================
 
-func transposeHeader(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int, toKey entity.Key) ([]*docs.Request, entity.Key) {
-	docHeaderID := doc.DocumentStyle.DefaultHeaderId
-	if docHeaderID == "" {
-		return nil, ""
-	}
-
-	requests := make([]*docs.Request, 0)
-
-	section := sections[sectionIndex]
-	sectionHeaderID := section.SectionBreak.SectionStyle.DefaultHeaderId
-
-	var targetHeaderID string // Will hold the ID of the header to write to
-
-	// Create header if section doesn't have it.
-	if sectionHeaderID == "" {
-		location := newLocation(section.StartIndex, "")
-		requests = append(requests, newCreateHeaderRequest(headerTypeDefault, location))
-		// NOTE: targetHeaderID will be "", which may cause transpose to write to the body.
-	} else {
-		header := doc.Headers[sectionHeaderID]
-		targetHeaderID = header.HeaderId // Set the segment ID for transpose
-
-		// Clear existing content from the section header
-		lastHeaderContent := header.Content[len(header.Content)-1]
-		if lastHeaderContent.EndIndex-1 > 0 {
-			requests = append(requests, newDeleteContentRangeRequest(0, lastHeaderContent.EndIndex-1, header.HeaderId))
-		}
-	}
-	transposeRequests, key := composeTransposeRequests(
-		doc.Headers[docHeaderID].Content,
-		0,
-		"",
-		toKey,
-		targetHeaderID,
-		chordRatioThresholdHeader,
-	)
-	requests = append(requests, transposeRequests...)
-
-	return requests, key
-}
-
 func transposeBody(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int, key, toKey entity.Key) []*docs.Request {
 	requests := make([]*docs.Request, 0)
 
-	sectionToInsertStartIndex := sections[sectionIndex].StartIndex + 1
+	sectionToInsertStartIndex := getSectionBodyStartIndex(doc, sections, sectionIndex)
 	var sectionToInsertEndIndex int64
 
 	if len(sections) > sectionIndex+1 {
@@ -271,7 +291,7 @@ func transposeBody(doc *docs.Document, sections []docs.StructuralElement, sectio
 		sectionToInsertEndIndex = lastContentElement.EndIndex - 1
 	}
 
-	content := getContentForFirstSection(doc, sections)
+	content := getContentForSectionBody(doc, sections, 0)
 
 	if sectionToInsertEndIndex-sectionToInsertStartIndex > 0 {
 		requests = append(requests, newDeleteContentRangeRequest(sectionToInsertStartIndex, sectionToInsertEndIndex, ""))
@@ -323,8 +343,9 @@ func composeTransposeRequests(content []*docs.StructuralElement, index int64, ke
 
 func composeStyleRequests(content []*docs.StructuralElement, segmentID string, isHeader bool, chordRatioThreshold float64) []*docs.Request {
 	requests := make([]*docs.Request, 0)
+	_ = isHeader
 
-	for i, paragraph := range content {
+	for _, paragraph := range content {
 		if paragraph.Paragraph == nil {
 			continue
 		}
@@ -335,21 +356,12 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string, i
 			SpaceBelow:  &docs.Dimension{Magnitude: paraSpacingMagnitude, Unit: unitPoints, ForceSendFields: []string{"Magnitude"}},
 			LineSpacing: paraLineSpacing,
 		}
-		if isHeader {
-			paragraphStyle.Alignment = alignmentCenter
-			if i == 1 {
-				paragraphStyle.Alignment = alignmentEnd
-			}
-		}
 
 		paragraphStyleFields := "lineSpacing,spaceAbove,spaceBelow"
-		if isHeader {
-			paragraphStyleFields += ",alignment"
-		}
 		requests = append(requests, newUpdateParagraphStyleRequest(&paragraphStyle, paragraphStyleFields, paragraph.StartIndex, paragraph.EndIndex, segmentID))
 
 		// 2) Ensure all runs use Roboto Mono
-		requests = append(requests, newBaseTextStyleRequests(paragraph.Paragraph, isHeader, i, segmentID)...)
+		requests = append(requests, newBaseTextStyleRequests(paragraph.Paragraph, segmentID)...)
 
 		// Build the index ONCE for this paragraph
 		ip, ok := newIndexedParagraph(paragraph.Paragraph)
@@ -592,19 +604,47 @@ func changeStyleForChordsAcross(ip *indexedParagraph, segmentID string, chordRat
 
 // --- Helper Functions ---
 
-// getContentForFirstSection finds the body content that belongs to the first section.
-func getContentForFirstSection(doc *docs.Document, sections []docs.StructuralElement) []*docs.StructuralElement {
-	if len(sections) > 1 {
-		index := len(doc.Body.Content)
-		for i := range doc.Body.Content {
-			if doc.Body.Content[i].StartIndex == sections[1].StartIndex {
-				index = i
-				break
-			}
-		}
-		return doc.Body.Content[:index]
+func getSectionBodyStartIndex(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int) int64 {
+	sectionStart := sections[sectionIndex].StartIndex + 1
+	sectionEnd := contentEndForSection(doc, sections, sectionIndex)
+	continuous := findFirstContinuousBreakInRange(doc, sectionStart, sectionEnd)
+	if continuous == nil {
+		return sectionStart
 	}
-	return doc.Body.Content
+	return continuous.StartIndex + 1
+}
+
+func getContentForSectionBody(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int) []*docs.StructuralElement {
+	bodyStart := getSectionBodyStartIndex(doc, sections, sectionIndex)
+	bodyEnd := contentEndForSection(doc, sections, sectionIndex)
+	bodyEndExclusive := bodyEnd + 1
+
+	content := make([]*docs.StructuralElement, 0)
+	for _, item := range doc.Body.Content {
+		// Use start-based boundaries to avoid dropping the last paragraph that
+		// ends exactly at the section boundary (EndIndex semantics are exclusive).
+		if item.StartIndex < bodyStart || item.StartIndex >= bodyEndExclusive {
+			continue
+		}
+		if item.SectionBreak != nil {
+			continue
+		}
+		content = append(content, item)
+	}
+	return content
+}
+
+func getSectionBodyStyle(doc *docs.Document, sections []docs.StructuralElement, sectionIndex int) *docs.SectionStyle {
+	sectionStart := sections[sectionIndex].StartIndex + 1
+	sectionEnd := contentEndForSection(doc, sections, sectionIndex)
+	continuous := findFirstContinuousBreakInRange(doc, sectionStart, sectionEnd)
+	if continuous != nil && continuous.SectionBreak != nil {
+		return continuous.SectionBreak.SectionStyle
+	}
+	if sections[sectionIndex].SectionBreak != nil {
+		return sections[sectionIndex].SectionBreak.SectionStyle
+	}
+	return nil
 }
 
 // getParagraphs filters content for valid paragraphs and builds an indexedParagraph for each.
@@ -626,7 +666,7 @@ func getParagraphs(content []*docs.StructuralElement) ([]*docs.Paragraph, []*ind
 }
 
 // newBaseTextStyleRequests applies the base font (Roboto Mono), weight, and header-specific font sizes.
-func newBaseTextStyleRequests(paragraph *docs.Paragraph, isHeader bool, paragraphIndex int, segmentID string) []*docs.Request {
+func newBaseTextStyleRequests(paragraph *docs.Paragraph, segmentID string) []*docs.Request {
 	requests := make([]*docs.Request, 0, len(paragraph.Elements))
 
 	for _, element := range paragraph.Elements {
@@ -645,20 +685,7 @@ func newBaseTextStyleRequests(paragraph *docs.Paragraph, isHeader bool, paragrap
 			if existingTextStyle.WeightedFontFamily != nil {
 				textStyle.WeightedFontFamily.Weight = existingTextStyle.WeightedFontFamily.Weight
 			}
-			// Always include Bold in update: headers => true, body => preserve existing
-			textStyle.Bold = isHeader || existingTextStyle.Bold
-		}
-
-		if isHeader {
-			switch paragraphIndex {
-			case 0:
-				textStyle.FontSize = &docs.Dimension{Magnitude: fontSizeHeaderTitle, Unit: unitPoints}
-			case 1:
-				textStyle.FontSize = &docs.Dimension{Magnitude: fontSizeHeaderMetadata, Unit: unitPoints}
-			case 2:
-				textStyle.FontSize = &docs.Dimension{Magnitude: fontSizeHeaderLastPara, Unit: unitPoints}
-			}
-			textStyleFields += ",fontSize"
+			textStyle.Bold = existingTextStyle.Bold
 		}
 
 		requests = append(requests, newUpdateTextStyleRequest(textStyle, textStyleFields, element.StartIndex, element.EndIndex, segmentID))
@@ -689,8 +716,13 @@ func shouldTransposeParagraph(fullText string, chordRatioThreshold float64) bool
 
 // guessKeyIfNeeded attempts to guess the key from text if no key is currently set.
 func guessKeyIfNeeded(currentKey entity.Key, fullText string) entity.Key {
+	currentKey = entity.Key(strings.TrimSpace(string(currentKey)))
 	if currentKey != "" {
-		return currentKey // Key is already set, do nothing
+		if _, err := transposer.ParseKey(string(currentKey)); err == nil {
+			return currentKey // Valid key is already set, do nothing
+		}
+		// Non-single-key values (e.g. "C->D") should not block auto-guessing.
+		currentKey = ""
 	}
 	if guessedKey, err := transposer.GuessKeyFromText(fullText); err == nil {
 		return entity.Key(guessedKey.String()) // Guessed a new key
@@ -698,9 +730,23 @@ func guessKeyIfNeeded(currentKey entity.Key, fullText string) entity.Key {
 	return currentKey // Guessing failed, return original (empty) key
 }
 
+func isTranspositionTargetKeySupported(key entity.Key) bool {
+	normalized := strings.TrimSpace(string(key))
+	if normalized == "" || normalized == "?" {
+		return false
+	}
+	if normalized == keyNashville {
+		return true
+	}
+	_, err := transposer.ParseKey(normalized)
+	return err == nil
+}
+
 // newTransposeRequestsForParagraph generates all the requests for a single paragraph's elements.
 func newTransposeRequestsForParagraph(paragraph *docs.Paragraph, isLastParagraph, shouldTranspose bool, key, toKey entity.Key, segmentId string, index int64) ([]*docs.Request, int64) {
 	requests := make([]*docs.Request, 0)
+	paragraphRangeStart := int64(-1)
+	paragraphRangeEnd := int64(-1)
 
 	for j, element := range paragraph.Elements {
 		if element.TextRun == nil || element.TextRun.Content == "" {
@@ -708,7 +754,11 @@ func newTransposeRequestsForParagraph(paragraph *docs.Paragraph, isLastParagraph
 		}
 
 		runText := element.TextRun.Content
-		textStyle := element.TextRun.TextStyle // Extracted variable
+		textStyle := &docs.TextStyle{}
+		if element.TextRun.TextStyle != nil {
+			copiedStyle := *element.TextRun.TextStyle
+			textStyle = &copiedStyle
+		}
 
 		// Clean newline from the very last element of the content
 		isLastElement := j == len(paragraph.Elements)-1
@@ -734,17 +784,32 @@ func newTransposeRequestsForParagraph(paragraph *docs.Paragraph, isLastParagraph
 			textStyle.ForegroundColor = newOptionalColor(rgbColorBlack)
 		}
 
+		runStart := index
 		runTextLen := int64(len([]rune(runText)))
 		endIndex := index + runTextLen
 
-		// Insert the (possibly transposed) text and reapply element + paragraph styles for that span
+		// Insert the (possibly transposed) text and reapply element style for that span.
 		requests = append(requests,
 			newInsertTextRequest(runText, index, segmentId),
-			newUpdateTextStyleRequest(textStyle, "*", index, endIndex, segmentId), // Use extracted variable
-			newUpdateParagraphStyleRequest(paragraph.ParagraphStyle, "alignment, lineSpacing, direction, spaceAbove, spaceBelow", index, endIndex, segmentId),
+			newUpdateTextStyleRequest(textStyle, "*", index, endIndex, segmentId),
 		)
 
 		index += runTextLen
+		if paragraphRangeStart < 0 {
+			paragraphRangeStart = runStart
+		}
+		paragraphRangeEnd = endIndex
+	}
+
+	// Paragraph style is identical across the full paragraph; apply once.
+	if paragraph.ParagraphStyle != nil && paragraphRangeStart >= 0 && paragraphRangeEnd > paragraphRangeStart {
+		requests = append(requests, newUpdateParagraphStyleRequest(
+			paragraph.ParagraphStyle,
+			"alignment, lineSpacing, direction, spaceAbove, spaceBelow",
+			paragraphRangeStart,
+			paragraphRangeEnd,
+			segmentId,
+		))
 	}
 
 	return requests, index
@@ -820,16 +885,6 @@ func newUpdateParagraphStyleRequest(style *docs.ParagraphStyle, fields string, s
 			Fields:         fields,
 			ParagraphStyle: style,
 			Range:          newRange(start, end, segmentId),
-		},
-	}
-}
-
-// newCreateHeaderRequest creates a new CreateHeader request.
-func newCreateHeaderRequest(headerType string, location *docs.Location) *docs.Request {
-	return &docs.Request{
-		CreateHeader: &docs.CreateHeaderRequest{
-			Type:                 headerType,
-			SectionBreakLocation: location,
 		},
 	}
 }
