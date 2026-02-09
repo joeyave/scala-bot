@@ -82,7 +82,7 @@ func TestComposeCanonicalMetadataStyleRequests(t *testing.T) {
 		Time:  "4/4",
 	}
 
-	requests := composeCanonicalMetadataStyleRequests(10, md)
+	requests := composeCanonicalMetadataStyleRequests(10, md, rgbColorChord)
 	assert.Len(t, requests, 7)
 
 	assert.Equal(t, "alignment,lineSpacing,spaceAbove,spaceBelow", requests[0].UpdateParagraphStyle.Fields)

@@ -41,8 +41,9 @@ const (
 )
 
 var (
-	rgbColorChord = newRgbColor(0.8, 0, 0)
-	rgbColorBlack = newRgbColor(0, 0, 0)
+	rgbColorChord    = newRgbColor(0.8, 0, 0)
+	rgbColorChordAlt = newRgbColor(0, 0, 0.8)
+	rgbColorBlack    = newRgbColor(0, 0, 0)
 )
 
 // =========================================================================
@@ -119,7 +120,7 @@ func (s *DriveFileService) TransposeOne(ID string, toKey entity.Key, sectionInde
 
 // CopyAndTransposeFirstSection copies a file to the temp folder and transposes section 0.
 // Returns the new file's Drive file. On transpose error, the copied file is deleted.
-func (s *DriveFileService) CopyAndTransposeFirstSection(sourceID string, sourceName string, toKey entity.Key, tempFolderID string) (*drive.File, error) {
+func (s *DriveFileService) CopyAndTransposeFirstSection(sourceID, sourceName string, toKey entity.Key, tempFolderID string) (*drive.File, error) {
 	copyTarget := &drive.File{
 		Parents: []string{tempFolderID},
 	}
@@ -156,14 +157,14 @@ func (s *DriveFileService) StyleOne(ID, lang string) (*drive.File, error) {
 	sections := getSections(doc)
 
 	// Hard mode: always restore canonical metadata styles on StyleOne.
-	for _, section := range sections {
+	for sectionIndex, section := range sections {
 		sectionStart := section.StartIndex + 1
 		md := s.extractSectionMetadata(doc, section)
 		md.Title = normalizeTextValue(doc.Title)
-		requests = append(requests, composeCanonicalMetadataStyleRequests(sectionStart, md)...)
+		requests = append(requests, composeCanonicalMetadataStyleRequests(sectionStart, md, chordColorForSectionIndex(sectionIndex))...)
 	}
 
-	requests = append(requests, composeStyleRequests(getContentForSectionBody(doc, sections, 0), "", false, chordRatioThresholdBody)...)
+	requests = append(requests, composeStyleRequests(getContentForSectionBody(doc, sections, 0), "", false, chordRatioThresholdBody, chordColorForSectionIndex(0))...)
 
 	docStyle := &docs.DocumentStyle{
 		MarginBottom: &docs.Dimension{
@@ -304,13 +305,14 @@ func transposeBody(doc *docs.Document, sections []docs.StructuralElement, sectio
 		toKey,
 		"",
 		chordRatioThresholdBody,
+		chordColorForSectionIndex(sectionIndex),
 	)
 	requests = append(requests, transposeRequests...)
 
 	return requests
 }
 
-func composeTransposeRequests(content []*docs.StructuralElement, index int64, key, toKey entity.Key, segmentId string, chordRatioThreshold float64) ([]*docs.Request, entity.Key) {
+func composeTransposeRequests(content []*docs.StructuralElement, index int64, key, toKey entity.Key, segmentId string, chordRatioThreshold float64, chordColor *docs.RgbColor) ([]*docs.Request, entity.Key) {
 	allRequests := make([]*docs.Request, 0)
 	paragraphs, idxs := getParagraphs(content)
 
@@ -327,7 +329,7 @@ func composeTransposeRequests(content []*docs.StructuralElement, index int64, ke
 		isLastParagraph := i == len(paragraphs)-1
 		paraRequests, newIndex := newTransposeRequestsForParagraph(
 			paragraph, isLastParagraph, shouldTranspose,
-			key, toKey, segmentId, index,
+			key, toKey, segmentId, index, chordColor,
 		)
 
 		allRequests = append(allRequests, paraRequests...)
@@ -341,9 +343,12 @@ func composeTransposeRequests(content []*docs.StructuralElement, index int64, ke
 // Core Logic - Styling
 // =========================================================================
 
-func composeStyleRequests(content []*docs.StructuralElement, segmentID string, isHeader bool, chordRatioThreshold float64) []*docs.Request {
+func composeStyleRequests(content []*docs.StructuralElement, segmentID string, isHeader bool, chordRatioThreshold float64, chordColor *docs.RgbColor) []*docs.Request {
 	requests := make([]*docs.Request, 0)
 	_ = isHeader
+	if chordColor == nil {
+		chordColor = rgbColorChord
+	}
 
 	for _, paragraph := range content {
 		if paragraph.Paragraph == nil {
@@ -370,7 +375,7 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string, i
 		}
 
 		// 3) Style chords across the whole paragraph (paragraph-level heuristic)
-		requests = append(requests, changeStyleForChordsAcross(ip, segmentID, chordRatioThreshold)...)
+		requests = append(requests, changeStyleForChordsAcross(ip, segmentID, chordRatioThreshold, chordColor)...)
 
 		// [|] -> bold, black
 		textStyle := docs.TextStyle{
@@ -388,7 +393,7 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string, i
 		// (x|х)\d+ -> bold, red-ish
 		textStyle = docs.TextStyle{
 			Bold:            true,
-			ForegroundColor: newOptionalColor(rgbColorChord),
+			ForegroundColor: newOptionalColor(chordColor),
 		}
 		requests = append(requests, changeStyleByRegexAcross(ip, repetitionRe, textStyle, "bold,foregroundColor", nil, segmentID)...)
 	}
@@ -549,8 +554,11 @@ func changeStyleByRegexAcross(ip *indexedParagraph, regex *regexp.Regexp, style 
 // using a paragraph-level heuristic to avoid false positives (e.g., verse numbers).
 // If the ratio of chord tokens to total tokens is below chordRatioThreshold,
 // no styling is applied for this paragraph.
-func changeStyleForChordsAcross(ip *indexedParagraph, segmentID string, chordRatioThreshold float64) []*docs.Request {
+func changeStyleForChordsAcross(ip *indexedParagraph, segmentID string, chordRatioThreshold float64, chordColor *docs.RgbColor) []*docs.Request {
 	requests := make([]*docs.Request, 0)
+	if chordColor == nil {
+		chordColor = rgbColorChord
+	}
 
 	// Tokenize the full paragraph (heuristic is inside Tokenize via ChordRatioThreshold)
 	lines := transposer.Tokenize(ip.fullText, true, false, &transposer.TransposeOpts{
@@ -560,7 +568,7 @@ func changeStyleForChordsAcross(ip *indexedParagraph, segmentID string, chordRat
 	// Style for chords
 	chordStyle := docs.TextStyle{
 		Bold:            true,
-		ForegroundColor: newOptionalColor(rgbColorChord),
+		ForegroundColor: newOptionalColor(chordColor),
 	}
 
 	chordSuffixStyle := docs.TextStyle{
@@ -743,10 +751,13 @@ func isTranspositionTargetKeySupported(key entity.Key) bool {
 }
 
 // newTransposeRequestsForParagraph generates all the requests for a single paragraph's elements.
-func newTransposeRequestsForParagraph(paragraph *docs.Paragraph, isLastParagraph, shouldTranspose bool, key, toKey entity.Key, segmentId string, index int64) ([]*docs.Request, int64) {
+func newTransposeRequestsForParagraph(paragraph *docs.Paragraph, isLastParagraph, shouldTranspose bool, key, toKey entity.Key, segmentId string, index int64, chordColor *docs.RgbColor) ([]*docs.Request, int64) {
 	requests := make([]*docs.Request, 0)
 	paragraphRangeStart := int64(-1)
 	paragraphRangeEnd := int64(-1)
+	if chordColor == nil {
+		chordColor = rgbColorChord
+	}
 
 	for j, element := range paragraph.Elements {
 		if element.TextRun == nil || element.TextRun.Content == "" {
@@ -783,6 +794,9 @@ func newTransposeRequestsForParagraph(paragraph *docs.Paragraph, isLastParagraph
 		if textStyle.ForegroundColor == nil {
 			textStyle.ForegroundColor = newOptionalColor(rgbColorBlack)
 		}
+		if isChordColoredText(textStyle) {
+			textStyle.ForegroundColor = newOptionalColor(chordColor)
+		}
 
 		runStart := index
 		runTextLen := int64(len([]rune(runText)))
@@ -813,6 +827,31 @@ func newTransposeRequestsForParagraph(paragraph *docs.Paragraph, isLastParagraph
 	}
 
 	return requests, index
+}
+
+func chordColorForSectionIndex(sectionIndex int) *docs.RgbColor {
+	if sectionIndex%2 == 0 {
+		return rgbColorChord
+	}
+	return rgbColorChordAlt
+}
+
+func isChordColoredText(style *docs.TextStyle) bool {
+	if style == nil ||
+		style.ForegroundColor == nil ||
+		style.ForegroundColor.Color == nil ||
+		style.ForegroundColor.Color.RgbColor == nil {
+		return false
+	}
+	rgb := style.ForegroundColor.Color.RgbColor
+	return isSameRGBColor(rgb, rgbColorChord) || isSameRGBColor(rgb, rgbColorChordAlt)
+}
+
+func isSameRGBColor(a, b *docs.RgbColor) bool {
+	if a == nil || b == nil {
+		return false
+	}
+	return a.Red == b.Red && a.Green == b.Green && a.Blue == b.Blue
 }
 
 // =========================================================================

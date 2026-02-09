@@ -208,7 +208,7 @@ func TestNewTransposeRequestsForParagraphAppliesParagraphStyleOnce(t *testing.T)
 		},
 	}
 
-	requests, _ := newTransposeRequestsForParagraph(paragraph, false, false, "", "", "", 1)
+	requests, _ := newTransposeRequestsForParagraph(paragraph, false, false, "", "", "", 1, nil)
 
 	paragraphStyleReqs := 0
 	for _, req := range requests {

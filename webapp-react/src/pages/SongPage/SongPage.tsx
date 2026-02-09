@@ -29,11 +29,7 @@ import {
 import { transposeAllText } from "@/pages/SongPage/util/transpose.ts";
 import { SongForm, StateSongData } from "@/pages/SongPage/util/types.ts";
 import { PageError } from "@/pages/UtilPages/PageError.tsx";
-import {
-  useMutation,
-  useQuery,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { Button, List, Section, Text } from "@telegram-apps/telegram-ui";
 import { MultiselectOption } from "@telegram-apps/telegram-ui/dist/components/Form/Multiselect/types";
 import { mainButton, miniApp, postEvent, viewport } from "@tma.js/sdk-react";
@@ -147,6 +143,8 @@ const SongPage: FC = () => {
       return data;
     },
   });
+  const { refetch: refetchSongData } = querySongDataRes;
+  const { refetch: refetchSongLyrics } = querySongLyricsRes;
 
   const mutateSong = useSongMutation();
   const [isFormattingSong, setIsFormattingSong] = useState(false);
@@ -190,10 +188,7 @@ const SongPage: FC = () => {
 
     setInitialFormData(initFormData);
     setFormData(initFormData);
-  }, [
-    querySongDataRes.data,
-    querySongDataRes.isSuccess,
-  ]);
+  }, [querySongDataRes.data, querySongDataRes.isSuccess]);
 
   useEffect(() => {
     if (!querySongLyricsRes.isSuccess || !querySongLyricsRes.data) {
@@ -202,8 +197,7 @@ const SongPage: FC = () => {
     setTransposedLyricsHtml(querySongLyricsRes.data.lyricsHtml);
 
     if (
-      querySongLyricsRes.dataUpdatedAt ===
-      appliedLyricsMetadataAtRef.current
+      querySongLyricsRes.dataUpdatedAt === appliedLyricsMetadataAtRef.current
     ) {
       return;
     }
@@ -346,10 +340,11 @@ const SongPage: FC = () => {
         chatId,
         userId,
       });
-      miniApp.close();
+      await Promise.allSettled([refetchSongData(), refetchSongLyrics()]);
     } catch (err) {
       logger.error("Failed to format song", { error: err });
       Notify.failure(t("formatError"));
+    } finally {
       setIsFormattingSong(false);
     }
   }, [
@@ -359,6 +354,8 @@ const SongPage: FC = () => {
     isFormattingSong,
     messageId,
     mutateFormatSong,
+    refetchSongData,
+    refetchSongLyrics,
     songId,
     t,
     userId,
@@ -510,7 +507,9 @@ const SongPage: FC = () => {
               stretched={true}
               mode="outline"
               size="m"
-              disabled={isFormattingSong || isFormChanged(formData, initialFormData)}
+              disabled={
+                isFormattingSong || isFormChanged(formData, initialFormData)
+              }
               onClick={() => {
                 void handleFormatClick();
               }}

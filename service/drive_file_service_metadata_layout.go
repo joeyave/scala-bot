@@ -480,14 +480,17 @@ func newMetadataTextStyle(fontSize float64) *docs.TextStyle {
 	}
 }
 
-func newMetadataKeyAccentStyle() *docs.TextStyle {
+func newMetadataKeyAccentStyle(chordColor *docs.RgbColor) *docs.TextStyle {
+	if chordColor == nil {
+		chordColor = rgbColorChord
+	}
 	return &docs.TextStyle{
-		ForegroundColor: newOptionalColor(rgbColorChord),
+		ForegroundColor: newOptionalColor(chordColor),
 		Bold:            true,
 	}
 }
 
-func composeCanonicalMetadataStyleRequests(sectionStart int64, md SectionMetadata) []*docs.Request {
+func composeCanonicalMetadataStyleRequests(sectionStart int64, md SectionMetadata, chordColor *docs.RgbColor) []*docs.Request {
 	md = normalizeMetadata(md)
 
 	titleText := md.Title + "\n"
@@ -550,7 +553,7 @@ func composeCanonicalMetadataStyleRequests(sectionStart int64, md SectionMetadat
 	keyEnd := keyStart + int64(len([]rune(string(md.Key))))
 	if keyEnd > keyStart {
 		requests = append(requests, newUpdateTextStyleRequest(
-			newMetadataKeyAccentStyle(),
+			newMetadataKeyAccentStyle(chordColor),
 			"foregroundColor,bold",
 			keyStart,
 			keyEnd,
@@ -780,7 +783,7 @@ func (s *DriveFileService) normalizeMetadataLayoutWithOptions(ID string, options
 		}
 
 		if needsMetadataRestyle && options.applyMetadataStyles {
-			requests = append(requests, composeCanonicalMetadataStyleRequests(sectionStart, md)...)
+			requests = append(requests, composeCanonicalMetadataStyleRequests(sectionStart, md, chordColorForSectionIndex(i))...)
 		}
 
 		if metaStyle, fields := singleColumnSectionStyle(); metaStyle != nil {
@@ -859,7 +862,7 @@ func metadataRewriteRequestsForSection(doc *docs.Document, sections []docs.Struc
 		requests = append(requests, newDeleteContentRangeRequest(sectionStart, deleteEnd, ""))
 	}
 	requests = append(requests, newInsertTextRequest(insertText, sectionStart, ""))
-	requests = append(requests, composeCanonicalMetadataStyleRequests(sectionStart, md)...)
+	requests = append(requests, composeCanonicalMetadataStyleRequests(sectionStart, md, chordColorForSectionIndex(sectionIndex))...)
 
 	if metaStyle, fields := singleColumnSectionStyle(); metaStyle != nil {
 		if req := sectionStyleUpdateRequest(sectionStart, metaStyle, fields); req != nil {
