@@ -93,11 +93,11 @@ func TestComposeCanonicalMetadataStyleRequests(t *testing.T) {
 	assert.Equal(t, "alignment,lineSpacing,spaceAbove,spaceBelow", requests[1].UpdateParagraphStyle.Fields)
 	assert.Equal(t, "END", requests[1].UpdateParagraphStyle.ParagraphStyle.Alignment)
 
-	assert.Equal(t, "weightedFontFamily,fontSize,bold,italic,underline,strikethrough,foregroundColor", requests[3].UpdateTextStyle.Fields)
+	assert.Equal(t, "*", requests[3].UpdateTextStyle.Fields)
 	assert.Equal(t, fontFamilyRobotoMono, requests[3].UpdateTextStyle.TextStyle.WeightedFontFamily.FontFamily)
 	assert.Equal(t, metadataFontSizeTitle, requests[3].UpdateTextStyle.TextStyle.FontSize.Magnitude)
 	assert.True(t, requests[3].UpdateTextStyle.TextStyle.Bold)
-	assert.False(t, requests[3].UpdateTextStyle.TextStyle.Italic)
+	assert.Equal(t, "NONE", requests[3].UpdateTextStyle.TextStyle.BaselineOffset)
 	assert.NotNil(t, requests[3].UpdateTextStyle.TextStyle.ForegroundColor)
 
 	assert.Equal(t, "foregroundColor,bold", requests[6].UpdateTextStyle.Fields)

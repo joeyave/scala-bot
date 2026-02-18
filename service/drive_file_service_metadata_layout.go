@@ -473,9 +473,7 @@ func newMetadataTextStyle(fontSize float64) *docs.TextStyle {
 			Unit:      unitPoints,
 		},
 		Bold:            true,
-		Italic:          false,
-		Underline:       false,
-		Strikethrough:   false,
+		BaselineOffset:  "NONE",
 		ForegroundColor: newOptionalColor(rgbColorBlack),
 	}
 }
@@ -529,21 +527,21 @@ func composeCanonicalMetadataStyleRequests(sectionStart int64, md SectionMetadat
 		),
 		newUpdateTextStyleRequest(
 			newMetadataTextStyle(metadataFontSizeTitle),
-			"weightedFontFamily,fontSize,bold,italic,underline,strikethrough,foregroundColor",
+			"*",
 			titleStart,
 			titleEnd,
 			"",
 		),
 		newUpdateTextStyleRequest(
 			newMetadataTextStyle(metadataFontSizeLine),
-			"weightedFontFamily,fontSize,bold,italic,underline,strikethrough,foregroundColor",
+			"*",
 			metaStart,
 			metaEnd,
 			"",
 		),
 		newUpdateTextStyleRequest(
 			newMetadataTextStyle(metadataFontSizeLastLine),
-			"weightedFontFamily,fontSize,bold,italic,underline,strikethrough,foregroundColor",
+			"*",
 			lastStart,
 			lastEnd,
 			"",
