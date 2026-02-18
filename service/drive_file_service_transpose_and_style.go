@@ -42,7 +42,7 @@ const (
 
 var (
 	rgbColorChord    = newRgbColor(0.8, 0, 0)
-	rgbColorChordAlt = newRgbColor(0, 0, 0.8)
+	rgbColorChordAlt = newRgbColor(0.6, 0, 1)
 	rgbColorBlack    = newRgbColor(0, 0, 0)
 )
 
