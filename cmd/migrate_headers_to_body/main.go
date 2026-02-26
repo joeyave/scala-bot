@@ -17,6 +17,10 @@ import (
 )
 
 func main() {
+	if err := service.LoadAndApplyDriveStyleConfigFromEnv(); err != nil {
+		panic(fmt.Sprintf("failed to load drive style config: %v", err))
+	}
+
 	mongoClient, err := mongo.Connect(options.Client().ApplyURI(os.Getenv("BOT_MONGODB_URI")))
 	if err != nil {
 		panic(fmt.Sprintf("failed to connect mongo: %v", err))

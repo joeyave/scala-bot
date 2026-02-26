@@ -203,6 +203,10 @@ func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key ent
 
 	requests := make([]*docs.Request, 0)
 
+	if docStyle, fields := newDriveDocumentStyleFromConfig(); docStyle != nil {
+		requests = append(requests, newUpdateDocumentStyleRequest(docStyle, fields))
+	}
+
 	// todo: test and include.
 	// requests = append(requests, &docs.Request{
 	//	UpdateDocumentStyle: &docs.UpdateDocumentStyleRequest{
@@ -245,6 +249,7 @@ func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key ent
 	}
 
 	requests = nil
+	styleCfg := getDriveStyleConfig()
 	for _, paragraph := range doc.Body.Content {
 		if paragraph.Paragraph == nil {
 			continue
@@ -256,8 +261,8 @@ func (s *DriveFileService) CreateOne(newFile *drive.File, lyrics string, key ent
 			}
 
 			element.TextRun.TextStyle.FontSize = &docs.Dimension{
-				Magnitude: 14,
-				Unit:      "PT",
+				Magnitude: styleCfg.NewDocument.DefaultFontSizePt,
+				Unit:      styleCfg.Document.Unit,
 			}
 
 			requests = append(requests, &docs.Request{

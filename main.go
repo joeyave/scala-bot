@@ -46,6 +46,10 @@ func main() {
 	}
 	log.Logger = zerolog.New(out).Level(zerolog.GlobalLevel()).With().Timestamp().Logger()
 
+	if err := service.LoadAndApplyDriveStyleConfigFromEnv(); err != nil {
+		log.Fatal().Err(err).Msg("Error loading drive style config")
+	}
+
 	// Create bot from environment value.
 	bot, err := gotgbot.NewBot(os.Getenv("BOT_TOKEN"), &gotgbot.BotOpts{})
 	if err != nil {

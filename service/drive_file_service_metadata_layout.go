@@ -35,15 +35,6 @@ type normalizeMetadataLayoutOptions struct {
 	applyMetadataStyles bool
 }
 
-const (
-	metadataAlignmentCenter = "CENTER"
-	metadataAlignmentEnd    = "END"
-
-	metadataFontSizeTitle    float64 = 20
-	metadataFontSizeLine     float64 = 14
-	metadataFontSizeLastLine float64 = 11
-)
-
 func normalizeTextValue(s string) string {
 	s = strings.TrimSpace(s)
 	if s == "" {
@@ -203,7 +194,7 @@ func cloneParagraphElementsRequests(content []*docs.StructuralElement, index int
 				element.TextRun.TextStyle = &docs.TextStyle{}
 			}
 			if element.TextRun.TextStyle.ForegroundColor == nil {
-				element.TextRun.TextStyle.ForegroundColor = newOptionalColor(rgbColorBlack)
+				element.TextRun.TextStyle.ForegroundColor = newOptionalColor(driveStylePlainTextColor())
 			}
 
 			textLen := int64(len([]rune(element.TextRun.Content)))
@@ -451,36 +442,38 @@ func applyMetadataPatch(md SectionMetadata, patch MetadataPatch) SectionMetadata
 }
 
 func newMetadataParagraphStyle(alignment string) *docs.ParagraphStyle {
+	styleCfg := getDriveStyleConfig()
 	return &docs.ParagraphStyle{
 		Alignment: alignment,
 		SpaceAbove: &docs.Dimension{
-			Magnitude: paraSpacingMagnitude,
-			Unit:      unitPoints,
+			Magnitude: styleCfg.Paragraph.SpaceAbovePt,
+			Unit:      styleCfg.Document.Unit,
 		},
 		SpaceBelow: &docs.Dimension{
-			Magnitude: paraSpacingMagnitude,
-			Unit:      unitPoints,
+			Magnitude: styleCfg.Paragraph.SpaceBelowPt,
+			Unit:      styleCfg.Document.Unit,
 		},
-		LineSpacing: paraLineSpacing,
+		LineSpacing: styleCfg.Paragraph.LineSpacing,
 	}
 }
 
 func newMetadataTextStyle(fontSize float64) *docs.TextStyle {
+	styleCfg := getDriveStyleConfig()
 	return &docs.TextStyle{
-		WeightedFontFamily: &docs.WeightedFontFamily{FontFamily: fontFamilyRobotoMono},
+		WeightedFontFamily: &docs.WeightedFontFamily{FontFamily: styleCfg.Text.FontFamily},
 		FontSize: &docs.Dimension{
 			Magnitude: fontSize,
-			Unit:      unitPoints,
+			Unit:      styleCfg.Document.Unit,
 		},
 		Bold:            true,
-		BaselineOffset:  "NONE",
-		ForegroundColor: newOptionalColor(rgbColorBlack),
+		BaselineOffset:  styleCfg.Metadata.BaselineOffset,
+		ForegroundColor: newOptionalColor(driveStylePlainTextColor()),
 	}
 }
 
 func newMetadataKeyAccentStyle(chordColor *docs.RgbColor) *docs.TextStyle {
 	if chordColor == nil {
-		chordColor = rgbColorChord
+		chordColor = driveStyleChordPrimaryColor()
 	}
 	return &docs.TextStyle{
 		ForegroundColor: newOptionalColor(chordColor),
@@ -490,6 +483,7 @@ func newMetadataKeyAccentStyle(chordColor *docs.RgbColor) *docs.TextStyle {
 
 func composeCanonicalMetadataStyleRequests(sectionStart int64, md SectionMetadata, chordColor *docs.RgbColor) []*docs.Request {
 	md = normalizeMetadata(md)
+	styleCfg := getDriveStyleConfig()
 
 	titleText := md.Title + "\n"
 	metaLineText := fmt.Sprintf("KEY: %s; BPM: %s; TIME: %s;\n", md.Key, md.BPM, md.Time)
@@ -505,42 +499,42 @@ func composeCanonicalMetadataStyleRequests(sectionStart int64, md SectionMetadat
 	requests := make([]*docs.Request, 0, 7)
 	requests = append(requests,
 		newUpdateParagraphStyleRequest(
-			newMetadataParagraphStyle(metadataAlignmentCenter),
+			newMetadataParagraphStyle(styleCfg.Metadata.TitleAlignment),
 			"alignment,lineSpacing,spaceAbove,spaceBelow",
 			titleStart,
 			titleEnd,
 			"",
 		),
 		newUpdateParagraphStyleRequest(
-			newMetadataParagraphStyle(metadataAlignmentEnd),
+			newMetadataParagraphStyle(styleCfg.Metadata.LineAlignment),
 			"alignment,lineSpacing,spaceAbove,spaceBelow",
 			metaStart,
 			metaEnd,
 			"",
 		),
 		newUpdateParagraphStyleRequest(
-			newMetadataParagraphStyle(metadataAlignmentCenter),
+			newMetadataParagraphStyle(styleCfg.Metadata.LastLineAlignment),
 			"alignment,lineSpacing,spaceAbove,spaceBelow",
 			lastStart,
 			lastEnd,
 			"",
 		),
 		newUpdateTextStyleRequest(
-			newMetadataTextStyle(metadataFontSizeTitle),
+			newMetadataTextStyle(styleCfg.Metadata.FontSizeTitlePt),
 			"*",
 			titleStart,
 			titleEnd,
 			"",
 		),
 		newUpdateTextStyleRequest(
-			newMetadataTextStyle(metadataFontSizeLine),
+			newMetadataTextStyle(styleCfg.Metadata.FontSizeLinePt),
 			"*",
 			metaStart,
 			metaEnd,
 			"",
 		),
 		newUpdateTextStyleRequest(
-			newMetadataTextStyle(metadataFontSizeLastLine),
+			newMetadataTextStyle(styleCfg.Metadata.FontSizeLastLinePt),
 			"*",
 			lastStart,
 			lastEnd,

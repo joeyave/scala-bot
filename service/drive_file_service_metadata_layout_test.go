@@ -75,6 +75,9 @@ func TestFindMetadataTitleAndLineFallbackFirstNonEmpty(t *testing.T) {
 }
 
 func TestComposeCanonicalMetadataStyleRequests(t *testing.T) {
+	setDriveStyleConfig(DefaultDriveStyleConfig())
+	cfg := getDriveStyleConfig()
+
 	md := SectionMetadata{
 		Title: "Song",
 		Key:   "Am",
@@ -82,7 +85,7 @@ func TestComposeCanonicalMetadataStyleRequests(t *testing.T) {
 		Time:  "4/4",
 	}
 
-	requests := composeCanonicalMetadataStyleRequests(10, md, rgbColorChord)
+	requests := composeCanonicalMetadataStyleRequests(10, md, driveStyleChordPrimaryColor())
 	assert.Len(t, requests, 7)
 
 	assert.Equal(t, "alignment,lineSpacing,spaceAbove,spaceBelow", requests[0].UpdateParagraphStyle.Fields)
@@ -91,13 +94,13 @@ func TestComposeCanonicalMetadataStyleRequests(t *testing.T) {
 	assert.Equal(t, int64(15), requests[0].UpdateParagraphStyle.Range.EndIndex)
 
 	assert.Equal(t, "alignment,lineSpacing,spaceAbove,spaceBelow", requests[1].UpdateParagraphStyle.Fields)
-	assert.Equal(t, "END", requests[1].UpdateParagraphStyle.ParagraphStyle.Alignment)
+	assert.Equal(t, cfg.Metadata.LineAlignment, requests[1].UpdateParagraphStyle.ParagraphStyle.Alignment)
 
 	assert.Equal(t, "*", requests[3].UpdateTextStyle.Fields)
-	assert.Equal(t, fontFamilyRobotoMono, requests[3].UpdateTextStyle.TextStyle.WeightedFontFamily.FontFamily)
-	assert.Equal(t, metadataFontSizeTitle, requests[3].UpdateTextStyle.TextStyle.FontSize.Magnitude)
+	assert.Equal(t, cfg.Text.FontFamily, requests[3].UpdateTextStyle.TextStyle.WeightedFontFamily.FontFamily)
+	assert.Equal(t, cfg.Metadata.FontSizeTitlePt, requests[3].UpdateTextStyle.TextStyle.FontSize.Magnitude)
 	assert.True(t, requests[3].UpdateTextStyle.TextStyle.Bold)
-	assert.Equal(t, "NONE", requests[3].UpdateTextStyle.TextStyle.BaselineOffset)
+	assert.Equal(t, cfg.Metadata.BaselineOffset, requests[3].UpdateTextStyle.TextStyle.BaselineOffset)
 	assert.NotNil(t, requests[3].UpdateTextStyle.TextStyle.ForegroundColor)
 
 	assert.Equal(t, "foregroundColor,bold", requests[6].UpdateTextStyle.Fields)
@@ -174,21 +177,24 @@ func TestLeadingEmptyBodyParagraphRangeOnlyEmpty(t *testing.T) {
 }
 
 func TestCopyBodySectionStyleIncludesExtendedFields(t *testing.T) {
+	setDriveStyleConfig(DefaultDriveStyleConfig())
+	cfg := getDriveStyleConfig()
+
 	style := &docs.SectionStyle{
 		ColumnProperties: []*docs.SectionColumnProperties{
 			{
-				PaddingEnd: &docs.Dimension{Magnitude: 12, Unit: unitPoints},
+				PaddingEnd: &docs.Dimension{Magnitude: 12, Unit: cfg.Document.Unit},
 			},
 			{},
 		},
 		ColumnSeparatorStyle:     "BETWEEN_EACH_COLUMN",
 		ContentDirection:         "LEFT_TO_RIGHT",
-		MarginLeft:               &docs.Dimension{Magnitude: 30, Unit: unitPoints},
-		MarginRight:              &docs.Dimension{Magnitude: 31, Unit: unitPoints},
-		MarginTop:                &docs.Dimension{Magnitude: 32, Unit: unitPoints},
-		MarginBottom:             &docs.Dimension{Magnitude: 33, Unit: unitPoints},
-		MarginHeader:             &docs.Dimension{Magnitude: 12, Unit: unitPoints},
-		MarginFooter:             &docs.Dimension{Magnitude: 11, Unit: unitPoints},
+		MarginLeft:               &docs.Dimension{Magnitude: 30, Unit: cfg.Document.Unit},
+		MarginRight:              &docs.Dimension{Magnitude: 31, Unit: cfg.Document.Unit},
+		MarginTop:                &docs.Dimension{Magnitude: 32, Unit: cfg.Document.Unit},
+		MarginBottom:             &docs.Dimension{Magnitude: 33, Unit: cfg.Document.Unit},
+		MarginHeader:             &docs.Dimension{Magnitude: 12, Unit: cfg.Document.Unit},
+		MarginFooter:             &docs.Dimension{Magnitude: 11, Unit: cfg.Document.Unit},
 		FlipPageOrientation:      true,
 		PageNumberStart:          2,
 		UseFirstPageHeaderFooter: true,

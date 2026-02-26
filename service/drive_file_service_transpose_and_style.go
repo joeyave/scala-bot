@@ -23,27 +23,8 @@ var (
 )
 
 const (
-	unitPoints           = "PT"
-	keyNashville         = "Numbers"
-	fontFamilyRobotoMono = "Roboto Mono"
-	maxBatchRequests     = 900
-
-	// Margins and Spacing.
-	docMarginVertical   float64 = 14
-	docMarginHorizontal float64 = 30
-	docMarginHeader     float64 = 18
-
-	paraLineSpacing      float64 = 90
-	paraSpacingMagnitude float64 = 0
-
-	// Font Sizes.
-	chordRatioThresholdBody float64 = 0 // todo: find a better value.
-)
-
-var (
-	rgbColorChord    = newRgbColor(0.8, 0, 0)
-	rgbColorChordAlt = newRgbColor(0.6, 0, 1)
-	rgbColorBlack    = newRgbColor(0, 0, 0)
+	keyNashville     = "Numbers"
+	maxBatchRequests = 900
 )
 
 // =========================================================================
@@ -155,6 +136,7 @@ func (s *DriveFileService) StyleOne(ID, lang string) (*drive.File, error) {
 	}
 	_ = lang
 	sections := getSections(doc)
+	styleCfg := getDriveStyleConfig()
 
 	// Hard mode: always restore canonical metadata styles on StyleOne.
 	for sectionIndex, section := range sections {
@@ -164,31 +146,11 @@ func (s *DriveFileService) StyleOne(ID, lang string) (*drive.File, error) {
 		requests = append(requests, composeCanonicalMetadataStyleRequests(sectionStart, md, chordColorForSectionIndex(sectionIndex))...)
 	}
 
-	requests = append(requests, composeStyleRequests(getContentForSectionBody(doc, sections, 0), "", false, chordRatioThresholdBody, chordColorForSectionIndex(0))...)
+	requests = append(requests, composeStyleRequests(getContentForSectionBody(doc, sections, 0), "", false, styleCfg.Chords.ChordRatioThreshold, chordColorForSectionIndex(0))...)
 
-	docStyle := &docs.DocumentStyle{
-		MarginBottom: &docs.Dimension{
-			Magnitude: docMarginVertical,
-			Unit:      unitPoints,
-		},
-		MarginLeft: &docs.Dimension{
-			Magnitude: docMarginHorizontal,
-			Unit:      unitPoints,
-		},
-		MarginRight: &docs.Dimension{
-			Magnitude: docMarginHorizontal,
-			Unit:      unitPoints,
-		},
-		MarginTop: &docs.Dimension{
-			Magnitude: docMarginVertical,
-			Unit:      unitPoints,
-		},
-		MarginHeader: &docs.Dimension{
-			Magnitude: docMarginHeader,
-			Unit:      unitPoints,
-		},
+	if docStyle, fields := newDriveDocumentStyleFromConfig(); docStyle != nil {
+		requests = append(requests, newUpdateDocumentStyleRequest(docStyle, fields))
 	}
-	requests = append(requests, newUpdateDocumentStyleRequest(docStyle, "marginBottom,marginLeft,marginRight,marginTop,marginHeader"))
 
 	_, err = s.batchUpdate(ID, requests)
 	if err != nil {
@@ -304,7 +266,7 @@ func transposeBody(doc *docs.Document, sections []docs.StructuralElement, sectio
 		key,
 		toKey,
 		"",
-		chordRatioThresholdBody,
+		getDriveStyleConfig().Chords.ChordRatioThreshold,
 		chordColorForSectionIndex(sectionIndex),
 	)
 	requests = append(requests, transposeRequests...)
@@ -346,8 +308,9 @@ func composeTransposeRequests(content []*docs.StructuralElement, index int64, ke
 func composeStyleRequests(content []*docs.StructuralElement, segmentID string, isHeader bool, chordRatioThreshold float64, chordColor *docs.RgbColor) []*docs.Request {
 	requests := make([]*docs.Request, 0)
 	_ = isHeader
+	styleCfg := getDriveStyleConfig()
 	if chordColor == nil {
-		chordColor = rgbColorChord
+		chordColor = driveStyleChordPrimaryColor()
 	}
 
 	for _, paragraph := range content {
@@ -357,15 +320,15 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string, i
 
 		// 1) Paragraph-level spacing
 		paragraphStyle := docs.ParagraphStyle{
-			SpaceAbove:  &docs.Dimension{Magnitude: paraSpacingMagnitude, Unit: unitPoints, ForceSendFields: []string{"Magnitude"}},
-			SpaceBelow:  &docs.Dimension{Magnitude: paraSpacingMagnitude, Unit: unitPoints, ForceSendFields: []string{"Magnitude"}},
-			LineSpacing: paraLineSpacing,
+			SpaceAbove:  &docs.Dimension{Magnitude: styleCfg.Paragraph.SpaceAbovePt, Unit: styleCfg.Document.Unit, ForceSendFields: []string{"Magnitude"}},
+			SpaceBelow:  &docs.Dimension{Magnitude: styleCfg.Paragraph.SpaceBelowPt, Unit: styleCfg.Document.Unit, ForceSendFields: []string{"Magnitude"}},
+			LineSpacing: styleCfg.Paragraph.LineSpacing,
 		}
 
 		paragraphStyleFields := "lineSpacing,spaceAbove,spaceBelow"
 		requests = append(requests, newUpdateParagraphStyleRequest(&paragraphStyle, paragraphStyleFields, paragraph.StartIndex, paragraph.EndIndex, segmentID))
 
-		// 2) Ensure all runs use Roboto Mono
+		// 2) Ensure all runs use configured base font.
 		requests = append(requests, newBaseTextStyleRequests(paragraph.Paragraph, segmentID)...)
 
 		// Build the index ONCE for this paragraph
@@ -377,10 +340,14 @@ func composeStyleRequests(content []*docs.StructuralElement, segmentID string, i
 		// 3) Style chords across the whole paragraph (paragraph-level heuristic)
 		requests = append(requests, changeStyleForChordsAcross(ip, segmentID, chordRatioThreshold, chordColor)...)
 
+		if !styleCfg.Tokens.Enabled {
+			continue
+		}
+
 		// [|] -> bold, black
 		textStyle := docs.TextStyle{
 			Bold:            true,
-			ForegroundColor: newOptionalColor(rgbColorBlack),
+			ForegroundColor: newOptionalColor(driveStylePlainTextColor()),
 		}
 		requests = append(requests, changeStyleByRegexAcross(ip, barlineRe, textStyle, "bold,foregroundColor", nil, segmentID)...)
 
@@ -556,8 +523,9 @@ func changeStyleByRegexAcross(ip *indexedParagraph, regex *regexp.Regexp, style 
 // no styling is applied for this paragraph.
 func changeStyleForChordsAcross(ip *indexedParagraph, segmentID string, chordRatioThreshold float64, chordColor *docs.RgbColor) []*docs.Request {
 	requests := make([]*docs.Request, 0)
+	styleCfg := getDriveStyleConfig()
 	if chordColor == nil {
-		chordColor = rgbColorChord
+		chordColor = driveStyleChordPrimaryColor()
 	}
 
 	// Tokenize the full paragraph (heuristic is inside Tokenize via ChordRatioThreshold)
@@ -569,10 +537,6 @@ func changeStyleForChordsAcross(ip *indexedParagraph, segmentID string, chordRat
 	chordStyle := docs.TextStyle{
 		Bold:            true,
 		ForegroundColor: newOptionalColor(chordColor),
-	}
-
-	chordSuffixStyle := docs.TextStyle{
-		BaselineOffset: "SUPERSCRIPT",
 	}
 
 	for _, line := range lines {
@@ -599,11 +563,16 @@ func changeStyleForChordsAcross(ip *indexedParagraph, segmentID string, chordRat
 			if runeStart == runeEnd {
 				continue
 			}
+			if !styleCfg.Chords.SuffixStylingEnabled {
+				continue
+			}
 			docStart, docEnd, ok = ip.toDocRange(runeStart, runeEnd)
 			if !ok {
 				continue
 			}
-			requests = append(requests, styleRange(docStart, docEnd, chordSuffixStyle, "baselineOffset", segmentID))
+			requests = append(requests, styleRange(docStart, docEnd, docs.TextStyle{
+				BaselineOffset: "SUPERSCRIPT",
+			}, "baselineOffset", segmentID))
 		}
 	}
 
@@ -673,9 +642,10 @@ func getParagraphs(content []*docs.StructuralElement) ([]*docs.Paragraph, []*ind
 	return paragraphs, ips
 }
 
-// newBaseTextStyleRequests applies the base font (Roboto Mono), weight, and header-specific font sizes.
+// newBaseTextStyleRequests applies the configured base font and preserves existing weight/bold flags.
 func newBaseTextStyleRequests(paragraph *docs.Paragraph, segmentID string) []*docs.Request {
 	requests := make([]*docs.Request, 0, len(paragraph.Elements))
+	styleCfg := getDriveStyleConfig()
 
 	for _, element := range paragraph.Elements {
 		if element.TextRun == nil || element.TextRun.Content == "" {
@@ -683,7 +653,7 @@ func newBaseTextStyleRequests(paragraph *docs.Paragraph, segmentID string) []*do
 		}
 
 		textStyle := &docs.TextStyle{
-			WeightedFontFamily: &docs.WeightedFontFamily{FontFamily: fontFamilyRobotoMono},
+			WeightedFontFamily: &docs.WeightedFontFamily{FontFamily: styleCfg.Text.FontFamily},
 			Bold:               false,
 		}
 		textStyleFields := "weightedFontFamily,bold"
@@ -756,7 +726,7 @@ func newTransposeRequestsForParagraph(paragraph *docs.Paragraph, isLastParagraph
 	paragraphRangeStart := int64(-1)
 	paragraphRangeEnd := int64(-1)
 	if chordColor == nil {
-		chordColor = rgbColorChord
+		chordColor = driveStyleChordPrimaryColor()
 	}
 
 	for j, element := range paragraph.Elements {
@@ -792,7 +762,7 @@ func newTransposeRequestsForParagraph(paragraph *docs.Paragraph, isLastParagraph
 		}
 
 		if textStyle.ForegroundColor == nil {
-			textStyle.ForegroundColor = newOptionalColor(rgbColorBlack)
+			textStyle.ForegroundColor = newOptionalColor(driveStylePlainTextColor())
 		}
 		if isChordColoredText(textStyle) {
 			textStyle.ForegroundColor = newOptionalColor(chordColor)
@@ -831,9 +801,9 @@ func newTransposeRequestsForParagraph(paragraph *docs.Paragraph, isLastParagraph
 
 func chordColorForSectionIndex(sectionIndex int) *docs.RgbColor {
 	if sectionIndex%2 == 0 {
-		return rgbColorChord
+		return driveStyleChordPrimaryColor()
 	}
-	return rgbColorChordAlt
+	return driveStyleChordAlternateColor()
 }
 
 func isChordColoredText(style *docs.TextStyle) bool {
@@ -844,7 +814,7 @@ func isChordColoredText(style *docs.TextStyle) bool {
 		return false
 	}
 	rgb := style.ForegroundColor.Color.RgbColor
-	return isSameRGBColor(rgb, rgbColorChord) || isSameRGBColor(rgb, rgbColorChordAlt)
+	return isSameRGBColor(rgb, driveStyleChordPrimaryColor()) || isSameRGBColor(rgb, driveStyleChordAlternateColor())
 }
 
 func isSameRGBColor(a, b *docs.RgbColor) bool {

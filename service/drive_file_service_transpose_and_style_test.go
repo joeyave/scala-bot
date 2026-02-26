@@ -253,3 +253,12 @@ func TestGetContentForSectionBodyKeepsBoundaryParagraph(t *testing.T) {
 	assert.Equal(t, int64(10), firstBody[1].StartIndex)
 	assert.Equal(t, "Last line in section\n", firstBody[1].Paragraph.Elements[0].TextRun.Content)
 }
+
+func TestNewDriveDocumentStyleFromConfigExcludesPageSize(t *testing.T) {
+	setDriveStyleConfig(DefaultDriveStyleConfig())
+
+	style, fields := newDriveDocumentStyleFromConfig()
+	assert.NotNil(t, style)
+	assert.Equal(t, "marginBottom,marginLeft,marginRight,marginTop,marginHeader", fields)
+	assert.Nil(t, style.PageSize)
+}

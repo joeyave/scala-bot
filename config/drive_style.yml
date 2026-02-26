@@ -1,0 +1,38 @@
+new_document:
+  default_font_size_pt: 16
+
+document:
+  unit: PT
+  margins_pt:
+    top: 14
+    right: 30
+    bottom: 14
+    left: 30
+    header: 18
+
+text:
+  font_family: "Roboto Mono"
+
+paragraph:
+  line_spacing: 90
+  space_above_pt: 0
+  space_below_pt: 0
+
+metadata:
+  title_alignment: CENTER
+  line_alignment: END
+  last_line_alignment: CENTER
+  font_size_title_pt: 20
+  font_size_line_pt: 14
+  font_size_last_line_pt: 11
+  baseline_offset: NONE
+
+chords:
+  primary_color: "#CC0000"
+  alternate_color: "#9900FF"
+  plain_text_color: "#000000"
+  suffix_styling_enabled: true
+  chord_ratio_threshold: 0
+
+tokens:
+  enabled: true
