@@ -11,45 +11,60 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 'Clean remote build directory'
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.VM_SSH_HOST }}
-          username: ${{ secrets.VM_SSH_USER }}
-          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
-          script: |
-            rm -rf build
-
-      - name: 'Copy source files to server'
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VM_SSH_HOST }}
-          username: ${{ secrets.VM_SSH_USER }}
-          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
-          source: "."
-          target: "build" # todo: change target folder to project specific.
-
-      - name: 'Build image and push to Dockerhub'
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.VM_SSH_HOST }}
-          username: ${{ secrets.VM_SSH_USER }}
-          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
-          script: |
-            cd build &&
-            sudo docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/scala-bot-image . &&
-            echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin &&
-            sudo docker push ${{ secrets.DOCKERHUB_USERNAME }}/scala-bot-image
-
-      - name: 'Update service'
-        uses: appleboy/ssh-action@master
+      - name: Derive image refs
+        id: image_refs
         env:
+          IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/scala-bot-image
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "image=${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
+          echo "tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ steps.image_refs.outputs.image }}:${{ steps.image_refs.outputs.tag }}
+            ${{ steps.image_refs.outputs.image }}:latest
+
+      - name: Upload deploy stack file
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.VM_SSH_HOST }}
+          username: ${{ secrets.VM_SSH_USER }}
+          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          source: "docker-stack.yml"
+          target: "/tmp/scala-bot-deploy"
+          overwrite: true
+
+      - name: Update service
+        uses: appleboy/ssh-action@v1.2.4
+        env:
+          IMAGE_TAG: ${{ steps.image_refs.outputs.tag }}
           ENV: ${{ secrets.ENV }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           BOT_TOKEN_2: ${{ secrets.BOT_TOKEN_2 }}
           BOT_MONGODB_URI: ${{ secrets.BOT_MONGODB_URI }}
           BOT_MONGODB_NAME: ${{ secrets.BOT_MONGODB_NAME }}
+          BOT_FILES_CHANNEL_ID: ${{ secrets.BOT_FILES_CHANNEL_ID }}
           BOT_GOOGLEAPIS_KEY: ${{ secrets.BOT_GOOGLEAPIS_KEY }}
           BOT_DOMAIN: ${{ secrets.BOT_DOMAIN }}
           BOT_DOMAIN_2: ${{ secrets.BOT_DOMAIN_2 }}
@@ -58,8 +73,13 @@ jobs:
           host: ${{ secrets.VM_SSH_HOST }}
           username: ${{ secrets.VM_SSH_USER }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
-          envs: ENV, DOCKERHUB_USERNAME, BOT_TOKEN, BOT_TOKEN_2, BOT_MONGODB_URI, BOT_MONGODB_NAME, BOT_GOOGLEAPIS_KEY, BOT_DOMAIN, BOT_DOMAIN_2, BOT_ALERTS_CHANNEL_ID
+          envs: IMAGE_TAG, ENV, DOCKERHUB_USERNAME, DOCKERHUB_TOKEN, BOT_TOKEN, BOT_TOKEN_2, BOT_MONGODB_URI, BOT_MONGODB_NAME, BOT_FILES_CHANNEL_ID, BOT_GOOGLEAPIS_KEY, BOT_DOMAIN, BOT_DOMAIN_2, BOT_ALERTS_CHANNEL_ID
           script: |
-            cd build
-            sudo -E docker stack deploy -c docker-stack.yml scala-bot
+            set -euo pipefail
+
+            mkdir -p /tmp/scala-bot-deploy
+            printf '%s' "$DOCKERHUB_TOKEN" | sudo docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+
+            cd /tmp/scala-bot-deploy
+            sudo -E docker stack deploy --with-registry-auth -c docker-stack.yml scala-bot
             sudo docker system prune -f
