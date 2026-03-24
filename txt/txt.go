@@ -247,8 +247,8 @@ var locales = map[string]map[string]string{
 		"uk": "Додати адміна",
 	},
 	"button.cleanupDatabase": {
-		"ru": "Почистить базу",
-		"uk": "Почистити базу",
+		"ru": "Почистить базу (admin)",
+		"uk": "Почистити базу (admin)",
 	},
 	"button.continue": {
 		"ru": "Продолжить",
@@ -411,7 +411,7 @@ var locales = map[string]map[string]string{
 	},
 	"text.addedLyricsPage": {
 		"ru": "На вторую страницу добавлены слова (без аккордов).",
-		"uk": "На другу сторігнку додані слова (без акордів).",
+		"uk": "На другу сторінку додані слова (без акордів).",
 	},
 	"text.copiedToMyBand": {
 		"ru": "Песня скопирована!",
