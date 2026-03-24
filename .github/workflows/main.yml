@@ -84,4 +84,4 @@ jobs:
 
             cd /tmp/scala-bot-deploy
             sudo -E docker stack deploy --with-registry-auth -c docker-stack.yml scala-bot
-            sudo docker system prune -f
+            sudo docker system prune -af

@@ -9,7 +9,6 @@ README.md
 Jenkinsfile
 docker
 docker-stack.yml
-webapp
 webapp-react/node_modules
 webapp-react/dist
 **/*_test.go
