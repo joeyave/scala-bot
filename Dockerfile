@@ -70,6 +70,7 @@ WORKDIR /app
 
 COPY --from=backend /out/scala-bot /usr/local/bin/scala-bot
 COPY --from=rubberband /src/rubberband/build/rubberband /usr/local/bin/rubberband
+COPY config ./config
 COPY webapp ./webapp
 COPY --from=frontend /app/webapp-react/dist ./webapp-react/dist
 
