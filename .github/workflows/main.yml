@@ -84,4 +84,21 @@ jobs:
 
             cd /tmp/scala-bot-deploy
             sudo -E docker stack deploy --with-registry-auth -c docker-stack.yml scala-bot
-            sudo docker system prune -af
+
+            IMAGE_NAME="${DOCKERHUB_USERNAME}/scala-bot-image"
+
+            sleep 30
+            sudo docker container prune -f
+
+            sudo docker image ls "$IMAGE_NAME" --format '{{.Repository}}:{{.Tag}}' |
+              awk '/:[0-9a-f]{40}$/ { print }' |
+              while read -r ref; do
+                created="$(sudo docker image inspect --format '{{.Created}}' "$ref" 2>/dev/null || true)"
+                [ -n "$created" ] || continue
+                printf '%s %s\n' "$created" "$ref"
+              done |
+              sort -r |
+              awk 'NR > 3 {print $2}' |
+              xargs -r -n1 sh -c 'sudo docker image rm "$1" || true' _
+
+            sudo docker image prune -f
