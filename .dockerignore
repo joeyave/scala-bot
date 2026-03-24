@@ -1,11 +1,16 @@
-# docker build deps
-docker/*
-Dockerfile
-Jenkinsfile
-
-# git files
-.git/*
+.env
+.env.*
+.github
+.git
 .gitignore
-
-# project files
+.idea
+.vscode
 README.md
+Jenkinsfile
+docker
+docker-stack.yml
+webapp
+webapp-react/node_modules
+webapp-react/dist
+**/*_test.go
+tmp

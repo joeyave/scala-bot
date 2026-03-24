@@ -1,79 +1,77 @@
-# ─── Stage 1: Build React frontend ─────────────────────────────────────
-FROM node:20 AS frontend
+# syntax=docker/dockerfile:1.7
+
+FROM node:20-bookworm-slim AS frontend
 WORKDIR /app/webapp-react
+
 COPY webapp-react/package*.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci
+
 COPY webapp-react/ ./
 RUN npm run build
 
-# ─── Stage 2: Build Go app ─────────────────────────────────────────────
-FROM ubuntu:24.04
+FROM --platform=$BUILDPLATFORM golang:1.24-bookworm AS backend
+ARG TARGETOS
+ARG TARGETARCH
 
-RUN apt-get update -y && apt-get install -y \
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
+
+COPY . ./
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -trimpath -buildvcs=false -ldflags="-s -w" -o /out/scala-bot .
+
+FROM ubuntu:24.04 AS rubberband
+ARG DEBIAN_FRONTEND=noninteractive
+ARG RUBBERBAND_VERSION=v4.0.0
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     ca-certificates \
     git \
-    build-essential \
-    meson ninja-build \
-    golang \
-    ffmpeg
-#   rubberband-cli
-
-## Installing sleef.
-#RUN apt-get update -y && apt-get install -y \
-#    libmpfr-dev  \
-#    libssl-dev  \
-#    libfftw3-dev
-#
-#RUN git clone https://github.com/shibatch/sleef.git
-#
-#WORKDIR /sleef
-#
-#RUN mkdir build
-#WORKDIR /sleef/build
-#
-#RUN cmake -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_DFT=TRUE ..
-#
-#RUN make
-#RUN make test
-#RUN make install
-
-# Installing rubberband CLI.
-RUN apt-get update -y && apt-get install -y \
+    libsamplerate0-dev \
     libsndfile1-dev \
-    libsamplerate0-dev
+    meson \
+    ninja-build \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /
+WORKDIR /src
 
-RUN git clone https://github.com/breakfastquay/rubberband.git
+RUN git clone --branch ${RUBBERBAND_VERSION} --depth 1 https://github.com/breakfastquay/rubberband.git
 
-WORKDIR /rubberband
+WORKDIR /src/rubberband
 
-RUN meson setup build  \
-    -Dauto_features=disabled  \
+RUN meson setup build \
+    --buildtype=release \
+    -Dauto_features=disabled \
     -Dcmdline=enabled \
     -Dfft=builtin \
     -Dresampler=libsamplerate
 
 RUN ninja -C build
-RUN ninja -C build install
 
-RUN rubberband --version
+FROM ubuntu:24.04
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    ffmpeg \
+    libsamplerate0 \
+    libsndfile1 \
+    libstdc++6 \
+    tzdata \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY go.mod ./
-COPY go.sum ./
-
-RUN go mod download
-
-COPY ./ ./
-
-#ENV GOOS=linux
-#ENV GOARCH=arm
-#ENV GODEBUG=tls13=0
-
-RUN go build -buildvcs=false -o /scala-bot
-
+COPY --from=backend /out/scala-bot /usr/local/bin/scala-bot
+COPY --from=rubberband /src/rubberband/build/rubberband /usr/local/bin/rubberband
 COPY --from=frontend /app/webapp-react/dist ./webapp-react/dist
 
-CMD [ "/scala-bot" ]
+EXPOSE 8080
+
+CMD ["/usr/local/bin/scala-bot"]
