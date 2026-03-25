@@ -2,7 +2,9 @@ package controller
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -13,15 +15,51 @@ import (
 	"github.com/joeyave/scala-bot/service"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"google.golang.org/api/drive/v3"
 )
+
+type webAppEventService interface {
+	FindOneByID(bson.ObjectID) (*entity.Event, error)
+	GetMostFrequentEventNames(bson.ObjectID, int) ([]*entity.EventNameFrequencies, error)
+	UpdateOne(entity.Event) (*entity.Event, error)
+}
+
+type webAppUserService interface {
+	FindOneByID(int64) (*entity.User, error)
+	FindManyExtraByBandID(bson.ObjectID, time.Time, time.Time) ([]*entity.UserWithEvents, error)
+}
+
+type webAppBandService interface {
+	FindOneByID(bson.ObjectID) (*entity.Band, error)
+}
+
+type webAppDriveFileService interface {
+	GetHTMLTextWithSectionsNumberAndMetadata(string) (string, int, service.SectionMetadata, error)
+	Rename(string, string) error
+	NormalizeMetadataLayout(string) error
+	TransposeOne(string, entity.Key, int) (*drive.File, error)
+	UpdateMetadataAcrossSections(string, service.MetadataPatch) error
+	GetMetadata(string) (entity.Key, string, string)
+	DownloadOneByID(string) (io.ReadCloser, error)
+	StyleOne(string, string) (*drive.File, error)
+	DownloadOneByIDWithResp(string) (*http.Response, error)
+}
+
+type webAppSongService interface {
+	FindOneByID(bson.ObjectID) (*entity.Song, error)
+	GetTags(bson.ObjectID) ([]string, error)
+	UpdateOne(entity.Song) (*entity.Song, error)
+	SyncPDFMetadataByDriveFileID(string) (*entity.Song, *drive.File, error)
+	RetrieveFreshSongsForEvent(*entity.Event) ([]*entity.Song, error)
+}
 
 type WebAppController struct {
 	Bot               *gotgbot.Bot
-	EventService      *service.EventService
-	UserService       *service.UserService
-	BandService       *service.BandService
-	DriveFileService  *service.DriveFileService
-	SongService       *service.SongService
+	EventService      webAppEventService
+	UserService       webAppUserService
+	BandService       webAppBandService
+	DriveFileService  webAppDriveFileService
+	SongService       webAppSongService
 	VoiceService      *service.VoiceService
 	MembershipService *service.MembershipService
 	RoleService       *service.RoleService
@@ -30,77 +68,66 @@ type WebAppController struct {
 func (h *WebAppController) Statistics(ctx *gin.Context) {
 	fmt.Println(ctx.Request.URL.String())
 
-	hex := ctx.Query("bandId")
-	bandID, err := bson.ObjectIDFromHex(hex)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		log.Error().Err(err).Msgf("Error:")
-		return
+	redirectURL := &url.URL{
+		Path:     "/webapp-react/",
+		Fragment: "/statistics",
 	}
 
-	band, err := h.BandService.FindOneByID(bandID)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		log.Error().Err(err).Msgf("Error:")
-		return
+	if rawQuery := ctx.Request.URL.RawQuery; rawQuery != "" {
+		redirectURL.Fragment = fmt.Sprintf("%s?%s", redirectURL.Fragment, rawQuery)
 	}
 
-	now := band.GetNowTime()
-
-	ctx.HTML(http.StatusOK, "statistics.go.html", gin.H{
-		"Lang": ctx.Query("lang"),
-
-		// "Users": viewUsers,
-		"FromDate": time.Date(now.Year(), time.January, 1, 0, 0, 0, 0, now.Location()),
-		"BandID":   bandID.Hex(),
-		"Roles":    band.Roles,
-	})
+	ctx.Redirect(http.StatusFound, redirectURL.String())
 }
 
-// API Users.
+// API Statistics.
 
-type User struct {
-	ID     int64    `json:"id"`
-	Name   string   `json:"name"`
-	Events []*Event `json:"events"`
+type StatisticsUser struct {
+	ID     int64              `json:"id"`
+	Name   string             `json:"name"`
+	Events []*StatisticsEvent `json:"events"`
 }
 
-type Event struct {
-	ID      bson.ObjectID `json:"id"`
-	Date    string        `json:"date"`
-	Weekday time.Weekday  `json:"weekday"`
-	Name    string        `json:"name"`
-	Roles   []*Role       `json:"roles"`
+type StatisticsEvent struct {
+	ID      string            `json:"id"`
+	Date    string            `json:"date"`
+	Weekday time.Weekday      `json:"weekday"`
+	Name    string            `json:"name"`
+	Roles   []*StatisticsRole `json:"roles"`
 }
 
-type Role struct {
-	ID   bson.ObjectID `json:"id"`
-	Name string        `json:"name"`
+type StatisticsRole struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
-func (h *WebAppController) UsersWithEvents(ctx *gin.Context) {
+type StatisticsResponse struct {
+	BandName        string            `json:"bandName"`
+	CurrentDate     string            `json:"currentDate"`
+	DefaultFromDate string            `json:"defaultFromDate"`
+	Roles           []*StatisticsRole `json:"roles"`
+	Users           []*StatisticsUser `json:"users"`
+}
+
+func (h *WebAppController) StatisticsData(ctx *gin.Context) {
 	fmt.Println(ctx.Request.URL)
 
 	hex := ctx.Query("bandId")
 	bandID, err := bson.ObjectIDFromHex(hex)
 	if err != nil {
-		ctx.JSON(500, gin.H{"status": "error", "message": err.Error()})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	band, err := h.BandService.FindOneByID(bandID)
 	if err != nil {
-		ctx.JSON(500, gin.H{"status": "error", "message": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	now := band.GetNowTime()
-
-	from := ctx.Query("from")
-	fromDate, err := time.ParseInLocation("02.01.2006", from, band.GetLocation())
-	if err != nil {
-		fromDate = time.Date(now.Year(), time.January, 1, 0, 0, 0, 0, time.Local)
-	}
+	defaultFromDate := statisticsDefaultFromDate(now, band.GetLocation())
+	fromDate := parseStatisticsFromDate(ctx.Query("from"), defaultFromDate, band.GetLocation())
 
 	users, err := h.UserService.FindManyExtraByBandID(bandID, fromDate, now)
 	if err != nil {
@@ -109,16 +136,24 @@ func (h *WebAppController) UsersWithEvents(ctx *gin.Context) {
 		return
 	}
 
-	viewUsers := make([]*User, 0)
+	viewRoles := make([]*StatisticsRole, 0, len(band.Roles))
+	for _, role := range band.Roles {
+		viewRoles = append(viewRoles, &StatisticsRole{
+			ID:   role.ID.Hex(),
+			Name: role.Name,
+		})
+	}
+
+	viewUsers := make([]*StatisticsUser, 0, len(users))
 	for _, user := range users {
-		viewUser := &User{
+		viewUser := &StatisticsUser{
 			ID:   user.ID,
 			Name: user.Name,
 		}
 
 		for _, event := range user.Events {
-			viewEvent := &Event{
-				ID:      event.ID,
+			viewEvent := &StatisticsEvent{
+				ID:      event.ID.Hex(),
 				Date:    event.TimeUTC.In(band.GetLocation()).Format("2006-01-02"),
 				Weekday: event.TimeUTC.In(band.GetLocation()).Weekday(),
 				Name:    event.Name,
@@ -126,12 +161,11 @@ func (h *WebAppController) UsersWithEvents(ctx *gin.Context) {
 
 			for _, membership := range event.Memberships {
 				if membership.UserID == user.ID {
-					viewRole := &Role{
-						ID:   membership.Role.ID,
+					viewRole := &StatisticsRole{
+						ID:   membership.Role.ID.Hex(),
 						Name: membership.Role.Name,
 					}
 					viewEvent.Roles = append(viewEvent.Roles, viewRole)
-					break
 				}
 			}
 
@@ -141,9 +175,44 @@ func (h *WebAppController) UsersWithEvents(ctx *gin.Context) {
 		viewUsers = append(viewUsers, viewUser)
 	}
 
-	ctx.JSON(200, gin.H{
-		"users": viewUsers,
+	ctx.JSON(http.StatusOK, gin.H{
+		"data": StatisticsResponse{
+			BandName:        band.Name,
+			CurrentDate:     now.Format("2006-01-02"),
+			DefaultFromDate: defaultFromDate.Format("2006-01-02"),
+			Roles:           viewRoles,
+			Users:           viewUsers,
+		},
 	})
+}
+
+func statisticsDefaultFromDate(now time.Time, loc *time.Location) time.Time {
+	sixMonthsAgo := now.In(loc).AddDate(0, -6, 0)
+	return time.Date(
+		sixMonthsAgo.Year(),
+		sixMonthsAgo.Month(),
+		sixMonthsAgo.Day(),
+		0,
+		0,
+		0,
+		0,
+		loc,
+	)
+}
+
+func parseStatisticsFromDate(raw string, fallback time.Time, loc *time.Location) time.Time {
+	if raw == "" {
+		return fallback
+	}
+
+	for _, layout := range []string{"2006-01-02", "02.01.2006"} {
+		parsed, err := time.ParseInLocation(layout, raw, loc)
+		if err == nil {
+			return parsed
+		}
+	}
+
+	return fallback
 }
 
 // API Songs.

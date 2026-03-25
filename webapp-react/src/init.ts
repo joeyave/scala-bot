@@ -14,6 +14,12 @@ import {
   viewport
 } from "@tma.js/sdk-react";
 
+function getHashQueryParam(name: string): string | null {
+  const hash = window.location.hash.slice(1);
+  const [, query = ""] = hash.split("?");
+  return new URLSearchParams(query).get(name);
+}
+
 /**
  * Initializes the application and configures its dependencies.
  */
@@ -78,7 +84,7 @@ export async function init(options: {
   miniApp.bindCssVars.ifAvailable();
   miniApp.ready();
 
-  const lang = initData.user()?.language_code || "uk";
+  const lang = initData.user()?.language_code || getHashQueryParam("lang") || "uk";
   console.log("lang", lang);
 
   await initI18n(lang);

@@ -1,4 +1,8 @@
-import { RespEventData, RespEventFreqNames } from "@/api/webapp/typesResp.ts";
+import {
+  RespEventData,
+  RespEventFreqNames,
+  RespStatistics,
+} from "@/api/webapp/typesResp.ts";
 
 // Mock data for development without backend
 // Only used when VITE_USE_MOCK_DATA=true
@@ -16,9 +20,24 @@ export const mockEventData: RespEventData = {
       driveFolderId: "mock-drive-folder-id",
       archiveFolderId: "mock-archive-folder-id",
       roles: [
-        { id: "role-1", name: "Vocalist", band_id: "mock-band-id-456", priority: 1 },
-        { id: "role-2", name: "Guitarist", band_id: "mock-band-id-456", priority: 2 },
-        { id: "role-3", name: "Drummer", band_id: "mock-band-id-456", priority: 3 },
+        {
+          id: "role-1",
+          name: "Vocalist",
+          band_id: "mock-band-id-456",
+          priority: 1,
+        },
+        {
+          id: "role-2",
+          name: "Guitarist",
+          band_id: "mock-band-id-456",
+          priority: 2,
+        },
+        {
+          id: "role-3",
+          name: "Drummer",
+          band_id: "mock-band-id-456",
+          priority: 3,
+        },
       ],
     },
     songIds: ["song-1", "song-2", "song-3"],
@@ -112,6 +131,79 @@ export const mockEventFreqNames: RespEventFreqNames = {
     "Christmas Special",
     "Easter Service",
     "Prayer Meeting",
+  ],
+};
+
+export const mockStatisticsData: RespStatistics = {
+  bandName: "Worship Band",
+  currentDate: "2026-03-25",
+  defaultFromDate: "2025-09-25",
+  roles: [
+    { id: "role-1", name: "Vocalist" },
+    { id: "role-2", name: "Guitarist" },
+    { id: "role-3", name: "Drummer" },
+  ],
+  users: [
+    {
+      id: 1,
+      name: "Anastasiia",
+      events: [
+        {
+          id: "event-1",
+          date: "2026-01-12",
+          weekday: 1,
+          name: "Monday Rehearsal",
+          roles: [{ id: "role-1", name: "Vocalist" }],
+        },
+        {
+          id: "event-2",
+          date: "2026-02-09",
+          weekday: 1,
+          name: "Monday Rehearsal",
+          roles: [{ id: "role-1", name: "Vocalist" }],
+        },
+        {
+          id: "event-3",
+          date: "2026-03-08",
+          weekday: 0,
+          name: "Sunday Service",
+          roles: [{ id: "role-2", name: "Guitarist" }],
+        },
+      ],
+    },
+    {
+      id: 2,
+      name: "Maksym",
+      events: [
+        {
+          id: "event-4",
+          date: "2026-01-18",
+          weekday: 0,
+          name: "Sunday Service",
+          roles: [{ id: "role-3", name: "Drummer" }],
+        },
+        {
+          id: "event-5",
+          date: "2026-02-22",
+          weekday: 0,
+          name: "Sunday Service",
+          roles: [{ id: "role-3", name: "Drummer" }],
+        },
+      ],
+    },
+    {
+      id: 3,
+      name: "Kateryna",
+      events: [
+        {
+          id: "event-6",
+          date: "2026-02-05",
+          weekday: 4,
+          name: "Thursday Prayer",
+          roles: [{ id: "role-1", name: "Vocalist" }],
+        },
+      ],
+    },
   ],
 };
 

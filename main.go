@@ -379,19 +379,15 @@ func main() {
 		"translate": txt.Get,
 	})
 
-	router.LoadHTMLGlob("./webapp/templates/*.go.html")
-	router.Static("/webapp/assets", "./webapp/assets")
-
 	router.Any("/check", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
 	router.GET("/web-app/statistics", webAppController.Statistics)
+	router.GET("/api/statistics", webAppController.StatisticsData)
 
 	router.GET("/api/v2/drive-files/search", driveFileController.SearchV2)
 	router.GET("/api/v2/songs/find-by-drive-file-id", driveFileController.FindByDriveFileIDV2)
-
-	router.GET("/api/users-with-events", webAppController.UsersWithEvents)
 
 	router.GET("/api/songs/:id", webAppController.SongData)
 	router.GET("/api/songs/:id/lyrics", webAppController.SongLyrics)

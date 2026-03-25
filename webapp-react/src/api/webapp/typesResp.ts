@@ -61,6 +61,33 @@ export interface RespEventData {
   event: Event;
 }
 
+export interface RespStatistics {
+  bandName: string;
+  currentDate: string;
+  defaultFromDate: string;
+  roles: StatisticsRole[];
+  users: StatisticsUser[];
+}
+
+export interface StatisticsUser {
+  id: number;
+  name: string;
+  events: StatisticsEvent[];
+}
+
+export interface StatisticsEvent {
+  id: string;
+  date: string;
+  weekday: number;
+  name: string;
+  roles: StatisticsRole[];
+}
+
+export interface StatisticsRole {
+  id: string;
+  name: string;
+}
+
 // SetlistItem represents a song in the setlist with optional event-specific overrides
 export interface SongOverride {
   songId: string;

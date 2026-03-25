@@ -28,7 +28,7 @@ func Menu(user *entity.User, bands []*entity.Band, lang string) [][]gotgbot.Keyb
 
 	keyboard = append(keyboard, [][]gotgbot.KeyboardButton{
 		{{Text: txt.Get("button.schedule", lang)}},
-		{{Text: txt.Get("button.songs", lang)}, {Text: txt.Get("button.stats", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/web-app/statistics?bandId=%s&lang=%s", os.Getenv("BOT_DOMAIN"), user.BandID.Hex(), lang)}}},
+		{{Text: txt.Get("button.songs", lang)}, {Text: txt.Get("button.stats", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/webapp-react/#/statistics?bandId=%s&lang=%s", os.Getenv("BOT_DOMAIN"), user.BandID.Hex(), lang)}}},
 		{{Text: txt.Get("button.settings", lang)}},
 	}...)
 	return keyboard

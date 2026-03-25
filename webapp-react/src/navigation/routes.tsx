@@ -13,6 +13,9 @@ const SongConfirmationPage = lazy(
 
 const EventPage = lazy(() => import("@/pages/EventPage/EventPage.tsx"));
 const CreateEventPage = lazy(() => import("@/pages/EventPage/CreateEventPage"));
+const StatisticsPage = lazy(
+  () => import("@/pages/StatisticsPage/StatisticsPage.tsx"),
+);
 
 interface Route {
   path: string;
@@ -46,4 +49,5 @@ export const routes: Route[] = [
     Component: CreateEventPage,
   },
   { path: "/events/:eventId/edit", Component: EventPage },
+  { path: "/statistics", Component: StatisticsPage },
 ];
