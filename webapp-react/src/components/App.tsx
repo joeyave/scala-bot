@@ -16,7 +16,7 @@ export function App() {
 
   return (
     <AppRoot
-      className="root"
+      className={`root ${isDark ? "app-theme-dark" : "app-theme-light"}`}
       appearance={isDark ? "dark" : "light"}
       // platform={['macos', 'ios'].includes(lp.tgWebAppPlatform) ? 'ios' : 'base'}
       platform="ios"

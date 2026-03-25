@@ -29,10 +29,7 @@ html {
 }
 
 body {
-    background:
-        radial-gradient(circle at top right, var(--app-surface-glow), transparent 30%),
-        radial-gradient(circle at left 20%, var(--app-surface-glow-soft), transparent 32%),
-        linear-gradient(180deg, var(--app-surface-top) 0%, var(--app-surface-bottom) 100%);
+    background: var(--tg-theme-secondary-bg-color, white);
     padding: 0;
     margin: 0;
 }
@@ -40,10 +37,17 @@ body {
 .root {
     isolation: isolate;
     min-height: 100vh;
+}
+
+.root.app-theme-light {
     background:
         radial-gradient(circle at top right, var(--app-surface-glow), transparent 30%),
         radial-gradient(circle at left 20%, var(--app-surface-glow-soft), transparent 32%),
         linear-gradient(180deg, var(--app-surface-top) 0%, var(--app-surface-bottom) 100%);
+}
+
+.root.app-theme-dark {
+    background: var(--tg-theme-secondary-bg-color, #0f0f0f);
 }
 
 /*todo*/
