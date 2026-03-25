@@ -4,6 +4,7 @@ import {
   updateEvent,
 } from "@/api/webapp/events.ts";
 import { ReqBodyUpdateEvent } from "@/api/webapp/typesReq.ts";
+import { AutosizeTextarea } from "@/components/AutosizeTextarea/AutosizeTextarea.tsx";
 import { EditableTitle } from "@/components/EditableTitle/EditableTitle.tsx";
 import { Page } from "@/components/Page.tsx";
 import { SetlistSection } from "@/components/Setlist/SetlistSection.tsx";
@@ -22,7 +23,6 @@ import {
   Input,
   List,
   Section,
-  Textarea,
 } from "@telegram-apps/telegram-ui";
 import { mainButton, miniApp, postEvent } from "@tma.js/sdk-react";
 import { Notify } from "notiflix";
@@ -224,16 +224,8 @@ const EventPage: FC = () => {
 
   return (
     <Page back={false}>
-      <div
-        className="flex h-screen flex-col"
-        // style={{
-        //   // todo: check how to use safeAreaInset properly.
-        //   marginTop: viewport.safeAreaInsetTop(),
-        //   marginBottom: viewport.safeAreaInsetBottom(),
-        // }}
-      >
-        <div className="flex-none">
-          <List>
+      <div className="min-h-screen pb-[calc(7rem+var(--tg-safe-area-inset-bottom,0px))]">
+        <List>
             <EditableTitle
               // list="suggestions"
               // placeholder={t("namePlaceholder")}
@@ -313,19 +305,27 @@ const EventPage: FC = () => {
               }}
             />
 
-            <Textarea
+            <AutosizeTextarea
               header={t("notes")}
               placeholder={t("notesPlaceholder")}
               value={formData.notes}
+              maxHeight="40vh"
               onChange={(val) => {
                 setFormData((prev) => ({
                   ...prev,
                   notes: val.target.value,
                 }));
               }}
+              onFocus={(event) => {
+                window.setTimeout(() => {
+                  event.currentTarget.scrollIntoView({
+                    block: "center",
+                    behavior: "smooth",
+                  });
+                }, 150);
+              }}
             />
           </List>
-        </div>
       </div>
     </Page>
   );
