@@ -310,7 +310,7 @@ const StatisticsPage: FC = () => {
     selectedWeekdays.length > 0;
   return (
     <Page back={false}>
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(106,178,242,0.12),transparent_26%),linear-gradient(180deg,var(--tg-theme-bg-color,#fff)_0%,var(--tg-theme-secondary-bg-color,#f4f4f5)_100%)] text-[var(--tg-theme-text-color)]">
+      <div className="min-h-screen text-[var(--tg-theme-text-color)]">
         <div className="mx-auto flex max-w-5xl flex-col gap-4 px-0 pt-6 pb-[calc(2.5rem+var(--tg-safe-area-inset-bottom,0px))]">
           <List className="bg-transparent">
             <Section
