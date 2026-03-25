@@ -22,6 +22,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joeyave/scala-bot/controller"
 	"github.com/joeyave/scala-bot/entity"
+	"github.com/joeyave/scala-bot/helpers"
 	"github.com/joeyave/scala-bot/keyboard"
 	"github.com/joeyave/scala-bot/repository"
 	"github.com/joeyave/scala-bot/service"
@@ -40,6 +41,10 @@ import (
 )
 
 func main() {
+	if err := helpers.LoadDotEnv(); err != nil {
+		panic(fmt.Sprintf("failed to load .env: %v", err))
+	}
+
 	out := zerolog.ConsoleWriter{
 		Out:        os.Stdout,
 		TimeFormat: time.RFC3339,

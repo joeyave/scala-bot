@@ -10,6 +10,7 @@ require (
 	github.com/gorilla/schema v1.4.1
 	github.com/hbollon/go-edlib v1.7.0
 	github.com/joeyave/chords-transposer v0.0.24
+	github.com/joho/godotenv v1.5.1
 	github.com/klauspost/lctime v0.1.0
 	github.com/rs/zerolog v1.34.0
 	github.com/stretchr/testify v1.11.1
@@ -19,6 +20,7 @@ require (
 	golang.org/x/sync v0.19.0
 	golang.org/x/text v0.33.0
 	google.golang.org/api v0.264.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -81,5 +83,4 @@ require (
 	google.golang.org/grpc v1.78.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

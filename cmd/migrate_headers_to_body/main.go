@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/joeyave/scala-bot/helpers"
 	"github.com/joeyave/scala-bot/repository"
 	"github.com/joeyave/scala-bot/service"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -17,6 +18,10 @@ import (
 )
 
 func main() {
+	if err := helpers.LoadDotEnv(); err != nil {
+		panic(fmt.Sprintf("failed to load .env: %v", err))
+	}
+
 	if err := service.LoadAndApplyDriveStyleConfigFromEnv(); err != nil {
 		panic(fmt.Sprintf("failed to load drive style config: %v", err))
 	}
