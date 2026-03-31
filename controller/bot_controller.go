@@ -230,6 +230,35 @@ func (c *BotController) search(index int) handlers.Response {
 					return err
 				}
 
+				// Исключаем файлы из временных папок (TempFolderID) всех групп при глобальном поиске.
+				if user.Cache.Filter == txt.Get("button.globalSearch", ctx.EffectiveUser.LanguageCode) {
+					allBands, bandsErr := c.BandService.FindAll()
+					if bandsErr == nil {
+						tempFolderIDs := make(map[string]bool)
+						for _, band := range allBands {
+							if band.TempFolderID != "" {
+								tempFolderIDs[band.TempFolderID] = true
+							}
+						}
+						if len(tempFolderIDs) > 0 {
+							filtered := make([]*drive.File, 0, len(driveFiles))
+							for _, df := range driveFiles {
+								isTemp := false
+								for _, parentID := range df.Parents {
+									if tempFolderIDs[parentID] {
+										isTemp = true
+										break
+									}
+								}
+								if !isTemp {
+									filtered = append(filtered, df)
+								}
+							}
+							driveFiles = filtered
+						}
+					}
+				}
+
 				user.Cache.NextPageToken = &entity.NextPageToken{
 					Value: nextPageToken,
 					Prev:  user.Cache.NextPageToken,
@@ -275,7 +304,22 @@ func (c *BotController) search(index int) handlers.Response {
 							}
 						}
 					}
+				}
 
+				// Добавляем индекс к песням с одинаковым названием, чтобы пользователь мог различить их.
+				nameCount := make(map[string]int)
+				for _, driveFile := range driveFiles {
+					nameCount[driveFile.Name]++
+				}
+				nameIndex := make(map[string]int)
+				for i, driveFile := range driveFiles {
+					if nameCount[driveFile.Name] > 1 {
+						nameIndex[driveFile.Name]++
+						driveFiles[i].Name = fmt.Sprintf("%s [%d]", driveFile.Name, nameIndex[driveFile.Name])
+					}
+				}
+
+				for _, driveFile := range driveFiles {
 					opts := &keyboard.DriveFileButtonOpts{
 						ShowLike: true,
 					}
