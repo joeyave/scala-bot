@@ -79,12 +79,6 @@ func (c *BotController) RegisterUser(bot *gotgbot.Bot, ctx *ext.Context) error {
 	user.Name = strings.TrimSpace(fmt.Sprintf("%s %s", ctx.EffectiveUser.FirstName, ctx.EffectiveUser.LastName))
 	user.LanguageCode = ctx.EffectiveUser.LanguageCode
 
-	// todo
-	// if user.BandID == bson.NilObjectID && user.State.Name != helpers.ChooseBandState && user.State.Name != helpers.CreateBandState {
-	//	user.State = entity.State{
-	//		Name: helpers.ChooseBandState,
-	//	}
-	//}
 	if user.BandID == bson.NilObjectID || user.Band == nil {
 		if ctx.CallbackQuery != nil {
 			parsedData := strings.Split(ctx.CallbackQuery.Data, ":")
@@ -534,7 +528,7 @@ func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) 
 		//}
 	} else if ctx.InlineQuery != nil {
 		_, _ = ctx.InlineQuery.Answer(bot, nil, &gotgbot.AnswerInlineQueryOpts{
-			CacheTime: 1,
+			CacheTime: new(int64(1)),
 		})
 	} else if ctx.EffectiveChat != nil {
 		_, err := ctx.EffectiveChat.SendMessage(bot, txt.Get("text.serverError", ctx.EffectiveUser.LanguageCode), nil)

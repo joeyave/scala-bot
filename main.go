@@ -55,8 +55,20 @@ func main() {
 		log.Fatal().Err(err).Msg("Error loading drive style config")
 	}
 
+	botAPIMode := strings.ToLower(strings.TrimSpace(os.Getenv("BOT_API_MODE")))
+
+	botOpts := &gotgbot.BotOpts{}
+	if botAPIMode == "test" {
+		botOpts.BotClient = &gotgbot.BaseBotClient{
+			Client: http.Client{
+				Timeout: time.Second * 30,
+			},
+			UseTestEnvironment: true,
+		}
+	}
+
 	// Create bot from environment value.
-	bot, err := gotgbot.NewBot(os.Getenv("BOT_TOKEN"), &gotgbot.BotOpts{})
+	bot, err := gotgbot.NewBot(os.Getenv("BOT_TOKEN"), botOpts)
 	if err != nil {
 		panic("failed to create new bot: " + err.Error())
 	}
@@ -338,7 +350,7 @@ func main() {
 		}
 
 		_, err = ctx.InlineQuery.Answer(bot, results, &gotgbot.AnswerInlineQueryOpts{
-			CacheTime: 1,
+			CacheTime: new(int64(1)),
 		})
 		if err != nil {
 			return err
@@ -436,7 +448,8 @@ func main() {
 		// Start receiving updates.
 		err = updater.StartPolling(bot, &ext.PollingOpts{
 			GetUpdatesOpts: &gotgbot.GetUpdatesOpts{
-				Timeout: 10,
+				Timeout:        10,
+				AllowedUpdates: []string{},
 				RequestOpts: &gotgbot.RequestOpts{
 					Timeout: 11 * time.Second,
 				},

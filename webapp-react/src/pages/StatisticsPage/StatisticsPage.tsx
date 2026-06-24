@@ -17,7 +17,14 @@ import {
   Spinner,
 } from "@telegram-apps/telegram-ui";
 import { hapticFeedback, postEvent } from "@tma.js/sdk-react";
-import { FC, ReactNode, startTransition, useEffect, useMemo, useState } from "react";
+import {
+  FC,
+  ReactNode,
+  startTransition,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
 
@@ -65,7 +72,7 @@ function StatisticsChipGroup<T extends string | number>({
   onToggle: (value: T) => void;
 }) {
   return (
-    <div className="flex gap-2 overflow-x-auto px-1 py-1 [scrollbar-width:none] md:flex-wrap md:overflow-visible [&::-webkit-scrollbar]:hidden">
+    <div className="flex [scrollbar-width:none] gap-2 overflow-x-auto px-1 py-1 md:flex-wrap md:overflow-visible [&::-webkit-scrollbar]:hidden">
       {items.map((item) => {
         const isSelected = selected.includes(item.id);
         return (
@@ -122,7 +129,11 @@ function formatISODate(value: Date): string {
 
 function addMonthsToISODate(value: string, deltaMonths: number): string {
   const source = parseISODate(value);
-  const target = new Date(source.getFullYear(), source.getMonth() + deltaMonths, 1);
+  const target = new Date(
+    source.getFullYear(),
+    source.getMonth() + deltaMonths,
+    1,
+  );
   const lastDayOfTargetMonth = new Date(
     target.getFullYear(),
     target.getMonth() + 1,
@@ -231,7 +242,67 @@ const StatisticsPage: FC = () => {
     },
   });
 
-  if (query.isError || !query.data) {
+  const effectiveFromDate =
+    selectedFromDate || query.data?.defaultFromDate || "";
+  const filters: StatisticsFilters = useMemo(
+    () => ({
+      fromDate: effectiveFromDate,
+      selectedRoleIds,
+      selectedWeekdays,
+    }),
+    [effectiveFromDate, selectedRoleIds, selectedWeekdays],
+  );
+
+  const statistics = useMemo(() => {
+    if (!query.data) return null;
+    return buildStatisticsModel(query.data.users, query.data.roles, filters);
+  }, [query.data, filters]);
+
+  const weekdayOptions: FilterChip<number>[] = useMemo(
+    () => [
+      { id: 1, label: t("weekdayMonShort") },
+      { id: 2, label: t("weekdayTueShort") },
+      { id: 3, label: t("weekdayWedShort") },
+      { id: 4, label: t("weekdayThuShort") },
+      { id: 5, label: t("weekdayFriShort") },
+      { id: 6, label: t("weekdaySatShort") },
+      { id: 0, label: t("weekdaySunShort") },
+    ],
+    [t],
+  );
+
+  const roleOptions: FilterChip<string>[] = useMemo(
+    () =>
+      (query.data?.roles ?? []).map((role: StatisticsRole) => ({
+        id: role.id,
+        label: role.name,
+      })),
+    [query.data?.roles],
+  );
+
+  const datePresetOptions: FilterChip<string>[] = useMemo(() => {
+    if (!query.data) return [];
+    return [
+      {
+        id: addMonthsToISODate(query.data.currentDate, -1),
+        label: t("statisticsPresetLastMonth"),
+      },
+      {
+        id: addMonthsToISODate(query.data.currentDate, -6),
+        label: t("statisticsPresetLastSixMonths"),
+      },
+      {
+        id: addMonthsToISODate(query.data.currentDate, -12),
+        label: t("statisticsPresetLastYear"),
+      },
+      {
+        id: startOfISODateYear(query.data.currentDate),
+        label: t("statisticsPresetYearStart"),
+      },
+    ];
+  }, [query.data, t]);
+
+  if (query.isError || !query.data || !statistics) {
     return (
       <Page back={false}>
         <StatisticsState
@@ -241,54 +312,6 @@ const StatisticsPage: FC = () => {
       </Page>
     );
   }
-
-  const effectiveFromDate = selectedFromDate || query.data.defaultFromDate;
-  const filters: StatisticsFilters = useMemo(() => ({
-    fromDate: effectiveFromDate,
-    selectedRoleIds,
-    selectedWeekdays,
-  }), [effectiveFromDate, selectedRoleIds, selectedWeekdays]);
-
-  const statistics = useMemo(() => buildStatisticsModel(
-    query.data.users,
-    query.data.roles,
-    filters,
-  ), [query.data.users, query.data.roles, filters]);
-
-  const weekdayOptions: FilterChip<number>[] = useMemo(() => [
-    { id: 1, label: t("weekdayMonShort") },
-    { id: 2, label: t("weekdayTueShort") },
-    { id: 3, label: t("weekdayWedShort") },
-    { id: 4, label: t("weekdayThuShort") },
-    { id: 5, label: t("weekdayFriShort") },
-    { id: 6, label: t("weekdaySatShort") },
-    { id: 0, label: t("weekdaySunShort") },
-  ], [t]);
-
-  const roleOptions: FilterChip<string>[] = useMemo(() => (query.data.roles ?? []).map(
-    (role: StatisticsRole) => ({
-      id: role.id,
-      label: role.name,
-    }),
-  ), [query.data.roles]);
-  const datePresetOptions: FilterChip<string>[] = useMemo(() => [
-    {
-      id: addMonthsToISODate(query.data.currentDate, -1),
-      label: t("statisticsPresetLastMonth"),
-    },
-    {
-      id: addMonthsToISODate(query.data.currentDate, -6),
-      label: t("statisticsPresetLastSixMonths"),
-    },
-    {
-      id: addMonthsToISODate(query.data.currentDate, -12),
-      label: t("statisticsPresetLastYear"),
-    },
-    {
-      id: startOfISODateYear(query.data.currentDate),
-      label: t("statisticsPresetYearStart"),
-    },
-  ], [query.data.currentDate, t]);
   const activeDatePresetIds = datePresetOptions.some(
     ({ id }) => id === effectiveFromDate,
   )

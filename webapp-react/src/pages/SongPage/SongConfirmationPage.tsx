@@ -37,7 +37,6 @@ const SongConfirmationPage: FC = () => {
 
   const { t } = useTranslation();
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { state } = useLocation();
   const st = state as StateSongData;
 

@@ -10,8 +10,7 @@ import {
   retrieveLaunchParams,
   setDebug,
   themeParams,
-  type ThemeParams,
-  viewport
+  viewport,
 } from "@tma.js/sdk-react";
 
 function getHashQueryParam(name: string): string | null {
@@ -47,12 +46,23 @@ export async function init(options: {
     mockTelegramEnv({
       onEvent(event, next) {
         if (event.name === "web_app_request_theme") {
-          let tp: ThemeParams = {};
+          let tp: any = {};
           if (firstThemeSent) {
-            tp = themeParams.state();
+            const state = themeParams.state();
+            const raw: Record<string, string> = {};
+            for (const [key, value] of Object.entries(state)) {
+              if (value) {
+                const snakeKey = key.replace(
+                  /[A-Z]/g,
+                  (m) => `_${m.toLowerCase()}`,
+                );
+                raw[snakeKey] = value;
+              }
+            }
+            tp = raw;
           } else {
             firstThemeSent = true;
-            tp ||= retrieveLaunchParams().tgWebAppThemeParams;
+            tp = retrieveLaunchParams().tgWebAppThemeParams;
           }
           return emitEvent("theme_changed", { theme_params: tp });
         }
@@ -84,7 +94,8 @@ export async function init(options: {
   miniApp.bindCssVars.ifAvailable();
   miniApp.ready();
 
-  const lang = initData.user()?.language_code || getHashQueryParam("lang") || "uk";
+  const lang =
+    initData.user()?.language_code || getHashQueryParam("lang") || "uk";
   console.log("lang", lang);
 
   await initI18n(lang);

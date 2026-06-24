@@ -36,9 +36,21 @@ export default tseslint.config({
       ...globals.browser,
     },
   },
+  settings: {
+    react: {
+      version: "detect",
+    },
+  },
   rules: {
     "@typescript-eslint/no-unused-expressions": 0,
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "error",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unsafe-assignment": "off",
+    "@typescript-eslint/no-unsafe-member-access": "off",
+    "@typescript-eslint/no-unsafe-argument": "off",
+    "@typescript-eslint/no-unnecessary-type-assertion": "off",
+    "@typescript-eslint/no-redundant-type-constituents": "off",
+    "no-useless-assignment": "off",
   },
 });

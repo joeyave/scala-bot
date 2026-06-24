@@ -529,9 +529,7 @@ func changeStyleForChordsAcross(ip *indexedParagraph, segmentID string, chordRat
 	}
 
 	// Tokenize the full paragraph (heuristic is inside Tokenize via ChordRatioThreshold)
-	lines := transposer.Tokenize(ip.fullText, true, false, &transposer.TransposeOpts{
-		ChordRatioThreshold: chordRatioThreshold,
-	})
+	lines := transposer.Tokenize(ip.fullText, true, false, transposer.WithChordRatioThreshold(chordRatioThreshold))
 
 	// Style for chords
 	chordStyle := docs.TextStyle{
@@ -677,9 +675,7 @@ func shouldTransposeParagraph(fullText string, chordRatioThreshold float64) bool
 		return true // No heuristic, default to transposing
 	}
 
-	lines := transposer.Tokenize(fullText, true, false, &transposer.TransposeOpts{
-		ChordRatioThreshold: chordRatioThreshold,
-	})
+	lines := transposer.Tokenize(fullText, true, false, transposer.WithChordRatioThreshold(chordRatioThreshold))
 	for _, line := range lines {
 		for _, token := range line {
 			if token.Chord != nil {
