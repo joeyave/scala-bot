@@ -26,11 +26,22 @@ type webAppEventService interface {
 
 type webAppUserService interface {
 	FindOneByID(int64) (*entity.User, error)
+	FindOneOrCreateByID(int64) (*entity.User, error)
+	FindMultipleByBandID(bson.ObjectID) ([]*entity.User, error)
+	FindMultipleByIDs([]int64) ([]*entity.User, error)
+	UpdateOne(entity.User) (*entity.User, error)
+	AddToBand(*entity.User, bson.ObjectID) (*entity.User, error)
+	RemoveFromBand(*entity.User, bson.ObjectID) (*entity.User, error)
+	SetActiveBand(*entity.User, bson.ObjectID) (*entity.User, error)
 	FindManyExtraByBandID(bson.ObjectID, time.Time, time.Time) ([]*entity.UserWithEvents, error)
 }
 
 type webAppBandService interface {
+	FindAll() ([]*entity.Band, error)
+	FindManyByIDs([]bson.ObjectID) ([]*entity.Band, error)
 	FindOneByID(bson.ObjectID) (*entity.Band, error)
+	UpdateOne(entity.Band) (*entity.Band, error)
+	IsUserAdmin(*entity.User, *entity.Band) bool
 }
 
 type webAppDriveFileService interface {
@@ -53,16 +64,27 @@ type webAppSongService interface {
 	RetrieveFreshSongsForEvent(*entity.Event) ([]*entity.Song, error)
 }
 
+type webAppJoinRequestService interface {
+	FindOneByID(bson.ObjectID) (*entity.JoinRequest, error)
+	FindPendingByUserID(int64) ([]*entity.JoinRequest, error)
+	Create(service.CreateJoinRequestInput) (*entity.JoinRequest, bool, error)
+	Approve(bson.ObjectID, int64) (*entity.JoinRequest, *entity.User, error)
+	Decline(bson.ObjectID, int64) (*entity.JoinRequest, error)
+	Cancel(int64, bson.ObjectID) (*entity.JoinRequest, error)
+}
+
 type WebAppController struct {
-	Bot               *gotgbot.Bot
-	EventService      webAppEventService
-	UserService       webAppUserService
-	BandService       webAppBandService
-	DriveFileService  webAppDriveFileService
-	SongService       webAppSongService
-	VoiceService      *service.VoiceService
-	MembershipService *service.MembershipService
-	RoleService       *service.RoleService
+	Bot                *gotgbot.Bot
+	EventService       webAppEventService
+	UserService        webAppUserService
+	BandService        webAppBandService
+	DriveFileService   webAppDriveFileService
+	SongService        webAppSongService
+	VoiceService       *service.VoiceService
+	MembershipService  *service.MembershipService
+	RoleService        *service.RoleService
+	JoinRequestService webAppJoinRequestService
+	IsTestBotAPI       bool
 }
 
 func (h *WebAppController) Statistics(ctx *gin.Context) {

@@ -29,23 +29,8 @@ func Menu(user *entity.User, bands []*entity.Band, lang string) [][]gotgbot.Keyb
 	keyboard = append(keyboard, [][]gotgbot.KeyboardButton{
 		{{Text: txt.Get("button.schedule", lang)}},
 		{{Text: txt.Get("button.songs", lang)}, {Text: txt.Get("button.stats", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/webapp-react/#/statistics?bandId=%s&lang=%s", os.Getenv("BOT_DOMAIN"), user.BandID.Hex(), lang)}}},
-		{{Text: txt.Get("button.settings", lang)}},
+		{{Text: txt.Get("button.settings", lang), WebApp: &gotgbot.WebAppInfo{Url: fmt.Sprintf("%s/webapp-react/#/settings?userId=%d&lang=%s", os.Getenv("BOT_DOMAIN"), user.ID, lang)}}},
 	}...)
-	return keyboard
-}
-
-func Settings(user *entity.User, lang string) [][]gotgbot.InlineKeyboardButton {
-	keyboard := [][]gotgbot.InlineKeyboardButton{
-		{{Text: txt.Get("button.changeBand", lang), CallbackData: util.CallbackData(state.SettingsBands, "")}},
-	}
-	// if user.IsAdmin() {
-	keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.addAdmin", lang), CallbackData: util.CallbackData(state.SettingsBandMembers, user.BandID.Hex())}})
-	//}
-
-	if user.ID == 195295372 {
-		keyboard = append(keyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.cleanupDatabase", lang), CallbackData: util.CallbackData(state.SettingsCleanupDatabase, user.BandID.Hex())}})
-	}
-
 	return keyboard
 }
 

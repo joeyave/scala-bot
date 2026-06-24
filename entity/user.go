@@ -24,13 +24,25 @@ type User struct {
 	CallbackCache CallbackCache `bson:"-" json:"-"`
 
 	BandID bson.ObjectID `bson:"bandId,omitempty" json:"band_id,omitempty"`
-	Band   *Band              `bson:"band,omitempty" json:"-"`
+	Band   *Band         `bson:"band,omitempty" json:"-"`
 
 	BandIDs []bson.ObjectID `bson:"bandIDs,omitempty" json:"bandIDs,omitempty"`
 }
 
 func (u *User) IsAdmin() bool {
 	return u.Role == AdminRole
+}
+
+func (u *User) BelongsToBand(bandID bson.ObjectID) bool {
+	if u.BandID == bandID {
+		return true
+	}
+	for _, userBandID := range u.BandIDs {
+		if userBandID == bandID {
+			return true
+		}
+	}
+	return false
 }
 
 func (u *User) IsEventMember(event *Event) bool {
@@ -87,15 +99,15 @@ type Cache struct {
 
 	DriveFiles []*drive.File `bson:"drive_files,omitempty"`
 
-	NextPageToken *NextPageToken     `bson:"next_page_token,omitempty"`
-	SongNames     []string           `bson:"song_names,omitempty"`
-	DriveFileIDs  []string           `bson:"drive_file_ids,omitempty"`
-	Voice         *Voice             `bson:"voice,omitempty"`
-	SongID        bson.ObjectID `bson:"song_id,omitempty"`
-	Band          *Band              `bson:"band,omitempty"`
-	Role          *Role              `bson:"role,omitempty"`
-	Audio         *gotgbot.Audio     `json:"audio,omitempty"`
-	Bands         []*Band            `json:"bands,omitempty"`
+	NextPageToken *NextPageToken `bson:"next_page_token,omitempty"`
+	SongNames     []string       `bson:"song_names,omitempty"`
+	DriveFileIDs  []string       `bson:"drive_file_ids,omitempty"`
+	Voice         *Voice         `bson:"voice,omitempty"`
+	SongID        bson.ObjectID  `bson:"song_id,omitempty"`
+	Band          *Band          `bson:"band,omitempty"`
+	Role          *Role          `bson:"role,omitempty"`
+	Audio         *gotgbot.Audio `json:"audio,omitempty"`
+	Bands         []*Band        `json:"bands,omitempty"`
 }
 
 type CallbackCache struct {

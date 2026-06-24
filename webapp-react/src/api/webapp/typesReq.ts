@@ -32,3 +32,21 @@ export interface ReqBodyUpdateEvent {
   songOverrides?: SongOverride[];
   notes?: string;
 }
+
+export interface ReqBodySettingsBand {
+  name: string;
+  driveFolderId?: string;
+  driveFolderUrl?: string;
+  timezone: string;
+}
+
+export interface ReqBodySettingsBandPatch {
+  name?: string;
+  driveFolderId?: string;
+  driveFolderUrl?: string;
+  timezone?: string;
+}
+
+export interface ReqBodySettingsMemberRole {
+  isAdmin: boolean;
+}

@@ -30,14 +30,15 @@ import (
 )
 
 type BotController struct {
-	UserService       *service.UserService
-	DriveFileService  *service.DriveFileService
-	SongService       *service.SongService
-	VoiceService      *service.VoiceService
-	BandService       *service.BandService
-	MembershipService *service.MembershipService
-	EventService      *service.EventService
-	RoleService       *service.RoleService
+	UserService        *service.UserService
+	DriveFileService   *service.DriveFileService
+	SongService        *service.SongService
+	VoiceService       *service.VoiceService
+	BandService        *service.BandService
+	MembershipService  *service.MembershipService
+	EventService       *service.EventService
+	RoleService        *service.RoleService
+	JoinRequestService *service.JoinRequestService
 	// OldHandler        *myhandlers.Handler
 }
 
@@ -80,29 +81,28 @@ func (c *BotController) RegisterUser(bot *gotgbot.Bot, ctx *ext.Context) error {
 	user.LanguageCode = ctx.EffectiveUser.LanguageCode
 
 	if user.BandID == bson.NilObjectID || user.Band == nil {
-		if ctx.CallbackQuery != nil {
-			parsedData := strings.Split(ctx.CallbackQuery.Data, ":")
-			if parsedData[0] == strconv.Itoa(state.SettingsChooseBand) || parsedData[0] == strconv.Itoa(state.BandCreate_AskForName) {
-				return nil
-			}
-		} else if user.State.Name == state.BandCreate {
-			return nil
+		markup := gotgbot.ReplyKeyboardMarkup{
+			Keyboard: [][]gotgbot.KeyboardButton{
+				{
+					{
+						Text: txt.Get("text.selectOrCreateBand", ctx.EffectiveUser.LanguageCode),
+						WebApp: &gotgbot.WebAppInfo{
+							Url: fmt.Sprintf("%s/webapp-react/#/settings?userId=%d&lang=%s", os.Getenv("BOT_DOMAIN"), ctx.EffectiveUser.Id, ctx.EffectiveUser.LanguageCode),
+						},
+					},
+				},
+			},
+			ResizeKeyboard: true,
 		}
 
-		markup := gotgbot.InlineKeyboardMarkup{}
-
-		bands, err := c.BandService.FindAll()
+		_, err = ctx.EffectiveChat.SendMessage(bot, txt.Get("text.chooseBandInWebApp", ctx.EffectiveUser.LanguageCode), &gotgbot.SendMessageOpts{
+			ReplyMarkup: markup,
+		})
 		if err != nil {
 			return err
 		}
-		for _, band := range bands {
-			markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: band.Name, CallbackData: util.CallbackData(state.SettingsChooseBand, band.ID.Hex())}})
-		}
-		markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.createBand", ctx.EffectiveUser.LanguageCode), CallbackData: util.CallbackData(state.BandCreate_AskForName, "")}})
 
-		_, err = ctx.EffectiveChat.SendMessage(bot, txt.Get("text.chooseBand", ctx.EffectiveUser.LanguageCode), &gotgbot.SendMessageOpts{
-			ReplyMarkup: markup,
-		})
+		_, err = c.UserService.UpdateOne(*user)
 		if err != nil {
 			return err
 		}

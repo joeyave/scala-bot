@@ -88,7 +88,7 @@ func (c *BotController) BandCreate(index int) handlers.Response {
 				}
 
 				user.Cache.Band.DriveFolderID = matches[2]
-				user.Role = entity.AdminRole // todo
+				user.Cache.Band.AdminUserIDs = []int64{user.ID}
 				band, err := c.BandService.UpdateOne(*user.Cache.Band)
 				if err != nil {
 					return err

@@ -69,4 +69,7 @@ const (
 
 	TransposeAudio_AskForSemitonesNumber
 	TransposeAudio
+
+	JoinRequestApprove
+	JoinRequestDecline
 )

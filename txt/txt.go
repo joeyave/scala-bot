@@ -335,6 +335,10 @@ var locales = map[string]map[string]string{
 		"ru": "Выбери группу или создай свою.",
 		"uk": "Вибери групу або створи свою.",
 	},
+	"text.chooseBandInWebApp": {
+		"ru": "Добро пожаловать! Чтобы начать работу с ботом, выбери или создай группу в WebApp.",
+		"uk": "Вітаємо! Щоб почати роботу з ботом, вибери або створи групу у WebApp.",
+	},
 	"text.addedToBand": {
 		"ru": "Ты добавлен в группу %s.",
 		"uk": "Ти додан у групу %s.",
@@ -574,6 +578,18 @@ var locales = map[string]map[string]string{
 	"text.sorting.descending": {
 		"ru": "по убыванию",
 		"uk": "за спаданням",
+	},
+	"text.joinRequestNotification": {
+		"ru": "👤 <b>%s</b> хочет вступить в вашу группу <b>%s</b>.",
+		"uk": "👤 <b>%s</b> хоче вступити до вашої групи <b>%s</b>.",
+	},
+	"button.approve": {
+		"ru": "✅ Принять",
+		"uk": "✅ Прийняти",
+	},
+	"button.decline": {
+		"ru": "❌ Отклонить",
+		"uk": "❌ Відхилити",
 	},
 }
 

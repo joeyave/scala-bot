@@ -143,6 +143,9 @@ func main() {
 	roleRepository := repository.NewRoleRepository(mongoClient)
 	roleService := service.NewRoleService(roleRepository)
 
+	joinRequestRepository := repository.NewJoinRequestRepository(mongoClient)
+	joinRequestService := service.NewJoinRequestService(joinRequestRepository, userService)
+
 	// handler := myhandlers.NewHandler(
 	//	bot,
 	//	userService,
@@ -157,26 +160,29 @@ func main() {
 
 	botController := controller.BotController{
 		// OldHandler:        handler,
-		UserService:       userService,
-		DriveFileService:  driveFileService,
-		SongService:       songService,
-		VoiceService:      voiceService,
-		BandService:       bandService,
-		MembershipService: membershipService,
-		EventService:      eventService,
-		RoleService:       roleService,
+		UserService:        userService,
+		DriveFileService:   driveFileService,
+		SongService:        songService,
+		VoiceService:       voiceService,
+		BandService:        bandService,
+		MembershipService:  membershipService,
+		EventService:       eventService,
+		RoleService:        roleService,
+		JoinRequestService: joinRequestService,
 	}
 	webAppController := controller.WebAppController{
 		Bot: bot,
 
-		UserService:       userService,
-		DriveFileService:  driveFileService,
-		SongService:       songService,
-		VoiceService:      voiceService,
-		BandService:       bandService,
-		MembershipService: membershipService,
-		EventService:      eventService,
-		RoleService:       roleService,
+		UserService:        userService,
+		DriveFileService:   driveFileService,
+		SongService:        songService,
+		VoiceService:       voiceService,
+		BandService:        bandService,
+		MembershipService:  membershipService,
+		EventService:       eventService,
+		RoleService:        roleService,
+		JoinRequestService: joinRequestService,
+		IsTestBotAPI:       botAPIMode == "test",
 	}
 	driveFileController := controller.DriveFileController{
 		DriveFileService: driveFileService,
@@ -256,10 +262,6 @@ func main() {
 		_, _ = ctx.EffectiveChat.SendMessage(bot, txt.Get("text.noStats", ctx.EffectiveUser.LanguageCode), nil)
 		return nil
 	}), 1)
-	dispatcher.AddHandlerToGroup(handlers.NewMessage(func(msg *gotgbot.Message) bool {
-		return msg.Text == txt.Get("button.settings", msg.From.LanguageCode)
-	}, botController.Settings), 1)
-
 	// Web app.
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(func(msg *gotgbot.Message) bool {
 		return msg.WebAppData != nil && msg.WebAppData.ButtonText == txt.Get("button.createEvent", msg.From.LanguageCode)
@@ -269,16 +271,8 @@ func main() {
 	}, botController.CreateSong), 1)
 
 	// Callback query.
-	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.BandCreate_AskForName), botController.BandCreate_AskForName), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.RoleCreate_AskForName), botController.RoleCreate_AskForName), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.RoleCreate), botController.RoleCreate), 1)
-
-	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SettingsCB), botController.SettingsCB), 1)
-	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SettingsBands), botController.SettingsBands), 1)
-	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SettingsChooseBand), botController.SettingsChooseBand), 1)
-	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SettingsBandMembers), botController.SettingsBandMembers), 1)
-	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SettingsCleanupDatabase), botController.SettingsCleanupDatabase), 1)
-	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.SettingsBandAddAdmin), botController.SettingsBandAddAdmin), 1)
 
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.EventCB), botController.EventCB), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.EventSetlistDocs), botController.EventSetlistDocs), 1)
@@ -308,6 +302,8 @@ func main() {
 
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.TransposeAudio_AskForSemitonesNumber), botController.TransposeAudio_AskForSemitonesNumber), 1)
 	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.TransposeAudio), botController.TransposeAudio), 1)
+	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.JoinRequestApprove), botController.JoinRequestApprove), 1)
+	dispatcher.AddHandlerToGroup(handlers.NewCallback(util.CallbackState(state.JoinRequestDecline), botController.JoinRequestDecline), 1)
 
 	// Inline query.
 	dispatcher.AddHandlerToGroup(handlers.NewInlineQuery(inlinequery.All, func(bot *gotgbot.Bot, ctx *ext.Context) error {
@@ -365,8 +361,6 @@ func main() {
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(message.All, botController.ChooseHandlerOrSearch), 1)
 
 	dispatcher.AddHandlerToGroup(handlers.NewMessage(message.All, botController.UpdateUser), 2)
-	dispatcher.AddHandlerToGroup(handlers.NewCallback(callbackquery.Prefix(fmt.Sprintf("%d:", state.SettingsChooseBand)), botController.UpdateUser), 2)
-
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -397,6 +391,18 @@ func main() {
 
 	router.GET("/web-app/statistics", webAppController.Statistics)
 	router.GET("/api/statistics", webAppController.StatisticsData)
+
+	router.GET("/api/settings/me", webAppController.SettingsMe)
+	router.GET("/api/settings/bands", webAppController.SettingsBands)
+	router.POST("/api/settings/bands", webAppController.SettingsCreateBand)
+	router.POST("/api/settings/bands/:id/active", webAppController.SettingsSetActiveBand)
+	router.POST("/api/settings/bands/:id/join-requests", webAppController.SettingsCreateJoinRequest)
+	router.DELETE("/api/settings/bands/:id/join-requests", webAppController.SettingsCancelJoinRequest)
+	router.PATCH("/api/settings/bands/:id", webAppController.SettingsUpdateBand)
+	router.POST("/api/settings/bands/:id/leave", webAppController.SettingsLeaveBand)
+	router.GET("/api/settings/bands/:id/members", webAppController.SettingsBandMembers)
+	router.PATCH("/api/settings/bands/:id/members/:memberId", webAppController.SettingsUpdateBandMember)
+	router.DELETE("/api/settings/bands/:id/members/:memberId", webAppController.SettingsRemoveBandMember)
 
 	router.GET("/api/v2/drive-files/search", driveFileController.SearchV2)
 	router.GET("/api/v2/songs/find-by-drive-file-id", driveFileController.FindByDriveFileIDV2)

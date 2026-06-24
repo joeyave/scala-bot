@@ -124,3 +124,56 @@ export interface DriveFile {
   parents: string[];
   webViewLink: string;
 }
+
+export interface SettingsUser {
+  id: number;
+  name: string;
+  languageCode?: string;
+  activeBandId?: string;
+}
+
+export interface SettingsBand {
+  id: string;
+  name: string;
+  driveFolderId: string;
+  archiveFolderId: string;
+  tempFolderId: string;
+  timezone: string;
+  isMember: boolean;
+  isActive: boolean;
+  isAdmin: boolean;
+  hasPendingJoinRequest: boolean;
+}
+
+export interface SettingsMember {
+  id: number;
+  name: string;
+  isAdmin: boolean;
+  isSelf: boolean;
+  isActive: boolean;
+}
+
+export interface SettingsJoinRequest {
+  id: string;
+  bandId: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface RespSettingsMe {
+  user: SettingsUser;
+  bands: SettingsBand[];
+}
+
+export interface RespSettingsBands {
+  bands: SettingsBand[];
+}
+
+export interface RespSettingsMembers {
+  members: SettingsMember[];
+}
+
+export interface RespSettingsJoinRequestCreated {
+  request: SettingsJoinRequest;
+  created: boolean;
+}

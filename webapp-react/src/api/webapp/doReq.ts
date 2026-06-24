@@ -20,6 +20,12 @@ export async function doReqWebappApi<T>(
 
   const bodyJson = JSON.stringify(body);
   const qParams = toStringRecord(queryParams);
+  if (path.startsWith("/api/settings/") && !qParams.userId) {
+    const userId = getHashQueryParam("userId");
+    if (userId) {
+      qParams.userId = userId;
+    }
+  }
 
   const { resp, err } = await doReq(
     window.location.origin,
@@ -86,4 +92,10 @@ function toStringRecord(obj: unknown): Record<string, string> {
   }
 
   return result;
+}
+
+function getHashQueryParam(name: string): string | null {
+  const hash = window.location.hash.slice(1);
+  const [, query = ""] = hash.split("?");
+  return new URLSearchParams(query).get(name);
 }

@@ -71,7 +71,10 @@ func (r *UserRepository) FindManyByIDs(IDs []int64) ([]*entity.User, error) {
 
 func (r *UserRepository) FindManyByBandID(bandID bson.ObjectID) ([]*entity.User, error) {
 	return r.find(bson.M{
-		"bandId": bandID,
+		"$or": []bson.M{
+			{"bandId": bandID},
+			{"bandIDs": bson.M{"$elemMatch": bson.M{"$eq": bandID}}},
+		},
 	})
 }
 

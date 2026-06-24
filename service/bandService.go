@@ -35,3 +35,13 @@ func (s *BandService) FindOneByDriveFolderID(driveFolderID string) (*entity.Band
 func (s *BandService) UpdateOne(band entity.Band) (*entity.Band, error) {
 	return s.bandRepository.UpdateOne(band)
 }
+
+func (s *BandService) IsUserAdmin(user *entity.User, band *entity.Band) bool {
+	if user == nil || band == nil {
+		return false
+	}
+	if len(band.AdminUserIDs) > 0 {
+		return band.IsBandAdmin(user.ID)
+	}
+	return user.BelongsToBand(band.ID) && user.IsAdmin()
+}

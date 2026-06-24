@@ -1,0 +1,24 @@
+[
+  {
+    "label": "Launch Go",
+    "command": "go run main.go",
+    "reveal": "always",
+  },
+  {
+    "label": "Launch Vite",
+    "command": "npm run dev",
+    "cwd": "webapp-react",
+    "reveal": "always",
+  },
+  {
+    "label": "Launch All (Go + Vite)",
+    "command": "sh",
+    "args": ["-c", "go run main.go & (cd webapp-react && npm run dev)"],
+    "reveal": "always",
+  },
+  {
+    "label": "Run Header Migration Tool",
+    "command": "go run cmd/migrate_headers_to_body/main.go",
+    "reveal": "always",
+  },
+]

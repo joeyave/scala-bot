@@ -16,6 +16,15 @@ const CreateEventPage = lazy(() => import("@/pages/EventPage/CreateEventPage"));
 const StatisticsPage = lazy(
   () => import("@/pages/StatisticsPage/StatisticsPage.tsx"),
 );
+const SettingsPage = lazy(
+  () => import("@/pages/SettingsPage/SettingsPage.tsx"),
+);
+const CreateSettingsBandPage = lazy(
+  () => import("@/pages/SettingsPage/CreateSettingsBandPage.tsx"),
+);
+const BandSettingsPage = lazy(
+  () => import("@/pages/SettingsPage/BandSettingsPage.tsx"),
+);
 
 interface Route {
   path: string;
@@ -50,4 +59,7 @@ export const routes: Route[] = [
   },
   { path: "/events/:eventId/edit", Component: EventPage },
   { path: "/statistics", Component: StatisticsPage },
+  { path: "/settings", Component: SettingsPage },
+  { path: "/settings/create", Component: CreateSettingsBandPage },
+  { path: "/settings/bands/:bandId", Component: BandSettingsPage },
 ];

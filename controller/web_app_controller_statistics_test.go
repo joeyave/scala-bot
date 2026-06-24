@@ -16,8 +16,24 @@ type stubStatisticsBandService struct {
 	band *entity.Band
 }
 
+func (s stubStatisticsBandService) FindAll() ([]*entity.Band, error) {
+	return []*entity.Band{s.band}, nil
+}
+
+func (s stubStatisticsBandService) FindManyByIDs([]bson.ObjectID) ([]*entity.Band, error) {
+	return []*entity.Band{s.band}, nil
+}
+
 func (s stubStatisticsBandService) FindOneByID(bson.ObjectID) (*entity.Band, error) {
 	return s.band, nil
+}
+
+func (s stubStatisticsBandService) UpdateOne(band entity.Band) (*entity.Band, error) {
+	return &band, nil
+}
+
+func (s stubStatisticsBandService) IsUserAdmin(*entity.User, *entity.Band) bool {
+	return false
 }
 
 type stubStatisticsUserService struct {
@@ -27,6 +43,36 @@ type stubStatisticsUserService struct {
 
 func (s *stubStatisticsUserService) FindOneByID(int64) (*entity.User, error) {
 	return nil, nil
+}
+
+func (s *stubStatisticsUserService) FindOneOrCreateByID(id int64) (*entity.User, error) {
+	return &entity.User{ID: id}, nil
+}
+
+func (s *stubStatisticsUserService) FindMultipleByBandID(bson.ObjectID) ([]*entity.User, error) {
+	return nil, nil
+}
+
+func (s *stubStatisticsUserService) FindMultipleByIDs([]int64) ([]*entity.User, error) {
+	return nil, nil
+}
+
+func (s *stubStatisticsUserService) UpdateOne(user entity.User) (*entity.User, error) {
+	return &user, nil
+}
+
+func (s *stubStatisticsUserService) AddToBand(user *entity.User, bandID bson.ObjectID) (*entity.User, error) {
+	user.BandID = bandID
+	return user, nil
+}
+
+func (s *stubStatisticsUserService) RemoveFromBand(user *entity.User, bandID bson.ObjectID) (*entity.User, error) {
+	return user, nil
+}
+
+func (s *stubStatisticsUserService) SetActiveBand(user *entity.User, bandID bson.ObjectID) (*entity.User, error) {
+	user.BandID = bandID
+	return user, nil
 }
 
 func (s *stubStatisticsUserService) FindManyExtraByBandID(_ bson.ObjectID, from, _ time.Time) ([]*entity.UserWithEvents, error) {
