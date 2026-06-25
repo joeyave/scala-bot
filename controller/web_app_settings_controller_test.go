@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -506,5 +507,216 @@ func TestSettingsCreateJoinRequestAutoApprovesInTestBotAPI(t *testing.T) {
 	}
 	if !approveCalled {
 		t.Fatal("expected approve service to be called")
+	}
+}
+
+func TestSettingsCreateJoinRequestAdminlessGroupAutoPromotes(t *testing.T) {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+
+	bandID := bson.NewObjectID()
+	requestID := bson.NewObjectID()
+	user := &entity.User{ID: 42, Name: "Alice"}
+	band := &entity.Band{ID: bandID, Name: "Scala Band", AdminUserIDs: []int64{}}
+
+	approveCalled := false
+	var updatedBand *entity.Band
+
+	controller := WebAppController{
+		IsTestBotAPI: false,
+		UserService: &settingsStubUserService{users: map[int64]*entity.User{
+			user.ID: user,
+		}},
+		BandService: &settingsStubBandService{
+			bands: map[bson.ObjectID]*entity.Band{
+				band.ID: band,
+			},
+		},
+		JoinRequestService: settingsStubJoinRequestService{
+			createFunc: func(input service.CreateJoinRequestInput) (*entity.JoinRequest, bool, error) {
+				return &entity.JoinRequest{
+					ID:        requestID,
+					UserID:    input.UserID,
+					UserName:  input.UserName,
+					BandID:    input.Band.ID,
+					BandName:  input.Band.Name,
+					Status:    entity.JoinRequestPending,
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+				}, true, nil
+			},
+			approveFunc: func(gotRequestID bson.ObjectID, decidedByUserID int64) (*entity.JoinRequest, *entity.User, error) {
+				approveCalled = true
+				return &entity.JoinRequest{
+					ID:        gotRequestID,
+					UserID:    user.ID,
+					BandID:    bandID,
+					Status:    entity.JoinRequestApproved,
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+				}, user, nil
+			},
+		},
+	}
+
+	router := gin.New()
+	router.POST("/api/settings/bands/:id/join-requests", controller.SettingsCreateJoinRequest)
+
+	request := httptest.NewRequest(http.MethodPost, "/api/settings/bands/"+bandID.Hex()+"/join-requests?userId=42", nil)
+	recorder := httptest.NewRecorder()
+
+	router.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d: %s", http.StatusOK, recorder.Code, recorder.Body.String())
+	}
+	if !approveCalled {
+		t.Fatal("expected approve to be called for adminless group")
+	}
+
+	updatedBand = controller.BandService.(*settingsStubBandService).bands[bandID]
+	if updatedBand == nil {
+		t.Fatal("expected band to be updated")
+	}
+	if len(updatedBand.AdminUserIDs) != 1 || updatedBand.AdminUserIDs[0] != 42 {
+		t.Fatalf("expected user 42 to be promoted to admin, got adminUserIDs: %v", updatedBand.AdminUserIDs)
+	}
+}
+
+func TestSettingsLeaveBandDescriptiveErrors(t *testing.T) {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+
+	bandID := bson.NewObjectID()
+	otherBandID := bson.NewObjectID()
+
+	// 1. Test leaving the only group
+	userOnlyGroup := &entity.User{
+		ID:      42,
+		Name:    "Alice",
+		BandID:  bandID,
+		BandIDs: []bson.ObjectID{bandID},
+	}
+	band := &entity.Band{
+		ID:           bandID,
+		Name:         "Scala Band",
+		AdminUserIDs: []int64{42},
+	}
+
+	controller := WebAppController{
+		UserService: &settingsStubUserService{users: map[int64]*entity.User{
+			userOnlyGroup.ID: userOnlyGroup,
+		}},
+		BandService: &settingsStubBandService{bands: map[bson.ObjectID]*entity.Band{
+			band.ID: band,
+		}},
+	}
+
+	router := gin.New()
+	router.POST("/api/settings/bands/:id/leave", controller.SettingsLeaveBand)
+
+	// Leaving only group
+	reqOnlyGroup := httptest.NewRequest(http.MethodPost, "/api/settings/bands/"+bandID.Hex()+"/leave?userId=42", nil)
+	wOnlyGroup := httptest.NewRecorder()
+	router.ServeHTTP(wOnlyGroup, reqOnlyGroup)
+
+	if wOnlyGroup.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, wOnlyGroup.Code)
+	}
+	var errRespOnlyGroup map[string]string
+	if err := json.Unmarshal(wOnlyGroup.Body.Bytes(), &errRespOnlyGroup); err != nil {
+		t.Fatal(err)
+	}
+	if errRespOnlyGroup["error"] != "cannot leave the only group" {
+		t.Fatalf("expected %q, got %q", "cannot leave the only group", errRespOnlyGroup["error"])
+	}
+
+	// 2. Test leaving as last admin
+	userLastAdmin := &entity.User{
+		ID:      42,
+		Name:    "Alice",
+		BandID:  bandID,
+		BandIDs: []bson.ObjectID{bandID, otherBandID},
+	}
+	controllerLastAdmin := WebAppController{
+		UserService: &settingsStubUserService{users: map[int64]*entity.User{
+			userLastAdmin.ID: userLastAdmin,
+		}},
+		BandService: &settingsStubBandService{bands: map[bson.ObjectID]*entity.Band{
+			band.ID:     band,
+			otherBandID: {ID: otherBandID, Name: "Other Band"},
+		}},
+	}
+
+	routerLastAdmin := gin.New()
+	routerLastAdmin.POST("/api/settings/bands/:id/leave", controllerLastAdmin.SettingsLeaveBand)
+
+	reqLastAdmin := httptest.NewRequest(http.MethodPost, "/api/settings/bands/"+bandID.Hex()+"/leave?userId=42", nil)
+	wLastAdmin := httptest.NewRecorder()
+	routerLastAdmin.ServeHTTP(wLastAdmin, reqLastAdmin)
+
+	if wLastAdmin.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, wLastAdmin.Code)
+	}
+	var errRespLastAdmin map[string]string
+	if err := json.Unmarshal(wLastAdmin.Body.Bytes(), &errRespLastAdmin); err != nil {
+		t.Fatal(err)
+	}
+	if errRespLastAdmin["error"] != "cannot leave the group: you are the last administrator" {
+		t.Fatalf("expected %q, got %q", "cannot leave the group: you are the last administrator", errRespLastAdmin["error"])
+	}
+}
+
+func TestSettingsUpdateBandMemberDescriptiveErrors(t *testing.T) {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+
+	bandID := bson.NewObjectID()
+	user := &entity.User{
+		ID:      42,
+		Name:    "Alice",
+		BandID:  bandID,
+		BandIDs: []bson.ObjectID{bandID},
+	}
+	member := &entity.User{
+		ID:      43,
+		Name:    "Bob",
+		BandID:  bandID,
+		BandIDs: []bson.ObjectID{bandID},
+	}
+	band := &entity.Band{
+		ID:           bandID,
+		Name:         "Scala Band",
+		AdminUserIDs: []int64{42},
+	}
+
+	controller := WebAppController{
+		UserService: &settingsStubUserService{users: map[int64]*entity.User{
+			user.ID:   user,
+			member.ID: member,
+		}},
+		BandService: &settingsStubBandService{bands: map[bson.ObjectID]*entity.Band{
+			band.ID: band,
+		}},
+	}
+
+	router := gin.New()
+	router.POST("/api/settings/bands/:id/members/:memberId", controller.SettingsUpdateBandMember)
+
+	// Demoting self
+	reqDemoteSelf := httptest.NewRequest(http.MethodPost, "/api/settings/bands/"+bandID.Hex()+"/members/42?userId=42", strings.NewReader(`{"isAdmin":false}`))
+	reqDemoteSelf.Header.Set("Content-Type", "application/json")
+	wDemoteSelf := httptest.NewRecorder()
+	router.ServeHTTP(wDemoteSelf, reqDemoteSelf)
+
+	if wDemoteSelf.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d: %s", http.StatusBadRequest, wDemoteSelf.Code, wDemoteSelf.Body.String())
+	}
+	var errRespDemoteSelf map[string]string
+	if err := json.Unmarshal(wDemoteSelf.Body.Bytes(), &errRespDemoteSelf); err != nil {
+		t.Fatal(err)
+	}
+	if errRespDemoteSelf["error"] != "cannot demote yourself" {
+		t.Fatalf("expected %q, got %q", "cannot demote yourself", errRespDemoteSelf["error"])
 	}
 }

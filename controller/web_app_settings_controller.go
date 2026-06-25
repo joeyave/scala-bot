@@ -246,10 +246,6 @@ func (h *WebAppController) SettingsCreateJoinRequest(ctx *gin.Context) {
 			h.handleSettingsError(ctx, err)
 			return
 		}
-		if len(adminUserIDs) == 0 {
-			h.settingsConflict(ctx, "group has no administrators")
-			return
-		}
 	}
 
 	joinRequest, created, err := h.JoinRequestService.Create(service.CreateJoinRequestInput{
@@ -262,11 +258,20 @@ func (h *WebAppController) SettingsCreateJoinRequest(ctx *gin.Context) {
 		return
 	}
 
-	if h.IsTestBotAPI {
+	if len(adminUserIDs) == 0 || h.IsTestBotAPI {
 		joinRequest, user, err = h.JoinRequestService.Approve(joinRequest.ID, user.ID)
 		if err != nil {
 			h.handleSettingsError(ctx, err)
 			return
+		}
+
+		if len(adminUserIDs) == 0 {
+			band.AdminUserIDs = appendUniqueInt64(band.AdminUserIDs, user.ID)
+			band, err = h.BandService.UpdateOne(*band)
+			if err != nil {
+				h.handleSettingsError(ctx, err)
+				return
+			}
 		}
 
 		ctx.JSON(http.StatusOK, gin.H{
@@ -381,7 +386,7 @@ func (h *WebAppController) SettingsLeaveBand(ctx *gin.Context) {
 		return
 	}
 	if len(settingsUserBandIDs(user)) <= 1 {
-		h.handleSettingsError(ctx, service.ErrInvalidOperation)
+		h.badSettingsRequest(ctx, "cannot leave the only group")
 		return
 	}
 
@@ -392,7 +397,7 @@ func (h *WebAppController) SettingsLeaveBand(ctx *gin.Context) {
 	}
 	if containsInt64(adminUserIDs, user.ID) {
 		if len(adminUserIDs) <= 1 {
-			h.handleSettingsError(ctx, service.ErrInvalidOperation)
+			h.badSettingsRequest(ctx, "cannot leave the group: you are the last administrator")
 			return
 		}
 		band.AdminUserIDs = removeInt64(adminUserIDs, user.ID)
@@ -463,11 +468,11 @@ func (h *WebAppController) SettingsUpdateBandMember(ctx *gin.Context) {
 		band.AdminUserIDs = appendUniqueInt64(adminUserIDs, member.ID)
 	} else {
 		if member.ID == user.ID {
-			h.handleSettingsError(ctx, service.ErrInvalidOperation)
+			h.badSettingsRequest(ctx, "cannot demote yourself")
 			return
 		}
 		if containsInt64(adminUserIDs, member.ID) && len(adminUserIDs) <= 1 {
-			h.handleSettingsError(ctx, service.ErrInvalidOperation)
+			h.badSettingsRequest(ctx, "cannot demote the last administrator")
 			return
 		}
 		band.AdminUserIDs = removeInt64(adminUserIDs, member.ID)
@@ -504,7 +509,7 @@ func (h *WebAppController) SettingsRemoveBandMember(ctx *gin.Context) {
 	}
 	if containsInt64(adminUserIDs, member.ID) {
 		if len(adminUserIDs) <= 1 {
-			h.handleSettingsError(ctx, service.ErrInvalidOperation)
+			h.badSettingsRequest(ctx, "cannot remove the last administrator")
 			return
 		}
 		band.AdminUserIDs = removeInt64(adminUserIDs, member.ID)
@@ -668,25 +673,7 @@ func (h *WebAppController) settingsMemberResponse(member *entity.User, band *ent
 }
 
 func (h *WebAppController) adminUserIDsForBand(band *entity.Band) ([]int64, error) {
-	if len(band.AdminUserIDs) > 0 {
-		return uniqueInt64s(band.AdminUserIDs), nil
-	}
-
-	members, err := h.UserService.FindMultipleByBandID(band.ID)
-	if errors.Is(err, repository.ErrNotFound) {
-		return []int64{}, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	adminUserIDs := make([]int64, 0)
-	for _, member := range members {
-		if member.IsAdmin() {
-			adminUserIDs = appendUniqueInt64(adminUserIDs, member.ID)
-		}
-	}
-	return adminUserIDs, nil
+	return uniqueInt64s(band.AdminUserIDs), nil
 }
 
 func (h *WebAppController) notifyBandAdminsAboutJoinRequest(joinRequest *entity.JoinRequest, adminUserIDs []int64) {

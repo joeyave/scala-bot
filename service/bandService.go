@@ -40,8 +40,5 @@ func (s *BandService) IsUserAdmin(user *entity.User, band *entity.Band) bool {
 	if user == nil || band == nil {
 		return false
 	}
-	if len(band.AdminUserIDs) > 0 {
-		return band.IsBandAdmin(user.ID)
-	}
-	return user.BelongsToBand(band.ID) && user.IsAdmin()
+	return band.IsBandAdmin(user.ID)
 }

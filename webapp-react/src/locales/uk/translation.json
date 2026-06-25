@@ -129,5 +129,7 @@
   "settingsRoleChangeError": "Не вдалося змінити роль",
   "settingsExcludeError": "Не вдалося виключити учасника",
   "settingsLeaveError": "Не вдалося вийти з групи",
+  "settingsDemoteLastAdminError": "Не можна прибрати статус адміністратора у єдиного адміністратора. Спочатку призначте іншого адміністратора.",
+  "settingsExcludeLastAdminError": "Не можна виключити єдиного адміністратора. Спочатку призначте іншого адміністратора.",
   "settingsLeave": "Вийти"
 }

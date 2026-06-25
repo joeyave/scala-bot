@@ -111,8 +111,10 @@ const SettingsPageContent: FC = () => {
       hapticFeedback.notificationOccurred("error");
       const errMsg =
         err?.response?.data?.error || err?.message || t("settingsLeaveError");
-      if (errMsg === "invalid operation") {
+      if (errMsg === "cannot leave the group: you are the last administrator" || errMsg === "invalid operation") {
         window.alert(t("settingsLeaveOnlyAdminError"));
+      } else if (errMsg === "cannot leave the only group") {
+        window.alert(t("settingsLeaveLastGroupError"));
       } else {
         window.alert(errMsg);
       }

@@ -175,8 +175,10 @@ function SettingsMembersSection({ band }: { band: SettingsBand }) {
       hapticFeedback.notificationOccurred("error");
       const errMsg =
         err?.response?.data?.error || err?.message || t("settingsRoleChangeError");
-      if (errMsg === "invalid operation") {
+      if (errMsg === "cannot demote yourself" || errMsg === "invalid operation") {
         window.alert(t("settingsNoSelfDemote"));
+      } else if (errMsg === "cannot demote the last administrator") {
+        window.alert(t("settingsDemoteLastAdminError"));
       } else {
         window.alert(errMsg);
       }
@@ -194,7 +196,11 @@ function SettingsMembersSection({ band }: { band: SettingsBand }) {
       hapticFeedback.notificationOccurred("error");
       const errMsg =
         err?.response?.data?.error || err?.message || t("settingsExcludeError");
-      window.alert(errMsg);
+      if (errMsg === "cannot remove the last administrator") {
+        window.alert(t("settingsExcludeLastAdminError"));
+      } else {
+        window.alert(errMsg);
+      }
     },
   });
 

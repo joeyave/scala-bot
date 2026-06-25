@@ -16,7 +16,6 @@ import (
 type User struct {
 	ID           int64  `bson:"_id,omitempty" json:"id,omitempty"`
 	Name         string `bson:"name,omitempty" json:"name,omitempty"`
-	Role         string `bson:"role" json:"role,omitempty"`
 	LanguageCode string `bson:"languageCode,omitempty" json:"languageCode,omitempty"`
 
 	State         State         `bson:"state,omitempty" json:"state"`
@@ -27,10 +26,6 @@ type User struct {
 	Band   *Band         `bson:"band,omitempty" json:"-"`
 
 	BandIDs []bson.ObjectID `bson:"bandIDs,omitempty" json:"bandIDs,omitempty"`
-}
-
-func (u *User) IsAdmin() bool {
-	return u.Role == AdminRole
 }
 
 func (u *User) BelongsToBand(bandID bson.ObjectID) bool {
