@@ -266,6 +266,10 @@ var locales = map[string]map[string]string{
 		"ru": "Быстро",
 		"uk": "Швидко",
 	},
+	"button.beginning": {
+		"ru": "В начало",
+		"uk": "На початок",
+	},
 
 	"text.statsCaption": {
 		"ru": "Всего исполнений: <b>%d %s</b>\nДата последнего исполнения: <b>%s</b> (%s)",
@@ -570,6 +574,62 @@ var locales = map[string]map[string]string{
 	"text.joinRequestNotification": {
 		"ru": "👤 <b>%s</b> хочет вступить в вашу группу <b>%s</b>.",
 		"uk": "👤 <b>%s</b> хоче вступити до вашої групи <b>%s</b>.",
+	},
+	"text.joinRequestInsufficientRights": {
+		"ru": "Недостаточно прав.",
+		"uk": "Недостатньо прав.",
+	},
+	"text.joinRequestAlreadyProcessed": {
+		"ru": "Запрос уже обработан.",
+		"uk": "Запит уже оброблено.",
+	},
+	"text.joinRequestApprovedStatus": {
+		"ru": "✅ Запрос одобрен",
+		"uk": "✅ Запит схвалено",
+	},
+	"text.joinRequestDeclinedStatus": {
+		"ru": "❌ Запрос отклонен",
+		"uk": "❌ Запит відхилено",
+	},
+	"text.joinRequestApprovedNotification": {
+		"ru": "Ваш запрос на вступление в группу %s одобрен!",
+		"uk": "Ваш запит на вступ до групи %s схвалено!",
+	},
+	"text.joinRequestDeclinedNotification": {
+		"ru": "Ваш запрос на вступление в группу %s отклонен.",
+		"uk": "Ваш запит на вступ до групи %s відхилено.",
+	},
+	"text.joinRequestDecisionSummary": {
+		"ru": "%s\n\n👤 <b>%s</b>\nГруппа: <b>%s</b>",
+		"uk": "%s\n\n👤 <b>%s</b>\nГрупа: <b>%s</b>",
+	},
+	"text.audioStarting": {
+		"ru": "Начинаю...",
+		"uk": "Починаю...",
+	},
+	"text.audioQueuePosition": {
+		"ru": "Позиция в очереди: %d",
+		"uk": "Позиція в черзі: %d",
+	},
+	"text.audioError": {
+		"ru": "Ошибка: %v",
+		"uk": "Помилка: %v",
+	},
+	"text.audioDownloading": {
+		"ru": "Скачиваю...",
+		"uk": "Завантажую...",
+	},
+	"text.audioConverting": {
+		"ru": "Конвертирую...",
+		"uk": "Конвертую...",
+	},
+	"text.audioProcessing": {
+		"ru": "Обрабатываю...",
+		"uk": "Обробляю...",
+	},
+	"text.audioProcessingProgress": {
+		"ru": "Обрабатываю... %s",
+		"uk": "Обробляю... %s",
 	},
 	"button.approve": {
 		"ru": "✅ Принять",

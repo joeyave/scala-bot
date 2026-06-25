@@ -48,7 +48,7 @@ func (c *BotController) RoleCreate_ChoosePosition(bot *gotgbot.Bot, ctx *ext.Con
 
 	markup := &gotgbot.InlineKeyboardMarkup{}
 
-	markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: "В начало", CallbackData: util.CallbackData(state.RoleCreate, fmt.Sprintf("%s:%d", ctx.EffectiveMessage.Text, 0))}})
+	markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: txt.Get("button.beginning", ctx.EffectiveUser.LanguageCode), CallbackData: util.CallbackData(state.RoleCreate, fmt.Sprintf("%s:%d", ctx.EffectiveMessage.Text, 0))}})
 	for _, role := range user.Band.Roles {
 		markup.InlineKeyboard = append(markup.InlineKeyboard, []gotgbot.InlineKeyboardButton{{Text: role.Name, CallbackData: util.CallbackData(state.RoleCreate, fmt.Sprintf("%s:%d", ctx.EffectiveMessage.Text, role.Priority+1))}})
 	}

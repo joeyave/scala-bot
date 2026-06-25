@@ -1,6 +1,7 @@
 import { Cell, Checkbox, Section } from "@telegram-apps/telegram-ui";
 import { isRGB } from "@tma.js/sdk-react";
 import type { FC, ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Link } from "@/components/Link/Link.tsx";
 import { RGB } from "@/components/RGB/RGB.tsx";
@@ -21,40 +22,44 @@ export interface DisplayDataProps {
   rows: DisplayDataRow[];
 }
 
-export const DisplayData: FC<DisplayDataProps> = ({ header, rows }) => (
-  <Section header={header}>
-    {rows.map((item, idx) => {
-      let valueNode: ReactNode;
+export const DisplayData: FC<DisplayDataProps> = ({ header, rows }) => {
+  const { t } = useTranslation();
 
-      if (item.value === undefined) {
-        valueNode = <i>empty</i>;
-      } else {
-        if ("type" in item) {
-          valueNode = <Link to={item.value}>Open</Link>;
-        } else if (typeof item.value === "string") {
-          valueNode = isRGB(item.value) ? (
-            <RGB color={item.value} />
-          ) : (
-            item.value
-          );
-        } else if (typeof item.value === "boolean") {
-          valueNode = <Checkbox checked={item.value} disabled />;
+  return (
+    <Section header={header}>
+      {rows.map((item, idx) => {
+        let valueNode: ReactNode;
+
+        if (item.value === undefined) {
+          valueNode = <i>{t("displayDataEmpty")}</i>;
         } else {
-          valueNode = item.value;
+          if ("type" in item) {
+            valueNode = <Link to={item.value}>{t("displayDataOpen")}</Link>;
+          } else if (typeof item.value === "string") {
+            valueNode = isRGB(item.value) ? (
+              <RGB color={item.value} />
+            ) : (
+              item.value
+            );
+          } else if (typeof item.value === "boolean") {
+            valueNode = <Checkbox checked={item.value} disabled />;
+          } else {
+            valueNode = item.value;
+          }
         }
-      }
 
-      return (
-        <Cell
-          className={e("line")}
-          subhead={item.title}
-          readOnly
-          multiline={true}
-          key={idx}
-        >
-          <span className={e("line-value")}>{valueNode}</span>
-        </Cell>
-      );
-    })}
-  </Section>
-);
+        return (
+          <Cell
+            className={e("line")}
+            subhead={item.title}
+            readOnly
+            multiline={true}
+            key={idx}
+          >
+            <span className={e("line-value")}>{valueNode}</span>
+          </Cell>
+        );
+      })}
+    </Section>
+  );
+};

@@ -2,12 +2,13 @@ package controller
 
 import (
 	"errors"
-	"fmt"
 	"html"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
+	"github.com/joeyave/scala-bot/entity"
 	"github.com/joeyave/scala-bot/service"
+	"github.com/joeyave/scala-bot/txt"
 	"github.com/joeyave/scala-bot/util"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -41,22 +42,27 @@ func (c *BotController) decideJoinRequest(bot *gotgbot.Bot, ctx *ext.Context, ap
 	if err != nil {
 		return err
 	}
+	adminLang := admin.LanguageCode
 	if !c.BandService.IsUserAdmin(admin, band) {
 		_, _ = ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
-			Text:      "Недостаточно прав.",
+			Text:      txt.Get("text.joinRequestInsufficientRights", adminLang),
 			ShowAlert: true,
 		})
 		return nil
 	}
 
+	var requestUser *entity.User
 	if approve {
-		request, _, err = c.JoinRequestService.Approve(requestID, admin.ID)
+		request, requestUser, err = c.JoinRequestService.Approve(requestID, admin.ID)
 	} else {
 		request, err = c.JoinRequestService.Decline(requestID, admin.ID)
+		if err == nil {
+			requestUser, err = c.UserService.FindOneByID(request.UserID)
+		}
 	}
 	if errors.Is(err, service.ErrInvalidOperation) {
 		_, _ = ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
-			Text: "Запрос уже обработан.",
+			Text: txt.Get("text.joinRequestAlreadyProcessed", adminLang),
 		})
 		return nil
 	}
@@ -64,15 +70,21 @@ func (c *BotController) decideJoinRequest(bot *gotgbot.Bot, ctx *ext.Context, ap
 		return err
 	}
 
-	statusText := "✅ Запрос одобрен"
-	userNotification := fmt.Sprintf("Ваш запрос на вступление в группу %s одобрен!", request.BandName)
-	if !approve {
-		statusText = "❌ Запрос отклонен"
-		userNotification = fmt.Sprintf("Ваш запрос на вступление в группу %s отклонен.", request.BandName)
+	userLang := ""
+	if requestUser != nil {
+		userLang = requestUser.LanguageCode
 	}
 
-	_, _, editErr := ctx.EffectiveMessage.EditText(bot, fmt.Sprintf(
-		"%s\n\n👤 <b>%s</b>\nГруппа: <b>%s</b>",
+	statusText := txt.Get("text.joinRequestApprovedStatus", adminLang)
+	userNotification := txt.Get("text.joinRequestApprovedNotification", userLang, request.BandName)
+	if !approve {
+		statusText = txt.Get("text.joinRequestDeclinedStatus", adminLang)
+		userNotification = txt.Get("text.joinRequestDeclinedNotification", userLang, request.BandName)
+	}
+
+	_, _, editErr := ctx.EffectiveMessage.EditText(bot, txt.Get(
+		"text.joinRequestDecisionSummary",
+		adminLang,
 		statusText,
 		html.EscapeString(request.UserName),
 		html.EscapeString(request.BandName),

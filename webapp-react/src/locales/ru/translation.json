@@ -135,5 +135,8 @@
   "settingsActiveToday": "Активен сегодня",
   "settingsActiveYesterday": "Активен вчера",
   "settingsActiveDate": "Активен {{date}}",
-  "settingsNeverActive": "Ещё не пользовался ботом"
+  "settingsNeverActive": "Ещё не пользовался ботом",
+  "displayDataEmpty": "пусто",
+  "displayDataOpen": "Открыть",
+  "unhandledError": "Произошла необработанная ошибка:"
 }

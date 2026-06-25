@@ -1,11 +1,15 @@
+import { useTranslation } from "react-i18next";
+
 import { App } from "@/components/App.tsx";
 import { ErrorBoundary } from "@/components/ErrorBoundary.tsx";
 
 function ErrorBoundaryError({ error }: { error: unknown }) {
+  const { t } = useTranslation();
+
   // todo: use prettier screen.
   return (
     <div>
-      <p>An unhandled error occurred:</p>
+      <p>{t("unhandledError")}</p>
       <blockquote>
         <code>
           {error instanceof Error
@@ -21,7 +25,7 @@ function ErrorBoundaryError({ error }: { error: unknown }) {
 
 export function Root() {
   return (
-    <ErrorBoundary  fallback={ErrorBoundaryError}>
+    <ErrorBoundary fallback={ErrorBoundaryError}>
       <App />
     </ErrorBoundary>
   );

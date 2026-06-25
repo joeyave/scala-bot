@@ -199,7 +199,8 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 		return err
 	}
 
-	processingMsg, _, err := ctx.EffectiveMessage.EditText(bot, "Starting...", &gotgbot.EditMessageTextOpts{})
+	lang := ctx.EffectiveUser.LanguageCode
+	processingMsg, _, err := ctx.EffectiveMessage.EditText(bot, txt.Get("text.audioStarting", lang), &gotgbot.EditMessageTextOpts{})
 	if err != nil {
 		return err
 	}
@@ -217,7 +218,7 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 			case <-ticker.C:
 				pos := sem.Position(id) + 1
 				if pos != prevPos {
-					_, _, _ = processingMsg.EditText(bot, fmt.Sprintf("Position in queue: %d", pos), nil)
+					_, _, _ = processingMsg.EditText(bot, txt.Get("text.audioQueuePosition", lang, pos), nil)
 				}
 				prevPos = pos
 			}
@@ -234,9 +235,9 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 		weight = mb * coef
 	}
 
-	converted, newFileBytes, err := c.transposeAudio(bot, ctx, stopSendingQueueMessages, sem, weight, user.CallbackCache.AudioMimeType, user.CallbackCache.AudioFileId, semitones, fine, processingMsg)
+	converted, newFileBytes, err := c.transposeAudio(bot, ctx, stopSendingQueueMessages, sem, weight, user.CallbackCache.AudioMimeType, user.CallbackCache.AudioFileId, semitones, fine, processingMsg, lang)
 	if err != nil {
-		_, _, _ = processingMsg.EditText(bot, fmt.Sprintf("Error: %v", err), nil)
+		_, _, _ = processingMsg.EditText(bot, txt.Get("text.audioError", lang, err), nil)
 
 		return err
 	}
@@ -285,7 +286,7 @@ func (c *BotController) TransposeAudio(bot *gotgbot.Bot, ctx *ext.Context) error
 	return nil
 }
 
-func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQueueMessages context.CancelFunc, sem *mysemaphore.Weighted, weight int64, mimeType, audioFileID, semitones string, fine bool, processingMsg *gotgbot.Message) (bool, []byte, error) {
+func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQueueMessages context.CancelFunc, sem *mysemaphore.Weighted, weight int64, mimeType, audioFileID, semitones string, fine bool, processingMsg *gotgbot.Message, lang string) (bool, []byte, error) {
 	err := sem.Acquire(context.TODO(), weight, ctx.EffectiveMessage.MessageId)
 	if err != nil {
 		sem.Release(weight)
@@ -295,7 +296,7 @@ func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQ
 	defer sem.Release(weight)
 	stopQueueMessages()
 
-	_, _, _ = processingMsg.EditText(bot, "Downloading...", nil)
+	_, _, _ = processingMsg.EditText(bot, txt.Get("text.audioDownloading", lang), nil)
 
 	f, err := bot.GetFile(audioFileID, nil)
 	if err != nil {
@@ -316,7 +317,7 @@ func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQ
 
 	converted := false
 	if mimeType == "audio/mp4" {
-		_, _, _ = processingMsg.EditText(bot, "Converting...", nil)
+		_, _, _ = processingMsg.EditText(bot, txt.Get("text.audioConverting", lang), nil)
 		converted = true
 		if err := inputTmpFile.Close(); err != nil {
 			return false, nil, err
@@ -341,7 +342,7 @@ func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQ
 		}
 	}
 
-	_, _, _ = processingMsg.EditText(bot, "Processing...", nil)
+	_, _, _ = processingMsg.EditText(bot, txt.Get("text.audioProcessing", lang), nil)
 
 	outTmpFile, err := os.CreateTemp("", "output_audio_*")
 	if err != nil {
@@ -375,7 +376,7 @@ func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQ
 		return false, nil, err
 	}
 
-	go sendProgressToUser(stderr, bot, processingMsg)
+	go sendProgressToUser(stderr, bot, processingMsg, lang)
 
 	if err := cmd.Wait(); err != nil {
 		return false, nil, err
@@ -388,7 +389,7 @@ func (c *BotController) transposeAudio(bot *gotgbot.Bot, ctx *ext.Context, stopQ
 	return converted, newFileBytes, nil
 }
 
-func sendProgressToUser(stderr io.Reader, bot *gotgbot.Bot, processingMsg *gotgbot.Message) {
+func sendProgressToUser(stderr io.Reader, bot *gotgbot.Bot, processingMsg *gotgbot.Message, lang string) {
 	scanner := bufio.NewScanner(stderr)
 	scanner.Split(bufio.ScanWords)
 
@@ -417,7 +418,7 @@ func sendProgressToUser(stderr io.Reader, bot *gotgbot.Bot, processingMsg *gotgb
 
 			select {
 			case <-ticker.C:
-				_, _, _ = processingMsg.EditText(bot, "Processing... "+scanner.Text(), nil)
+				_, _, _ = processingMsg.EditText(bot, txt.Get("text.audioProcessingProgress", lang, scanner.Text()), nil)
 				// fmt.Println(wordsScanner.Text())
 			default:
 			}
