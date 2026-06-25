@@ -509,62 +509,118 @@ func (c *BotController) Menu(bot *gotgbot.Bot, ctx *ext.Context) error {
 }
 
 func (c *BotController) Error(bot *gotgbot.Bot, ctx *ext.Context, botErr error) ext.DispatcherAction {
-	log.Error().Msgf("Error handling update: %v", botErr)
+	log.Error().Err(botErr).Msg("Error handling update")
 
-	user, err := c.UserService.FindOneByID(ctx.EffectiveUser.Id)
-	if err != nil {
-		log.Error().Err(err).Msg("Error!")
-		return ext.DispatcherActionEndGroups
+	var user *entity.User
+	if ctx != nil && ctx.EffectiveUser != nil {
+		var err error
+		user, err = c.UserService.FindOneByID(ctx.EffectiveUser.Id)
+		if err != nil {
+			log.Error().Err(err).Msg("Error finding user while handling bot error")
+		}
 	}
 
-	if ctx.CallbackQuery != nil {
+	c.sendErrorAlert(bot, ctx, botErr, user)
+
+	lang := ""
+	if ctx != nil && ctx.EffectiveUser != nil {
+		lang = ctx.EffectiveUser.LanguageCode
+	}
+
+	if ctx != nil && ctx.CallbackQuery != nil {
 		_, _ = ctx.CallbackQuery.Answer(bot, &gotgbot.AnswerCallbackQueryOpts{
-			Text: txt.Get("text.serverError", ctx.EffectiveUser.LanguageCode),
+			Text: txt.Get("text.serverError", lang),
 		})
-		// if err != nil {
-		//	log.Error().Err(err).Msg("Error!")
-		//	return ext.DispatcherActionEndGroups
-		//}
-	} else if ctx.InlineQuery != nil {
+	} else if ctx != nil && ctx.InlineQuery != nil {
 		_, _ = ctx.InlineQuery.Answer(bot, nil, &gotgbot.AnswerInlineQueryOpts{
 			CacheTime: new(int64(1)),
 		})
-	} else if ctx.EffectiveChat != nil {
-		_, err := ctx.EffectiveChat.SendMessage(bot, txt.Get("text.serverError", ctx.EffectiveUser.LanguageCode), nil)
+	} else if ctx != nil && ctx.EffectiveChat != nil {
+		_, err := ctx.EffectiveChat.SendMessage(bot, txt.Get("text.serverError", lang), nil)
 		if err != nil {
-			log.Error().Err(err).Msg("Error!")
+			log.Error().Err(err).Msg("Error sending server error message")
 			return ext.DispatcherActionEndGroups
 		}
-		user.State = entity.State{}
-		_, err = c.UserService.UpdateOne(*user)
-		if err != nil {
-			log.Error().Err(err).Msg("Error!")
-			return ext.DispatcherActionEndGroups
-		}
-	}
-
-	// todo: send message to the logs channel
-	logsChannelID, err := strconv.ParseInt(os.Getenv("BOT_ALERTS_CHANNEL_ID"), 10, 64)
-	if err == nil {
-		userJsonBytes, err := json.Marshal(user)
-		if err != nil {
-			log.Error().Err(err).Msg("Error!")
-			return ext.DispatcherActionEndGroups
-		}
-
-		_, err = bot.SendMessage(logsChannelID, fmt.Sprintf("Error handling update!\n<pre>error=%v</pre>\n<pre>user=%s</pre>", botErr, string(userJsonBytes)), &gotgbot.SendMessageOpts{
-			LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
-				IsDisabled: true,
-			},
-			ParseMode: "HTML",
-		})
-		if err != nil {
-			log.Error().Err(err).Msg("Error!")
-			return ext.DispatcherActionEndGroups
+		if user != nil {
+			user.State = entity.State{}
+			_, err = c.UserService.UpdateOne(*user)
+			if err != nil {
+				log.Error().Err(err).Msg("Error resetting user state")
+				return ext.DispatcherActionEndGroups
+			}
 		}
 	}
 
 	return ext.DispatcherActionEndGroups
+}
+
+func (c *BotController) sendErrorAlert(bot *gotgbot.Bot, ctx *ext.Context, botErr error, user *entity.User) {
+	logsChannelIDStr := strings.TrimSpace(os.Getenv("BOT_ALERTS_CHANNEL_ID"))
+	if logsChannelIDStr == "" {
+		log.Warn().Msg("BOT_ALERTS_CHANNEL_ID is empty; cannot send bot error alert")
+		return
+	}
+
+	logsChannelID, err := strconv.ParseInt(logsChannelIDStr, 10, 64)
+	if err != nil {
+		log.Error().Err(err).Str("BOT_ALERTS_CHANNEL_ID", logsChannelIDStr).Msg("Invalid BOT_ALERTS_CHANNEL_ID; cannot send bot error alert")
+		return
+	}
+
+	var userJSON string
+	if user != nil {
+		userJSONBytes, err := json.Marshal(user)
+		if err != nil {
+			log.Error().Err(err).Msg("Error marshaling user for bot error alert")
+			userJSON = fmt.Sprintf("marshal error: %v", err)
+		} else {
+			userJSON = string(userJSONBytes)
+		}
+	}
+
+	message := truncateTelegramMessage(fmt.Sprintf("Error handling update!\nerror=%v%s",
+		botErr,
+		formatErrorAlertContext(ctx, userJSON),
+	))
+
+	_, err = bot.SendMessage(logsChannelID, message, &gotgbot.SendMessageOpts{
+		LinkPreviewOptions: &gotgbot.LinkPreviewOptions{
+			IsDisabled: true,
+		},
+	})
+	if err != nil {
+		log.Error().Err(err).Msg("Error sending bot error alert")
+	}
+}
+
+func truncateTelegramMessage(message string) string {
+	const maxTelegramMessageLength = 4096
+	if len(message) <= maxTelegramMessageLength {
+		return message
+	}
+	return message[:maxTelegramMessageLength-20] + "\n... truncated"
+}
+
+func formatErrorAlertContext(ctx *ext.Context, userJSON string) string {
+	var b strings.Builder
+	if ctx != nil {
+		if ctx.EffectiveUser != nil {
+			fmt.Fprintf(&b, "\neffectiveUserID=%d lang=%s", ctx.EffectiveUser.Id, ctx.EffectiveUser.LanguageCode)
+		}
+		if ctx.EffectiveChat != nil {
+			fmt.Fprintf(&b, "\nchatID=%d", ctx.EffectiveChat.Id)
+		}
+		if ctx.CallbackQuery != nil {
+			fmt.Fprintf(&b, "\ncallbackData=%s", ctx.CallbackQuery.Data)
+		}
+		if ctx.EffectiveMessage != nil {
+			fmt.Fprintf(&b, "\nmessageID=%d", ctx.EffectiveMessage.MessageId)
+		}
+	}
+	if userJSON != "" {
+		fmt.Fprintf(&b, "\nuser=%s", userJSON)
+	}
+	return b.String()
 }
 
 func (c *BotController) buildSongsMediaGroup(songs []*entity.Song, downloadAll bool) ([]gotgbot.InputMedia, []io.Closer, error) {
