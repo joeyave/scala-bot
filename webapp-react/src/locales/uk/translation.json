@@ -131,5 +131,9 @@
   "settingsLeaveError": "Не вдалося вийти з групи",
   "settingsDemoteLastAdminError": "Не можна прибрати статус адміністратора у єдиного адміністратора. Спочатку призначте іншого адміністратора.",
   "settingsExcludeLastAdminError": "Не можна виключити єдиного адміністратора. Спочатку призначте іншого адміністратора.",
-  "settingsLeave": "Вийти"
+  "settingsLeave": "Вийти",
+  "settingsActiveToday": "Активний сьогодні",
+  "settingsActiveYesterday": "Активний вчора",
+  "settingsActiveDate": "Активний {{date}}",
+  "settingsNeverActive": "Ще не користувався ботом"
 }

@@ -25,11 +25,12 @@ import (
 )
 
 type SettingsUserResponse struct {
-	ID           int64  `json:"id"`
-	Name         string `json:"name"`
-	LanguageCode string `json:"languageCode,omitempty"`
-	ActiveBandID string `json:"activeBandId,omitempty"`
-	AvatarFileID string `json:"avatarFileId,omitempty"`
+	ID           int64     `json:"id"`
+	Name         string    `json:"name"`
+	LanguageCode string    `json:"languageCode,omitempty"`
+	ActiveBandID string    `json:"activeBandId,omitempty"`
+	AvatarFileID string    `json:"avatarFileId,omitempty"`
+	LastActiveAt time.Time `json:"lastActiveAt,omitempty"`
 }
 
 type SettingsBandResponse struct {
@@ -46,12 +47,13 @@ type SettingsBandResponse struct {
 }
 
 type SettingsMemberResponse struct {
-	ID           int64  `json:"id"`
-	Name         string `json:"name"`
-	IsAdmin      bool   `json:"isAdmin"`
-	IsSelf       bool   `json:"isSelf"`
-	IsActive     bool   `json:"isActive"`
-	AvatarFileID string `json:"avatarFileId,omitempty"`
+	ID           int64     `json:"id"`
+	Name         string    `json:"name"`
+	IsAdmin      bool      `json:"isAdmin"`
+	IsSelf       bool      `json:"isSelf"`
+	IsActive     bool      `json:"isActive"`
+	AvatarFileID string    `json:"avatarFileId,omitempty"`
+	LastActiveAt time.Time `json:"lastActiveAt,omitempty"`
 }
 
 type SettingsJoinRequestResponse struct {
@@ -665,6 +667,7 @@ func (h *WebAppController) settingsUserResponse(user *entity.User) SettingsUserR
 		ID:           user.ID,
 		Name:         settingsDisplayName(user),
 		LanguageCode: user.LanguageCode,
+		LastActiveAt: user.LastActiveAt,
 	}
 	if !user.BandID.IsZero() {
 		response.ActiveBandID = user.BandID.Hex()
@@ -715,11 +718,12 @@ func (h *WebAppController) settingsMemberResponses(currentUser *entity.User, ban
 
 func (h *WebAppController) settingsMemberResponse(member *entity.User, band *entity.Band, currentUserID int64) SettingsMemberResponse {
 	return SettingsMemberResponse{
-		ID:       member.ID,
-		Name:     member.Name,
-		IsAdmin:  h.BandService.IsUserAdmin(member, band),
-		IsSelf:   member.ID == currentUserID,
-		IsActive: member.BandID == band.ID,
+		ID:           member.ID,
+		Name:         member.Name,
+		IsAdmin:      h.BandService.IsUserAdmin(member, band),
+		IsSelf:       member.ID == currentUserID,
+		IsActive:     member.BandID == band.ID,
+		LastActiveAt: member.LastActiveAt,
 	}
 }
 

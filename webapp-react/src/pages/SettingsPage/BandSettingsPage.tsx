@@ -205,6 +205,29 @@ function SettingsMembersSection({ band }: { band: SettingsBand }) {
     },
   });
 
+  const sortedMembers = useMemo(() => {
+    const list = membersQuery.data?.members ?? [];
+    return [...list].sort((a, b) => {
+      // 1. Current user (isSelf) always goes first
+      if (a.isSelf && !b.isSelf) return -1;
+      if (!a.isSelf && b.isSelf) return 1;
+
+      // 2. Sort by lastActiveAt (more recently active goes first)
+      const timeA = a.lastActiveAt && !a.lastActiveAt.startsWith("0001-01-01")
+        ? new Date(a.lastActiveAt).getTime()
+        : 0;
+      const timeB = b.lastActiveAt && !b.lastActiveAt.startsWith("0001-01-01")
+        ? new Date(b.lastActiveAt).getTime()
+        : 0;
+      if (timeA !== timeB) {
+        return timeB - timeA;
+      }
+
+      // 3. Alphabetical order by name
+      return (a.name || "").localeCompare(b.name || "");
+    });
+  }, [membersQuery.data?.members]);
+
   if (membersQuery.isLoading) {
     return (
       <SectionBlock title={t("settingsMembers")}>
@@ -215,17 +238,15 @@ function SettingsMembersSection({ band }: { band: SettingsBand }) {
     );
   }
 
-  const members = membersQuery.data?.members ?? [];
-
   return (
     <SectionBlock title={t("settingsMembers")}>
-      {members.length > 0 ? (
+      {sortedMembers.length > 0 ? (
         <div className="overflow-hidden rounded-2xl bg-[var(--tg-theme-section-bg-color,#ffffff)]">
-          {members.map((member, index) => (
+          {sortedMembers.map((member, index) => (
             <MemberRow
               key={member.id}
               member={member}
-              showDivider={index < members.length - 1}
+              showDivider={index < sortedMembers.length - 1}
               roleLabel={member.isAdmin ? t("settingsAdmin") : t("settingsMember")}
               selfLabel={t("settingsIsSelf")}
               menu={
@@ -279,6 +300,35 @@ function SettingsMembersSection({ band }: { band: SettingsBand }) {
   );
 }
 
+function formatLastActive(lastActiveAt: string | undefined, t: any, lang: string): string {
+  if (!lastActiveAt || lastActiveAt.startsWith("0001-01-01")) {
+    return ` • ${t("settingsNeverActive")}`;
+  }
+
+  const date = new Date(lastActiveAt);
+  const now = new Date();
+
+  // Check if today
+  if (date.toDateString() === now.toDateString()) {
+    return ` • ${t("settingsActiveToday")}`;
+  }
+
+  // Check if yesterday
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) {
+    return ` • ${t("settingsActiveYesterday")}`;
+  }
+
+  // Localized date format: "20 июня" or "20 червня"
+  const formattedDate = date.toLocaleDateString(lang === "uk" ? "uk-UA" : "ru-RU", {
+    day: "numeric",
+    month: "long",
+  });
+
+  return ` • ${t("settingsActiveDate", { date: formattedDate })}`;
+}
+
 function MemberRow({
   member,
   showDivider,
@@ -292,6 +342,8 @@ function MemberRow({
   selfLabel: string;
   menu: ReactNode;
 }) {
+  const { t, i18n } = useTranslation();
+
   return (
     <div
       className={`flex min-h-[64px] items-center gap-3 px-4 py-3 ${
@@ -305,6 +357,7 @@ function MemberRow({
         </div>
         <div className="mt-1 text-sm font-medium text-[var(--tg-theme-hint-color,#8e8e93)]">
           {member.isSelf ? `${roleLabel} (${selfLabel.toLowerCase()})` : roleLabel}
+          {formatLastActive(member.lastActiveAt, t, i18n.language)}
         </div>
       </div>
       {menu}

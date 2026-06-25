@@ -79,6 +79,7 @@ func (c *BotController) RegisterUser(bot *gotgbot.Bot, ctx *ext.Context) error {
 
 	user.Name = strings.TrimSpace(fmt.Sprintf("%s %s", ctx.EffectiveUser.FirstName, ctx.EffectiveUser.LastName))
 	user.LanguageCode = ctx.EffectiveUser.LanguageCode
+	user.LastActiveAt = time.Now()
 
 	if user.BandID == bson.NilObjectID || user.Band == nil {
 		markup := gotgbot.ReplyKeyboardMarkup{

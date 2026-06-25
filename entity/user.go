@@ -14,9 +14,10 @@ import (
 )
 
 type User struct {
-	ID           int64  `bson:"_id,omitempty" json:"id,omitempty"`
-	Name         string `bson:"name,omitempty" json:"name,omitempty"`
-	LanguageCode string `bson:"languageCode,omitempty" json:"languageCode,omitempty"`
+	ID           int64     `bson:"_id,omitempty" json:"id,omitempty"`
+	Name         string    `bson:"name,omitempty" json:"name,omitempty"`
+	LanguageCode string    `bson:"languageCode,omitempty" json:"languageCode,omitempty"`
+	LastActiveAt time.Time `bson:"lastActiveAt,omitempty" json:"lastActiveAt,omitempty"`
 
 	State         State         `bson:"state,omitempty" json:"state"`
 	Cache         Cache         `bson:"cache" json:"-"`
