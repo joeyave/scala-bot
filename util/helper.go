@@ -9,7 +9,17 @@ import (
 )
 
 func File(bot *gotgbot.Bot, file *gotgbot.File) (io.ReadCloser, error) {
-	url := bot.GetAPIURL(nil) + "/file/bot" + bot.Token + "/" + file.FilePath
+	isTestEnv := false
+	if baseClient, ok := bot.BotClient.(*gotgbot.BaseBotClient); ok {
+		isTestEnv = baseClient.UseTestEnvironment
+	}
+
+	var url string
+	if isTestEnv {
+		url = bot.GetAPIURL(nil) + "/file/bot" + bot.Token + "/test/" + file.FilePath
+	} else {
+		url = bot.GetAPIURL(nil) + "/file/bot" + bot.Token + "/" + file.FilePath
+	}
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {

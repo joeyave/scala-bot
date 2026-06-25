@@ -403,6 +403,7 @@ func main() {
 	router.GET("/api/settings/bands/:id/members", webAppController.SettingsBandMembers)
 	router.PATCH("/api/settings/bands/:id/members/:memberId", webAppController.SettingsUpdateBandMember)
 	router.DELETE("/api/settings/bands/:id/members/:memberId", webAppController.SettingsRemoveBandMember)
+	router.GET("/api/users/:memberId/avatar", webAppController.SettingsUserAvatar)
 
 	router.GET("/api/v2/drive-files/search", driveFileController.SearchV2)
 	router.GET("/api/v2/songs/find-by-drive-file-id", driveFileController.FindByDriveFileIDV2)

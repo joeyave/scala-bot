@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"io"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
@@ -27,6 +29,7 @@ type SettingsUserResponse struct {
 	Name         string `json:"name"`
 	LanguageCode string `json:"languageCode,omitempty"`
 	ActiveBandID string `json:"activeBandId,omitempty"`
+	AvatarFileID string `json:"avatarFileId,omitempty"`
 }
 
 type SettingsBandResponse struct {
@@ -43,11 +46,12 @@ type SettingsBandResponse struct {
 }
 
 type SettingsMemberResponse struct {
-	ID       int64  `json:"id"`
-	Name     string `json:"name"`
-	IsAdmin  bool   `json:"isAdmin"`
-	IsSelf   bool   `json:"isSelf"`
-	IsActive bool   `json:"isActive"`
+	ID           int64  `json:"id"`
+	Name         string `json:"name"`
+	IsAdmin      bool   `json:"isAdmin"`
+	IsSelf       bool   `json:"isSelf"`
+	IsActive     bool   `json:"isActive"`
+	AvatarFileID string `json:"avatarFileId,omitempty"`
 }
 
 type SettingsJoinRequestResponse struct {
@@ -109,9 +113,22 @@ func (h *WebAppController) SettingsMe(ctx *gin.Context) {
 		return
 	}
 
+	var avatarFileID string
+	if h.Bot != nil {
+		photos, err := h.Bot.GetUserProfilePhotos(user.ID, &gotgbot.GetUserProfilePhotosOpts{
+			Limit: 1,
+		})
+		if err == nil && photos != nil && len(photos.Photos) > 0 && len(photos.Photos[0]) > 0 {
+			avatarFileID = photos.Photos[0][0].FileUniqueId
+		}
+	}
+
+	userResp := h.settingsUserResponse(user)
+	userResp.AvatarFileID = avatarFileID
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"data": SettingsMeResponse{
-			User:  h.settingsUserResponse(user),
+			User:  userResp,
 			Bands: h.settingsBandResponses(user, bands, pendingRequests),
 		},
 	})
@@ -434,9 +451,43 @@ func (h *WebAppController) SettingsBandMembers(ctx *gin.Context) {
 		return
 	}
 
+	// Query Telegram in parallel for all members to get their current avatar file IDs on-the-fly.
+	avatarFileIDs := make(map[int64]string)
+	if h.Bot != nil {
+		var wg sync.WaitGroup
+		var mu sync.Mutex
+		for _, member := range members {
+			wg.Add(1)
+			go func(m *entity.User) {
+				defer wg.Done()
+				photos, err := h.Bot.GetUserProfilePhotos(m.ID, &gotgbot.GetUserProfilePhotosOpts{
+					Limit: 1,
+				})
+				if err != nil {
+					log.Warn().Err(err).Int64("userID", m.ID).Msg("failed to fetch user profile photos from Telegram in parallel")
+					return
+				}
+
+				if photos != nil && len(photos.Photos) > 0 && len(photos.Photos[0]) > 0 {
+					mu.Lock()
+					avatarFileIDs[m.ID] = photos.Photos[0][0].FileUniqueId
+					mu.Unlock()
+				}
+			}(member)
+		}
+		wg.Wait()
+	}
+
+	memberResponses := h.settingsMemberResponses(user, band, members)
+	for i, member := range members {
+		if id, ok := avatarFileIDs[member.ID]; ok {
+			memberResponses[i].AvatarFileID = id
+		}
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"data": SettingsMembersResponse{
-			Members: h.settingsMemberResponses(user, band, members),
+			Members: memberResponses,
 		},
 	})
 }
@@ -866,4 +917,54 @@ func containsInt64(values []int64, value int64) bool {
 		}
 	}
 	return false
+}
+
+func (h *WebAppController) SettingsUserAvatar(ctx *gin.Context) {
+	if h.Bot == nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "bot is not configured"})
+		return
+	}
+
+	memberID, err := strconv.ParseInt(ctx.Param("memberId"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid member id"})
+		return
+	}
+
+	photos, err := h.Bot.GetUserProfilePhotos(memberID, &gotgbot.GetUserProfilePhotosOpts{
+		Limit: 1,
+	})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if photos == nil || len(photos.Photos) == 0 || len(photos.Photos[0]) == 0 {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "no avatar found"})
+		return
+	}
+
+	// Use the smallest size (index 0) for the avatar
+	photoSize := photos.Photos[0][0]
+
+	file, err := h.Bot.GetFile(photoSize.FileId, nil)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	stream, err := util.File(h.Bot, file)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer stream.Close()
+
+	ctx.Header("Cache-Control", "public, max-age=2592000") // Cache for 30 days (1 month)
+	ctx.Header("Content-Type", "image/jpeg")
+
+	_, err = io.Copy(ctx.Writer, stream)
+	if err != nil {
+		log.Warn().Err(err).Int64("memberID", memberID).Msg("failed to stream avatar to client")
+	}
 }

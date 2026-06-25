@@ -19,6 +19,7 @@ import { FC, ReactNode, useEffect, useMemo } from "react";
 import { ThreeDots } from "react-bootstrap-icons";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
+import { UserAvatar } from "./SettingsPage.tsx";
 
 const BandSettingsPage: FC = () => {
   const { t } = useTranslation();
@@ -297,6 +298,7 @@ function MemberRow({
         showDivider ? "border-b border-black/[0.06]" : ""
       }`}
     >
+      <UserAvatar name={member.name || `User ${member.id}`} userId={member.id} size="small" avatarFileId={member.avatarFileId} />
       <div className="min-w-0 flex-1">
         <div className="truncate text-base font-medium text-[var(--tg-theme-text-color,#000000)]">
           {member.name || `User ${member.id}`}

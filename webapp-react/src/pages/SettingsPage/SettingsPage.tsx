@@ -150,6 +150,7 @@ const SettingsPageContent: FC = () => {
         <UserProfile
           name={meQuery.data.user.name || "Telegram user"}
           userId={meQuery.data.user.id}
+          avatarFileId={meQuery.data.user.avatarFileId}
         />
 
         {myBands.length > 0 ? (
@@ -248,10 +249,10 @@ const SettingsPageContent: FC = () => {
   );
 };
 
-function UserProfile({ name, userId }: { name: string; userId: number }) {
+function UserProfile({ name, userId, avatarFileId }: { name: string; userId: number; avatarFileId?: string }) {
   return (
     <div className="flex items-center gap-3 px-4 py-4">
-      <UserAvatar name={name} userId={userId} />
+      <UserAvatar name={name} userId={userId} avatarFileId={avatarFileId} />
       <div className="min-w-0 truncate text-xl font-semibold text-[var(--tg-theme-text-color,#000000)]">
         {name}
       </div>
@@ -491,7 +492,19 @@ function getHashSearch(): string {
   return query ? `?${query}` : "";
 }
 
-function UserAvatar({ name, userId }: { name: string; userId: number }) {
+export function UserAvatar({
+  name,
+  userId,
+  size = "large",
+  avatarFileId,
+}: {
+  name: string;
+  userId: number;
+  size?: "small" | "large";
+  avatarFileId?: string;
+}) {
+  const [imgError, setImgError] = useState(false);
+
   const palettes = [
     "bg-[#2f80ed] text-white",
     "bg-[#27ae60] text-white",
@@ -500,9 +513,25 @@ function UserAvatar({ name, userId }: { name: string; userId: number }) {
     "bg-[#f2c94c] text-[#1f2933]",
   ];
   const palette = palettes[Math.abs(userId) % palettes.length];
+  const sizeClasses =
+    size === "small" ? "h-10 w-10 text-sm" : "h-14 w-14 text-lg";
+
+  // If there's a valid avatar hash and no loading error, render the image
+  if (avatarFileId && !imgError) {
+    return (
+      <img
+        src={`/api/users/${userId}/avatar?v=${avatarFileId}`}
+        alt={name}
+        onError={() => setImgError(true)}
+        className={`shrink-0 rounded-full object-cover ${sizeClasses}`}
+      />
+    );
+  }
+
+  // Otherwise, fall back to the colored initials placeholder directly
   return (
     <div
-      className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-lg font-semibold ${palette}`}
+      className={`flex shrink-0 items-center justify-center rounded-full font-semibold ${sizeClasses} ${palette}`}
     >
       {getInitials(name)}
     </div>

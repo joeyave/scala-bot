@@ -155,6 +155,17 @@ func (r *UserRepository) UpdateOne(user entity.User) (*entity.User, error) {
 		"$set": user,
 	}
 
+	unsetFields := bson.M{}
+	if user.BandID.IsZero() {
+		unsetFields["bandId"] = ""
+	}
+	if len(user.BandIDs) == 0 {
+		unsetFields["bandIDs"] = ""
+	}
+	if len(unsetFields) > 0 {
+		update["$unset"] = unsetFields
+	}
+
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After).SetUpsert(true)
 
 	result := collection.FindOneAndUpdate(context.TODO(), filter, update, opts)

@@ -130,6 +130,7 @@ export interface SettingsUser {
   name: string;
   languageCode?: string;
   activeBandId?: string;
+  avatarFileId?: string;
 }
 
 export interface SettingsBand {
@@ -151,6 +152,7 @@ export interface SettingsMember {
   isAdmin: boolean;
   isSelf: boolean;
   isActive: boolean;
+  avatarFileId?: string;
 }
 
 export interface SettingsJoinRequest {
