@@ -127,7 +127,7 @@ func (s *DriveFileService) FindOneByID(ID string) (*drive.File, error) {
 
 	var driveFile *drive.File
 	err := retrier.Run(func() error {
-		_driveFile, err := s.driveClient.Files.Get(ID).Fields("id, name, version, webViewLink, parents").Do()
+		_driveFile, err := s.driveClient.Files.Get(ID).Fields("id, name, version, webViewLink, parents, trashed").Do()
 		if err != nil {
 			return err
 		}

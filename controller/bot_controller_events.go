@@ -454,6 +454,14 @@ func (c *BotController) getBandTempFolderID(bandID bson.ObjectID) (string, error
 		return "", err
 	}
 
+	if band.TempFolderID != "" {
+		folder, err := c.DriveFileService.FindOneByID(band.TempFolderID)
+		if err != nil || folder == nil || folder.Trashed {
+			log.Warn().Err(err).Msgf("Temp folder %s for band %s is missing, trashed, or inaccessible. Recreating...", band.TempFolderID, band.Name)
+			band.TempFolderID = ""
+		}
+	}
+
 	if band.TempFolderID == "" {
 		tempFolder, err := c.DriveFileService.FindOrCreateOneFolderByNameAndFolderID(
 			tempFolderName, band.DriveFolderID,
