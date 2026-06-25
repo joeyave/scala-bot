@@ -102,6 +102,14 @@ func (c *BotController) CreateEvent(bot *gotgbot.Bot, ctx *ext.Context) error {
 			continue
 		}
 		newEvent.SongIDs = append(newEvent.SongIDs, hex)
+
+		override := data.GetSongOverride(id)
+		if override != nil && override.EventKey != "" {
+			newEvent.SongOverrides = append(newEvent.SongOverrides, entity.SongOverride{
+				SongID:   hex,
+				EventKey: override.EventKey,
+			})
+		}
 	}
 
 	if data.Notes != "" {

@@ -9,7 +9,7 @@ RUN --mount=type=cache,target=/root/.npm npm ci
 COPY webapp-react/ ./
 RUN npm run build
 
-FROM --platform=$BUILDPLATFORM golang:1.24-bookworm AS backend
+FROM --platform=$BUILDPLATFORM golang:1.26-bookworm AS backend
 ARG TARGETOS
 ARG TARGETARCH
 
