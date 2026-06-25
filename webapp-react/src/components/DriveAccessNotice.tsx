@@ -3,7 +3,9 @@ import { useTranslation } from "react-i18next";
 
 export const DriveAccessNotice: FC = () => {
   const { t } = useTranslation();
-  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
+    "idle",
+  );
   const email = "scala-drive@scala-chords-bot.iam.gserviceaccount.com";
 
   const copyEmail = async () => {
@@ -24,7 +26,7 @@ export const DriveAccessNotice: FC = () => {
 
   return (
     <div className="rounded-2xl border border-[var(--tg-theme-link-color,#2481cc)]/30 bg-[var(--tg-theme-link-color,#2481cc)]/10 p-4">
-      <div className="text-sm font-semibold uppercase text-[var(--tg-theme-link-color,#2481cc)]">
+      <div className="text-sm font-semibold text-[var(--tg-theme-link-color,#2481cc)] uppercase">
         {t("settingsDriveAccessTitle")}
       </div>
       <div className="mt-2 text-sm leading-5 text-[var(--tg-theme-text-color,#000000)]">
@@ -37,7 +39,9 @@ export const DriveAccessNotice: FC = () => {
         <button
           type="button"
           className="h-9 shrink-0 rounded-lg bg-[var(--tg-theme-button-color,#2481cc)] px-3 text-sm font-semibold text-[var(--tg-theme-button-text-color,#ffffff)] active:opacity-75"
-          onClick={copyEmail}
+          onClick={() => {
+            void copyEmail();
+          }}
         >
           {copyButtonText()}
         </button>

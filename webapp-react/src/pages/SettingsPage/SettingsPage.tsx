@@ -9,8 +9,13 @@ import {
 import { SettingsBand } from "@/api/webapp/typesResp.ts";
 import { ContextMenu, ContextMenuItem } from "@/components/ContextMenu.tsx";
 import { Page } from "@/components/Page.tsx";
+import { tgAlert, tgConfirm } from "@/helpers/tgDialog.ts";
 import { Button, Radio, RadioGroup } from "@headlessui/react";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { hapticFeedback, postEvent } from "@tma.js/sdk-react";
 import { FC, ReactNode, useEffect, useMemo, useState } from "react";
 import { Clock, Plus, ThreeDots } from "react-bootstrap-icons";
@@ -29,7 +34,7 @@ const SettingsPage: FC = () => {
   if (!userId) {
     return (
       <Page back={false}>
-        <main className="px-4 pb-6 pt-4">
+        <main className="px-4 pt-4 pb-6">
           <EmptyState
             title={t("settingsErrorNoTgId")}
             description={t("settingsErrorOpenViaBot")}
@@ -109,14 +114,16 @@ const SettingsPageContent: FC = () => {
     },
     onError: (err: any) => {
       hapticFeedback.notificationOccurred("error");
-      const errMsg =
-        err?.response?.data?.error || err?.message || t("settingsLeaveError");
-      if (errMsg === "cannot leave the group: you are the last administrator" || errMsg === "invalid operation") {
-        window.alert(t("settingsLeaveOnlyAdminError"));
+      const errMsg = err?.message || t("settingsLeaveError");
+      if (
+        errMsg === "cannot leave the group: you are the last administrator" ||
+        errMsg === "invalid operation"
+      ) {
+        tgAlert(t("settingsLeaveOnlyAdminError"));
       } else if (errMsg === "cannot leave the only group") {
-        window.alert(t("settingsLeaveLastGroupError"));
+        tgAlert(t("settingsLeaveLastGroupError"));
       } else {
-        window.alert(errMsg);
+        tgAlert(errMsg);
       }
     },
   });
@@ -171,17 +178,19 @@ const SettingsPageContent: FC = () => {
                     band={band}
                     isBusy={activatingBandId !== null}
                     showDivider={index < myBands.length - 1}
-                    roleLabel={band.isAdmin ? t("settingsAdmin") : t("settingsMember")}
+                    roleLabel={
+                      band.isAdmin ? t("settingsAdmin") : t("settingsMember")
+                    }
                     menu={
                       <BandContextMenu
                         band={band}
                         myBandsCount={myBands.length}
-                        onConfigure={() =>
-                          navigate({
+                        onConfigure={() => {
+                          void navigate({
                             pathname: `/settings/bands/${band.id}`,
                             search: getHashSearch(),
-                          })
-                        }
+                          });
+                        }}
                         onLeave={() => leaveMutation.mutate(band.id)}
                       />
                     }
@@ -193,7 +202,11 @@ const SettingsPageContent: FC = () => {
         ) : null}
 
         <SectionBlock
-          title={myBands.length > 0 ? t("settingsAddBand") : t("settingsRegistration")}
+          title={
+            myBands.length > 0
+              ? t("settingsAddBand")
+              : t("settingsRegistration")
+          }
         >
           <div className="space-y-3">
             {availableBands.length > 16 && (
@@ -224,10 +237,13 @@ const SettingsPageContent: FC = () => {
               ))}
               <Button
                 type="button"
-                className="flex w-full min-h-[48px] cursor-pointer items-center justify-between px-4 py-1.5 outline-none text-base font-semibold text-[var(--tg-theme-link-color,#2481cc)] hover:bg-black/[0.02] active:bg-black/[0.04] transition-colors"
-                onClick={() =>
-                  navigate({ pathname: "/settings/create", search: getHashSearch() })
-                }
+                className="flex min-h-[48px] w-full cursor-pointer items-center justify-between px-4 py-1.5 text-base font-semibold text-[var(--tg-theme-link-color,#2481cc)] transition-colors outline-none hover:bg-black/[0.02] active:bg-black/[0.04]"
+                onClick={() => {
+                  void navigate({
+                    pathname: "/settings/create",
+                    search: getHashSearch(),
+                  });
+                }}
               >
                 <span>{t("settingsCreateBand")}</span>
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[var(--tg-theme-link-color,#2481cc)]">
@@ -249,7 +265,15 @@ const SettingsPageContent: FC = () => {
   );
 };
 
-function UserProfile({ name, userId, avatarFileId }: { name: string; userId: number; avatarFileId?: string }) {
+function UserProfile({
+  name,
+  userId,
+  avatarFileId,
+}: {
+  name: string;
+  userId: number;
+  avatarFileId?: string;
+}) {
   return (
     <div className="flex items-center gap-3 px-4 py-4">
       <UserAvatar name={name} userId={userId} avatarFileId={avatarFileId} />
@@ -269,7 +293,7 @@ function SectionBlock({
 }) {
   return (
     <section className="px-4 py-3">
-      <h2 className="mb-3 px-1 text-sm font-semibold uppercase text-[var(--tg-theme-link-color,#2481cc)]">
+      <h2 className="mb-3 px-1 text-sm font-semibold text-[var(--tg-theme-link-color,#2481cc)] uppercase">
         {title}
       </h2>
       {children}
@@ -352,9 +376,14 @@ function BandContextMenu({
       label: t("settingsActionSheetLeave"),
       destructive: true,
       onClick: () => {
-        if (window.confirm(t("settingsLeaveConfirm", { name: band.name }))) {
-          onLeave();
-        }
+        tgConfirm(
+          t("settingsLeaveConfirm", { name: band.name }),
+          (confirmed) => {
+            if (confirmed) {
+              onLeave();
+            }
+          },
+        );
       },
     });
   }
@@ -459,8 +488,6 @@ function AvailableBandRow({
   );
 }
 
-
-
 function EmptyState({
   title,
   description,
@@ -539,12 +566,11 @@ export function UserAvatar({
 }
 
 function getInitials(name: string): string {
-  const words = name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2);
-  const initials = words.map((word) => word[0]).join("").toUpperCase();
+  const words = name.trim().split(/\s+/).filter(Boolean).slice(0, 2);
+  const initials = words
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase();
   return initials || "U";
 }
 

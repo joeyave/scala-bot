@@ -9,12 +9,19 @@ import { SettingsBand, SettingsMember } from "@/api/webapp/typesResp.ts";
 import { ContextMenu } from "@/components/ContextMenu.tsx";
 import { DriveAccessNotice } from "@/components/DriveAccessNotice.tsx";
 import { Page } from "@/components/Page.tsx";
+import { tgAlert, tgConfirm } from "@/helpers/tgDialog.ts";
 import {
   SettingsBandForm,
   SettingsBandFormState,
 } from "@/pages/SettingsPage/SettingsBandForm.tsx";
-import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { hapticFeedback, postEvent } from "@tma.js/sdk-react";
+import type { TFunction } from "i18next";
 import { FC, ReactNode, useEffect, useMemo } from "react";
 import { ThreeDots } from "react-bootstrap-icons";
 import { useTranslation } from "react-i18next";
@@ -33,7 +40,7 @@ const BandSettingsPage: FC = () => {
   if (!bandId) {
     return (
       <Page back={true}>
-        <main className="px-4 pb-6 pt-4">
+        <main className="px-4 pt-4 pb-6">
           <EmptyState
             title={t("settingsBandNotFound")}
             description={t("settingsInvalidBandId")}
@@ -81,9 +88,8 @@ const BandSettingsPageContent: FC<{ bandId: string }> = ({ bandId }) => {
     },
     onError: (err: any) => {
       hapticFeedback.notificationOccurred("error");
-      const errMsg =
-        err?.response?.data?.error || err?.message || t("settingsUpdateBandError");
-      window.alert(errMsg);
+      const errMsg = err?.message || t("settingsUpdateBandError");
+      tgAlert(errMsg);
     },
   });
 
@@ -94,7 +100,7 @@ const BandSettingsPageContent: FC<{ bandId: string }> = ({ bandId }) => {
   if (!band) {
     return (
       <Page back={true}>
-        <main className="px-4 pb-6 pt-4">
+        <main className="px-4 pt-4 pb-6">
           <EmptyState
             title={t("settingsBandNotFound")}
             description={t("settingsNotMemberOfGroup")}
@@ -107,7 +113,7 @@ const BandSettingsPageContent: FC<{ bandId: string }> = ({ bandId }) => {
   if (!band.isAdmin) {
     return (
       <Page back={true}>
-        <main className="px-4 pb-6 pt-4">
+        <main className="px-4 pt-4 pb-6">
           <EmptyState
             title={t("settingsAccessRestricted")}
             description={t("settingsAdminsOnly")}
@@ -119,7 +125,7 @@ const BandSettingsPageContent: FC<{ bandId: string }> = ({ bandId }) => {
 
   return (
     <Page back={true}>
-      <main className="space-y-4 px-4 pb-6 pt-4">
+      <main className="space-y-4 px-4 pt-4 pb-6">
         <SectionBlock title={t("settingsBandHeader", { name: band.name })}>
           <div className="rounded-2xl bg-[var(--tg-theme-section-bg-color,#ffffff)] p-4">
             <SettingsBandForm
@@ -166,22 +172,29 @@ function SettingsMembersSection({ band }: { band: SettingsBand }) {
   };
 
   const roleMutation = useMutation({
-    mutationFn: ({ member, isAdmin }: { member: SettingsMember; isAdmin: boolean }) =>
-      updateSettingsBandMember(band.id, member.id, { isAdmin }),
+    mutationFn: ({
+      member,
+      isAdmin,
+    }: {
+      member: SettingsMember;
+      isAdmin: boolean;
+    }) => updateSettingsBandMember(band.id, member.id, { isAdmin }),
     onSuccess: async () => {
       hapticFeedback.selectionChanged();
       await refreshMembers();
     },
     onError: (err: any) => {
       hapticFeedback.notificationOccurred("error");
-      const errMsg =
-        err?.response?.data?.error || err?.message || t("settingsRoleChangeError");
-      if (errMsg === "cannot demote yourself" || errMsg === "invalid operation") {
-        window.alert(t("settingsNoSelfDemote"));
+      const errMsg = err?.message || t("settingsRoleChangeError");
+      if (
+        errMsg === "cannot demote yourself" ||
+        errMsg === "invalid operation"
+      ) {
+        tgAlert(t("settingsNoSelfDemote"));
       } else if (errMsg === "cannot demote the last administrator") {
-        window.alert(t("settingsDemoteLastAdminError"));
+        tgAlert(t("settingsDemoteLastAdminError"));
       } else {
-        window.alert(errMsg);
+        tgAlert(errMsg);
       }
     },
   });
@@ -195,12 +208,11 @@ function SettingsMembersSection({ band }: { band: SettingsBand }) {
     },
     onError: (err: any) => {
       hapticFeedback.notificationOccurred("error");
-      const errMsg =
-        err?.response?.data?.error || err?.message || t("settingsExcludeError");
+      const errMsg = err?.message || t("settingsExcludeError");
       if (errMsg === "cannot remove the last administrator") {
-        window.alert(t("settingsExcludeLastAdminError"));
+        tgAlert(t("settingsExcludeLastAdminError"));
       } else {
-        window.alert(errMsg);
+        tgAlert(errMsg);
       }
     },
   });
@@ -213,12 +225,14 @@ function SettingsMembersSection({ band }: { band: SettingsBand }) {
       if (!a.isSelf && b.isSelf) return 1;
 
       // 2. Sort by lastActiveAt (more recently active goes first)
-      const timeA = a.lastActiveAt && !a.lastActiveAt.startsWith("0001-01-01")
-        ? new Date(a.lastActiveAt).getTime()
-        : 0;
-      const timeB = b.lastActiveAt && !b.lastActiveAt.startsWith("0001-01-01")
-        ? new Date(b.lastActiveAt).getTime()
-        : 0;
+      const timeA =
+        a.lastActiveAt && !a.lastActiveAt.startsWith("0001-01-01")
+          ? new Date(a.lastActiveAt).getTime()
+          : 0;
+      const timeB =
+        b.lastActiveAt && !b.lastActiveAt.startsWith("0001-01-01")
+          ? new Date(b.lastActiveAt).getTime()
+          : 0;
       if (timeA !== timeB) {
         return timeB - timeA;
       }
@@ -247,7 +261,9 @@ function SettingsMembersSection({ band }: { band: SettingsBand }) {
               key={member.id}
               member={member}
               showDivider={index < sortedMembers.length - 1}
-              roleLabel={member.isAdmin ? t("settingsAdmin") : t("settingsMember")}
+              roleLabel={
+                member.isAdmin ? t("settingsAdmin") : t("settingsMember")
+              }
               selfLabel={t("settingsIsSelf")}
               menu={
                 !member.isSelf ? (
@@ -272,15 +288,16 @@ function SettingsMembersSection({ band }: { band: SettingsBand }) {
                         label: t("settingsActionSheetExclude"),
                         destructive: true,
                         onClick: () => {
-                          if (
-                            window.confirm(
-                              t("settingsExcludeConfirm", {
-                                name: member.name || `User ${member.id}`,
-                              }),
-                            )
-                          ) {
-                            removeMutation.mutate(member);
-                          }
+                          tgConfirm(
+                            t("settingsExcludeConfirm", {
+                              name: member.name || `User ${member.id}`,
+                            }),
+                            (confirmed) => {
+                              if (confirmed) {
+                                removeMutation.mutate(member);
+                              }
+                            },
+                          );
                         },
                       },
                     ]}
@@ -300,7 +317,11 @@ function SettingsMembersSection({ band }: { band: SettingsBand }) {
   );
 }
 
-function formatLastActive(lastActiveAt: string | undefined, t: any, lang: string): string {
+function formatLastActive(
+  lastActiveAt: string | undefined,
+  t: TFunction,
+  lang: string,
+): string {
   if (!lastActiveAt || lastActiveAt.startsWith("0001-01-01")) {
     return ` • ${t("settingsNeverActive")}`;
   }
@@ -321,10 +342,13 @@ function formatLastActive(lastActiveAt: string | undefined, t: any, lang: string
   }
 
   // Localized date format: "20 июня" or "20 червня"
-  const formattedDate = date.toLocaleDateString(lang === "uk" ? "uk-UA" : "ru-RU", {
-    day: "numeric",
-    month: "long",
-  });
+  const formattedDate = date.toLocaleDateString(
+    lang === "uk" ? "uk-UA" : "ru-RU",
+    {
+      day: "numeric",
+      month: "long",
+    },
+  );
 
   return ` • ${t("settingsActiveDate", { date: formattedDate })}`;
 }
@@ -350,13 +374,20 @@ function MemberRow({
         showDivider ? "border-b border-black/[0.06]" : ""
       }`}
     >
-      <UserAvatar name={member.name || `User ${member.id}`} userId={member.id} size="small" avatarFileId={member.avatarFileId} />
+      <UserAvatar
+        name={member.name || `User ${member.id}`}
+        userId={member.id}
+        size="small"
+        avatarFileId={member.avatarFileId}
+      />
       <div className="min-w-0 flex-1">
         <div className="truncate text-base font-medium text-[var(--tg-theme-text-color,#000000)]">
           {member.name || `User ${member.id}`}
         </div>
         <div className="mt-1 text-sm font-medium text-[var(--tg-theme-hint-color,#8e8e93)]">
-          {member.isSelf ? `${roleLabel} (${selfLabel.toLowerCase()})` : roleLabel}
+          {member.isSelf
+            ? `${roleLabel} (${selfLabel.toLowerCase()})`
+            : roleLabel}
           {formatLastActive(member.lastActiveAt, t, i18n.language)}
         </div>
       </div>
@@ -374,7 +405,7 @@ function SectionBlock({
 }) {
   return (
     <section className="space-y-3">
-      <h2 className="px-1 text-sm font-semibold uppercase text-[var(--tg-theme-link-color,#2481cc)]">
+      <h2 className="px-1 text-sm font-semibold text-[var(--tg-theme-link-color,#2481cc)] uppercase">
         {title}
       </h2>
       {children}

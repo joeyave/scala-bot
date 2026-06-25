@@ -44,7 +44,19 @@ export async function doReq(
   try {
     const resp = await fetch(req);
     if (!resp.ok) {
-      throw new Error("Request failed with status code " + resp.status);
+      let message = "Request failed with status code " + resp.status;
+      try {
+        const contentType = resp.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          const body = (await resp.json()) as { error?: string };
+          if (body?.error) {
+            message = body.error;
+          }
+        }
+      } catch {
+        // ignore JSON parse errors, use default message
+      }
+      throw new Error(message);
     }
 
     const duration = performance.now() - startTime;
