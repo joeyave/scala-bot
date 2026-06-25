@@ -6,10 +6,26 @@ import {
 } from "@/api/webapp/typesReq.ts";
 import {
   RespSettingsBands,
+  RespSettingsConfig,
   RespSettingsJoinRequestCreated,
   RespSettingsMe,
   RespSettingsMembers,
 } from "@/api/webapp/typesResp.ts";
+
+export async function getSettingsConfig(): Promise<RespSettingsConfig | null> {
+  const { data, err } = await doReqWebappApi<RespSettingsConfig>(
+    "/api/settings/config",
+    "GET",
+    undefined,
+    { Accept: "application/json" },
+  );
+
+  if (err) {
+    throw err;
+  }
+
+  return data;
+}
 
 export async function getSettingsMe(): Promise<RespSettingsMe | null> {
   const { data, err } = await doReqWebappApi<RespSettingsMe>(

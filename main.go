@@ -110,12 +110,14 @@ func main() {
 		log.Fatal().Err(err).Msg("Error pinging MongoDB")
 	}
 
-	driveRepository, err := drive.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("BOT_GOOGLEAPIS_KEY"))))
+	googleAPIsKeyJSON := []byte(os.Getenv("BOT_GOOGLEAPIS_KEY"))
+
+	driveRepository, err := drive.NewService(context.TODO(), option.WithAuthCredentialsJSON(option.ServiceAccount, googleAPIsKeyJSON))
 	if err != nil {
 		log.Fatal().Msgf("Unable to retrieve Drive client: %v", err)
 	}
 
-	docsRepository, err := docs.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("BOT_GOOGLEAPIS_KEY"))))
+	docsRepository, err := docs.NewService(context.TODO(), option.WithAuthCredentialsJSON(option.ServiceAccount, googleAPIsKeyJSON))
 	if err != nil {
 		log.Fatal().Msgf("Unable to retrieve Docs client: %v", err)
 	}
@@ -392,6 +394,7 @@ func main() {
 	router.GET("/web-app/statistics", webAppController.Statistics)
 	router.GET("/api/statistics", webAppController.StatisticsData)
 
+	router.GET("/api/settings/config", webAppController.SettingsConfig)
 	router.GET("/api/settings/me", webAppController.SettingsMe)
 	router.GET("/api/settings/bands", webAppController.SettingsBands)
 	router.POST("/api/settings/bands", webAppController.SettingsCreateBand)

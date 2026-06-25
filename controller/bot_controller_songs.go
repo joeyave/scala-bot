@@ -15,6 +15,7 @@ import (
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers"
 	"github.com/joeyave/scala-bot/entity"
+	"github.com/joeyave/scala-bot/helpers"
 	"github.com/joeyave/scala-bot/keyboard"
 	"github.com/joeyave/scala-bot/state"
 	"github.com/joeyave/scala-bot/txt"
@@ -229,7 +230,12 @@ func (c *BotController) GetSongs(index int) handlers.Response {
 						},
 						ResizeKeyboard: true,
 					}
-					_, err := ctx.EffectiveChat.SendMessage(bot, txt.Get("text.noDocs", ctx.EffectiveUser.LanguageCode), &gotgbot.SendMessageOpts{ReplyMarkup: markup})
+					email, err := helpers.GoogleAPIsClientEmailFromEnv()
+					if err != nil {
+						return err
+					}
+
+					_, err = ctx.EffectiveChat.SendMessage(bot, txt.Get("text.noDocs", ctx.EffectiveUser.LanguageCode, email), &gotgbot.SendMessageOpts{ReplyMarkup: markup})
 					return err
 				}
 

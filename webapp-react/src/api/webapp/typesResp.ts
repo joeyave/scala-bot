@@ -164,6 +164,10 @@ export interface SettingsJoinRequest {
   createdAt: string;
 }
 
+export interface RespSettingsConfig {
+  driveServiceAccountEmail: string;
+}
+
 export interface RespSettingsMe {
   user: SettingsUser;
   bands: SettingsBand[];

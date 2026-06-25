@@ -15,6 +15,7 @@ import (
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/joeyave/scala-bot/entity"
+	"github.com/joeyave/scala-bot/helpers"
 	"github.com/joeyave/scala-bot/repository"
 	"github.com/joeyave/scala-bot/service"
 	"github.com/joeyave/scala-bot/state"
@@ -81,6 +82,10 @@ type SettingsJoinRequestCreateResponse struct {
 	Created bool                        `json:"created"`
 }
 
+type SettingsConfigResponse struct {
+	DriveServiceAccountEmail string `json:"driveServiceAccountEmail"`
+}
+
 type settingsBandRequest struct {
 	Name           *string `json:"name"`
 	DriveFolderID  *string `json:"driveFolderId"`
@@ -96,6 +101,20 @@ var (
 	driveFolderURLRe = regexp.MustCompile(`(?:/folders/|id=)([a-zA-Z0-9_-]+)`)
 	driveFolderIDRe  = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 )
+
+func (h *WebAppController) SettingsConfig(ctx *gin.Context) {
+	email, err := helpers.GoogleAPIsClientEmailFromEnv()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"data": SettingsConfigResponse{
+			DriveServiceAccountEmail: email,
+		},
+	})
+}
 
 func (h *WebAppController) SettingsMe(ctx *gin.Context) {
 	user, ok := h.settingsCurrentUser(ctx)

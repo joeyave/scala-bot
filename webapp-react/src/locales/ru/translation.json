@@ -107,7 +107,7 @@
   "settingsBandNamePlaceholder": "Название группы",
   "settingsDrivePlaceholder": "Google Drive folder ID или ссылка",
   "settingsDriveAccessTitle": "Важно: доступ к Google Диску",
-  "settingsDriveAccessNotice": "Перед созданием добавьте scala-drive@scala-chords-bot.iam.gserviceaccount.com в папку на Google Диске как редактора. Без этого бот не сможет читать и создавать документы в новой группе.",
+  "settingsDriveAccessNotice": "Перед созданием добавьте {{email}} в папку на Google Диске как редактора. Без этого бот не сможет читать и создавать документы в новой группе.",
   "settingsCopyEmail": "Скопировать",
   "settingsCopied": "Скопировано",
   "settingsCopyFailed": "Не скопировано",

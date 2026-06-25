@@ -42,11 +42,13 @@ func main() {
 		panic(fmt.Sprintf("failed to ping mongo: %v", err))
 	}
 
-	driveRepository, err := drive.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("BOT_GOOGLEAPIS_KEY"))))
+	googleAPIsKeyJSON := []byte(os.Getenv("BOT_GOOGLEAPIS_KEY"))
+
+	driveRepository, err := drive.NewService(context.TODO(), option.WithAuthCredentialsJSON(option.ServiceAccount, googleAPIsKeyJSON))
 	if err != nil {
 		panic(fmt.Sprintf("failed to init drive: %v", err))
 	}
-	docsRepository, err := docs.NewService(context.TODO(), option.WithCredentialsJSON([]byte(os.Getenv("BOT_GOOGLEAPIS_KEY"))))
+	docsRepository, err := docs.NewService(context.TODO(), option.WithAuthCredentialsJSON(option.ServiceAccount, googleAPIsKeyJSON))
 	if err != nil {
 		panic(fmt.Sprintf("failed to init docs: %v", err))
 	}

@@ -1,12 +1,24 @@
+import { getSettingsConfig } from "@/api/webapp/settings.ts";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { FC, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 export const DriveAccessNotice: FC = () => {
   const { t } = useTranslation();
+  const configQuery = useSuspenseQuery({
+    queryKey: ["settings", "config"],
+    queryFn: async () => {
+      const data = await getSettingsConfig();
+      if (!data) {
+        throw new Error("Failed to load settings config.");
+      }
+      return data;
+    },
+  });
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
     "idle",
   );
-  const email = "scala-drive@scala-chords-bot.iam.gserviceaccount.com";
+  const email = configQuery.data.driveServiceAccountEmail;
 
   const copyEmail = async () => {
     const copied = await copyText(email);
@@ -30,7 +42,9 @@ export const DriveAccessNotice: FC = () => {
         {t("settingsDriveAccessTitle")}
       </div>
       <div className="mt-2 text-sm leading-5 text-[var(--tg-theme-text-color,#000000)]">
-        {t("settingsDriveAccessNotice")}
+        {t("settingsDriveAccessNotice", {
+          email,
+        })}
       </div>
       <div className="mt-3 flex items-center gap-2 rounded-xl bg-[var(--tg-theme-section-bg-color,#ffffff)] p-2">
         <code className="min-w-0 flex-1 truncate px-2 text-sm font-semibold text-[var(--tg-theme-text-color,#000000)]">

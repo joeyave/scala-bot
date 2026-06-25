@@ -13,7 +13,7 @@ const (
 
 	SongVoices_CreateVoice
 
-	BandCreate
+	_ // reserved for removed chat-based band creation state
 
 	RoleCreate_ChoosePosition
 )
@@ -62,7 +62,7 @@ const (
 	SongStyle
 	SongAddLyricsPage
 
-	BandCreate_AskForName
+	_ // reserved for removed chat-based band creation callback
 
 	RoleCreate_AskForName
 	RoleCreate
