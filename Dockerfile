@@ -4,7 +4,7 @@ FROM node:20-bookworm-slim AS frontend
 WORKDIR /app/webapp-react
 
 COPY webapp-react/package*.json ./
-RUN --mount=type=cache,target=/root/.npm npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci --legacy-peer-deps
 
 COPY webapp-react/ ./
 RUN npm run build
